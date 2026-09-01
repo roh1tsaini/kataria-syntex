@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.next/
+.open-next/
+.wrangler/
+out/
+build/
+*.tsbuildinfo
+
+# Environment & secrets (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+
+# Local data (inquiry JSONL fallback)
+.data/
+
+# Staged deploy bundle produced by the deploy-api workflow's build script
+.deploy/
+
+# Turbo & tool caches
+.turbo/
+.cache/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+server.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Legacy archive (kept on disk, excluded from git)
+old-code/
+apps/web/screens-new/
+
+# Reference business documents (customer challans/invoices) — never commit
+apps/app/Docs Template/
+
+# Capacitor build output (the android/ source project IS committed)
+apps/app/out/
+apps/app/release/
+apps/app/build/
+apps/app/dist-electron/
+
+# Scratch / tool output (audit screenshots, throwaway profiles)
+apps/app/tmp/
+eslint-output.json
+apps/web/eslint-output.json
+/dead-files

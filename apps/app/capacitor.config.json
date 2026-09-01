@@ -1,0 +1,8 @@
+{
+  "appId": "com.katariasyntex.challan",
+  "appName": "Kataria Challan",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

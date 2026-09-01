@@ -1,0 +1,260 @@
+name: "Build Challan App"
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Which targets to build"
+        type: choice
+        options:
+          - all
+          - desktop
+          - android
+        default: all
+      version:
+        description: "Release version (e.g. 0.1.0). Creates a v<version> tag + Release with direct .exe/.dmg/.AppImage/.apk files."
+        type: string
+        default: "0.1.0"
+  push:
+    branches: [main]
+    paths:
+      - "apps/app/**"
+      - "packages/**"
+      - ".github/workflows/**"
+      - ".github/scripts/**"
+      - "package.json"
+      - "turbo.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/app/**"
+      - "packages/**"
+
+concurrency:
+  group: app-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  # API origin for native builds — set the APP_URL repo variable (the App
+  # FQDN, no trailing slash) after the first deploy.
+  VITE_API_URL: ${{ vars.APP_URL }}
+
+jobs:
+  typecheck:
+    name: "Typecheck"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck all workspaces
+        run: bun run typecheck
+
+  desktop:
+    name: "Desktop (${{ matrix.name }})"
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.targets != 'android' }}
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            name: windows-x64
+            builder_args: --win
+            bundle_path: apps/app/release/*.exe
+          - platform: macos-latest
+            name: macos-arm64
+            builder_args: --mac
+            bundle_path: apps/app/release/*.dmg
+          - platform: ubuntu-24.04
+            name: linux-x64
+            builder_args: --linux
+            bundle_path: apps/app/release/*.AppImage
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require APP_URL variable
+        if: ${{ vars.APP_URL == '' }}
+        run: |
+          echo "::error::Set the repository variable APP_URL (app FQDN, no trailing slash) before building native apps."
+          exit 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Cache Electron + builder downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: electron-${{ matrix.name }}-${{ hashFiles('bun.lock') }}
+          restore-keys: electron-${{ matrix.name }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Inject App origin into main-process API origin
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: bun electron/build.ts
+        working-directory: apps/app
+
+      - name: Rewrite CSP placeholder for the packaged renderer
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          APP_URL="https://${APP_URL#*://}"
+          APP_URL="${APP_URL%/}"
+          bun -e "const fs=require('fs');const f='apps/app/index.html';const s=fs.readFileSync(f,'utf8').replaceAll('https://CHANGE_ME_APP_ORIGIN', process.env.APP_URL);fs.writeFileSync(f,s)"
+
+      - name: Build renderer + main/preload + package
+        working-directory: apps/app
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          bun run build
+          bun run build:electron
+          bunx electron-builder --config electron-builder.yml ${{ matrix.builder_args }}
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: challan-${{ matrix.name }}
+          path: ${{ matrix.bundle_path }}
+          if-no-files-found: error
+
+  android:
+    name: "Android universal APK (all devices)"
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.targets != 'desktop' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Require APP_URL variable
+        if: ${{ vars.APP_URL == '' }}
+        run: |
+          echo "::error::Set the repository variable APP_URL (app FQDN, no trailing slash) before building the Android app."
+          exit 1
+
+      - name: Install Android SDK components
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Rewrite CSP placeholder for the APK WebView
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          APP_URL="https://${APP_URL#*://}"
+          APP_URL="${APP_URL%/}"
+          bun -e "const fs=require('fs');const f='apps/app/index.html';const s=fs.readFileSync(f,'utf8').replaceAll('https://CHANGE_ME_APP_ORIGIN', process.env.APP_URL);fs.writeFileSync(f,s)"
+
+      - name: Build web bundle + sync Capacitor
+        working-directory: apps/app
+        run: |
+          bun run build
+          bunx cap sync android
+
+      - name: Decode signing keystore from secrets
+        shell: bash
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEY_BASE64" ]; then
+            echo "::error::ANDROID_KEY_BASE64 secret is missing."
+            exit 1
+          fi
+          echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.p12"
+
+      - name: Write keystore.properties
+        working-directory: apps/app
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/keystore.p12
+          KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: python3 ../../.github/scripts/capacitor-android-signing.py android
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-challan-${{ hashFiles('apps/app/android/**/*.gradle*', 'apps/app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-challan-
+
+      - name: Build signed release APK
+        working-directory: apps/app/android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: challan-android
+          path: apps/app/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  release:
+    name: "Publish GitHub Release"
+    if: ${{ github.event_name == 'workflow_dispatch' && !cancelled() && (needs.desktop.result == 'success' || needs.desktop.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') }}
+    needs: [desktop, android]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all bundles
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Inspect downloaded files
+        run: ls -laR dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Kataria Challan v${{ inputs.version }}
+          body: |
+            Direct-download installers — one file per device (no zip):
+
+            - **Android** (all phones): `*.apk` — signed. Allow "Install unknown apps" and open the file.
+            - **Windows**: `*-setup.exe` — NSIS installer. SmartScreen may warn (unsigned); click "More info → Run anyway".
+            - **macOS**: `*.dmg` — universal (Intel + Apple Silicon). Right-click → Open to bypass Gatekeeper.
+            - **Linux**: `*.AppImage` — `chmod +x` and run.
+          generate_release_notes: false
+          files: dist/**
+          fail_on_unmatched_files: false

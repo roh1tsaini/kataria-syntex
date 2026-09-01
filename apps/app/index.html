@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/pwa-192.png" />
+    <!-- Theme + accent applied pre-paint (CSP-safe: same-origin script). -->
+    <script src="/theme-init.js"></script>
+    <!--
+      CSP for the SPA. connect-src allows the deployed backend origin (the
+      CHANGE_ME_APP_ORIGIN placeholder is injected by CI) + the Vite HMR
+      websockets in dev. style-src 'unsafe-inline' is required by Tailwind
+      v4's injected styles.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://CHANGE_ME_APP_ORIGIN ws://localhost:1420 ws://localhost:1421"
+    />
+    <title>Kataria Syntex — Challan App</title>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main/main.tsx"></script>
+  </body>
+</html>

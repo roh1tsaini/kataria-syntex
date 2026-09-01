@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kataria Syntex — homepage demo (combo palette)</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --navy: #0a2540;
+        --royal: #1e3a8a;
+        --sky: #7dd3fc;
+        --ice: #b8d8f5;
+        --corn: #93c5fd;
+        --ink-soft: #46586e;
+        --line: rgb(10 37 64 / 0.12);
+      }
+      body {
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        color: var(--navy);
+        background: #fff;
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      .btn {
+        display: inline-block;
+        font-size: 14px;
+        font-weight: 650;
+        padding: 12px 22px;
+        border-radius: 11px;
+        text-decoration: none;
+      }
+      .btn-royal {
+        background: var(--royal);
+        color: #fff;
+      }
+      .btn-sky {
+        background: var(--sky);
+        color: var(--navy);
+      }
+      .btn-ghost {
+        border: 1.5px solid currentColor;
+        background: transparent;
+      }
+      .kicker {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--royal);
+      }
+
+      /* nav */
+      nav {
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+      }
+      nav .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        font-size: 15px;
+      }
+      .brand .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, var(--royal), var(--sky));
+      }
+      .navlinks {
+        display: flex;
+        gap: 26px;
+        font-size: 13.5px;
+        font-weight: 550;
+        color: var(--ink-soft);
+      }
+      .navlinks b {
+        color: var(--navy);
+      }
+
+      /* hero */
+      .hero {
+        background: linear-gradient(180deg, #ffffff 0%, var(--ice) 130%);
+        padding: 84px 0 76px;
+      }
+      .hero .wrap {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 56px;
+        align-items: center;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        background: #fff;
+        border: 1px solid var(--line);
+        color: var(--royal);
+        padding: 6px 12px;
+        border-radius: 999px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        font-size: 52px;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        font-weight: 800;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--royal);
+      }
+      .lede {
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 18px 0 30px;
+        max-width: 520px;
+      }
+      .hero .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .fine {
+        margin-top: 16px;
+        font-size: 12px;
+        color: var(--ink-soft);
+        font-family: "SF Mono", Consolas, monospace;
+      }
+
+      .shadecard {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 24px 48px rgb(10 37 64 / 0.14);
+      }
+      .shadecard header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 14px;
+      }
+      .shadecard header b {
+        font-size: 14px;
+      }
+      .shadecard header span {
+        font-size: 10.5px;
+        color: var(--ink-soft);
+        font-family: "SF Mono", Consolas, monospace;
+      }
+      .chips {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+      }
+      .chip {
+        border-radius: 8px;
+        height: 52px;
+        position: relative;
+      }
+      .chip i {
+        position: absolute;
+        left: 6px;
+        bottom: 5px;
+        font-style: normal;
+        font-size: 8.5px;
+        font-family: "SF Mono", Consolas, monospace;
+        color: rgb(255 255 255 / 0.85);
+      }
+      .chip.light i {
+        color: rgb(10 37 64 / 0.65);
+      }
+
+      /* stats */
+      .stats {
+        background: var(--navy);
+        color: #fff;
+      }
+      .stats .wrap {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 34px 32px;
+        gap: 20px;
+      }
+      .stat b {
+        display: block;
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--sky);
+        letter-spacing: -0.02em;
+      }
+      .stat span {
+        font-size: 12.5px;
+        color: rgb(184 216 245 / 0.75);
+      }
+
+      /* index */
+      .index {
+        padding: 84px 0;
+      }
+      .index h2 {
+        font-size: 34px;
+        letter-spacing: -0.02em;
+        font-weight: 800;
+        margin-top: 10px;
+      }
+      .index .sub {
+        color: var(--ink-soft);
+        font-size: 15px;
+        margin-top: 10px;
+        max-width: 560px;
+        line-height: 1.55;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-top: 38px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 22px;
+        background: #fff;
+      }
+      .fam {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+      .fam span {
+        height: 26px;
+        flex: 1;
+        border-radius: 7px;
+      }
+      .card h3 {
+        font-size: 17px;
+        font-weight: 750;
+      }
+      .card p {
+        font-size: 13px;
+        color: var(--ink-soft);
+        line-height: 1.55;
+        margin: 8px 0 16px;
+      }
+      .card a {
+        font-size: 13px;
+        font-weight: 650;
+        color: var(--royal);
+        text-decoration: none;
+      }
+
+      /* process */
+      .process {
+        background: var(--navy);
+        color: #fff;
+        padding: 84px 0;
+      }
+      .process .kicker {
+        color: var(--sky);
+      }
+      .process h2 {
+        font-size: 34px;
+        letter-spacing: -0.02em;
+        font-weight: 800;
+        margin-top: 10px;
+      }
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 40px;
+        margin-top: 44px;
+      }
+      .step .num {
+        font-family: "SF Mono", Consolas, monospace;
+        font-size: 13px;
+        color: var(--sky);
+      }
+      .step h3 {
+        font-size: 17px;
+        margin: 10px 0 8px;
+        font-weight: 700;
+      }
+      .step p {
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: rgb(184 216 245 / 0.72);
+      }
+
+      /* cta */
+      .cta {
+        background: linear-gradient(120deg, var(--navy), var(--royal));
+        color: #fff;
+        padding: 76px 0;
+      }
+      .cta .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 32px;
+      }
+      .cta h2 {
+        font-size: 36px;
+        letter-spacing: -0.02em;
+        font-weight: 800;
+      }
+      .cta p {
+        color: rgb(184 216 245 / 0.8);
+        font-size: 15px;
+        margin-top: 8px;
+      }
+      .cta .row {
+        display: flex;
+        gap: 12px;
+      }
+      .cta .btn-ghost {
+        color: var(--corn);
+      }
+
+      /* footer */
+      footer {
+        background: var(--navy);
+        color: rgb(184 216 245 / 0.65);
+        padding: 40px 0;
+        border-top: 1px solid rgb(125 211 252 / 0.15);
+      }
+      footer .wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12.5px;
+      }
+      footer .brand {
+        color: #fff;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="wrap">
+        <div class="brand"><span class="dot"></span>KATARIA SYNTEX</div>
+        <div class="navlinks">
+          <b>Yarns</b><span>Shade card</span><span>About</span
+          ><span>Contact</span>
+        </div>
+        <a
+          class="btn btn-royal"
+          style="padding: 9px 18px; font-size: 13px"
+          href="#"
+          >Send inquiry</a
+        >
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <span class="tag">Surat · B2B yarn supply since 2004</span>
+          <h1>Tell us the yarn.<br /><em>We do the rest.</em></h1>
+          <p class="lede">
+            Cotton, polyester, and dyed yarn from Surat — counts, deniers,
+            packing, and dispatch, specified to the lot.
+          </p>
+          <div class="row">
+            <a class="btn btn-royal" href="#">Browse the yarn index</a>
+            <a class="btn btn-ghost" style="color: var(--navy)" href="#"
+              >Open shade card</a
+            >
+          </div>
+          <p class="fine">
+            quotes within one working day · lot-traceable dyeing
+          </p>
+        </div>
+        <div class="shadecard">
+          <header><b>Shade card — dyed yarn</b><span>100+ shades</span></header>
+          <div class="chips">
+            <div class="chip" style="background: #0a2540"><i>KS-01</i></div>
+            <div class="chip" style="background: #1e3a8a"><i>KS-02</i></div>
+            <div class="chip" style="background: #3c5da7"><i>KS-03</i></div>
+            <div class="chip" style="background: #5980c4"><i>KS-04</i></div>
+            <div class="chip" style="background: #76a2e0"><i>KS-05</i></div>
+            <div class="chip light" style="background: #93c5fd">
+              <i>KS-06</i>
+            </div>
+            <div class="chip light" style="background: #b8d8f5">
+              <i>KS-07</i>
+            </div>
+            <div class="chip light" style="background: #7dd3fc">
+              <i>KS-08</i>
+            </div>
+            <div class="chip" style="background: #16324f"><i>KS-09</i></div>
+            <div class="chip" style="background: #274b9f"><i>KS-10</i></div>
+            <div class="chip" style="background: #4a71b8"><i>KS-11</i></div>
+            <div class="chip light" style="background: #dceafb">
+              <i>KS-12</i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="wrap">
+        <div class="stat"><b>3</b><span>fiber families in the index</span></div>
+        <div class="stat"><b>100+</b><span>dyed shades on the card</span></div>
+        <div class="stat"><b>1 day</b><span>quote turnaround</span></div>
+        <div class="stat"><b>2004</b><span>trading from Surat since</span></div>
+      </div>
+    </section>
+
+    <section class="index">
+      <div class="wrap">
+        <span class="kicker">The yarn index</span>
+        <h2>Every yarn, fully specified.</h2>
+        <p class="sub">
+          Counts, deniers, packing, and applications for each product. Open any
+          family for the complete specification.
+        </p>
+        <div class="cards">
+          <div class="card">
+            <div class="fam">
+              <span style="background: #0a2540"></span
+              ><span style="background: #3c5da7"></span
+              ><span style="background: #b8d8f5"></span>
+            </div>
+            <h3>Cotton</h3>
+            <p>
+              Combed counts for knitting and hosiery, specified to the cone.
+            </p>
+            <a href="#">Specification →</a>
+          </div>
+          <div class="card">
+            <div class="fam">
+              <span style="background: #1e3a8a"></span
+              ><span style="background: #5980c4"></span
+              ><span style="background: #93c5fd"></span>
+            </div>
+            <h3>Polyester DTY</h3>
+            <p>Deniers for weaving and warping, raw white and solution dyed.</p>
+            <a href="#">Specification →</a>
+          </div>
+          <div class="card">
+            <div class="fam">
+              <span style="background: #0c4a6e"></span
+              ><span style="background: #458eb5"></span
+              ><span style="background: #7dd3fc"></span>
+            </div>
+            <h3>Dyed</h3>
+            <p>
+              Shade-matched to the physical card, lot-traceable on dispatch.
+            </p>
+            <a href="#">Specification →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="process">
+      <div class="wrap">
+        <span class="kicker">How the desk works</span>
+        <h2>Say what is available. Dispatch what was promised.</h2>
+        <div class="steps">
+          <div class="step">
+            <span class="num">01</span>
+            <h3>Inquire</h3>
+            <p>
+              Counts, quantity, destination. A commercial question gets a
+              commercial answer.
+            </p>
+          </div>
+          <div class="step">
+            <span class="num">02</span>
+            <h3>Quote</h3>
+            <p>
+              Real terms within one working day — price, packing, and dispatch
+              date.
+            </p>
+          </div>
+          <div class="step">
+            <span class="num">03</span>
+            <h3>Dispatch</h3>
+            <p>
+              The yarn follows the quote to the lot. What was promised leaves
+              the godown.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap">
+        <div>
+          <h2>Tell us the yarn.</h2>
+          <p>Counts, quantity, and destination get you a commercial answer.</p>
+        </div>
+        <div class="row">
+          <a class="btn btn-sky" href="#">Send an inquiry</a>
+          <a class="btn btn-ghost" href="#">Browse yarns</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <div class="brand"><span class="dot"></span>KATARIA SYNTEX</div>
+        <span>Surat, Gujarat · B2B yarn supply since 2004</span>
+      </div>
+    </footer>
+  </body>
+</html>

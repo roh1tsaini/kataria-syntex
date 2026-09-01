@@ -1,0 +1,310 @@
+@import "tailwindcss";
+
+/* Self-hosted fonts — zero CDN, zero Google. WOFF2 in ./fonts/ committed to git. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-400-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-400-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-500-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-500-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+:root {
+  --font-space-grotesk:
+    "Space Grotesk Variable", "Avenir Next", "Segoe UI", sans-serif;
+  --font-inter: "Inter Variable", "Avenir Next", "Segoe UI", sans-serif;
+  --font-ibm-plex-mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/*
+ * Design tokens — blue brand system (owner-locked 2026-09-01, see design.md).
+ * Navy carries ink and dark surfaces, royal is the action color, sky the
+ * accent on dark, ice the light surface. Status colors stay separate.
+ */
+@theme inline {
+  --font-display:
+    var(--font-space-grotesk), "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: var(--font-inter), "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono:
+    var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --color-navy: #0a2540;
+  --color-royal: #1e3a8a;
+  --color-sky: #7dd3fc;
+  --color-ice: #b8d8f5;
+  --color-cornflower: #93c5fd;
+  --color-canvas: #e6f0fb;
+  --color-canvas-deep: #d4e7f7;
+  --color-paper: #ffffff;
+  --color-ink-soft: #46586e;
+  --color-line: rgb(10 37 64 / 0.12);
+  --color-line-dark: rgb(125 211 252 / 0.15);
+  --color-ice-soft: rgb(184 216 245 / 0.72);
+  --color-danger: #c10328;
+  --color-success: #286e44;
+
+  --radius-chip: 8px;
+  --radius-control: 11px;
+  --radius-card: 16px;
+  --radius-panel: 18px;
+
+  --shadow-card: 0 8px 24px rgb(10 37 64 / 0.08);
+  --shadow-float: 0 24px 48px rgb(10 37 64 / 0.14);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-accordion-down: accordion-down 200ms var(--ease-out);
+  --animate-accordion-up: accordion-up 200ms var(--ease-out);
+
+  --breakpoint-xs: 30rem;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  /* No CSS `scroll-behavior: smooth` — Lenis owns scrolling (anchors, wheel,
+     keyboard). A second animator here is the known Lenis jank source. */
+
+  body {
+    @apply bg-canvas text-navy font-body antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-sky);
+    color: var(--color-navy);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-royal);
+    outline-offset: 2px;
+  }
+
+  .bg-navy :focus-visible {
+    outline-color: var(--color-sky);
+  }
+
+  /* Thin, low-contrast scrollbar that stays out of the way. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(10 37 64 / 0.3);
+    border: 3px solid var(--color-canvas);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@utility tnum {
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/*
+ * Load-in — one-time entrance for above-the-fold content (hero column,
+ * floating panel). Pure CSS so it runs before hydration; delays are set
+ * inline per element. Uses the `translate` property so it never fights
+ * transforms. The global reduced-motion block collapses it to a fade.
+ */
+@keyframes ks-enter {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.ks-enter {
+  animation: ks-enter 640ms var(--ease-out) both;
+}
+
+/*
+ * Reveal — crossfade with a small rise. Hidden state only applies when
+ * JS is active (html.js), so server-rendered and no-JS pages stay fully
+ * visible. Uses the `translate` property so it never fights transforms.
+ */
+.ks-reveal {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 240ms var(--ease-out),
+    translate 240ms var(--ease-out);
+}
+html.js .ks-reveal[data-shown="false"] {
+  opacity: 0;
+  translate: 0 6px;
+}
+
+/* Lenis smooth scroll — keep native scroll-behavior from fighting it. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 200ms !important;
+    transition-property:
+      opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+  .ks-reveal {
+    transition-duration: 200ms !important;
+    translate: 0 0 !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html.lenis,
+  header[class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+}
+
+/* Form micro-animations (previously provided by tw-animate-css) */
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-slide-in {
+  animation: fade-slide-in 150ms var(--ease-out);
+}
+.animate-fade-zoom-in {
+  animation: fade-zoom-in 300ms var(--ease-out);
+}

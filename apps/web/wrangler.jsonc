@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kataria-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+  },
+  "d1_databases": [
+    {
+      "binding": "INQUIRY_DB",
+      "database_name": "kataria-web-inquiry",
+      // CI auto-provisions the database and injects the real id on deploy
+      // (.github/workflows/cf-deploy.yml). Local dev works with the
+      // placeholder via `opennextjs-cloudflare` --d1 flag or .dev.vars.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle",
+      "migrations_table": "d1_migrations",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+  },
+}

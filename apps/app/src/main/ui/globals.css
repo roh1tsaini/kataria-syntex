@@ -1,0 +1,517 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Hide scrollbars while keeping the area scrollable (horizontal chip strips). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Inter variable font — bundled locally (assets/fonts), zero external requests at runtime. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../assets/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../assets/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/*
+ * Design system — Apple × Vercel × Luma (refined 2026-08-29)
+ * Apple fluid motion + optical type, Vercel flat borders, generous Apple spacing.
+ */
+
+@theme inline {
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 5%);
+  --shadow-overlay:
+    0 8px 24px -8px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Accents ────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-accent="claude"] {
+  --a-strong: oklch(0.66 0.15 41);
+  --a-fg: oklch(0.995 0.003 41);
+  --a-soft: oklch(0.66 0.15 41 / 10%);
+  --a-ink: oklch(0.48 0.13 41);
+}
+.dark,
+.dark[data-accent="claude"] {
+  --a-strong: oklch(0.76 0.12 45);
+  --a-fg: oklch(0.18 0.04 45);
+  --a-soft: oklch(0.76 0.12 45 / 15%);
+  --a-ink: oklch(0.86 0.08 45);
+}
+
+:root[data-accent="graphite"] {
+  --a-strong: oklch(0.22 0.005 260);
+  --a-fg: oklch(0.985 0 0);
+  --a-soft: oklch(0.22 0.005 260 / 7%);
+  --a-ink: oklch(0.32 0.008 260);
+}
+.dark[data-accent="graphite"] {
+  --a-strong: oklch(0.93 0 0);
+  --a-fg: oklch(0.16 0 0);
+  --a-soft: oklch(1 0 0 / 10%);
+  --a-ink: oklch(0.88 0 0);
+}
+
+:root[data-accent="iris"] {
+  --a-strong: oklch(0.54 0.2 295);
+  --a-fg: oklch(0.985 0.005 295);
+  --a-soft: oklch(0.54 0.2 295 / 10%);
+  --a-ink: oklch(0.42 0.18 295);
+}
+.dark[data-accent="iris"] {
+  --a-strong: oklch(0.72 0.15 295);
+  --a-fg: oklch(0.16 0.04 295);
+  --a-soft: oklch(0.72 0.15 295 / 16%);
+  --a-ink: oklch(0.84 0.09 295);
+}
+
+:root[data-accent="ocean"] {
+  --a-strong: oklch(0.52 0.17 250);
+  --a-fg: oklch(0.985 0.005 250);
+  --a-soft: oklch(0.52 0.17 250 / 10%);
+  --a-ink: oklch(0.42 0.15 250);
+}
+.dark[data-accent="ocean"] {
+  --a-strong: oklch(0.72 0.13 250);
+  --a-fg: oklch(0.16 0.04 250);
+  --a-soft: oklch(0.72 0.13 250 / 16%);
+  --a-ink: oklch(0.84 0.08 250);
+}
+
+:root[data-accent="emerald"] {
+  --a-strong: oklch(0.53 0.13 163);
+  --a-fg: oklch(0.985 0.005 163);
+  --a-soft: oklch(0.53 0.13 163 / 10%);
+  --a-ink: oklch(0.42 0.12 163);
+}
+.dark[data-accent="emerald"] {
+  --a-strong: oklch(0.74 0.13 165);
+  --a-fg: oklch(0.16 0.04 165);
+  --a-soft: oklch(0.74 0.13 165 / 15%);
+  --a-ink: oklch(0.85 0.09 165);
+}
+
+:root[data-accent="amber"] {
+  --a-strong: oklch(0.7 0.15 70);
+  --a-fg: oklch(0.22 0.06 70);
+  --a-soft: oklch(0.7 0.15 70 / 13%);
+  --a-ink: oklch(0.46 0.11 70);
+}
+.dark[data-accent="amber"] {
+  --a-strong: oklch(0.79 0.14 75);
+  --a-fg: oklch(0.2 0.05 70);
+  --a-soft: oklch(0.79 0.14 75 / 16%);
+  --a-ink: oklch(0.87 0.09 75);
+}
+
+/* ── Neutral base — Vercel zinc ─────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: var(--a-strong);
+  --primary-foreground: var(--a-fg);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: var(--a-soft);
+  --accent-foreground: var(--a-ink);
+  --destructive: oklch(0.577 0.216 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.6 0.13 158);
+  --warning: oklch(0.68 0.14 70);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: var(--a-strong);
+  --chart-1: var(--a-strong);
+  --chart-2: oklch(0.65 0 0);
+  --chart-3: color-mix(in oklch, var(--a-strong) 55%, oklch(0.6 0 0));
+  --chart-4: oklch(0.45 0 0);
+  --chart-5: color-mix(in oklch, var(--a-strong) 30%, oklch(0.75 0 0));
+  --radius: 0.625rem;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: var(--a-strong);
+  --primary-foreground: var(--a-fg);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: var(--a-soft);
+  --accent-foreground: var(--a-ink);
+  --destructive: oklch(0.704 0.191 22.2);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.72 0.14 158);
+  --warning: oklch(0.79 0.14 75);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: var(--a-strong);
+  --chart-1: var(--a-strong);
+  --chart-2: oklch(0.62 0 0);
+  --chart-3: color-mix(in oklch, var(--a-strong) 55%, oklch(0.65 0 0));
+  --chart-4: oklch(0.42 0 0);
+  --chart-5: color-mix(in oklch, var(--a-strong) 30%, oklch(0.78 0 0));
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+    scrollbar-color: color-mix(
+        in oklch,
+        var(--muted-foreground) 38%,
+        transparent
+      )
+      transparent;
+    /* Apple: respect Dynamic Type — scale with rem, 100% = 16px base */
+    font-size: clamp(15px, 1rem + 0.12vw, 17px);
+    font-optical-sizing: auto;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1,
+      "cv11" 1,
+      "ss01" 1;
+    font-optical-sizing: auto;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    overflow-x: clip;
+    /* Apple: body tracking near 0, comfortable leading */
+    letter-spacing: -0.011em;
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+  /* Ensure #root stretches full viewport even with safe-area padding on body */
+  #root {
+    min-height: 100dvh;
+    isolation: isolate;
+  }
+  ::selection {
+    background-color: color-mix(in oklch, var(--a-strong) 20%, transparent);
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+    background-color: color-mix(
+      in oklch,
+      var(--muted-foreground) 32%,
+      transparent
+    );
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(
+      in oklch,
+      var(--muted-foreground) 55%,
+      transparent
+    );
+  }
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Strong, accessible focus ring that respects accent */
+  :where(:focus-visible) {
+    outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent);
+    outline-offset: 2px;
+  }
+  /* Better tap highlight and touch affordance on mobile */
+  a,
+  button {
+    -webkit-tap-highlight-color: color-mix(
+      in oklch,
+      var(--a-strong) 14%,
+      transparent
+    );
+  }
+}
+
+@layer components {
+  /* Apple optical type — tracking tightens as size grows */
+  .page-eyebrow {
+    color: var(--muted-foreground);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .page-title {
+    font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.05;
+    text-wrap: balance;
+    font-optical-sizing: auto;
+  }
+  .page-desc {
+    font-size: 0.9375rem;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+    font-weight: 400;
+    letter-spacing: -0.006em;
+  }
+
+  .micro-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    line-height: 1;
+  }
+
+  /* Apple material filter bar — translucent border, generous padding */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem;
+  }
+
+  .field-control {
+    border-radius: var(--radius-md);
+    background-color: var(--card);
+    border-width: 1px;
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      background-color 140ms ease;
+  }
+  .field-control:hover {
+    border-color: oklch(0.85 0 0);
+  }
+  .field-control:focus-within,
+  .field-control:focus {
+    border-color: color-mix(in oklch, var(--foreground) 40%, var(--input));
+    box-shadow: none;
+  }
+  /* The brightened hairline is the focus indicator — never stack outlines. */
+  .field-control:focus-visible,
+  .field-control:focus-within:focus-visible {
+    outline: none;
+  }
+  [data-slot="input-group"]:has(
+    [data-slot="input-group-control"]:focus-visible
+  ),
+  [data-slot="input-group"]:focus-within {
+    border-color: color-mix(in oklch, var(--foreground) 40%, var(--input));
+    box-shadow: none;
+  }
+  [data-slot="input-group"]:focus-within {
+    outline: none;
+  }
+  .dark .field-control:hover {
+    border-color: oklch(0.4 0 0);
+  }
+
+  .table-row {
+    transition: background-color 140ms ease;
+  }
+  .table-row:hover {
+    background-color: var(--muted);
+  }
+
+  /* Apple card — generous padding, soft, no hard shadow */
+  .data-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 1.125rem;
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .data-card:hover {
+      border-color: oklch(0.85 0 0);
+      background: var(--card);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-soft);
+    }
+  }
+  .dark .data-card:hover {
+    border-color: oklch(0.35 0 0);
+  }
+
+  /* Sticky bottom bar — Vercel: solid card, flat border */
+  .sticky-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin-inline: -1rem;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: var(--card);
+    border-top: 1px solid var(--border);
+  }
+  @media (min-width: 640px) {
+    .sticky-action-bar {
+      position: static;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      backdrop-filter: none;
+      border: 0;
+      box-shadow: none;
+    }
+  }
+
+  .print-sheet {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Horizontal scroll affordance — fade mask to hint scrollability */
+  .scroll-fade {
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      black calc(100% - 24px),
+      transparent
+    );
+  }
+}
+
+@media print {
+  body {
+    background: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 200ms !important;
+    transition-property:
+      opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .filter-bar,
+  .sticky-action-bar,
+  header[class*="backdrop-blur"],
+  nav[class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    background-color: var(--card) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: oklch(0.75 0 0);
+  }
+  .dark {
+    --border: oklch(0.35 0 0);
+  }
+}
+
+/* View-transitions soft fade when supported */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.22s;
+  }
+}

@@ -1,0 +1,20 @@
+.env.local
+dist/
+dist-server/
+out/
+release/
+# SQLite databases — local dev data, never committed
+data/
+*.db
+*.db-wal
+*.db-shm
+# Android signing material — keystores must never be committed (kept in GitHub secrets)
+*.jks
+*.p12
+*.log
+# Capacitor Android build artifacts (the android/ source project IS committed)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/capacitor.build.gradle

@@ -1,0 +1,10 @@
+{
+  "extends": "@kataria-syntex/tsconfig/vite-app.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/main/*"]
+    },
+    "types": ["bun"]
+  },
+  "include": ["src/main", "src/shared", "vite.config.ts"]
+}

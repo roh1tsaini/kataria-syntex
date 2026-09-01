@@ -1,0 +1,36 @@
+# Dependencies & build output
+node_modules/
+**/node_modules/
+.next/
+dist/
+dist-server/
+dist-electron/
+.turbo/
+
+# Generated files
+*.tsbuildinfo
+apps/web/next-env.d.ts
+apps/web/cloudflare-env.d.ts
+apps/app/drizzle/
+apps/app/out/
+apps/app/release/
+apps/app/android/app/build/
+apps/app/android/app/src/main/assets/
+
+# Binaries & reference documents
+*.pdf
+*.png
+*.jpeg
+*.jpg
+*.ico
+*.icns
+*.p12
+*.sql
+apps/app/Docs Template/
+
+# Screenshots (kept on disk, not part of the repo)
+apps/app/tmp/
+
+# Obsidian rewrites these on every session — prettier can't own them
+docs/.obsidian/
+

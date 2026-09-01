@@ -1,0 +1,45 @@
+appId: com.kataria.challan
+productName: Kataria Challan
+copyright: Kataria Syntex
+
+directories:
+  output: release
+  buildResources: resources
+
+# The renderer (dist/) and the main/preload bundles (dist-electron/) are both
+# produced by `bun run electron:package` before this config runs.
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+
+# Main process entry relative to app root — package.json has no "main" so we
+# point the builder at it via electron-builder's extraMetadata below.
+extraMetadata:
+  main: dist-electron/main.js
+
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+  category: public.app-category.business
+  icon: resources/icon.png
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: Office
+  icon: resources/icon.png

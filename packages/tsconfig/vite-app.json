@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Vite App",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
+    "types": ["vite/client", "node"],
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true
+  },
+  "exclude": ["node_modules", "dist", "out"]
+}

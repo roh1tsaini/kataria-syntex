@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a problem in the website or the internal app
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much as you can.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does the bug occur?
+      options:
+        - Public website (apps/web)
+        - Internal app — web (apps/app)
+        - Internal app — Android
+        - Internal app — desktop (Windows / macOS / Linux)
+        - Backend API / database
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen, and what actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. Scroll down to ...
+        4. See error
+  - type: input
+    id: version
+    attributes:
+      label: Version / build
+      description: e.g. app version, browser, OS, phone model
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Paste error messages, network responses, or screenshots.
+      render: shell
