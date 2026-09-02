@@ -13,6 +13,7 @@ export default function ShadeCardPage() {
   return (
     <Section>
       <SectionHead
+        as="h1"
         kicker="RAJ shade card"
         title="Every shade, by the number."
         lede={`${shades.length} shades across card pages ${shadePages[0]}–${shadePages[shadePages.length - 1]}, wound as yarn the way the physical card carries them. Select a shade for its code and hex, or search a code directly. Screen colors are indicative — physical lots are matched on lab dips.`}

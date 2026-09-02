@@ -30,6 +30,7 @@ export default function AboutPage() {
       {/* Story */}
       <div className="grid gap-10 md:grid-cols-12">
         <SectionHead
+          as="h1"
           className="md:col-span-7"
           kicker="The house"
           title="A Surat yarn desk, built on repeat business."

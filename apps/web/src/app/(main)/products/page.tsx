@@ -14,6 +14,7 @@ export default function ProductsPage() {
   return (
     <Section>
       <SectionHead
+        as="h1"
         kicker="The yarn index"
         title="Every yarn, fully specified."
         lede={`${products.length} yarns across ${productCategories.length - 1} fiber families. Open any cell for the complete specification, or filter by family.`}

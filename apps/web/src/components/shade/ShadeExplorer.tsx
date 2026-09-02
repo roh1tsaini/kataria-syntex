@@ -70,7 +70,7 @@ export function ShadeExplorer({
           ))}
         </div>
 
-        <label className="flex h-11 min-w-52 items-center gap-2 rounded-control border border-line bg-paper px-3.5 transition-colors focus-within:border-royal">
+        <label className="flex h-11 w-full min-w-52 items-center gap-2 rounded-control border border-line bg-paper px-3.5 transition-colors focus-within:border-royal sm:w-auto sm:flex-1 lg:flex-none">
           <Search aria-hidden="true" className="size-4 text-ink-soft" />
           <span className="sr-only">Search by shade code</span>
           <input

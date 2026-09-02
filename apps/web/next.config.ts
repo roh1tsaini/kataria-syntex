@@ -33,6 +33,8 @@ const securityHeaders = [
       "img-src 'self' data: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://kataria-app.pages.dev",
+      // Contact page embeds a Google Maps iframe (maps.google.com).
+      "frame-src https://maps.google.com https://www.google.com",
       "frame-ancestors 'none'",
       "form-action 'self'",
     ].join("; "),

@@ -11,12 +11,15 @@ export function SectionHead({
   lede,
   className,
   invert = false,
+  /** Page-opening heads render as h1; in-section heads stay h2. */
+  as: Tag = "h2",
 }: {
   kicker: string;
   title: string;
   lede?: string;
   className?: string;
   invert?: boolean;
+  as?: "h1" | "h2";
 }) {
   return (
     <Reveal className={cn("max-w-3xl", className)}>
@@ -28,14 +31,14 @@ export function SectionHead({
       >
         {kicker}
       </p>
-      <h2
+      <Tag
         className={cn(
           "mt-3 font-display text-[clamp(1.75rem,3.5vw,2.375rem)] font-bold leading-[1.08] tracking-tight",
           invert ? "text-white" : "text-navy",
         )}
       >
         {title}
-      </h2>
+      </Tag>
       {lede ? (
         <p
           className={cn(

@@ -21,6 +21,7 @@ export default async function ContactPage({
   return (
     <Section>
       <SectionHead
+        as="h1"
         kicker="Send an inquiry"
         title="Tell us the yarn. We do the rest."
         lede="Counts or denier, quantity, shade, and destination — that is all the desk needs to come back with real options."
@@ -73,7 +74,7 @@ export default async function ContactPage({
                       rel={
                         row.href.startsWith("http") ? "noreferrer" : undefined
                       }
-                      className="break-all font-mono text-sm text-navy transition-colors hover:text-royal"
+                      className="inline-block break-all py-1 font-mono text-sm text-navy transition-colors hover:text-royal"
                     >
                       {row.value}
                     </a>

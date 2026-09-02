@@ -103,6 +103,15 @@ export function SiteFooter() {
           </p>
         </div>
       </Section>
+
+      {/* Giant ghost wordmark — full-bleed, uncropped by construction.
+          Breathing room lives inside the bed (pb + loose leading), never
+          negative margins, so descenders ("y") always clear the edge. */}
+      <div aria-hidden="true" className="overflow-hidden">
+        <p className="whitespace-nowrap pb-[0.16em] text-center font-display text-[clamp(2.75rem,11vw,11rem)] font-bold leading-[1] tracking-tight text-white/[0.08]">
+          {site.name}
+        </p>
+      </div>
     </footer>
   );
 }
