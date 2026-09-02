@@ -60,8 +60,7 @@ export async function readNativeToken(): Promise<string | null> {
   }
   if (host === "capacitor") {
     // Secure storage only — on failure return null (user re-auths) rather
-    // than falling back to plaintext Preferences on disk (owner decision
-    // 2026-08-25).
+    // than falling back to plaintext Preferences on disk (owner mandate).
     try {
       const { SecureStoragePlugin } =
         await import("capacitor-secure-storage-plugin");
@@ -96,8 +95,8 @@ export async function writeNativeToken(token: string | null): Promise<void> {
       }
       return;
     }
-    // Encrypted storage or nothing — never persist plaintext (owner decision
-    // 2026-08-25). The bearer still works for this run in memory; the next
+    // Encrypted storage or nothing — never persist plaintext (owner mandate).
+    // The bearer still works for this run in memory; the next
     // launch simply asks again.
     try {
       const { SecureStoragePlugin } =

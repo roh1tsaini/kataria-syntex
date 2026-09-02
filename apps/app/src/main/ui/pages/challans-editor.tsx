@@ -136,9 +136,6 @@ const emptyRow = (): ItemRow => ({
   remarks: "",
 });
 
-// Responsive editor uses dual adaptive layout (mobile cards + desktop grid), so
-// fixed 1400px grids are no longer needed. Left for reference if a rate column returns.
-
 type PackingItem = {
   id: string;
   entryNumber: string;

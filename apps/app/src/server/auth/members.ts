@@ -27,7 +27,7 @@ function parsePermissions(raw: string): Permission[] {
 
 /** Pre-add a member: a permissions row keyed by phone/email, no codes.
  * Expires after INVITE_TTL_DAYS so recycled numbers can't join with stale
- * permissions years later (owner decision 2026-08-25). */
+ * permissions years later (owner mandate). */
 const INVITE_TTL_DAYS = 30;
 
 export async function addPendingMember(

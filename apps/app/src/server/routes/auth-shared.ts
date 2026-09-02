@@ -76,8 +76,7 @@ export const otpVerifySchema = z.object({
 export const signupSchema = z.object({
   identifier: z.string().min(3).max(200),
   name: z.string().trim().min(1).max(60),
-  // Owner decision 2026-08-25: min 10 — don't undermine PBKDF2 with short
-  // secrets.
+  // Owner mandate: min 10 — don't undermine PBKDF2 with short secrets.
   password: z.string().min(10).max(200).optional(),
   workspaceName: z.string().trim().min(1).max(60).optional(),
 });

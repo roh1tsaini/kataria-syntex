@@ -7,8 +7,7 @@ type ClientCode =
 
 /**
  * `satisfies Record<ApiCode | ClientCode, string>` makes drift a build error:
- * a server code without a message, or a message the server no longer emits,
- * both fail typecheck.
+ * every server code has a message and every message maps to a live code.
  */
 const MESSAGES = {
   network_error:

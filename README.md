@@ -37,10 +37,11 @@ bun run electron:package  # renderer + main + installer (electron-builder)
 ## Docs
 
 - `AGENTS.md` — working agreement for AI agents and humans
-- `dead-files/apps/app/SPEC.md` — archived single source of truth for the business app
-- `dead-files/apps/app/BUILD.md` — archived build-order checklist
-- `dead-files/FIXES.md` — archived known-bug backlog with file:line causes
-- `dead-files/` — archived docs/code; reference only, never edit
+- `DEPLOY.md` — deploy & maintenance on GitHub + Cloudflare
+- `apps/app/APP.md` — business app reference (kept current with the code)
+- `apps/app/design.md` — app design system
+- `apps/web/design.md` — website design system
+- `dead-files/` — archive for dead docs/files; reference only, never edit
 
 ## Platforms
 

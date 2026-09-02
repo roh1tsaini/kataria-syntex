@@ -47,7 +47,7 @@ export function randomId(): string {
 }
 
 /** Parse a localStorage value only when it matches the expected shape —
- * corrupt/legacy JSON drops to null instead of poisoning callers. */
+ * corrupt JSON drops to null instead of poisoning callers. */
 function readJson<T>(key: string, guard: (v: unknown) => v is T): T | null {
   try {
     const raw = localStorage.getItem(key);

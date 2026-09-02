@@ -161,9 +161,9 @@ export const useChallans = create<ChallansState>()((set, get) => {
     },
 
     load: async (id) => {
-      // Clear any previously-loaded challan first: `detail` is shared store state,
-      // and leaving it stale made the editor prefill / print route render the
-      // previous challan while this one is still in flight (C2).
+      // Clear any loaded challan first: `detail` is shared store state, and a
+      // stale value would prefill the editor / print route with the wrong
+      // challan while this one is still in flight (C2).
       set({ detail: null });
       const seq = ++loadSeq;
       const pending = listPending().find((p) => p.clientRef === id);

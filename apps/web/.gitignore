@@ -1,1 +1,4 @@
 .data/
+
+# wrangler-generated env types
+cloudflare-env.d.ts

@@ -148,7 +148,7 @@ export async function requestOtp(
     id: generateId(),
     identifier: ident.value,
     // Only the hash is stored — a leaked DB file/backup never yields a
-    // usable live code (owner decision 2026-08-25).
+    // usable live code (owner mandate).
     code: await sha256Hex(code),
     attempts: 0,
     expiresAt: toIso(new Date(now.getTime() + OTP_TTL_SECONDS * 1000)),

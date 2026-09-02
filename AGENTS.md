@@ -69,11 +69,11 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   admin demo. If a screen looks dated next to macOS System Settings, Linear
   or Luma, it's not done.
 
-- `dead-files/` — archived old docs/specs/dead files. Reference only. Don't
-  edit, don't resurrect content unless explicitly asked. Historical specs and
-  plans live there: `dead-files/FIXES.md`,
-  `dead-files/apps/app/SPEC.md`, `dead-files/apps/app/BUILD.md`,
-  `dead-files/apps/app/CLOUDFLARE.md`.
+- `dead-files/` — archive for dead docs/specs/files. Reference only. Don't
+  edit, don't resurrect content unless explicitly asked. Contents:
+  `dead-files/FIXES.md`, `dead-files/apps/app/SPEC.md`,
+  `dead-files/apps/app/BUILD.md`, `dead-files/apps/app/CLOUDFLARE.md`,
+  `dead-files/apps/app/app-flow.canvas`.
 
 ## 3. Commands
 
@@ -104,6 +104,12 @@ bun run electron:dev # Electron shell over the Vite dev server
 5. Docs/code conflict → ask the owner. Owner's word wins, then update both.
 6. Dead code gets deleted. Dead files go to `dead-files/`. Nothing lingers.
 7. **Use web for latest info — always verify pricing/limits/docs via `webfetch`/`websearch` before claiming free/paid status; GCP/docs change (e.g. external IP pricing 2024-02-01). Never rely on training cutoff.**
+8. **Current state only.** Every file — code and docs alike — describes what
+   IS, never what was. No "previously", "no longer", "legacy", "old",
+   "was moved" narration; no change history; no stale references. When
+   something dies: delete the code, delete its comments, update every doc
+   that mentions it — all in the same change. History lives in git and
+   `dead-files/`, nowhere else.
 
 ## 4.1 Decision authority (owner-mandated, overrides everything)
 
@@ -138,15 +144,14 @@ Every part of this project must be:
 
 Hosting baseline: **Cloudflare free tier** (Pages + Workers + D1, free
 Cloudflare hostnames). No VM, no Docker, no deSEC. Anything added on top of
-that baseline requires an explicit owner question first. Migration history:
-`dead-files/apps/app/CLOUDFLARE.md` (archived; D1 provisioning is now
-automated in `.github/workflows/cf-deploy.yml`).
+that baseline requires an explicit owner question first. D1 provisioning is
+automated in `.github/workflows/cf-deploy.yml`.
 
 ## 5. apps/app working agreement (owner-mandated, always applies)
 
-The original SPEC.md/BUILD.md are **archived** in `dead-files/apps/app/`
-(frozen — don't edit, don't tick). They describe an earlier stage of the
-app; the code and the owner's word supersede them.
+SPEC.md/BUILD.md are **archived** in `dead-files/apps/app/`
+(frozen — don't edit, don't tick). The code and the owner's word are the
+truth.
 
 - **The owner's spoken word is the single source of truth.** If a rule
   isn't written anywhere: ask the owner, then code it.

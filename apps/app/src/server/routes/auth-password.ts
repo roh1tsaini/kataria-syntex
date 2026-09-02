@@ -96,7 +96,7 @@ authPasswordRoute.post("/password/login", async (c) => {
   }
   recordIpAttempt("password_login", clientIp(c));
 
-  // Two-tier lockout: per identifier+device pair (owner decision 2026-08-25 —
+  // Two-tier lockout: per identifier+device pair (owner mandate —
   // an attacker hammering THEIR device can't lock the real owner out) AND a
   // wider per-identifier ceiling, because the device key is client-controlled
   // and rotating it must not defeat the limit entirely.

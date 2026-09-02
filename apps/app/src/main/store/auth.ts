@@ -179,14 +179,7 @@ export function usePermission(): (perm: Permission) => boolean {
 export function isPackerOnlyWorkspace(ws: Workspace | null): boolean {
   if (!ws || ws.isPrimaryAdmin || !ws.permissions.length) return false;
   return ws.permissions.every((p) =>
-    [
-      "create_packing",
-      "edit_packing",
-      "delete_packing",
-      // transfer_packing no longer grantable; kept so legacy DB grants still
-      // classify the workspace as packer-only
-      "transfer_packing",
-    ].includes(p),
+    ["create_packing", "edit_packing"].includes(p),
   );
 }
 

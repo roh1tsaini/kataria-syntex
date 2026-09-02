@@ -1,8 +1,7 @@
 # APP.md — apps/app reference (maintained)
 
-Single maintained doc for the business app. Converted from `app-flow.canvas`
-2026-09-02 and verified line-by-line against the code — **code is truth**;
-update this doc in the same change that updates code.
+Single maintained doc for the business app. Kept current with the code —
+**code is truth**; update this doc in the same change that updates code.
 
 **Maintaining rules**
 
@@ -10,8 +9,7 @@ update this doc in the same change that updates code.
 - New table/route/permission/limit → add a row. Removed thing → delete the row.
 - Numbers here are verified against constants in code. When they disagree,
   fix the doc or the code — never let both drift.
-- The canvas (`app-flow.canvas`) is a frozen visual snapshot. Don't edit it;
-  edit this doc.
+- Current state only: describe what IS. No past talk, no change history.
 
 ---
 
@@ -76,7 +74,7 @@ Latest stable majors; never downgrade to escape a break.
 | -------- | ------------------------------------------------------------------------ |
 | Frontend | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict) |
 | Styling  | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2   |
-| PWA      | vite-plugin-pwa (autoUpdate, Workbox)                                    |
+| PWA      | vite-plugin-pwa (autoUpdate, Workbox) · workbox-window declared          |
 | API      | Hono 4 · zod 4 at every boundary                                         |
 | Data     | Drizzle ORM + drizzle-kit · Cloudflare D1                                |
 | PDF      | pdf-lib + fontkit · Inter TTFs bundled (no CDN)                          |
@@ -275,12 +273,13 @@ drives routing. Zod at the boundary; dummy-hash on unknown user (no timing leak)
 **Password**
 
 - PBKDF2-SHA256, 310 000 iterations, per-user salt, timing-safe compare.
-  Format `pbkdf2$sha256$<iter>$<salt>$<hash>`. Min length 6.
-- Client sends the password as-is — hashing is server-side only (owner decision).
+  Format `pbkdf2$sha256$<iter>$<salt>$<hash>`. Min length 10.
+- Client sends the password as-is — hashing is server-side only (owner mandate).
 - Dummy-hash burn for unknown users (anti-enumeration).
 - Lockout: 10 fails / 15 min per identifier+device; ×10 for the identifier
   across all devices (an attacker can't lock the owner out).
-- ⚠️ Open decision: archived SPEC says scrypt, code uses PBKDF2 — owner picks.
+- Open decision: hashing algorithm — scrypt vs PBKDF2. Owner picks;
+  then update code + this line.
 
 **Sessions**
 
@@ -303,7 +302,6 @@ manage_members manage_settings
 ```
 
 - `memberships.isPrimaryAdmin` bypasses all checks.
-- `transfer_packing` is retired — not grantable; legacy DB grants are ignored.
 - `isPackerOnlyWorkspace()` → nav collapses to Packing only (packer mode).
 - Nav hides what the user can't open (`useCanSee()`); every route is
   permission-gated server-side too.
@@ -412,8 +410,7 @@ copy, or commit them. Secrets enter only as env read at use site.
 - `app-build.yml` — manual: desktop (win-x64, mac-arm64, linux-x64) + Android
   APK → GitHub Release with artifacts. Requires `APP_URL` repo variable.
 
-**Free-tier limits** (Cloudflare, verified 2026-08-30 — re-verify before
-claiming; limits change)
+**Free-tier limits** (Cloudflare — re-verify before claiming; limits change)
 
 | Service           | Limit                                                                                                |
 | ----------------- | ---------------------------------------------------------------------------------------------------- |
@@ -436,20 +433,15 @@ footprint · minimal maintenance.
 - **OTP testing budget**: 5 sends/identifier/hour, 12/day — an identifier at
   the daily cap is locked out until the oldest row ages out (24 h). Plan test
   sends or reuse an existing session. Global cap 300/day applies too.
-- Test account (2026-08-28) is STALE — dev D1 was recreated. Current dev
-  user: phone `+91 63515 70979`, no password, OTP-only.
+- Dev user: phone `+91 63515 70979` — no password, OTP-only.
 - QR login needs a second logged-in device (any camera) to approve.
-- Logs `api*.log` in apps/app root are throwaway dev logs — gitignored noise.
+- Dev logs (`api*.log`) are throwaway and gitignored — never commit them.
 
-## 16 · History & pointers
+## 16 · Pointers
 
-- `app-flow.canvas` — frozen visual snapshot this doc replaces.
 - `design.md` — design system (mandatory read for UI work).
-- Archived specs (reference only, don't edit): `dead-files/apps/app/SPEC.md`,
-  `BUILD.md`, `CLOUDFLARE.md`, `dead-files/FIXES.md`.
-- ADR references in code comments (ADR-0001 permission model, ADR-0003
-  exclusive packing consumption) — the ADR files themselves are not in the
-  repo; treat code comments as the record.
+- ADRs are recorded in code comments: ADR-0001 (permission model, no fixed
+  roles) and ADR-0003 (exclusive packing consumption).
 
-**Open decision**: password hashing — SPEC's scrypt vs code's PBKDF2.
+**Open decision**: password hashing algorithm — scrypt vs PBKDF2.
 Owner picks; then update code + this line.
