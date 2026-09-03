@@ -4,7 +4,7 @@ node_modules/
 # Build outputs
 dist/
 .next/
-.open-next/
+.vinext/
 .wrangler/
 out/
 build/
@@ -31,9 +31,6 @@ coverage/
 
 # Logs
 *.log
-npm-debug.log*
-yarn-error.log*
-server.pid
 
 # OS files
 .DS_Store
@@ -46,10 +43,6 @@ Thumbs.db
 *.swp
 *.swo
 
-# Legacy archive (kept on disk, excluded from git)
-old-code/
-apps/web/screens-new/
-
 # Reference business documents (customer challans/invoices) — never commit
 apps/app/Docs Template/
 
@@ -59,8 +52,10 @@ apps/app/release/
 apps/app/build/
 apps/app/dist-electron/
 
+# Android signing secrets (written by the CI signing script, used locally)
+apps/app/android/keystore.properties
+
 # Scratch / tool output (audit screenshots, throwaway profiles)
 apps/app/tmp/
 eslint-output.json
 apps/web/eslint-output.json
-/dead-files

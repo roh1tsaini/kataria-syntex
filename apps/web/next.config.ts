@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = join(__dirname, "../..");
+const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 
-// Cloudflare Workers via OpenNext — `output: "standalone"` removed (Docker only).
-// See apps/web/wrangler.jsonc + open-next.config.ts for the Workers binding.
+// Rendered by Vinext on Cloudflare Workers — see apps/web/vite.config.ts +
+// wrangler.jsonc for the Workers setup. Vinext loads this file as ESM, so no
+// CommonJS globals (__dirname) here.
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -21,7 +23,6 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     // Next.js hydrates via inline scripts => unsafe-inline required.
-    // connect-src allows the Pages app origin (placeholder until project names final).
     // React's dev runtime uses eval() for debugging aids, so 'unsafe-eval'
     // is allowed only in development; production never evaluates strings.
     value: [
@@ -32,7 +33,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://kataria-app.pages.dev",
+      "connect-src 'self'",
       // Contact page embeds a Google Maps iframe (maps.google.com).
       "frame-src https://maps.google.com https://www.google.com",
       "frame-ancestors 'none'",

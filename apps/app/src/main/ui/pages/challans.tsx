@@ -1,7 +1,7 @@
 /**
  * Challans — route components live in focused modules; this file re-exports
- * the surface App.tsx and outward.tsx consume. Keep lazy imports in App.tsx
- * pointing at "@/ui/pages/challans" so code-splitting stays per-route.
+ * the surface App.tsx and outward.tsx consume. Lazy imports here keep the
+ * challan feature in one shared chunk.
  */
 import { ChallanListPage } from "./challans-list";
 import { ChallanEditorRoute } from "./challans-editor";

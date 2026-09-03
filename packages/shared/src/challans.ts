@@ -7,8 +7,23 @@ import { round3 } from "./math";
  * builder, and the React stores.
  */
 
+/** Real-calendar-date YYYY-MM-DD (rejects 2026-02-30, which Date.parse would roll to March). */
+export const dateStringSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD")
+  .refine((s) => {
+    const t = new Date(`${s}T00:00:00.000Z`).getTime();
+    if (Number.isNaN(t)) return false;
+    const d = new Date(t);
+    return (
+      d.getUTCFullYear() === Number(s.slice(0, 4)) &&
+      d.getUTCMonth() + 1 === Number(s.slice(5, 7)) &&
+      d.getUTCDate() === Number(s.slice(8, 10))
+    );
+  }, "date must be a real calendar date");
+
 /** One challan line item as submitted by any client. */
-export const challanItemSchema = z.object({
+const challanItemSchema = z.object({
   denierId: z.string().min(1),
   colorId: z.string().optional().nullable().default(""),
   boxNo: z.string().trim().max(60).default(""),
@@ -24,7 +39,7 @@ export const challanItemSchema = z.object({
 /** POST/PUT /api/challans body. */
 export const challanBodySchema = z.object({
   type: z.enum(["sales", "outward"]).default("sales"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+  date: dateStringSchema,
   customerId: z.string().min(1).optional(),
   jobWorkerId: z.string().min(1).optional(),
   notes: z.string().trim().max(500).optional().default(""),

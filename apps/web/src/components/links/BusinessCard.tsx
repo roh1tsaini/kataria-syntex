@@ -193,7 +193,7 @@ export function BusinessCard({
             aria-hidden="true"
           />
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
-            Kataria Syntex — card
+            {name} — card
           </span>
           <span className="h-px flex-1 bg-line" aria-hidden="true" />
         </div>
@@ -236,7 +236,7 @@ export function BusinessCard({
             <p className="mt-1.5 text-xs leading-relaxed text-sky">{tagline}</p>
 
             <div className="mt-auto border-t border-line-dark pt-2.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ice-soft/60">
-              Yarn sourcing · Surat
+              Yarn sourcing · {COMPANY_DETAILS.location.split(",")[0]}
             </div>
           </div>
         </div>
@@ -315,7 +315,7 @@ export function BusinessCard({
         </nav>
 
         <div className="mt-8 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft/70">
-          {COMPANY_DETAILS.tagline.replace(/\.$/, "")}
+          {tagline.replace(/\.$/, "")}
         </div>
       </Reveal>
     </div>

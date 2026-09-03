@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Search, Warehouse, Layers, AlertTriangle, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/store/auth";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
@@ -36,10 +37,11 @@ type StockGroup = {
   movements: number;
 };
 
-const stockCache: Record<"raw" | "dyed", StockGroup[] | null> = {
-  raw: null,
-  dyed: null,
-};
+// Keyed by workspace id so one account's stock never leaks into another's.
+const stockCache: Record<
+  string,
+  Record<"raw" | "dyed", StockGroup[] | null>
+> = {};
 
 export function StockPage() {
   const location = useLocation();
@@ -48,42 +50,49 @@ export function StockPage() {
     location.pathname.endsWith("/raw") || params.get("type") === "raw"
       ? "raw"
       : "dyed";
+  const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const [items, setItems] = useState<StockGroup[]>(
-    () => stockCache[stockType] ?? [],
+    () => stockCache[workspaceId]?.[stockType] ?? [],
   );
-  const [loading, setLoading] = useState(() => !stockCache[stockType]);
+  const [loading, setLoading] = useState(
+    () => !stockCache[workspaceId]?.[stockType],
+  );
   const [loadError, setLoadError] = useState(false);
   const [q, setQ] = useState("");
+  // Live type mirror — the callback's captured stockType can't guard against
+  // itself (it would always compare equal).
+  const stockTypeRef = useRef(stockType);
+  stockTypeRef.current = stockType;
 
   const load = useCallback(async () => {
     const type = stockType;
-    if (!stockCache[type]) {
+    if (!stockCache[workspaceId]?.[type]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: StockGroup[] }>(`/stock?type=${type}`);
-      if (type !== stockType) return;
-      stockCache[type] = res.items;
+      if (type !== stockTypeRef.current) return;
+      (stockCache[workspaceId] ??= { raw: null, dyed: null })[type] = res.items;
       setItems(res.items);
     } catch {
-      if (type === stockType && !stockCache[type]) {
+      if (type === stockTypeRef.current && !stockCache[workspaceId]?.[type]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      if (type === stockType) setLoading(false);
+      if (type === stockTypeRef.current) setLoading(false);
     }
-  }, [stockType]);
+  }, [stockType, workspaceId]);
 
   useEffect(() => {
-    // If we switch tab type, update local items from cache immediately if present
-    if (stockCache[stockType]) {
-      setItems(stockCache[stockType]!);
+    const cached = stockCache[workspaceId]?.[stockType];
+    if (cached) {
+      setItems(cached);
       setLoading(false);
     }
     void load();
-  }, [load, stockType]);
+  }, [load, stockType, workspaceId]);
 
   const filtered = items.filter(
     (i) =>
@@ -208,14 +217,10 @@ export function StockPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">Item</th>
-                      <th className="py-3.5 pr-3 font-inherit">Lot</th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Movements
-                      </th>
-                      <th className="py-3.5 pr-5 text-right font-inherit">
-                        Net wt (kg)
-                      </th>
+                      <th className="py-3.5 pl-5 pr-3">Item</th>
+                      <th className="py-3.5 pr-3">Lot</th>
+                      <th className="py-3.5 pr-3 text-right">Movements</th>
+                      <th className="py-3.5 pr-5 text-right">Net wt (kg)</th>
                     </tr>
                   </thead>
                   <TableSkeleton
@@ -279,14 +284,10 @@ export function StockPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">Item</th>
-                      <th className="py-3.5 pr-3 font-inherit">Lot</th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Movements
-                      </th>
-                      <th className="py-3.5 pr-5 text-right font-inherit">
-                        Net wt (kg)
-                      </th>
+                      <th className="py-3.5 pl-5 pr-3">Item</th>
+                      <th className="py-3.5 pr-3">Lot</th>
+                      <th className="py-3.5 pr-3 text-right">Movements</th>
+                      <th className="py-3.5 pr-5 text-right">Net wt (kg)</th>
                     </tr>
                   </thead>
                   <tbody>

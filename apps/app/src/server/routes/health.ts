@@ -7,7 +7,6 @@ healthRoute.get("/health", (c) => {
   return c.json({
     ok: true,
     service: "kataria-challan-app",
-    milestone: "M1",
     time: new Date().toISOString(),
   });
 });

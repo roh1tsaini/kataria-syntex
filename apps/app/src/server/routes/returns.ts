@@ -7,7 +7,6 @@ import {
   jobWorkReturns,
   jobWorkReturnItems,
   challans,
-  challanItems,
   jobWorkers,
   stockEntries,
 } from "../db/schema";
@@ -17,7 +16,7 @@ import { generateId } from "../lib/token";
 import { validateMasters } from "../lib/masters";
 import { buildReturnStockStatements } from "../lib/stock";
 import { createReturn, getChallanBalances } from "../lib/document-pipeline";
-import { round3 } from "@kataria-syntex/shared";
+import { round3, dateStringSchema } from "@kataria-syntex/shared";
 import { apiError } from "../lib/api-error";
 
 export const returnsRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -36,7 +35,7 @@ const returnItemSchema = z.object({
 const returnBody = z.object({
   jobWorkerId: z.string().min(1),
   invoiceNo: z.string().trim().min(1).max(100),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateStringSchema,
   remarks: z.string().trim().max(500).optional().default(""),
   items: z.array(returnItemSchema).min(1).max(200),
 });
@@ -176,7 +175,7 @@ returnsRoute.put("/:id", requirePermission("edit_return"), async (c) => {
       ),
     );
   const existing = existingRows[0];
-  if (!existing) return apiError(c, "not_found", 400);
+  if (!existing) return apiError(c, "not_found", 404);
 
   // Validate job worker + challans (same as create)
   const jwRows = await db
@@ -278,7 +277,14 @@ returnsRoute.put("/:id", requirePermission("edit_return"), async (c) => {
   // Delete old items + stock movements, then recreate — one atomic D1 batch,
   // no reads in between.
   await db.batch([
-    db.delete(stockEntries).where(eq(stockEntries.sourceRefId, existing.id)),
+    db
+      .delete(stockEntries)
+      .where(
+        and(
+          eq(stockEntries.sourceRefId, existing.id),
+          eq(stockEntries.workspaceId, workspaceId),
+        ),
+      ),
     db
       .delete(jobWorkReturnItems)
       .where(eq(jobWorkReturnItems.returnId, existing.id)),

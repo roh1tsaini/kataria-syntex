@@ -7,9 +7,10 @@ import { packingEntries, packingItems, challanItemSources } from "../db/schema";
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import { generateId } from "../lib/token";
-import { round3 } from "@kataria-syntex/shared";
+import { round3, dateStringSchema, fyForDate } from "@kataria-syntex/shared";
 import { validateMasters } from "../lib/masters";
 import { createPacking } from "../lib/document-pipeline";
+import { toDate } from "../lib/datetime";
 import { apiError } from "../lib/api-error";
 
 export const packingRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -35,7 +36,7 @@ const packingItemSchema = z.object({
 
 const packingBody = z.object({
   type: z.enum(["sale", "job_work"]),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateStringSchema,
   items: z.array(packingItemSchema).min(1).max(200),
 });
 
@@ -189,6 +190,19 @@ packingRoute.put("/:id", requirePermission("edit_packing"), async (c) => {
     );
   const existing = existingRows[0];
   if (!existing) return apiError(c, "not_found", 404);
+
+  // An entry never changes kind — the number belongs to the sale or job-work
+  // series it was issued from.
+  if (parsed.data.type !== existing.type)
+    return apiError(c, "type_change_not_allowed", 400);
+
+  // The number belongs to the FY it was issued in — a date change across FYs
+  // is rejected.
+  if (
+    fyForDate(toDate(existing.date)).label !==
+    fyForDate(toDate(parsed.data.date)).label
+  )
+    return apiError(c, "fy_change_not_allowed", 400);
 
   // Check if any item is imported — if so, entry is locked
   const itemRows = await db

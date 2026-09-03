@@ -55,7 +55,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: bunx wrangler d1 migrations apply kataria-app
+        run: bunx wrangler d1 migrations apply kataria-app --remote
 
       # On PRs this creates a preview deployment; on main it publishes.
       - name: Deploy Pages
@@ -83,9 +83,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build OpenNext worker
+      - name: Build Vinext worker
         working-directory: apps/web
-        run: bunx opennextjs-cloudflare build
+        run: bun run build
 
       - name: Ensure D1 database exists (inquiry DB)
         working-directory: apps/web
@@ -111,10 +111,8 @@ jobs:
         run: bunx wrangler d1 migrations apply kataria-web-inquiry --remote
 
       - name: Deploy Worker
-        uses: cloudflare/wrangler-action@v4
-        with:
-          packageManager: bun
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/web
-          command: deploy
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx vinext-cloudflare deploy --skip-build

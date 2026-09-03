@@ -38,7 +38,8 @@ async function deriveKey(
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  if (password.length < 6) throw new Error("password_too_short");
+  // Mirrors signupSchema's min 10 — the boundary guard for any future caller.
+  if (password.length < 10) throw new Error("password_too_short");
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const hash = await deriveKey(password, salt as Uint8Array<ArrayBuffer>);
   return `pbkdf2$sha256$${ITERATIONS}$${toBase64(salt)}$${toBase64(hash)}`;

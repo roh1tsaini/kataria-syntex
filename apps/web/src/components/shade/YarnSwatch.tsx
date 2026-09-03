@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { yarnBackground } from "@/components/shade/woven";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +11,10 @@ export function YarnSwatch({
   colors,
   rowHeight,
   className,
-  style,
 }: {
   colors: string[];
   rowHeight?: number;
   className?: string;
-  style?: CSSProperties;
 }) {
   return (
     <span
@@ -27,7 +24,6 @@ export function YarnSwatch({
         ...yarnBackground(colors, rowHeight),
         boxShadow:
           "inset 0 1px 1px rgb(255 255 255 / 0.2), inset 0 -1px 2px rgb(10 25 40 / 0.28), inset 3px 0 5px -2px rgb(0 0 0 / 0.24), inset -3px 0 5px -2px rgb(0 0 0 / 0.24)",
-        ...style,
       }}
     />
   );

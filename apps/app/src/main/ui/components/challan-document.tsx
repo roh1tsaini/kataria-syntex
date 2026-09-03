@@ -743,9 +743,15 @@ export function ChallanDocument({
     Promise.all([
       document.fonts.load('400 12px "Inter Print"'),
       document.fonts.load('700 12px "Inter Print"'),
-    ]).then(() => {
-      if (alive) setFontsReady(true);
-    });
+    ])
+      .then(() => {
+        if (alive) setFontsReady(true);
+      })
+      .catch(() => {
+        // A failed face load must not surface as an unhandled rejection —
+        // render with whatever the browser resolved.
+        if (alive) setFontsReady(true);
+      });
     return () => {
       alive = false;
     };

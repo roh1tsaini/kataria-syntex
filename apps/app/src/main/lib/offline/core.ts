@@ -5,9 +5,9 @@
  * the Android Capacitor webview, so one implementation serves all targets.
  * Sizes are tiny (JSON records), well under the ~5MB quota.
  *
- * Server-side counterparts: challan number formatting mirrors
- * src/server/lib/company.ts formatChallanNumber; FY calculation mirrors
- * fyForDate (Indian FY Apr 1 – Mar 31, computed in UTC). Keep them in sync.
+ * Challan numbering and the Indian FY window (Apr 1 – Mar 31, UTC) come
+ * from `@kataria-syntex/shared` — the single source for both client and
+ * server.
  */
 
 import type { Challan, ChallanInput, ChallanItem } from "@/store/challans";

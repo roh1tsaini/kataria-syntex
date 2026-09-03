@@ -68,7 +68,7 @@ export default defineConfig({
         // API calls are never cached — offline queuing is handled in-app
         // (lib/offline) against explicit user intent, not a stale SW cache.
         navigateFallbackDenylist: [/^\/api\//],
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2,ttf}"],
       },
     }),
   ],

@@ -1,92 +1,32 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
-import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
+
 import {
   AlertTriangle,
   ArrowLeft,
-  ArrowUpRight,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   CloudOff,
-  Copy,
   Download,
-  Ellipsis,
-  Eye,
   Pencil,
-  Plus,
   Printer,
-  Save,
-  Search,
   SearchX,
   Trash2,
-  X,
 } from "lucide-react";
 import { useAuth } from "@/store/auth";
-import {
-  useChallans,
-  type Challan,
-  type ChallanItem,
-  type ChallanInput,
-  type ChallanType,
-} from "@/store/challans";
-import { ChallanDocument } from "@/ui/components/challan-document";
+import { useChallans, type Challan, type ChallanItem } from "@/store/challans";
+
 import { RecipeLinkButton } from "@/ui/components/recipe-detail";
-import { printPage } from "@/lib/platform";
-import { useMasters } from "@/store/masters";
+
 import { friendlyError } from "@/ui/lib/errors";
-import { api, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { toastError, toastSuccess } from "@/store/toast";
 import { AppShell } from "@/ui/components/app-shell";
-import { PageHeader } from "@/ui/components/page-header";
+
 import { Button } from "@/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/ui/components/ui/card";
-import { Input } from "@/ui/components/ui/input";
-import { Label } from "@/ui/components/ui/label";
-import { DatePicker } from "@/ui/components/ui/date-picker";
-import { Checkbox } from "@/ui/components/ui/checkbox";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/ui/components/ui/input-group";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/ui/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/components/ui/select";
-import { Textarea } from "@/ui/components/ui/textarea";
+import { Card, CardContent } from "@/ui/components/ui/card";
+
 import { Badge } from "@/ui/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/ui/components/ui/dropdown-menu";
+
 import {
   Empty,
   EmptyContent,
@@ -97,15 +37,8 @@ import {
 } from "@/ui/components/ui/empty";
 import { Skeleton } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/ui/components/ui/dialog";
-import { EASE } from "@/ui/lib/motion";
-import { fmtBoxes, fmtWt, todayLocal } from "@/ui/lib/format";
+
+import { fmtBoxes, fmtWt } from "@/ui/lib/format";
 import { type ChallanKind } from "./challans-shared";
 
 export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
@@ -385,11 +318,6 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
                 kg
               </span>
             </div>
-            {kind.withRates && (
-              <div className="mt-2 text-lg font-bold tabular-nums">
-                {fmtWt(challan.totalNetWt)} kg
-              </div>
-            )}
             <div className="mt-2 text-xs text-muted-foreground">
               {items.length} {items.length === 1 ? "line" : "lines"} • FY{" "}
               {challan.fyLabel}
@@ -413,24 +341,12 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
             <table className="w-full text-left text-sm">
               <thead className="bg-card">
                 <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="py-3 pl-5 pr-3 font-inherit">#</th>
-                  <th className="py-3 pr-3 font-inherit">Denier</th>
-                  <th className="py-3 pr-3 font-inherit">Colour</th>
-                  <th className="py-3 pr-3 text-right font-inherit">Boxes</th>
-                  <th className="py-3 pr-3 text-right font-inherit">
-                    Net wt (kg)
-                  </th>
-                  {kind.withRates && (
-                    <th className="py-3 pr-3 text-right font-inherit">Rate</th>
-                  )}
-                  {kind.withRates && (
-                    <th className="py-3 pr-5 text-right font-inherit">
-                      Amount
-                    </th>
-                  )}
-                  {!kind.withRates && (
-                    <th className="py-3 pr-5 text-right font-inherit">Lot</th>
-                  )}
+                  <th className="py-3 pl-5 pr-3">#</th>
+                  <th className="py-3 pr-3">Denier</th>
+                  <th className="py-3 pr-3">Colour</th>
+                  <th className="py-3 pr-3 text-right">Boxes</th>
+                  <th className="py-3 pr-3 text-right">Net wt (kg)</th>
+                  <th className="py-3 pr-5 text-right">Lot</th>
                 </tr>
               </thead>
               <tbody>
@@ -462,19 +378,9 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
                     <td className="py-2.5 pr-3 text-right tabular-nums font-semibold">
                       {fmtWt(i.netWt)}
                     </td>
-                    {kind.withRates && (
-                      <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">
-                        —
-                      </td>
-                    )}
-                    {kind.withRates && (
-                      <td className="py-2.5 pr-5 text-right tabular-nums">—</td>
-                    )}
-                    {!kind.withRates && (
-                      <td className="py-2.5 pr-5 text-right tabular-nums text-muted-foreground">
-                        {i.lotNo || "—"}
-                      </td>
-                    )}
+                    <td className="py-2.5 pr-5 text-right tabular-nums text-muted-foreground">
+                      {i.lotNo || "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -489,13 +395,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
                   <td className="py-3.5 pr-3 text-right tabular-nums text-primary">
                     {fmtWt(challan.totalNetWt)}
                   </td>
-                  {kind.withRates && <td />}
-                  {kind.withRates && (
-                    <td className="py-3.5 pr-5 text-right tabular-nums">
-                      {fmtWt(challan.totalNetWt)} kg
-                    </td>
-                  )}
-                  {!kind.withRates && <td className="py-3.5 pr-5" />}
+                  <td className="py-3.5 pr-5" />
                 </tr>
               </tfoot>
             </table>
@@ -576,5 +476,3 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
     </AppShell>
   );
 }
-
-// ── Print (standalone, auto-prints) ──────────────────────────────────────────

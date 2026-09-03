@@ -1,34 +1,18 @@
 import { Hono } from "hono";
-import { setCookie, deleteCookie } from "hono/cookie";
-import {
-  and,
-  count,
-  eq,
-  gt,
-  inArray,
-  isNull,
-  isNotNull,
-  lt,
-  or,
-  sql,
-} from "drizzle-orm";
+
+import { and, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import {
   users,
   workspaces,
   memberships,
   memberPermissions,
-  devices,
-  sessions,
-  loginAttempts,
   companies,
   otpCodes,
-  qrLogins,
-  type Permission,
 } from "../db/schema";
-import { ALL_PERMISSIONS } from "@kataria-syntex/shared";
+
 import { detectIdentifier } from "../lib/identifier";
-import { hashPassword, verifyPasswordOrDummy } from "../lib/password";
+import { hashPassword } from "../lib/password";
 import { generateId } from "../lib/token";
 import { DEFAULT_NUMBERING_JSON } from "../lib/company";
 import {
@@ -39,40 +23,22 @@ import {
   ipBudgetRemaining,
   recordIpAttempt,
 } from "../auth/otp";
-import {
-  createQrLogin,
-  approveQrLogin,
-  claimQrLogin,
-  qrLoginInfo,
-  QR_TTL_SECONDS,
-} from "../auth/qr-login";
+
 import {
   findPendingMembership,
   consumePendingMembership,
 } from "../auth/members";
-import {
-  requireAuth,
-  createSessionForUser,
-  SESSION_TTL_MS,
-} from "../auth/session";
+
 import { toIso } from "../lib/datetime";
 import {
   badRequest,
-  buildDeviceMeta,
   clientIp,
-  deleteSessionCookie,
   findUserByIdentifier,
   identifierSchema,
   issueSession,
   otpVerifySchema,
-  passwordLoginSchema,
-  setSessionCookie,
   signupSchema,
   authPayload,
-  PASSWORD_LOGIN_MAX_FAILS,
-  PASSWORD_LOGIN_WINDOW_MS,
-  SESSION_COOKIE,
-  type AuthCtx,
   type AuthEnv,
 } from "./auth-shared";
 import { apiError } from "../lib/api-error";

@@ -1,7 +1,5 @@
 import { Crown, ShieldCheck } from "lucide-react";
 import { Badge } from "@/ui/components/ui/badge";
-import { cn } from "@/ui/lib/cn";
-import type { Permission } from "@/store/auth";
 
 const PERMISSION_LABELS: Record<string, string> = {
   create_challan: "Create Challans",

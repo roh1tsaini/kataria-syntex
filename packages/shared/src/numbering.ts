@@ -20,7 +20,7 @@ export const DEFAULT_NUMBERING: NumberingConfig = {
   raw: { prefix: "RM/", suffix: "", minDigits: 3 },
 };
 
-// Alias for backwards compatibility — app store uses `Numbering` name.
+/** App store name for the numbering config. */
 export type Numbering = NumberingConfig;
 
 /**
@@ -85,8 +85,9 @@ export function parseSeqFromNumber(
   let s = challanNumber;
   if (!s.startsWith(prefix)) return null;
   s = s.slice(prefix.length);
-  if (suffix && !s.endsWith(suffix + tail)) return null;
-  s = suffix ? s.slice(0, -(suffix + tail).length) : s.slice(0, -tail.length);
+  const stem = suffix + tail;
+  if (!s.endsWith(stem)) return null;
+  s = s.slice(0, -stem.length);
   if (!/^\d+$/.test(s) || s.length < minDigits) return null;
   return Number.parseInt(s, 10);
 }

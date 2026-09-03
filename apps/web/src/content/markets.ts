@@ -1,5 +1,5 @@
 /** Export destinations and domestic textile hubs served from Surat. */
-export interface ExportCountry {
+interface ExportCountry {
   name: string;
   code: string;
   volume: "high" | "medium" | "low";

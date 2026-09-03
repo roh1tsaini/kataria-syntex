@@ -1,9 +1,10 @@
 /**
  * Electron preload — the ONLY bridge between renderer and main.
  *
- * Sandboxed (no Node), exposes three calls via contextBridge:
+ * Sandboxed (no Node), exposes four calls via contextBridge:
  * - getToken / setToken: encrypted session token in the OS keychain
  * - api: same-shape fetch that runs in the main process (no CORS)
+ * - download: GET a file through the main process, base64 body
  * Nothing else crosses the boundary.
  */
 import { contextBridge, ipcRenderer } from "electron";

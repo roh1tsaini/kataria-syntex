@@ -1,4 +1,4 @@
-export interface Testimonial {
+interface Testimonial {
   name: string;
   company: string;
   country: string;

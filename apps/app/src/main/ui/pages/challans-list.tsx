@@ -1,75 +1,43 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowUpRight,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   CloudOff,
   Copy,
-  Download,
   Ellipsis,
   Eye,
   Pencil,
   Plus,
   Printer,
-  Save,
   Search,
-  SearchX,
   Trash2,
   X,
 } from "lucide-react";
 import { useAuth } from "@/store/auth";
-import {
-  useChallans,
-  type Challan,
-  type ChallanItem,
-  type ChallanInput,
-  type ChallanType,
-} from "@/store/challans";
-import { ChallanDocument } from "@/ui/components/challan-document";
-import { RecipeLinkButton } from "@/ui/components/recipe-detail";
-import { printPage } from "@/lib/platform";
-import { useMasters } from "@/store/masters";
+import { useChallans, type Challan } from "@/store/challans";
+
 import { friendlyError } from "@/ui/lib/errors";
-import { api, ApiError } from "@/lib/api";
+
 import { toastError, toastSuccess } from "@/store/toast";
 import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/ui/components/ui/card";
-import { Input } from "@/ui/components/ui/input";
+import { Card, CardContent } from "@/ui/components/ui/card";
+
 import { Label } from "@/ui/components/ui/label";
-import { DatePicker } from "@/ui/components/ui/date-picker";
-import { Checkbox } from "@/ui/components/ui/checkbox";
+
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/ui/components/ui/input-group";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/ui/components/ui/field";
+
 import {
   Select,
   SelectContent,
@@ -77,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/components/ui/select";
-import { Textarea } from "@/ui/components/ui/textarea";
+
 import { Badge } from "@/ui/components/ui/badge";
 import {
   DropdownMenu,
@@ -97,15 +65,8 @@ import {
 } from "@/ui/components/ui/empty";
 import { Skeleton } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/ui/components/ui/dialog";
-import { EASE } from "@/ui/lib/motion";
-import { fmtBoxes, fmtWt, todayLocal } from "@/ui/lib/format";
+
+import { fmtBoxes, fmtWt } from "@/ui/lib/format";
 import { type ChallanKind } from "./challans-shared";
 
 function RowMenu({ kind, challan }: { kind: ChallanKind; challan: Challan }) {
@@ -386,24 +347,13 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">
-                        Challan no.
-                      </th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3.5 pr-3 font-inherit">{kind.party}</th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Boxes
-                      </th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Net wt (kg)
-                      </th>
-                      {kind.withRates && (
-                        <th className="py-3.5 pr-3 text-right font-inherit">
-                          Amount
-                        </th>
-                      )}
-                      <th className="py-3 font-inherit">FY</th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Challan no.</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3.5 pr-3">{kind.party}</th>
+                      <th className="py-3.5 pr-3 text-right">Boxes</th>
+                      <th className="py-3.5 pr-3 text-right">Net wt (kg)</th>
+                      <th className="py-3">FY</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -415,9 +365,6 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                       { skeleton: "h-4 w-40" },
                       { skeleton: "ml-auto h-4 w-10" },
                       { skeleton: "ml-auto h-4 w-16" },
-                      ...(kind.withRates
-                        ? [{ skeleton: "ml-auto h-4 w-20" }]
-                        : []),
                       { skeleton: "h-4 w-14", td: "py-2.5" },
                       { skeleton: "ml-auto size-8 rounded-md", td: "py-2.5" },
                     ]}
@@ -471,24 +418,13 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 z-[1] bg-card/95">
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">
-                        Challan no.
-                      </th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3.5 pr-3 font-inherit">{kind.party}</th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Boxes
-                      </th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Net wt (kg)
-                      </th>
-                      {kind.withRates && (
-                        <th className="py-3.5 pr-3 text-right font-inherit">
-                          Amount
-                        </th>
-                      )}
-                      <th className="py-3 font-inherit">FY</th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Challan no.</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3.5 pr-3">{kind.party}</th>
+                      <th className="py-3.5 pr-3 text-right">Boxes</th>
+                      <th className="py-3.5 pr-3 text-right">Net wt (kg)</th>
+                      <th className="py-3">FY</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -543,11 +479,6 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                         <td className="py-2.5 pr-3 text-right font-medium tabular-nums">
                           {fmtWt(c.totalNetWt)}
                         </td>
-                        {kind.withRates && (
-                          <td className="py-2.5 pr-3 text-right font-semibold tabular-nums">
-                            {fmtWt(c.totalNetWt)} kg
-                          </td>
-                        )}
                         <td className="py-2.5 text-xs font-medium text-muted-foreground">
                           <span className="rounded-sm bg-muted px-2 py-1 text-[11px] font-semibold">
                             {c.fyLabel}
@@ -689,5 +620,3 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
     </AppShell>
   );
 }
-
-// ── Editor (new + edit) ──────────────────────────────────────────────────────

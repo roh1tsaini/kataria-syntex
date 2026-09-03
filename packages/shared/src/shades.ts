@@ -194,7 +194,7 @@ const pages: Record<number, Array<[string, string]>> = {
 
 export const shades: Shade[] = Object.entries(pages).flatMap(
   ([page, entries]) =>
-    (entries as Array<[string, string]>).map(([code, hex]) => {
+    entries.map(([code, hex]) => {
       const colors = multiColors[code];
       return { code, hex, page: Number(page), ...(colors && { colors }) };
     }),
@@ -203,6 +203,11 @@ export const shades: Shade[] = Object.entries(pages).flatMap(
 export const shadePages = Object.keys(pages)
   .map(Number)
   .sort((a, b) => a - b);
+
+/** Every 6th shade — a dye-heavy, full-spectrum run across the card. */
+export function shadeBand(limit: number): Shade[] {
+  return shades.filter((_, index) => index % 6 === 0).slice(0, limit);
+}
 
 /** Relative luminance — used to pick readable text over a swatch. */
 export function isLightShade(hex: string): boolean {

@@ -8,7 +8,7 @@ export default function NotFound() {
   return (
     <div className="min-h-dvh bg-canvas flex flex-col">
       <SiteHeader />
-      <main className="flex-1 grid place-items-center px-6 py-16">
+      <main id="main" className="flex-1 grid place-items-center px-6 py-16">
         <div className="max-w-md text-center">
           <p className="font-body text-xs font-bold tracking-[0.12em] text-royal">
             404 — NOT FOUND

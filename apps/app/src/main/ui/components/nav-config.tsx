@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Factory,
   FileText,
-  Factory as FactoryIcon,
   Layers,
   LayoutDashboard,
   ListTree,

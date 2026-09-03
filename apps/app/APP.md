@@ -38,7 +38,7 @@ Bun workspaces + Turborepo. Bun is the only package manager (`bun@1.3.14`).
 | Path                | Role                                             |
 | ------------------- | ------------------------------------------------ |
 | `apps/app`          | Business app (this doc)                          |
-| `apps/web`          | Public website — Next.js + OpenNext on Workers   |
+| `apps/web`          | Public website — Next.js + Vinext on Workers     |
 | `packages/shared`   | Domain types, permissions, errors, numbering, FY |
 | `packages/tsconfig` | Shared TS presets                                |
 
@@ -382,7 +382,7 @@ this baseline needs an explicit owner question first.
 | Piece     | Choice                                                                                              |
 | --------- | --------------------------------------------------------------------------------------------------- |
 | apps/app  | Cloudflare **Pages** — static SPA + Pages Functions (Hono)                                          |
-| apps/web  | Cloudflare **Workers** via OpenNext (separate project)                                              |
+| apps/web  | Cloudflare **Workers** via Vinext (separate project)                                                |
 | Database  | D1 `kataria-app` (app) · `kataria-web-inquiry` (website, isolated)                                  |
 | Hostnames | free `*.pages.dev` / `*.workers.dev` — final names TBD by owner; custom domain parked (no purchase) |
 

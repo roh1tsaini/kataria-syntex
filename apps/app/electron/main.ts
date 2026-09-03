@@ -17,8 +17,8 @@ import { join } from "node:path";
 import { readFile, writeFile, unlink } from "node:fs/promises";
 
 const DEV = process.env.KC_DEV === "1";
-// Baked at build time (electron/build.ts) from APP_URL / defaults to the
-// placeholder that CI rewrites; dev overrides with KC_API_ORIGIN.
+// Baked at build time from APP_URL via electron/build.ts (--define
+// KC_API_ORIGIN); dev overrides with localhost.
 const API_ORIGIN =
   process.env.KC_API_ORIGIN ??
   (DEV ? "http://localhost:3000" : "https://CHANGE_ME_APP_ORIGIN");

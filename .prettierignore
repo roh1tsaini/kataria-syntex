@@ -2,10 +2,17 @@
 node_modules/
 **/node_modules/
 .next/
+.vinext/
 dist/
-dist-server/
 dist-electron/
 .turbo/
+.wrangler/
+coverage/
+.data/
+.deploy/
+
+# Frozen archive — reference only, never reformatted
+dead-files/
 
 # Generated files
 *.tsbuildinfo

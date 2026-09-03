@@ -5,46 +5,18 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
-import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowUpRight,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  CloudOff,
-  Copy,
-  Download,
-  Ellipsis,
-  Eye,
-  Pencil,
-  Plus,
-  Printer,
-  Save,
-  Search,
-  SearchX,
-  Trash2,
-  X,
-} from "lucide-react";
+
+import { Download, Plus, Save, X } from "lucide-react";
 import { useAuth } from "@/store/auth";
-import {
-  useChallans,
-  type Challan,
-  type ChallanItem,
-  type ChallanInput,
-  type ChallanType,
-} from "@/store/challans";
-import { ChallanDocument } from "@/ui/components/challan-document";
-import { RecipeLinkButton } from "@/ui/components/recipe-detail";
-import { printPage } from "@/lib/platform";
+import { useChallans, type Challan, type ChallanInput } from "@/store/challans";
+
 import { useMasters } from "@/store/masters";
 import { friendlyError } from "@/ui/lib/errors";
-import { api, ApiError } from "@/lib/api";
-import { toastError, toastSuccess } from "@/store/toast";
+import { api } from "@/lib/api";
+
 import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -56,20 +28,11 @@ import {
   CardTitle,
 } from "@/ui/components/ui/card";
 import { Input } from "@/ui/components/ui/input";
-import { Label } from "@/ui/components/ui/label";
+
 import { DatePicker } from "@/ui/components/ui/date-picker";
 import { Checkbox } from "@/ui/components/ui/checkbox";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/ui/components/ui/input-group";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/ui/components/ui/field";
+
+import { Field, FieldGroup, FieldLabel } from "@/ui/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -79,22 +42,7 @@ import {
 } from "@/ui/components/ui/select";
 import { Textarea } from "@/ui/components/ui/textarea";
 import { Badge } from "@/ui/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/ui/components/ui/dropdown-menu";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/ui/components/ui/empty";
+
 import { Skeleton } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
 import {

@@ -15,7 +15,6 @@ const buttonVariants = cva(
         primary: "bg-royal text-white hover:bg-navy",
         "on-dark": "bg-sky text-navy hover:bg-white",
         ghost: "border-[1.5px] border-current bg-transparent",
-        link: "text-royal underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-9 px-4 text-[13px]",

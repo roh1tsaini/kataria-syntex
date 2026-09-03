@@ -4,7 +4,7 @@
  * client's message map are both typed against this union, so adding a code
  * on one side without the other fails typecheck.
  */
-export const API_CODES = [
+const API_CODES = [
   // generic
   "invalid_request",
   "invalid_permissions",

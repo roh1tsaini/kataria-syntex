@@ -21,37 +21,18 @@ import {
   Building2,
   CalendarDays,
   ChevronDown,
-  LayoutDashboard,
   LogOut,
-  MonitorSmartphone,
   Moon,
-  Package,
   Plus,
-  Settings,
   Sun,
-  Users,
-  BookOpen,
-  FileText,
-  Factory,
-  Boxes,
-  Warehouse,
-  Layers,
-  PackageOpen,
-  Scale,
-  AlertTriangle,
-  ClipboardList,
-  Receipt,
-  ListTree,
   PanelLeftClose,
   PanelLeftOpen,
   Wifi,
   WifiOff,
   X,
   MoreHorizontal,
-  Palette,
-  type LucideIcon,
 } from "lucide-react";
-import { useAuth, isPackerOnlyWorkspace, type Permission } from "@/store/auth";
+import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { Button } from "@/ui/components/ui/button";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
@@ -68,7 +49,6 @@ import {
   SECTIONS,
   SIDEBAR_STORAGE_KEY,
   useCanSee,
-  type NavItem,
   type NavSection,
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
@@ -210,7 +190,7 @@ function NavList({
                     >
                       <div className="min-h-0 overflow-hidden">
                         <div className="ml-4 flex flex-col gap-0.5 border-l border-border pl-3">
-                          {item.subItems!.map((sub) => {
+                          {item.subItems?.map((sub) => {
                             const subActive = isSubActive(
                               sub,
                               pathname,

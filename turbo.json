@@ -4,14 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        ".open-next/**",
-        "dist/**",
-        "dist-server/**",
-        "dist-electron/**"
-      ],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "dist-electron/**"],
       "env": ["VITE_API_URL", "APP_URL"]
     },
     "typecheck": {

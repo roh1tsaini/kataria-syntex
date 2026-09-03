@@ -12,7 +12,6 @@ const eslintConfig = [
     // Capacitor android/ contains a copy of the bundled renderer (dist).
     ignores: [
       "dist/",
-      "dist-server/",
       "dist-electron/",
       "out/",
       "release/",

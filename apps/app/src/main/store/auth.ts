@@ -343,7 +343,17 @@ export const useAuth = create<AuthState>()((set, get) => ({
       clearAccountCache();
       const { recountPending } = await import("@/lib/offline/sync");
       recountPending();
-      set({ status: "guest", user: null, workspace: null, devices: [] });
+      set({
+        status: "guest",
+        user: null,
+        workspace: null,
+        devices: [],
+        members: [],
+        pendingMembers: [],
+        company: null,
+        currentFy: null,
+        financialYears: [],
+      });
     }
   },
 

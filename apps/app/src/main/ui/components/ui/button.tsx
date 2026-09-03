@@ -1,7 +1,6 @@
 /**
  * APP ONLY — Luma design system (oklch accents, dark mode, skeleton loading).
  * Do NOT copy to apps/web — web uses Living Weave (ecru/ink/stitch).
- * See packages/ui/src/index.ts divergence note.
  */
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";

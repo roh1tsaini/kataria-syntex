@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Section } from "@/components/section/Section";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { shades } from "@/content/shades";
+import { shadeBand, shades } from "@/content/shades";
 import { SectionHead } from "@/components/section/SectionHead";
 import { Reveal } from "@/components/motion/Reveal";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
@@ -14,8 +14,7 @@ import { YarnSwatch } from "@/components/shade/YarnSwatch";
  * card.
  */
 export function ShadeStrip() {
-  // A dye-heavy run across the card: every 6th shade gives a full-spectrum band.
-  const band = shades.filter((_, index) => index % 6 === 0).slice(0, 26);
+  const band = shadeBand(26);
 
   return (
     <section className="bg-canvas-deep">

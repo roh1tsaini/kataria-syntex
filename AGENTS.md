@@ -26,7 +26,7 @@ workspace "while you're in there".
 | Path                | What                                                                        | Stack                                                                                                                                    |
 | ------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/app`          | Internal business app (challans, job work, stock, packing, reports)         | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Pages Functions · D1 (Drizzle) · PWA + Electron desktop + Capacitor Android |
-| `apps/web`          | Public showcase website                                                     | Next.js + React 19 + Tailwind v4 · OpenNext on Cloudflare Workers                                                                        |
+| `apps/web`          | Public showcase website                                                     | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                                                          |
 | `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`) | TypeScript                                                                                                                               |
 | `packages/tsconfig` | Shared TS config presets                                                    | —                                                                                                                                        |
 

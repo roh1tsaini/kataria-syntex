@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -12,7 +12,7 @@ import {
   PackageOpen,
   X,
 } from "lucide-react";
-import { usePermission } from "@/store/auth";
+import { usePermission, useAuth } from "@/store/auth";
 import { api } from "@/lib/api";
 import { useMasters } from "@/store/masters";
 import { AppShell } from "@/ui/components/app-shell";
@@ -99,38 +99,42 @@ const emptyRow = (): ItemRow => ({
   cones: "",
 });
 
-let returnsCache: ReturnEntry[] | null = null;
+// Keyed by workspace id so one account's entries never leak into another's.
+const returnsCache: Record<string, ReturnEntry[] | null> = {};
 
 export function ReturnsPage() {
   const [params] = useSearchParams();
   const editId = params.get("edit");
   const navigate = useNavigate();
+  const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const can = usePermission();
-  const [items, setItems] = useState<ReturnEntry[]>(() => returnsCache ?? []);
-  const [loading, setLoading] = useState(() => !returnsCache);
+  const [items, setItems] = useState<ReturnEntry[]>(
+    () => returnsCache[workspaceId] ?? [],
+  );
+  const [loading, setLoading] = useState(() => !returnsCache[workspaceId]);
   const [loadError, setLoadError] = useState(false);
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!returnsCache) {
+    if (!returnsCache[workspaceId]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: ReturnEntry[] }>("/returns");
-      returnsCache = res.items;
+      returnsCache[workspaceId] = res.items;
       setItems(res.items);
     } catch {
-      if (!returnsCache) {
+      if (!returnsCache[workspaceId]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [workspaceId]);
 
   useEffect(() => {
     void load();
@@ -242,12 +246,10 @@ export function ReturnsPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">
-                        Job worker
-                      </th>
-                      <th className="py-3.5 pr-3 font-inherit">Invoice</th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Job worker</th>
+                      <th className="py-3.5 pr-3">Invoice</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -319,12 +321,10 @@ export function ReturnsPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">
-                        Job worker
-                      </th>
-                      <th className="py-3.5 pr-3 font-inherit">Invoice</th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Job worker</th>
+                      <th className="py-3.5 pr-3">Invoice</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -496,6 +496,7 @@ function ReturnForm({
     })();
   }, [editId]);
 
+  const balanceSeq = useRef(0);
   const onJobWorkerChange = async (id: string) => {
     setDirty(true);
     setJobWorkerId(id);
@@ -504,11 +505,14 @@ function ReturnForm({
       setBalances([]);
       return;
     }
+    // Drop the response when a newer selection landed first.
+    const seq = ++balanceSeq.current;
     try {
       const res = await api<{ items: Balance[] }>(`/returns/balance/${id}`);
+      if (seq !== balanceSeq.current) return;
       setBalances(res.items);
     } catch {
-      setBalances([]);
+      if (seq === balanceSeq.current) setBalances([]);
     }
   };
 

@@ -1,12 +1,11 @@
 import { Section } from "@/components/section/Section";
 import Link from "next/link";
-import { site, trustMetrics, yearsOfExperience } from "@/content/site";
+import { site, yearsOfExperience } from "@/content/site";
+import { exportCountries } from "@/content/markets";
 import { navLinks } from "@/content/nav";
 
 export function SiteFooter() {
-  const countries =
-    trustMetrics.find((m) => m.label === "export countries served")?.value ??
-    "20+";
+  const countries = `${exportCountries.length}+`;
   return (
     <footer className="bg-navy text-ice-soft">
       <Section>

@@ -12,14 +12,13 @@ import type { ApiCode } from "@kataria-syntex/shared";
  * commits as ONE db.batch()).
  */
 
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db, Queryable } from "./db";
 import {
   challanItemSources,
   challanItems,
   challans,
-  companies,
   stockEntries,
   customers,
   financialYears,
@@ -49,6 +48,7 @@ import { generateId } from "./token";
 import {
   challanTotals,
   fyForDate,
+  parseSeqFromNumber,
   round3,
   type ChallanBody,
   type ChallanDto,
@@ -87,7 +87,6 @@ async function allocatedChallanNumber(
   date: Date,
   type: "sales" | "outward",
 ): Promise<{ challanNumber: string; fyId: string; fyLabel: string }> {
-  // Mirrors challans.ts allocateNumber but uses shared helpers
   for (let attempt = 0; attempt < 10; attempt++) {
     const fyRow = await getOrCreateFyForDate(d, workspaceId, date);
     const company = await getOrCreateCompany(d, workspaceId);
@@ -607,7 +606,15 @@ export async function createChallan(
         .from(challans)
         .where(eq(challans.id, existing[0].id));
       const row = rows[0];
-      if (row) return { ok: true as const, challan: row, items: [] };
+      if (row) {
+        // Replay answers with the full stored document, not just the header.
+        const storedItems = await d
+          .select()
+          .from(challanItems)
+          .where(eq(challanItems.challanId, row.id))
+          .orderBy(asc(challanItems.seq));
+        return { ok: true as const, challan: row, items: storedItems };
+      }
     }
   }
 
@@ -638,6 +645,18 @@ export async function createChallan(
     const fyRow = await getOrCreateFyForDate(d, workspaceId, date);
     const fy = fyRow;
     if (fyRow.label !== input.offline.fyLabel) return { error: "fy_mismatch" };
+    // Device-issued numbers must parse back to the claimed seq under the
+    // workspace's numbering config — an arbitrary string would otherwise be
+    // stored verbatim and inflate the FY counter.
+    if (
+      parseSeqFromNumber(
+        config,
+        input.type,
+        input.offline.challanNumber,
+        fyRow.label,
+      ) !== input.offline.seq
+    )
+      return { error: "invalid_challan" };
     const clash = await d
       .select({ id: challans.id })
       .from(challans)
@@ -692,25 +711,7 @@ export async function createChallan(
     fyId = alloc.fyId;
   }
 
-  const totals = {
-    totalBoxes: (items as { boxes: number }[]).reduce((s, i) => s + i.boxes, 0),
-    totalCheese: (items as { cheese: number }[]).reduce(
-      (s, i) => s + (i.cheese ?? 0),
-      0,
-    ),
-    totalGrossWt: round3(
-      (items as { grossWt: number }[]).reduce(
-        (s, i) => s + (i.grossWt ?? 0),
-        0,
-      ),
-    ),
-    totalTareWt: round3(
-      (items as { tareWt: number }[]).reduce((s, i) => s + (i.tareWt ?? 0), 0),
-    ),
-    totalNetWt: round3(
-      (items as { netWt: number }[]).reduce((s, i) => s + i.netWt, 0),
-    ),
-  };
+  const totals = challanTotals(items);
   const row = {
     id: challanId,
     workspaceId,

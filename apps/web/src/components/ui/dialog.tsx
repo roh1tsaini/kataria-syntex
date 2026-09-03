@@ -43,8 +43,8 @@ function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-5 top-5 cursor-pointer p-2 text-paper transition-colors hover:text-sky">
-          <X className="size-6" />
+        <DialogPrimitive.Close className="absolute right-5 top-5 cursor-pointer p-2.5 text-paper transition-colors hover:text-sky">
+          <X className="size-6" aria-hidden />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -65,4 +65,17 @@ function DialogTitle({
   );
 }
 
-export { Dialog, DialogTrigger, DialogContent, DialogTitle };
+function DialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  return (
+    <DialogPrimitive.Description
+      data-slot="dialog-description"
+      className={cn("font-body text-sm text-paper/70", className)}
+      {...props}
+    />
+  );
+}
+
+export { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription };

@@ -90,8 +90,7 @@ const MESSAGES = {
   internal_server_error:
     "Something went wrong on our side. Try again in a moment.",
   http_500: "Something went wrong on our side. Try again in a moment.",
-  http_502:
-    "The sign-in service is temporarily unavailable. Check your connection and try again.",
+  http_502: "The server is temporarily unavailable. Try again in a moment.",
 } satisfies Record<ApiCode | ClientCode, string>;
 
 export function friendlyError(

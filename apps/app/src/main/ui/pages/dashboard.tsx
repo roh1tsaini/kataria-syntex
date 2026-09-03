@@ -7,7 +7,6 @@ import {
   BookOpen,
   Factory,
   FileText,
-  Monitor,
   Package,
   PackageOpen,
   Warehouse,
@@ -17,17 +16,15 @@ import {
   Scale,
   Settings,
   Smartphone,
-  Trash2,
   TrendingDown,
   TrendingUp,
-  Globe,
   Users,
 } from "lucide-react";
-import { useAuth, type Device } from "@/store/auth";
+import { useAuth } from "@/store/auth";
 import { useChallans, type Challan } from "@/store/challans";
-import { api, ApiError } from "@/lib/api";
-import { toastError, toastSuccess } from "@/store/toast";
-import { QrApproveDialog } from "@/ui/components/qr-approve-dialog";
+import { api } from "@/lib/api";
+import { toastError } from "@/store/toast";
+
 import { PageHeader } from "@/ui/components/page-header";
 import { AppShell } from "@/ui/components/app-shell";
 import { Button } from "@/ui/components/ui/button";
@@ -44,8 +41,7 @@ import {
 import { cn } from "@/ui/lib/cn";
 import { EASE_OUT } from "@/ui/lib/motion";
 import { fmtBoxes, fmtWt } from "@/ui/lib/format";
-import { useConfirm } from "@/ui/components/confirm-dialog";
-import { friendlyError } from "@/ui/lib/errors";
+
 import {
   aggregate,
   inWindow,
@@ -844,5 +840,3 @@ export function Dashboard() {
     </AppShell>
   );
 }
-
-/** Packer-only shell: single screen, no access to company settings or devices. */

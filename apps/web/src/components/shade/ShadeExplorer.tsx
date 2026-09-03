@@ -51,7 +51,11 @@ export function ShadeExplorer({
     <div className="mt-10 md:mt-14">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div aria-label="Filter by card page" className="flex flex-wrap gap-2">
+        <div
+          role="group"
+          aria-label="Filter by card page"
+          className="flex flex-wrap gap-2"
+        >
           <FilterPill
             active={activePage === "all"}
             onClick={() => setActivePage("all")}

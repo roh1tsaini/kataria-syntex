@@ -7,7 +7,7 @@ Cloudflare — free tier only.
 
 | Piece        | Where it runs                          | Notes                                |
 | ------------ | -------------------------------------- | ------------------------------------ |
-| Website      | Cloudflare **Workers** (OpenNext)      | `apps/web`, D1 for inquiries         |
+| Website      | Cloudflare **Workers** (Vinext)        | `apps/web`, D1 for inquiries         |
 | Business app | Cloudflare **Pages** (SPA + Functions) | `apps/app`, D1 for business data     |
 | Databases    | Cloudflare **D1** (SQLite)             | `kataria-app`, `kataria-web-inquiry` |
 | CI/CD        | GitHub Actions                         | auto-deploys on push to `main`       |
@@ -40,7 +40,9 @@ it.
 
 Push to `main`. On every push:
 
-1. `app-build.yml` — typechecks and builds PRs; full native builds on demand.
+1. `app-build.yml` — typecheck on every change; full native builds (3 desktop
+   targets + APK) on pushes to `main` touching `apps/app`, or on manual
+   dispatch.
 2. `cf-deploy.yml` — website: build → ensure D1 → migrate → deploy Worker;
    app: build SPA → ensure D1 → migrate → deploy Pages.
 
@@ -110,7 +112,7 @@ keystore, base64-encoded).
 
 ```bash
 bun install
-bun run dev:web    # website on :3000 (Next.js)
+bun run dev:web    # website on :3000 (vinext)
 bun run dev:app    # app: vite on :1420 + API on :3000 (pinned)
 ```
 

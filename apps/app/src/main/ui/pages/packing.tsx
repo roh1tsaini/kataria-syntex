@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { useSearchParams } from "react-router-dom";
@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { usePermission } from "@/store/auth";
+import { usePermission, useAuth } from "@/store/auth";
 import { api } from "@/lib/api";
 import { useMasters } from "@/store/masters";
 import { AppShell } from "@/ui/components/app-shell";
@@ -121,53 +121,63 @@ const emptyJobRow = (): JobWorkItemRow => ({
   remarks: "",
 });
 
-const packingCache: Record<"sale" | "job_work", PackingEntry[] | null> = {
-  sale: null,
-  job_work: null,
-};
+// Keyed by workspace id so one account's entries never leak into another's.
+const packingCache: Record<
+  string,
+  Record<"sale" | "job_work", PackingEntry[] | null>
+> = {};
 
 export function PackingPage() {
   const [params, setParams] = useSearchParams();
   const activeTab = params.get("type") === "job_work" ? "job_work" : "sale";
+  const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const can = usePermission();
   const [items, setItems] = useState<PackingEntry[]>(
-    () => packingCache[activeTab] ?? [],
+    () => packingCache[workspaceId]?.[activeTab] ?? [],
   );
-  const [loading, setLoading] = useState(() => !packingCache[activeTab]);
+  const [loading, setLoading] = useState(
+    () => !packingCache[workspaceId]?.[activeTab],
+  );
   const [loadError, setLoadError] = useState(false);
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formTab, setFormTab] = useState<"sale" | "job_work">(activeTab);
+  // Live tab mirror — the callback's captured activeTab can't guard against
+  // itself (it would always compare equal).
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
 
   const load = useCallback(async () => {
     const tab = activeTab;
-    if (!packingCache[tab]) {
+    if (!packingCache[workspaceId]?.[tab]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: PackingEntry[] }>(`/packing?type=${tab}`);
-      if (tab !== activeTab) return;
-      packingCache[tab] = res.items;
+      if (tab !== activeTabRef.current) return;
+      (packingCache[workspaceId] ??= { sale: null, job_work: null })[tab] =
+        res.items;
       setItems(res.items);
     } catch {
-      if (tab === activeTab && !packingCache[tab]) {
+      if (tab === activeTabRef.current && !packingCache[workspaceId]?.[tab]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      if (tab === activeTab) setLoading(false);
+      if (tab === activeTabRef.current) setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, workspaceId]);
 
   useEffect(() => {
-    if (packingCache[activeTab]) {
-      setItems(packingCache[activeTab]!);
+    const cached = packingCache[workspaceId]?.[activeTab];
+    if (cached) {
+      setItems(cached);
       setLoading(false);
     }
     void load();
-  }, [load, activeTab]);
+  }, [load, activeTab, workspaceId]);
 
   if (showForm || editingId) {
     return (
@@ -285,15 +295,11 @@ export function PackingPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">Entry</th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Items
-                      </th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Net wt (kg)
-                      </th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Entry</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3.5 pr-3 text-right">Items</th>
+                      <th className="py-3.5 pr-3 text-right">Net wt (kg)</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -367,15 +373,11 @@ export function PackingPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">Entry</th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Items
-                      </th>
-                      <th className="py-3.5 pr-3 text-right font-inherit">
-                        Net wt (kg)
-                      </th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Entry</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3.5 pr-3 text-right">Items</th>
+                      <th className="py-3.5 pr-3 text-right">Net wt (kg)</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -422,7 +424,14 @@ export function PackingPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setEditingId(entry.id)}
+                                onClick={() => {
+                                  setFormTab(
+                                    entry.type === "job_work"
+                                      ? "job_work"
+                                      : "sale",
+                                  );
+                                  setEditingId(entry.id);
+                                }}
                                 aria-label={`Edit entry ${entry.entryNumber}`}
                                 className="text-muted-foreground hover:text-foreground"
                               >
@@ -485,7 +494,14 @@ export function PackingPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setEditingId(entry.id)}
+                                onClick={() => {
+                                  setFormTab(
+                                    entry.type === "job_work"
+                                      ? "job_work"
+                                      : "sale",
+                                  );
+                                  setEditingId(entry.id);
+                                }}
                                 aria-label={`Edit entry ${entry.entryNumber}`}
                                 className="-mr-1 -mt-1 size-8 rounded-md text-muted-foreground hover:text-foreground"
                               >

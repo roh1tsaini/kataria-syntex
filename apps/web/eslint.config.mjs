@@ -12,7 +12,7 @@ import globals from "globals";
 //   is pinned to ~9.38.0 until the plugin catches up.
 const eslintConfig = [
   {
-    ignores: [".next/", "node_modules/", "next-env.d.ts"],
+    ignores: [".next/", "dist/", "node_modules/", "next-env.d.ts"],
   },
   {
     plugins: {

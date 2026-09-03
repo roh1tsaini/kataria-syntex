@@ -1,45 +1,13 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { setCookie, deleteCookie } from "hono/cookie";
-import {
-  and,
-  count,
-  eq,
-  gt,
-  inArray,
-  isNull,
-  isNotNull,
-  lt,
-  or,
-  sql,
-} from "drizzle-orm";
+
+import { and, eq, inArray, isNotNull, lt, or } from "drizzle-orm";
 import { getDb } from "../lib/db";
-import {
-  users,
-  workspaces,
-  memberships,
-  memberPermissions,
-  devices,
-  sessions,
-  loginAttempts,
-  companies,
-  otpCodes,
-  qrLogins,
-  type Permission,
-} from "../db/schema";
-import { ALL_PERMISSIONS } from "@kataria-syntex/shared";
+import { memberships, loginAttempts, qrLogins } from "../db/schema";
+
 import { detectIdentifier, type Identifier } from "../lib/identifier";
-import { hashPassword, verifyPasswordOrDummy } from "../lib/password";
-import { generateId } from "../lib/token";
-import { DEFAULT_NUMBERING_JSON } from "../lib/company";
-import {
-  requestOtp,
-  verifyOtp,
-  consumeVerifiedOtp,
-  OtpRateError,
-  ipBudgetRemaining,
-  recordIpAttempt,
-} from "../auth/otp";
+
+import { ipBudgetRemaining, recordIpAttempt } from "../auth/otp";
 import {
   createQrLogin,
   approveQrLogin,
@@ -47,35 +15,18 @@ import {
   qrLoginInfo,
   QR_TTL_SECONDS,
 } from "../auth/qr-login";
-import {
-  findPendingMembership,
-  consumePendingMembership,
-} from "../auth/members";
-import {
-  requireAuth,
-  createSessionForUser,
-  SESSION_TTL_MS,
-} from "../auth/session";
+
+import { requireAuth } from "../auth/session";
 import { toIso } from "../lib/datetime";
 import {
   badRequest,
   buildDeviceMeta,
   clientIp,
-  deleteSessionCookie,
   findUserByIdentifier,
   identifierSchema,
-  issueSession,
-  otpVerifySchema,
-  passwordLoginSchema,
   setSessionCookie,
-  signupSchema,
   authPayload,
-  PASSWORD_LOGIN_MAX_FAILS,
-  PASSWORD_LOGIN_WINDOW_MS,
-  SESSION_COOKIE,
-  isHttpsRequest,
   type AuthContext,
-  type AuthCtx,
   type AuthEnv,
 } from "./auth-shared";
 import { apiError } from "../lib/api-error";

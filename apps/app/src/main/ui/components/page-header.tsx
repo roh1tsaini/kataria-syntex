@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 
 /**
  * The one page-title system: eyebrow + clamp title + optional description.
- * Replaces three competing ad-hoc patterns across pages (audit finding).
  */
 export function PageHeader({
   eyebrow,

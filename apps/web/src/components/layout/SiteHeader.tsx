@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -96,13 +97,16 @@ export function SiteHeader() {
               <button
                 type="button"
                 aria-label="Open menu"
-                className="cursor-pointer p-2 text-navy"
+                className="cursor-pointer p-2.5 text-navy"
               >
                 <Menu className="size-6" />
               </button>
             </DialogTrigger>
             <DialogContent className="gap-0 p-0">
               <DialogTitle className="sr-only">Menu</DialogTitle>
+              <DialogDescription className="sr-only">
+                Site navigation
+              </DialogDescription>
               <div className="flex h-full flex-col justify-between px-6 pb-10 pt-20">
                 <nav aria-label="Mobile" className="flex flex-col">
                   {navLinks.map((link, index) => (

@@ -29,7 +29,11 @@ export function ProductIndex({
 
   return (
     <div className="mt-10 md:mt-14">
-      <div aria-label="Filter by fiber family" className="flex flex-wrap gap-2">
+      <div
+        role="group"
+        aria-label="Filter by fiber family"
+        className="flex flex-wrap gap-2"
+      >
         {categories.map((item) => (
           <FilterPill
             key={item}

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+
 import { Globe, Monitor, Smartphone, Trash2 } from "lucide-react";
 import { useAuth, type Device } from "@/store/auth";
-import { api, ApiError } from "@/lib/api";
+
 import { toastError, toastSuccess } from "@/store/toast";
 import { QrApproveDialog } from "@/ui/components/qr-approve-dialog";
 import { PageHeader } from "@/ui/components/page-header";
@@ -13,9 +13,7 @@ import { Card, CardContent } from "@/ui/components/ui/card";
 import { Skeleton } from "@/ui/components/motion";
 import { Stagger, StaggerItem } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
-import { cn } from "@/ui/lib/cn";
-import { EASE_OUT } from "@/ui/lib/motion";
-import { fmtBoxes, fmtWt } from "@/ui/lib/format";
+
 import { friendlyError } from "@/ui/lib/errors";
 
 function platformIcon(platform: string) {

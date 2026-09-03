@@ -1,78 +1,26 @@
 import { Hono } from "hono";
-import { setCookie, deleteCookie } from "hono/cookie";
-import {
-  and,
-  count,
-  eq,
-  gt,
-  inArray,
-  isNull,
-  isNotNull,
-  lt,
-  or,
-  sql,
-} from "drizzle-orm";
+
+import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { getDb } from "../lib/db";
-import {
-  users,
-  workspaces,
-  memberships,
-  memberPermissions,
-  devices,
-  sessions,
-  loginAttempts,
-  companies,
-  otpCodes,
-  qrLogins,
-  type Permission,
-} from "../db/schema";
-import { ALL_PERMISSIONS } from "@kataria-syntex/shared";
+import { loginAttempts } from "../db/schema";
+
 import { detectIdentifier } from "../lib/identifier";
-import { hashPassword, verifyPasswordOrDummy } from "../lib/password";
+import { verifyPasswordOrDummy } from "../lib/password";
 import { generateId } from "../lib/token";
-import { DEFAULT_NUMBERING_JSON } from "../lib/company";
-import {
-  requestOtp,
-  verifyOtp,
-  consumeVerifiedOtp,
-  OtpRateError,
-  ipBudgetRemaining,
-  recordIpAttempt,
-} from "../auth/otp";
-import {
-  createQrLogin,
-  approveQrLogin,
-  claimQrLogin,
-  qrLoginInfo,
-  QR_TTL_SECONDS,
-} from "../auth/qr-login";
-import {
-  findPendingMembership,
-  consumePendingMembership,
-} from "../auth/members";
-import {
-  requireAuth,
-  createSessionForUser,
-  SESSION_TTL_MS,
-} from "../auth/session";
+
+import { ipBudgetRemaining, recordIpAttempt } from "../auth/otp";
+
 import { toIso } from "../lib/datetime";
 import {
   badRequest,
   buildDeviceMeta,
   clientIp,
-  deleteSessionCookie,
   findUserByIdentifier,
-  identifierSchema,
   issueSession,
-  otpVerifySchema,
   passwordLoginSchema,
-  setSessionCookie,
-  signupSchema,
   authPayload,
   PASSWORD_LOGIN_MAX_FAILS,
   PASSWORD_LOGIN_WINDOW_MS,
-  SESSION_COOKIE,
-  type AuthCtx,
   type AuthEnv,
 } from "./auth-shared";
 import { apiError } from "../lib/api-error";
@@ -141,29 +89,30 @@ authPasswordRoute.post("/password/login", async (c) => {
     user?.passwordHash ?? null,
   );
 
-  await db.batch([
-    db.insert(loginAttempts).values({
-      id: generateId(),
-      phone: ident.value,
-      deviceKey,
-      ok,
-      createdAt: nowIso,
-    }),
-    // Bound the table on successful logins only — a failed attempt shouldn't
-    // pay for a full-table delete sweep.
-    ...(ok
-      ? [
-          db
-            .delete(loginAttempts)
-            .where(
-              lt(
-                loginAttempts.createdAt,
-                toIso(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
-              ),
+  // Only failures are recorded — the lockout counts above read nothing else,
+  // and a successful login clears its device history below anyway.
+  await (ok
+    ? // Bound the table on successful logins only — a failed attempt
+      // shouldn't pay for a full-table delete sweep.
+      db.batch([
+        db
+          .delete(loginAttempts)
+          .where(
+            lt(
+              loginAttempts.createdAt,
+              toIso(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
             ),
-        ]
-      : []),
-  ]);
+          ),
+      ])
+    : db.batch([
+        db.insert(loginAttempts).values({
+          id: generateId(),
+          phone: ident.value,
+          deviceKey,
+          ok: false,
+          createdAt: nowIso,
+        }),
+      ]));
   if (!ok || !user || !user.passwordHash)
     return apiError(c, "invalid_credentials", 401);
 

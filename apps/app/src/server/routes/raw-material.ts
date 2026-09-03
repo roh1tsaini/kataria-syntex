@@ -14,8 +14,9 @@ import { requireAuth } from "../auth/session";
 import { generateId } from "../lib/token";
 import { buildRawStockStatements } from "../lib/stock";
 import { createRawMaterial } from "../lib/document-pipeline";
+import { round3, dateStringSchema, fyForDate } from "@kataria-syntex/shared";
 import { validateMasters } from "../lib/masters";
-import { round3 } from "@kataria-syntex/shared";
+import { toDate } from "../lib/datetime";
 import { apiError } from "../lib/api-error";
 
 export const rawMaterialRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -42,7 +43,7 @@ const rawItemSchema = z
 const rawBody = z.object({
   supplierId: z.string().min(1).optional(),
   supplierChallanNo: z.string().trim().max(100).optional().default(""),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateStringSchema,
   notes: z.string().trim().max(500).optional().default(""),
   items: z.array(rawItemSchema).min(1).max(200),
 });
@@ -138,7 +139,15 @@ rawMaterialRoute.put(
         ),
       );
     const existing = existingRows[0];
-    if (!existing) return apiError(c, "not_found", 400);
+    if (!existing) return apiError(c, "not_found", 404);
+
+    // The number belongs to the FY it was issued in — a date change across
+    // FYs is rejected.
+    if (
+      fyForDate(toDate(existing.date)).label !==
+      fyForDate(toDate(parsed.data.date)).label
+    )
+      return apiError(c, "fy_change_not_allowed", 400);
 
     // Check stock not consumed
     const stockOut = await db
@@ -211,7 +220,14 @@ rawMaterialRoute.put(
     // Delete old items + stock movements, recreate — one atomic D1 batch,
     // no reads in between.
     await db.batch([
-      db.delete(stockEntries).where(eq(stockEntries.sourceRefId, existing.id)),
+      db
+        .delete(stockEntries)
+        .where(
+          and(
+            eq(stockEntries.sourceRefId, existing.id),
+            eq(stockEntries.workspaceId, workspaceId),
+          ),
+        ),
       db
         .delete(rawMaterialItems)
         .where(eq(rawMaterialItems.entryId, existing.id)),

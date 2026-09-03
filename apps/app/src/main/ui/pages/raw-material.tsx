@@ -12,7 +12,7 @@ import {
   Boxes,
   X,
 } from "lucide-react";
-import { usePermission } from "@/store/auth";
+import { usePermission, useAuth } from "@/store/auth";
 import { api } from "@/lib/api";
 import { useMasters } from "@/store/masters";
 import { AppShell } from "@/ui/components/app-shell";
@@ -105,38 +105,42 @@ const emptyRow = (): ItemRow => ({
   packingCount: "",
 });
 
-let rawCache: RawEntry[] | null = null;
+// Keyed by workspace id so one account's entries never leak into another's.
+const rawCache: Record<string, RawEntry[] | null> = {};
 
 export function RawMaterialPage() {
   const [params] = useSearchParams();
   const editId = params.get("edit");
   const navigate = useNavigate();
+  const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const can = usePermission();
-  const [items, setItems] = useState<RawEntry[]>(() => rawCache ?? []);
-  const [loading, setLoading] = useState(() => !rawCache);
+  const [items, setItems] = useState<RawEntry[]>(
+    () => rawCache[workspaceId] ?? [],
+  );
+  const [loading, setLoading] = useState(() => !rawCache[workspaceId]);
   const [loadError, setLoadError] = useState(false);
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!rawCache) {
+    if (!rawCache[workspaceId]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: RawEntry[] }>("/raw-material");
-      rawCache = res.items;
+      rawCache[workspaceId] = res.items;
       setItems(res.items);
     } catch {
-      if (!rawCache) {
+      if (!rawCache[workspaceId]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [workspaceId]);
 
   useEffect(() => {
     void load();
@@ -248,10 +252,10 @@ export function RawMaterialPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">Entry</th>
-                      <th className="py-3.5 pr-3 font-inherit">Supplier</th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Entry</th>
+                      <th className="py-3.5 pr-3">Supplier</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -323,10 +327,10 @@ export function RawMaterialPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      <th className="py-3.5 pl-5 pr-3 font-inherit">Entry</th>
-                      <th className="py-3.5 pr-3 font-inherit">Supplier</th>
-                      <th className="py-3.5 pr-3 font-inherit">Date</th>
-                      <th className="py-3 pr-5 font-inherit">
+                      <th className="py-3.5 pl-5 pr-3">Entry</th>
+                      <th className="py-3.5 pr-3">Supplier</th>
+                      <th className="py-3.5 pr-3">Date</th>
+                      <th className="py-3 pr-5">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>

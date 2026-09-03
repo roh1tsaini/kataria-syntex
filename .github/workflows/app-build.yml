@@ -102,6 +102,8 @@ jobs:
             ~/.cache/electron-builder
             ~/Library/Caches/electron
             ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
           key: electron-${{ matrix.name }}-${{ hashFiles('bun.lock') }}
           restore-keys: electron-${{ matrix.name }}-
 
@@ -253,7 +255,7 @@ jobs:
 
             - **Android** (all phones): `*.apk` — signed. Allow "Install unknown apps" and open the file.
             - **Windows**: `*-setup.exe` — NSIS installer. SmartScreen may warn (unsigned); click "More info → Run anyway".
-            - **macOS**: `*.dmg` — universal (Intel + Apple Silicon). Right-click → Open to bypass Gatekeeper.
+            - **macOS**: `*.dmg` — Apple Silicon. Right-click → Open to bypass Gatekeeper.
             - **Linux**: `*.AppImage` — `chmod +x` and run.
           generate_release_notes: false
           files: dist/**

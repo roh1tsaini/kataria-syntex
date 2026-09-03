@@ -2,10 +2,7 @@ import { Hono } from "hono";
 import { toIso } from "../lib/datetime";
 import { z } from "zod";
 import { and, asc, eq } from "drizzle-orm";
-import type {
-  SQLiteTableWithColumns,
-  AnySQLiteColumn,
-} from "drizzle-orm/sqlite-core";
+import type { SQLiteTable, AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
 import { likeContains } from "../lib/like";
@@ -56,7 +53,7 @@ const supplierBody = z.object({
   gstin: z.string().trim().max(15).optional().default(""),
 });
 
-type MasterTable = SQLiteTableWithColumns<any> & {
+type MasterTable = SQLiteTable & {
   id: AnySQLiteColumn;
   workspaceId: AnySQLiteColumn;
   name: AnySQLiteColumn;

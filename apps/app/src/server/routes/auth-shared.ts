@@ -1,62 +1,27 @@
-import { Hono, type Context } from "hono";
-import { toIso } from "../lib/datetime";
+import { type Context } from "hono";
+
 import { z } from "zod";
 import { setCookie, deleteCookie } from "hono/cookie";
-import {
-  and,
-  count,
-  eq,
-  gt,
-  inArray,
-  isNull,
-  isNotNull,
-  lt,
-  or,
-  sql,
-} from "drizzle-orm";
-import { getDb, type Db } from "../lib/db";
+import { and, eq } from "drizzle-orm";
+import { type Db } from "../lib/db";
 import type { Env } from "../env";
 import {
   users,
   workspaces,
   memberships,
   memberPermissions,
-  devices,
-  sessions,
-  loginAttempts,
-  companies,
-  otpCodes,
-  qrLogins,
   type Permission,
 } from "../db/schema";
 import { ALL_PERMISSIONS, type ApiCode } from "@kataria-syntex/shared";
 import { apiError } from "../lib/api-error";
-import { detectIdentifier, type Identifier } from "../lib/identifier";
-import { hashPassword, verifyPasswordOrDummy } from "../lib/password";
-import { generateId } from "../lib/token";
-import { DEFAULT_NUMBERING_JSON } from "../lib/company";
+import { type Identifier } from "../lib/identifier";
+
 import {
-  requireAuth,
   createSessionForUser,
   SESSION_TTL_MS,
   type AuthVariables,
   type AuthContext,
 } from "../auth/session";
-import {
-  requestOtp,
-  verifyOtp,
-  consumeVerifiedOtp,
-  OtpRateError,
-  ipBudgetRemaining,
-  recordIpAttempt,
-} from "../auth/otp";
-import {
-  createQrLogin,
-  approveQrLogin,
-  claimQrLogin,
-  qrLoginInfo,
-  QR_TTL_SECONDS,
-} from "../auth/qr-login";
 
 export type AuthEnv = { Bindings: Env; Variables: AuthVariables };
 export type AuthCtx = Context<AuthEnv>;

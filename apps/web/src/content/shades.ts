@@ -1,5 +1,6 @@
 export {
   shades,
+  shadeBand,
   shadePages,
   isLightShade,
   type Shade,

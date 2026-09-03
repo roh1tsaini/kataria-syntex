@@ -1,4 +1,5 @@
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
+import { exportCountries } from "./markets";
 
 // The core identity (name, tagline, established year, location, phone,
 // email) comes from packages/shared — the single source of truth for
@@ -15,7 +16,6 @@ const siteUrl = (
  */
 export const site = {
   name: COMPANY_DETAILS.name,
-  shortName: "KS",
   tagline: COMPANY_DETAILS.tagline,
   url: siteUrl,
   establishedYear: COMPANY_DETAILS.established,
@@ -28,7 +28,7 @@ export const site = {
     whatsapp: COMPANY_DETAILS.phone,
     whatsappHref: `https://wa.me/${phoneDigits}`,
     email: COMPANY_DETAILS.email,
-    addressLines: ["Surat", "Gujarat", "India"],
+    addressLines: COMPANY_DETAILS.location.split(", "),
     mapsHref:
       "https://www.google.com/maps/search/?api=1&query=Kataria+Syntex,+Surat,+Gujarat,+India",
     mapEmbedUrl:
@@ -52,7 +52,7 @@ export function yearsOfExperience(): number {
 
 export const trustMetrics = [
   { value: `${yearsOfExperience()}+`, label: "years in the yarn trade" },
-  { value: "20+", label: "export countries served" },
+  { value: `${exportCountries.length}+`, label: "export countries served" },
   { value: "6+", label: "high-demand Indian states" },
   { value: "01", label: "point of contact, start to dispatch" },
 ] as const;

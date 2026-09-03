@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { site } from "@/content/site";
-import { shades, isLightShade } from "@/content/shades";
+import { shades, shadeBand, isLightShade, type Shade } from "@/content/shades";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +12,10 @@ import { cn } from "@/lib/utils";
  * of the real thing (wound-yarn texture, mono header, printed codes).
  */
 export function Hero() {
-  const panel = shades.filter((_, index) => index % 6 === 0).slice(0, 24);
-  const labels = [panel[2], panel[7], panel[13], panel[19]];
+  const panel = shadeBand(24);
+  const labels = [2, 7, 13, 19]
+    .map((i) => panel[i])
+    .filter((s): s is Shade => s !== undefined);
 
   return (
     <section className="relative overflow-hidden">

@@ -23,9 +23,10 @@ function clientIp(request: Request): string {
 
 async function getInquiryDb(): Promise<D1Database | null> {
   try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const ctx = getCloudflareContext();
-    return (ctx.env as CloudflareEnv).INQUIRY_DB ?? null;
+    // workerd only — resolves in `vinext dev` and on Workers, throws under
+    // plain Node (`vinext start`), where there is no binding to read.
+    const { env } = await import("cloudflare:workers");
+    return (env as { INQUIRY_DB?: D1Database }).INQUIRY_DB ?? null;
   } catch {
     return null;
   }
@@ -66,15 +67,21 @@ export async function POST(request: Request) {
   const ip = clientIp(request);
   const userAgent = request.headers.get("user-agent") ?? null;
 
-  // Persist to D1 when bound (Workers runtime). In `next dev` without Workers
-  // bindings, the DB is absent — keep the validation pass but don't fail the
-  // request (dev fallback).
+  // Persist to D1 when bound (Workers runtime). Without the binding the DB is
+  // absent — validation still runs, but a missing binding in production must
+  // fail loudly instead of silently discarding inquiries.
   const db = await getInquiryDb();
   if (!db) {
-    console.warn(
-      "inquiry: INQUIRY_DB not bound — dropping persist in dev (validation ok)",
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "inquiry: INQUIRY_DB not bound — dev fallback, not persisting",
+      );
+      return NextResponse.json({ ok: true });
+    }
+    return NextResponse.json(
+      { ok: false, error: "Could not save inquiry — please try again." },
+      { status: 500 },
     );
-    return NextResponse.json({ ok: true });
   }
 
   try {

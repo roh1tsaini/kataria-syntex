@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/store/auth";
 import {
   ArrowLeft,
   Factory,
@@ -139,6 +140,8 @@ function ReportGrid() {
   );
 }
 
+// Keyed by "workspaceId:reportId[?query]" so one account's rows never leak
+// into another's.
 const reportCache: Record<string, { items: Record<string, unknown>[] }> = {};
 
 const STORAGE_KEY = "reports.hiddenCols";
@@ -152,10 +155,12 @@ function columnLabel(key: string) {
 
 function ReportView({ reportId }: { reportId: string }) {
   const navigate = useNavigate();
+  const workspaceId = useAuth((s) => s.workspace?.id ?? "");
+  const baseKey = `${workspaceId}:${reportId}`;
   const [data, setData] = useState<{ items: Record<string, unknown>[] } | null>(
-    () => reportCache[reportId] ?? null,
+    () => reportCache[baseKey] ?? null,
   );
-  const [loading, setLoading] = useState(() => !reportCache[reportId]);
+  const [loading, setLoading] = useState(() => !reportCache[baseKey]);
   const [loadError, setLoadError] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -180,7 +185,7 @@ function ReportView({ reportId }: { reportId: string }) {
     if (from) params.set("from", from);
     if (to) params.set("to", to);
     const qs = params.toString() ? `?${params.toString()}` : "";
-    const cacheKey = `${reportId}${qs}`;
+    const cacheKey = `${baseKey}${qs}`;
     if (!reportCache[cacheKey]) {
       setLoading(true);
     }
@@ -198,7 +203,7 @@ function ReportView({ reportId }: { reportId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [reportId, from, to]);
+  }, [baseKey, reportId, from, to]);
 
   useEffect(() => {
     void load();

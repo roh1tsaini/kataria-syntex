@@ -1,5 +1,5 @@
 import type { ApiCode } from "@kataria-syntex/shared";
-import { and, count, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import type { Db } from "../lib/db";
 import type { Env } from "../env";
 import { otpCodes } from "../db/schema";
@@ -121,6 +121,22 @@ export async function requestOtp(
 
   const apiKey = env.PINGRAM_API_KEY;
   if (!apiKey) throw new OtpRateError(502, "otp_send_failed");
+
+  // Insert before send: the ceilings count rows, so a paid message must
+  // always land on a counted row, and a failed send must never leave a sent
+  // code that can never verify.
+  const otpId = generateId();
+  await d.insert(otpCodes).values({
+    id: otpId,
+    identifier: ident.value,
+    // Only the hash is stored — a leaked DB file/backup never yields a
+    // usable live code (owner mandate).
+    code: await sha256Hex(code),
+    attempts: 0,
+    expiresAt: toIso(new Date(now.getTime() + OTP_TTL_SECONDS * 1000)),
+    createdAt: nowIso,
+  });
+
   try {
     if (ident.type === "email") {
       await sendOtpEmail(
@@ -140,20 +156,12 @@ export async function requestOtp(
       );
     }
   } catch (err) {
+    // The message never went out — un-charge the budget and drop the row so
+    // no unverifiable code lingers.
+    await d.delete(otpCodes).where(eq(otpCodes.id, otpId));
     console.error("otp_send_failed", err);
     throw new OtpRateError(502, "otp_send_failed");
   }
-
-  await d.insert(otpCodes).values({
-    id: generateId(),
-    identifier: ident.value,
-    // Only the hash is stored — a leaked DB file/backup never yields a
-    // usable live code (owner mandate).
-    code: await sha256Hex(code),
-    attempts: 0,
-    expiresAt: toIso(new Date(now.getTime() + OTP_TTL_SECONDS * 1000)),
-    createdAt: nowIso,
-  });
 }
 
 const ipWindows = new Map<string, Map<string, number[]>>();
@@ -290,9 +298,12 @@ export async function consumeVerifiedOtp(
   if (!row || !row.verifiedAt) return false;
   if (toDate(row.expiresAt).getTime() < Date.now()) return false;
 
-  await d
+  // CAS one-shot: a parallel login racing the same verified code must not
+  // also mint a session.
+  const res = await d
     .update(otpCodes)
     .set({ consumedAt: toIso(new Date()) })
-    .where(eq(otpCodes.id, row.id));
-  return true;
+    .where(and(eq(otpCodes.id, row.id), isNull(otpCodes.consumedAt)))
+    .run();
+  return res.meta.changes === 1;
 }
