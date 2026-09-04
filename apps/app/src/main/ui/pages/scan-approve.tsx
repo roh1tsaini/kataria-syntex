@@ -90,14 +90,14 @@ export function ScanApprovePage() {
       >
         <Card>
           <CardHeader>
-            <div className="grid size-10 place-items-center rounded-lg bg-accent text-accent-foreground">
+            <div className="grid size-10 place-items-center rounded-md bg-accent text-accent-foreground">
               {approvedAs ? (
                 <CheckCircle2 className="size-5" aria-hidden />
               ) : (
                 <ShieldCheck className="size-5" aria-hidden />
               )}
             </div>
-            <CardTitle className="mt-3 text-xl font-bold tracking-[-0.022em]">
+            <CardTitle className="mt-3">
               {approvedAs
                 ? "Approved"
                 : expiredOrUsed
@@ -118,7 +118,7 @@ export function ScanApprovePage() {
               ) : expiredOrUsed ? (
                 "Ask the other device to show a fresh QR code."
               ) : alreadyApproved ? (
-                "This code was already approved. No action needed."
+                "This code was already approved."
               ) : (
                 "You scanned a login QR from another device."
               )}

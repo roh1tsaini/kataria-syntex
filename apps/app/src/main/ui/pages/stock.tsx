@@ -25,6 +25,7 @@ import {
 import { Skeleton } from "@/ui/components/motion";
 import { cn } from "@/ui/lib/cn";
 import { fmtWt } from "@/ui/lib/format";
+import { friendlyError } from "@/ui/lib/errors";
 
 type StockGroup = {
   denierId: string | null;
@@ -57,7 +58,7 @@ export function StockPage() {
   const [loading, setLoading] = useState(
     () => !stockCache[workspaceId]?.[stockType],
   );
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   // Live type mirror — the callback's captured stockType can't guard against
   // itself (it would always compare equal).
@@ -69,16 +70,16 @@ export function StockPage() {
     if (!stockCache[workspaceId]?.[type]) {
       setLoading(true);
     }
-    setLoadError(false);
+    setLoadError(null);
     try {
       const res = await api<{ items: StockGroup[] }>(`/stock?type=${type}`);
       if (type !== stockTypeRef.current) return;
       (stockCache[workspaceId] ??= { raw: null, dyed: null })[type] = res.items;
       setItems(res.items);
-    } catch {
+    } catch (err) {
       if (type === stockTypeRef.current && !stockCache[workspaceId]?.[type]) {
         setItems([]);
-        setLoadError(true);
+        setLoadError(friendlyError(err));
       }
     } finally {
       if (type === stockTypeRef.current) setLoading(false);
@@ -105,33 +106,24 @@ export function StockPage() {
   const Icon = stockType === "raw" ? Warehouse : Layers;
 
   const lotChip = (item: StockGroup) => (
-    <span className="inline-flex whitespace-nowrap rounded-sm bg-muted px-2 py-1 text-[11px] font-semibold">
+    <Badge variant="secondary" className="whitespace-nowrap px-2 py-1">
       {item.lotNo === "Unlabelled" ? "Unlabelled" : `Lot: ${item.lotNo}`}
-    </span>
+    </Badge>
   );
 
   return (
     <AppShell>
       <PageHeader
-        eyebrow={
-          stockType === "raw" ? "Grey yarn inventory" : "Dyed yarn inventory"
-        }
+        eyebrow={stockType === "raw" ? "Grey yarn" : "Dyed yarn"}
         title={stockType === "raw" ? "Raw stock" : "Dyed stock"}
-        description={
-          stockType === "raw"
-            ? "Grey/undyed yarn currently in stock."
-            : "Dyed yarn currently in stock."
-        }
         actions={
           <Card className="w-full sm:w-auto sm:min-w-[220px]">
             <CardContent className="flex items-center justify-between gap-6 p-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  Total
-                </p>
+                <p className="micro-label">Total</p>
                 <p
                   className={cn(
-                    "mt-1 text-2xl font-bold tabular-nums tracking-tight",
+                    "page-title mt-1 tabular-nums",
                     totalKg < 0 && "text-destructive",
                   )}
                 >
@@ -141,7 +133,7 @@ export function StockPage() {
                   </span>
                 </p>
               </div>
-              <span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
                 <Icon className="size-5" aria-hidden />
               </span>
             </CardContent>
@@ -166,7 +158,7 @@ export function StockPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 mr-1 shrink-0 rounded-md"
+                className="mr-1 shrink-0 rounded-md touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >
@@ -193,7 +185,7 @@ export function StockPage() {
 
       <Card className="mt-4 overflow-hidden">
         <div className="hidden sm:flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="micro-label">
             {stockType === "raw" ? "Grey yarn lots" : "Dyed yarn lots"}
           </span>
           <span className="hidden text-xs text-muted-foreground sm:inline">
@@ -201,7 +193,7 @@ export function StockPage() {
           </span>
         </div>
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5 sm:hidden">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="micro-label">
             Lots • {filtered.length > 0 ? `${filtered.length} shown` : "stock"}
           </span>
           <span className="text-[11px] tabular-nums text-muted-foreground">
@@ -216,7 +208,7 @@ export function StockPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Item</th>
                       <th className="py-3.5 pr-3">Lot</th>
                       <th className="py-3.5 pr-3 text-right">Movements</th>
@@ -253,9 +245,7 @@ export function StockPage() {
               </EmptyMedia>
               <EmptyHeader>
                 <EmptyTitle>Couldn't load stock</EmptyTitle>
-                <EmptyDescription>
-                  The server didn't answer. Check your connection and retry.
-                </EmptyDescription>
+                <EmptyDescription>{loadError}</EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
                 <Button variant="outline" onClick={() => void load()}>
@@ -283,7 +273,7 @@ export function StockPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Item</th>
                       <th className="py-3.5 pr-3">Lot</th>
                       <th className="py-3.5 pr-3 text-right">Movements</th>
@@ -345,7 +335,7 @@ export function StockPage() {
                   {filtered.map((item, idx) => (
                     <div
                       key={`${item.denierId ?? "x"}-${item.colorId ?? "x"}-${item.lotNo}-${idx}`}
-                      className="rounded-lg border border-border bg-card p-3.5"
+                      className="rounded-lg border border-border bg-card p-4"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">

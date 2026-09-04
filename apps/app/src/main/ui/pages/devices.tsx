@@ -10,6 +10,14 @@ import { AppShell } from "@/ui/components/app-shell";
 import { Button } from "@/ui/components/ui/button";
 import { Badge } from "@/ui/components/ui/badge";
 import { Card, CardContent } from "@/ui/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/ui/components/ui/empty";
 import { Skeleton } from "@/ui/components/motion";
 import { Stagger, StaggerItem } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
@@ -34,7 +42,7 @@ function DeviceRow({
 }) {
   return (
     <div className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-      <span className="grid size-7 place-items-center rounded-lg bg-muted text-muted-foreground">
+      <span className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground">
         {platformIcon(device.platform)}
       </span>
       <div className="flex-1">
@@ -95,8 +103,7 @@ export function DevicesPage() {
     const device = devices.find((d) => d.id === id);
     const ok = await confirm({
       title: `Revoke ${device?.label ?? "this device"}?`,
-      description:
-        "The session on that device ends immediately. It can sign in again if needed.",
+      description: "That session ends immediately, and it can sign in again.",
       confirmLabel: "Revoke",
       destructive: true,
     });
@@ -104,10 +111,7 @@ export function DevicesPage() {
     setDeletingId(id);
     try {
       await deleteDevice(id);
-      toastSuccess(
-        "Device revoked",
-        "The session on that device has been ended.",
-      );
+      toastSuccess("Device session ended.");
     } catch (err) {
       toastError("Could not revoke device", friendlyError(err));
     } finally {
@@ -118,9 +122,9 @@ export function DevicesPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Account & devices"
+        eyebrow="Account"
         title="Devices"
-        description="Devices with an active session. Revoke any device you do not recognize."
+        description="Revoke a session you do not recognize."
         actions={
           <Button
             onClick={() => setQrApproveOpen(true)}
@@ -135,17 +139,23 @@ export function DevicesPage() {
       <Card className="mt-6">
         <CardContent className="p-4">
           {devices.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center">
-              <div className="grid size-10 place-items-center rounded-lg bg-muted text-muted-foreground">
-                <Smartphone className="size-5" aria-hidden />
-              </div>
-              <p className="mt-3 text-[15px] font-semibold">
-                No devices found.
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Pair a new device to sign in from it.
-              </p>
-            </div>
+            <Empty className="px-4 py-10">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Smartphone aria-hidden />
+                </EmptyMedia>
+                <EmptyTitle>No devices found</EmptyTitle>
+                <EmptyDescription>
+                  Pair a new device to sign in from it.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button onClick={() => setQrApproveOpen(true)}>
+                  <Smartphone aria-hidden />
+                  Approve a device
+                </Button>
+              </EmptyContent>
+            </Empty>
           ) : (
             <Stagger>
               {devices.map((d) => (

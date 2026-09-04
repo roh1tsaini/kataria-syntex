@@ -172,7 +172,6 @@ export function RawMaterialPage() {
       <PageHeader
         eyebrow="Grey yarn intake"
         title="Raw material"
-        description="Grey yarn purchased from suppliers."
         actions={
           can("create_raw_material") ? (
             <Button
@@ -203,7 +202,7 @@ export function RawMaterialPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 mr-1 shrink-0 rounded-md"
+                className="mr-1 shrink-0 rounded-md touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >
@@ -229,15 +228,10 @@ export function RawMaterialPage() {
 
       <Card className="mt-4 overflow-hidden">
         <div className="hidden sm:flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            Purchase entries
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            Grey yarn intake
-          </span>
+          <span className="micro-label">Purchase entries</span>
         </div>
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5 sm:hidden">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="micro-label">
             Entries •{" "}
             {filtered.length > 0 ? `${filtered.length} shown` : "register"}
           </span>
@@ -251,7 +245,7 @@ export function RawMaterialPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Entry</th>
                       <th className="py-3.5 pr-3">Supplier</th>
                       <th className="py-3.5 pr-3">Date</th>
@@ -326,7 +320,7 @@ export function RawMaterialPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Entry</th>
                       <th className="py-3.5 pr-3">Supplier</th>
                       <th className="py-3.5 pr-3">Date</th>
@@ -342,7 +336,7 @@ export function RawMaterialPage() {
                         className="border-b border-border/50 last:border-b-0 transition-colors hover:bg-muted/20"
                       >
                         <td className="py-2.5 pl-5 pr-3">
-                          <span className="font-mono text-[13px] font-bold">
+                          <span className="font-mono text-[13px] font-bold tabular-nums">
                             {item.entryNumber}
                           </span>
                         </td>
@@ -351,12 +345,12 @@ export function RawMaterialPage() {
                             {item.supplierName ?? "Unknown"}
                           </div>
                           {item.supplierChallanNo && (
-                            <div className="truncate text-xs text-muted-foreground">
+                            <div className="truncate text-xs tabular-nums text-muted-foreground">
                               Challan {item.supplierChallanNo}
                             </div>
                           )}
                         </td>
-                        <td className="py-2.5 pr-3 font-medium text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 pr-3 font-medium tabular-nums text-muted-foreground whitespace-nowrap">
                           {fmtDate(item.date)}
                         </td>
                         <td className="py-2.5 pr-5 text-right">
@@ -386,19 +380,19 @@ export function RawMaterialPage() {
                   {filtered.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-lg border border-border bg-card p-3.5"
+                      className="rounded-lg border border-border bg-card p-4"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="font-mono text-sm font-bold tracking-tight">
+                            <span className="font-mono text-sm font-bold tabular-nums tracking-tight">
                               {item.entryNumber}
                             </span>
                             <span className="truncate text-sm font-semibold">
                               {item.supplierName ?? "Unknown"}
                             </span>
                           </div>
-                          <div className="mt-1 text-xs font-medium text-muted-foreground">
+                          <div className="mt-1 text-xs font-medium tabular-nums text-muted-foreground">
                             {fmtDate(item.date)}
                             {item.supplierChallanNo
                               ? ` · Challan ${item.supplierChallanNo}`
@@ -413,7 +407,7 @@ export function RawMaterialPage() {
                               navigate(`/raw-material?edit=${item.id}`)
                             }
                             aria-label={`Edit entry ${item.entryNumber}`}
-                            className="-mr-1 -mt-1 size-8 rounded-md text-muted-foreground hover:text-foreground"
+                            className="-mr-1 -mt-1 rounded-md text-muted-foreground hover:text-foreground touch-44"
                           >
                             <Pencil className="size-4" aria-hidden />
                           </Button>
@@ -579,10 +573,10 @@ function RawMaterialForm({
       };
       if (editId) {
         await api(`/raw-material/${editId}`, { method: "PUT", body });
-        toastSuccess("Entry updated", "Raw material entry has been saved.");
+        toastSuccess("Raw material entry saved.");
       } else {
         await api("/raw-material", { method: "POST", body });
-        toastSuccess("Entry created", "Raw material has been recorded.");
+        toastSuccess("Raw material recorded.");
       }
       setDirty(false);
       onBack();
@@ -664,7 +658,7 @@ function RawMaterialForm({
           <CardHeader className="border-b border-border bg-muted px-4 py-3">
             <CardTitle className="text-[15px]">Details</CardTitle>
             <CardDescription className="text-xs">
-              Record the purchase date. Supplier is optional.
+              Record the purchase date and optional supplier.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5">
@@ -780,7 +774,7 @@ function RawMaterialForm({
               {rows.map((row, idx) => (
                 <div
                   key={row.id}
-                  className="rounded-lg border border-border bg-card p-3.5"
+                  className="rounded-lg border border-border bg-card p-4"
                 >
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-2 text-xs font-bold">
@@ -803,7 +797,7 @@ function RawMaterialForm({
                         size="icon"
                         onClick={() => removeRow(idx)}
                         aria-label={`Remove row ${idx + 1}`}
-                        className="size-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
                       >
                         <Trash2 className="size-4" aria-hidden />
                       </Button>

@@ -249,7 +249,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ inputs.version }}
-          name: Kataria Challan v${{ inputs.version }}
+          name: Kataria Syntex Biz App v${{ inputs.version }}
           body: |
             Direct-download installers — one file per device (no zip):
 

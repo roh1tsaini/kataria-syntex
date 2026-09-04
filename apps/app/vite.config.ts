@@ -36,8 +36,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "theme-init.js"],
       manifest: {
-        name: "Kataria Challan",
-        short_name: "Kataria",
+        name: "Kataria Syntex Biz App",
+        short_name: "KS Biz App",
         description:
           "Sales challans, job work, stock and packing for Kataria Syntex.",
         lang: "en",

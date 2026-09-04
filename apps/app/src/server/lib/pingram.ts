@@ -52,7 +52,7 @@ export function sendOtpSms(
   return post(apiKey, baseUrl, "sms", {
     type: "otp",
     to: phone,
-    message: `${fromName ?? "Kataria Challan"}: your verification code is ${code}. Valid for 5 minutes.`,
+    message: `${fromName ?? "Kataria Syntex Biz App"}: your verification code is ${code}. Valid for 5 minutes.`,
   });
 }
 
@@ -63,7 +63,7 @@ export function sendOtpEmail(
   fromName?: string,
   baseUrl?: string,
 ): Promise<void> {
-  const name = fromName ?? "Kataria Challan";
+  const name = fromName ?? "Kataria Syntex Biz App";
   return post(apiKey, baseUrl, "email", {
     type: "otp",
     to: email,

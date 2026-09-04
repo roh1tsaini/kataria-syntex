@@ -10,10 +10,13 @@ import { cn } from "@/lib/utils";
 export function YarnSwatch({
   colors,
   rowHeight,
+  seed,
   className,
 }: {
   colors: string[];
   rowHeight?: number;
+  /** Stable per-shade seed (e.g. the shade code) for melange threads. */
+  seed?: string | number;
   className?: string;
 }) {
   return (
@@ -21,7 +24,7 @@ export function YarnSwatch({
       aria-hidden="true"
       className={cn("block rounded-chip", className)}
       style={{
-        ...yarnBackground(colors, rowHeight),
+        ...yarnBackground(colors, rowHeight, seed),
         boxShadow:
           "inset 0 1px 1px rgb(255 255 255 / 0.2), inset 0 -1px 2px rgb(10 25 40 / 0.28), inset 3px 0 5px -2px rgb(0 0 0 / 0.24), inset -3px 0 5px -2px rgb(0 0 0 / 0.24)",
       }}

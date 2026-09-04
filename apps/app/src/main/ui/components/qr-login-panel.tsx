@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { StyledQrCode } from "@/ui/components/styled-qr";
 import { useAuth, type QrLoginCode } from "@/store/auth";
 import { friendlyError } from "@/ui/lib/errors";
 import { useCountdown } from "@/ui/hooks/use-countdown";
@@ -94,9 +94,20 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      {/* QR frame — card radius; the SVG paints its own white canvas so scans
-          keep full contrast in dark mode too. */}
-      <div className="relative flex size-48 items-center justify-center rounded-lg border border-border bg-card p-3">
+      {/* Hint — short, plain words */}
+      <p className="max-w-[260px] text-center text-xs leading-relaxed text-muted-foreground">
+        {error
+          ? "No connection. Try again."
+          : expired
+            ? "Code expired. Refresh for a new one."
+            : polling === "not_found" || polling === "expired"
+              ? "Code no longer valid. Refresh."
+              : "Scan with a signed-in device."}
+      </p>
+      {/* QR frame — white interior merges with the drawing's white canvas so
+          the quiet zone reads as one surface (Telegram-style); the hairline
+          border still defines the card edge in both themes. */}
+      <div className="relative flex size-48 items-center justify-center rounded-lg border border-border bg-white p-2">
         {error ? (
           <div className="flex size-full flex-col items-center justify-center gap-2.5 p-2 text-center">
             <AlertCircle className="size-5 text-destructive" aria-hidden />
@@ -114,13 +125,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
           </div>
         ) : pairing ? (
           <>
-            <QRCodeSVG
-              value={pairing.payload}
-              size={168}
-              marginSize={0}
-              className="size-full rounded-sm"
-              style={{ width: "100%", height: "100%" }}
-            />
+            <StyledQrCode data={pairing.payload} />
             {expired && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 rounded-lg bg-card/95 p-4 text-center">
                 <p className="text-xs font-semibold text-foreground">
@@ -148,11 +153,11 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
       {!error && (
         <div className="flex flex-col items-center gap-1">
           {pairing ? (
-            <code className="rounded-sm border border-border bg-muted/70 px-2.5 py-1 font-mono text-xs font-bold tracking-widest text-primary">
+            <code className="rounded-md border border-border bg-muted/70 px-3.5 py-1.5 font-mono text-[15px] font-bold tracking-[0.18em] text-primary">
               {pairing.code}
             </code>
           ) : (
-            <Skeleton className="h-6 w-24 rounded-sm" />
+            <Skeleton className="h-9 w-44 rounded-md" />
           )}
 
           <p
@@ -163,7 +168,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
                 ? "Code expired"
                 : `Code expires in ${mm} minutes ${ss} seconds`
             }
-            className="text-[11px] tabular-nums text-muted-foreground"
+            className="text-[13px] tabular-nums text-muted-foreground"
           >
             {expired
               ? "Code expired"
@@ -173,17 +178,6 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
           </p>
         </div>
       )}
-
-      {/* Subtext */}
-      <p className="max-w-[260px] text-center text-xs leading-relaxed text-muted-foreground">
-        {error
-          ? "Request a fresh QR code once connectivity is restored."
-          : expired
-            ? "Refresh the code to continue."
-            : polling === "not_found" || polling === "expired"
-              ? "This code is no longer valid. Refresh to get a new one."
-              : "Scan with any logged-in device to sign into this device instantly."}
-      </p>
     </div>
   );
 }

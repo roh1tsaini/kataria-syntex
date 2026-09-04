@@ -146,7 +146,7 @@ function ColorFormDialog({
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <FieldGroup className="gap-4">
-            <Field>
+            <Field data-invalid={!!error}>
               <FieldLabel htmlFor="color-name">Name</FieldLabel>
               <Input
                 id="color-name"
@@ -157,9 +157,11 @@ function ColorFormDialog({
                   setDraft((d) => ({ ...d, name: e.target.value }))
                 }
                 placeholder="Color name"
+                aria-invalid={!!error}
+                aria-describedby={error ? "color-error" : undefined}
               />
             </Field>
-            <Field>
+            <Field data-invalid={!!error}>
               <FieldLabel htmlFor="color-code">Code</FieldLabel>
               <Input
                 id="color-code"
@@ -169,15 +171,21 @@ function ColorFormDialog({
                   setDraft((d) => ({ ...d, code: e.target.value }))
                 }
                 placeholder="Short code, e.g. NV"
+                aria-invalid={!!error}
+                aria-describedby={error ? "color-error" : undefined}
               />
             </Field>
-            <Field>
+            <Field data-invalid={!!error}>
               <FieldLabel htmlFor="color-stocktype">Stock type</FieldLabel>
               <Select
                 value={draft.stockType}
                 onValueChange={(v) => setDraft((d) => ({ ...d, stockType: v }))}
               >
-                <SelectTrigger id="color-stocktype">
+                <SelectTrigger
+                  id="color-stocktype"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "color-error" : undefined}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,7 +194,7 @@ function ColorFormDialog({
                 </SelectContent>
               </Select>
             </Field>
-            {error && <FieldError>{error}</FieldError>}
+            {error && <FieldError id="color-error">{error}</FieldError>}
           </FieldGroup>
           <div className="flex justify-end gap-2 border-t border-border pt-4">
             <Button
@@ -374,10 +382,14 @@ function RecipeEditorDialog({
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-5">
             {!editing && (
-              <Field>
+              <Field data-invalid={!!error}>
                 <FieldLabel htmlFor="recipe-denier">Denier</FieldLabel>
                 <Select value={denierId} onValueChange={setDenierId}>
-                  <SelectTrigger id="recipe-denier">
+                  <SelectTrigger
+                    id="recipe-denier"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? "recipe-error" : undefined}
+                  >
                     <SelectValue placeholder="Pick a denier" />
                   </SelectTrigger>
                   <SelectContent>
@@ -525,7 +537,7 @@ function RecipeEditorDialog({
               </div>
             </section>
 
-            <Field>
+            <Field data-invalid={!!error}>
               <FieldLabel htmlFor="recipe-notes">Notes</FieldLabel>
               <Textarea
                 id="recipe-notes"
@@ -534,10 +546,12 @@ function RecipeEditorDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Corrections, lab-dip results, remarks…"
+                aria-invalid={!!error}
+                aria-describedby={error ? "recipe-error" : undefined}
               />
             </Field>
 
-            {error && <FieldError>{error}</FieldError>}
+            {error && <FieldError id="recipe-error">{error}</FieldError>}
 
             <div className="flex justify-end gap-2 border-t border-border pt-4">
               <Button
@@ -622,8 +636,7 @@ export function ColorsPage() {
   const onDeleteColor = async (color: Color) => {
     const ok = await confirm({
       title: `Delete "${color.name}"?`,
-      description:
-        "This cannot be undone. Existing challans keep their own copy of the name.",
+      description: "This cannot be undone, but challans keep their own copy.",
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -747,7 +760,7 @@ export function ColorsPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedColorId(color.id)}
-                      className="min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="min-h-11 min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       aria-pressed={selectedColor?.id === color.id}
                     >
                       <span className="block truncate text-sm font-semibold">
@@ -794,7 +807,7 @@ export function ColorsPage() {
         {/* Recipes for the selected color */}
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-            <span className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+            <span className="truncate micro-label">
               {selectedColor ? `Recipes — ${selectedColor.name}` : "Recipes"}
             </span>
             {selectedColor && canManage && (
@@ -881,7 +894,7 @@ export function ColorsPage() {
                     <button
                       type="button"
                       onClick={() => setDetailRecipeId(recipe.id)}
-                      className="min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="min-h-11 min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       aria-label={`Open recipe for ${recipe.denierName}`}
                     >
                       <span className="block truncate text-sm font-semibold">

@@ -72,7 +72,7 @@ function ConfirmDialog({
       >
         <div className="flex items-start gap-3">
           <div
-            className={`grid size-10 shrink-0 place-items-center rounded-lg ${
+            className={`grid size-10 shrink-0 place-items-center rounded-md ${
               options.destructive
                 ? "bg-destructive/10 text-destructive"
                 : "bg-primary/10 text-primary"

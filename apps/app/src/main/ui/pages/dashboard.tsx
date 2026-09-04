@@ -24,12 +24,21 @@ import { useAuth } from "@/store/auth";
 import { useChallans, type Challan } from "@/store/challans";
 import { api } from "@/lib/api";
 import { toastError } from "@/store/toast";
+import { friendlyError } from "@/ui/lib/errors";
 
 import { PageHeader } from "@/ui/components/page-header";
 import { AppShell } from "@/ui/components/app-shell";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import { Badge } from "@/ui/components/ui/badge";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/ui/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/ui/components/ui/toggle-group";
 import {
   CountUp,
@@ -102,11 +111,11 @@ function VolumeChart({
   return (
     <div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <div className="text-2xl font-bold tracking-[-0.03em] tabular-nums">
+        <div className="page-title tabular-nums">
           {fmtWt(total)}{" "}
           <span className="text-sm font-medium text-muted-foreground">kg</span>
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs tabular-nums text-muted-foreground">
           {fmtWt(total / Math.max(buckets.length, 1))} kg avg per period
         </div>
       </div>
@@ -125,9 +134,9 @@ function VolumeChart({
                   transform: `scaleY(${Math.max(b.netWt / max, 0.02)})`,
                 }}
                 transition={{
-                  duration: reduceMotion ? 0 : 0.22,
+                  duration: reduceMotion ? 0 : 0.2,
                   ease: EASE_OUT,
-                  delay: reduceMotion ? 0 : i * 0.02,
+                  delay: reduceMotion ? 0 : Math.min(i, 4) * 0.04,
                 }}
                 style={{ transformOrigin: "bottom" }}
                 className="flex-1 origin-bottom self-stretch rounded-t-md bg-primary/70 transition-colors [@media(hover:hover)]:hover:bg-primary"
@@ -139,7 +148,7 @@ function VolumeChart({
             {buckets.map((b, i) => (
               <span
                 key={i}
-                className="flex-1 text-center text-[10px] font-medium text-muted-foreground"
+                className="flex-1 text-center text-[11px] font-medium text-muted-foreground"
               >
                 {b.label}
               </span>
@@ -147,9 +156,17 @@ function VolumeChart({
           </div>
         </>
       ) : (
-        <div className="mt-4 grid h-40 place-items-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
-          No dispatch in this period.
-        </div>
+        <Empty className="mt-4 px-4 py-10">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Package aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>No dispatch in this period</EmptyTitle>
+            <EmptyDescription>
+              Outward challans will show up here.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   );
@@ -168,9 +185,15 @@ function CustomerDonut({ list }: { list: Challan[] }) {
   const total = list.reduce((s, c) => s + c.totalNetWt, 0);
   if (total <= 0) {
     return (
-      <div className="grid h-40 place-items-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
-        No sales in this period.
-      </div>
+      <Empty className="px-4 py-10">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Users aria-hidden />
+          </EmptyMedia>
+          <EmptyTitle>No sales in this period</EmptyTitle>
+          <EmptyDescription>Sales challans will show up here.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
   const byName = new Map<string, number>();
@@ -199,12 +222,10 @@ function CustomerDonut({ list }: { list: Challan[] }) {
       >
         <div className="absolute inset-3 grid place-items-center rounded-full bg-card">
           <div className="text-center">
-            <div className="text-base font-bold leading-none tracking-[-0.03em] tabular-nums">
+            <div className="text-base font-semibold leading-none tracking-tight tabular-nums">
               {fmtWt(total)}
             </div>
-            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              kg Total
-            </div>
+            <div className="mt-1 micro-label">kg Total</div>
           </div>
         </div>
       </div>
@@ -238,7 +259,6 @@ function StatCard({
   sub,
   delta,
   loading,
-  tint,
 }: {
   icon: typeof Box;
   label: string;
@@ -247,19 +267,13 @@ function StatCard({
   sub?: string;
   delta?: number | null;
   loading?: boolean;
-  tint?: string;
 }) {
   return (
     <Card className="group h-full">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <span
-            className={cn(
-              "grid size-8 place-items-center rounded-md bg-muted text-muted-foreground",
-              tint,
-            )}
-          >
-            <Icon className="size-4" aria-hidden />
+          <span className="grid size-10 place-items-center rounded-lg bg-muted text-muted-foreground">
+            <Icon className="size-5" aria-hidden />
           </span>
           {delta != null && (
             <span
@@ -287,7 +301,7 @@ function StatCard({
         {loading ? (
           <Skeleton className="mt-2 h-7 w-24" />
         ) : (
-          <p className="mt-1 text-[22px] font-semibold leading-none tracking-tight tabular-nums">
+          <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight tabular-nums">
             <CountUp target={value} format={format} />
           </p>
         )}
@@ -353,8 +367,8 @@ function FlowCards() {
                 }
               >
                 <div className="flex items-center gap-1.5">
-                  <div className="grid size-6 place-items-center rounded-md bg-muted text-muted-foreground">
-                    <Icon className="size-3.5" />
+                  <div className="grid size-10 place-items-center rounded-lg bg-muted text-muted-foreground">
+                    <Icon className="size-5" aria-hidden />
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {card.label}
@@ -448,9 +462,9 @@ export function Dashboard() {
         setSales(res.sales);
         setOutward(res.outward);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled)
-          toastError("Could not load dashboard", "Try refreshing the page.");
+          toastError("Could not load dashboard", friendlyError(err));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -530,7 +544,7 @@ export function Dashboard() {
       <Reveal>
         <PageHeader
           eyebrow={todayLabel}
-          title={`Welcome back, ${firstName}`}
+          title="Overview"
           description={`${company?.name ?? workspace?.name ?? "—"} · Financial year ${currentFy?.label ?? "—"}`}
           actions={
             <>
@@ -566,19 +580,19 @@ export function Dashboard() {
           >
             <ToggleGroupItem
               value="fy"
-              className="min-w-16 px-3 text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+              className="min-w-16 px-3 text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-soft"
             >
               This FY
             </ToggleGroupItem>
             <ToggleGroupItem
               value="30d"
-              className="min-w-16 px-3 text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+              className="min-w-16 px-3 text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-soft"
             >
               Last 30 days
             </ToggleGroupItem>
             <ToggleGroupItem
               value="all"
-              className="min-w-16 px-3 text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+              className="min-w-16 px-3 text-muted-foreground data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-soft"
             >
               All time
             </ToggleGroupItem>
@@ -639,9 +653,7 @@ export function Dashboard() {
       <div className="mt-6 grid gap-3 sm:gap-4 lg:grid-cols-2">
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 bg-muted/35 px-4 py-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Dispatch volume over time
-            </span>
+            <span className="micro-label">Dispatch volume over time</span>
             <span className="text-xs text-muted-foreground">Kilograms</span>
           </div>
           <CardContent className="p-4">
@@ -654,9 +666,7 @@ export function Dashboard() {
         </Card>
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 bg-muted/35 px-4 py-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Dispatch by customer
-            </span>
+            <span className="micro-label">Dispatch by customer</span>
             <Link
               to="/masters?tab=customers"
               className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
@@ -679,9 +689,7 @@ export function Dashboard() {
         {/* Recent challans */}
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 bg-muted/35 px-4 py-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Recent challans
-            </span>
+            <span className="micro-label">Recent challans</span>
             <Link
               to="/challans"
               className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
@@ -705,23 +713,27 @@ export function Dashboard() {
                 ))}
               </div>
             ) : recent.length === 0 ? (
-              <div className="flex flex-col items-center py-12 text-center">
-                <div className="grid size-10 place-items-center rounded-lg bg-muted text-muted-foreground">
-                  <FileText className="size-5" aria-hidden />
-                </div>
-                <p className="mt-3 text-[15px] font-semibold">
-                  No challans yet for FY {currentFy?.label}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Create your first challan to see it here.
-                </p>
-                <Button asChild className="mt-4">
-                  <Link to="/challans/new">
-                    Create challan
-                    <ArrowUpRight className="size-3.5" aria-hidden />
-                  </Link>
-                </Button>
-              </div>
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <FileText aria-hidden />
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    No challans yet for FY {currentFy?.label}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    Create your first challan to see it here.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button asChild>
+                    <Link to="/challans/new">
+                      Create challan
+                      <ArrowUpRight className="size-3.5" aria-hidden />
+                    </Link>
+                  </Button>
+                </EmptyContent>
+              </Empty>
             ) : (
               <div>
                 {recent.map((r) => (
@@ -746,7 +758,7 @@ export function Dashboard() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate font-mono text-[13px] font-bold text-primary">
+                        <span className="truncate font-mono text-[13px] font-bold tabular-nums text-primary">
                           {r.number}
                         </span>
                         <TypeBadge type={r.type} />
@@ -780,9 +792,7 @@ export function Dashboard() {
         {/* Quick links */}
         <Card className="overflow-hidden h-fit">
           <div className="border-b border-border/70 bg-muted/35 px-4 py-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Quick links
-            </span>
+            <span className="micro-label">Quick links</span>
           </div>
           <CardContent className="pt-4">
             <Stagger stagger={0.05} delay={0}>

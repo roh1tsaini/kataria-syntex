@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { threadRows } from "@/components/shade/thread";
 
 /**
  * Wound-yarn swatch texture — the physical shade card, translated to CSS.
@@ -7,9 +8,10 @@ import type { CSSProperties } from "react";
  * shaded like a cylinder lit from above (highlight on the crown, body in the
  * middle, and a press-shadow where the strand is squeezed against the next
  * one), then finished with a fine ply twist and a fiber-grain overlay so the
- * field reads as thread, not paint. Multi-color (melange) yarns cycle their
- * palette one strand at a time — the way the physical card wraps a single
- * thread that carries several colors.
+ * field reads as thread, not paint. Multi-color (melange) yarn is one
+ * continuous thread carrying its palette in order along its length, so each
+ * row is split into color segments along the row (thread.ts) — the same
+ * thread the cone winds, seeded stable per shade.
  */
 
 /** Shared fiber-grain tile: desaturated fractal noise, blended as overlay. */
@@ -64,38 +66,98 @@ function shift(hex: string, amount: number): string {
  */
 const ROW_JITTER = [0.05, -0.03, 0.015, -0.055, 0.03, -0.02, 0.04, -0.015];
 
-export function yarnBackground(colors: string[], rowHeight = 9): CSSProperties {
+/** Cylinder profile within one strand: crown highlight → pressed groove. */
+const PROFILE: Array<[number, number]> = [
+  [0, 0.3],
+  [0.1, 0.22],
+  [0.36, 0],
+  [0.62, -0.1],
+  [0.85, -0.26],
+  [1, -0.38],
+];
+
+/* Melange thread tile — bigger than any swatch instance, so it paints
+   edge to edge without repeating mid-swatch. */
+const TILE_W = 240;
+const TILE_ROWS = 28;
+
+export function yarnBackground(
+  colors: string[],
+  rowHeight = 9,
+  seed?: string | number,
+): CSSProperties {
   const list = colors.length ? colors : ["#ffffff"];
 
-  // One strand of cylinder shading per row. Single-color shades cycle
-  // through 8 jittered rows so the repeat is organic; multi-color yarns
-  // already vary by wrapping their palette 1, 2, 3, … N.
-  const rows =
-    list.length === 1
-      ? ROW_JITTER.map((jitter) => ({ color: list[0], jitter }))
-      : list.map((color, i) => ({
-          color,
-          jitter: ROW_JITTER[i % ROW_JITTER.length] * 0.6,
-        }));
+  // Single-color shades: one strand of baked cylinder shading per row,
+  // cycling through 8 jittered rows so the repeat is organic.
+  if (list.length === 1) {
+    const rows = ROW_JITTER.map((jitter) => ({ color: list[0], jitter }));
 
-  const stops: string[] = [];
-  rows.forEach(({ color, jitter }, row) => {
-    const at = (fraction: number) =>
-      `${(row * rowHeight + fraction * rowHeight).toFixed(2)}px`;
-    stops.push(
-      `${shift(color, 0.3 + jitter)} ${at(0)}`,
-      `${shift(color, 0.22 + jitter)} ${at(0.1)}`,
-      `${shift(color, jitter)} ${at(0.36)}`,
-      `${shift(color, -0.1 + jitter)} ${at(0.62)}`,
-      `${shift(color, -0.26 + jitter)} ${at(0.85)}`,
-      `${shift(color, -0.38 + jitter)} ${at(1)}`,
-    );
+    const stops: string[] = [];
+    rows.forEach(({ color, jitter }, row) => {
+      const at = (fraction: number) =>
+        `${(row * rowHeight + fraction * rowHeight).toFixed(2)}px`;
+      PROFILE.forEach(([fraction, amount]) => {
+        stops.push(`${shift(color, amount + jitter)} ${at(fraction)}`);
+      });
+    });
+    const strands = `repeating-linear-gradient(180deg, ${stops.join(", ")})`;
+
+    return {
+      backgroundColor: list[0],
+      backgroundImage: `${GRAIN}, ${DRIFT}, ${TWIST}, ${strands}`,
+      backgroundBlendMode: "overlay, normal, normal, normal",
+    };
+  }
+
+  // Melange: one continuous thread walked across every row (thread.ts) —
+  // palette-ordered segments along the row, seeded stable per shade. Flat
+  // hues go in the tile; the cylinder shading rides on top as white/black
+  // light so it works over varying colors.
+  const rows = threadRows({
+    paletteLength: list.length,
+    rowWidths: Array.from({ length: TILE_ROWS }, () => TILE_W),
+    baseLen: 6 * rowHeight,
+    seed: seed ?? list.join("|"),
   });
-  const strands = `repeating-linear-gradient(180deg, ${stops.join(", ")})`;
+  const tileH = TILE_ROWS * rowHeight;
+  const rects: string[] = [];
+  rows.forEach((segments, row) => {
+    const y = (row * rowHeight).toFixed(2);
+    const h = (rowHeight + 0.5).toFixed(2);
+    segments.forEach((segment) => {
+      rects.push(
+        `<rect x='${segment.x0.toFixed(2)}' y='${y}' width='${(segment.x1 - segment.x0 + 0.5).toFixed(2)}' height='${h}' fill='${list[segment.colorIndex % list.length]}'/>`,
+      );
+    });
+  });
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${TILE_W}' height='${tileH.toFixed(2)}'>` +
+    `${rects.join("")}</svg>`;
+  const tile = `url("data:image/svg+xml,${svg
+    .replace(/</g, "%3C")
+    .replace(/>/g, "%3E")
+    .replace(/#/g, "%23")}")`;
+
+  // Strand shading overlay — the same profile + damped jitter the cone
+  // uses, as repeating white/black light over the flat thread colors.
+  const shadeStops: string[] = [];
+  for (let row = 0; row < ROW_JITTER.length; row += 1) {
+    const jitter = ROW_JITTER[row] * 0.6;
+    PROFILE.forEach(([fraction, amount]) => {
+      const v = amount + jitter;
+      const light = v >= 0 ? "255 255 255" : "0 0 0";
+      shadeStops.push(
+        `rgb(${light} / ${Math.abs(v).toFixed(3)}) ${(row * rowHeight + fraction * rowHeight).toFixed(2)}px`,
+      );
+    });
+  }
+  const shading = `repeating-linear-gradient(180deg, ${shadeStops.join(", ")})`;
 
   return {
     backgroundColor: list[0],
-    backgroundImage: `${GRAIN}, ${DRIFT}, ${TWIST}, ${strands}`,
-    backgroundBlendMode: "overlay, normal, normal, normal",
+    backgroundImage: `${GRAIN}, ${DRIFT}, ${TWIST}, ${shading}, ${tile}`,
+    backgroundBlendMode: "overlay, normal, normal, normal, normal",
+    backgroundRepeat: "repeat, repeat, repeat, repeat, no-repeat",
   };
 }

@@ -20,6 +20,7 @@ workspace "while you're in there".
 - Every sentence earns its place. Code > prose. Lists > paragraphs.
 - Plain English everywhere: code, comments, copy, docs.
 - **UI copy & copywriting:** Real software only — zero marketing slop, promotional fluff, or conversational padding. Explain in 1–2 lines max, direct and to the point with no overexplanation.
+- **Visual choices are shown, never just described.** Whenever suggesting options or asking the owner to pick between visual variants (rings, colors, spacing, layouts), build a small standalone compare page (e.g. `apps/app/public/<topic>-compare.html` — all variants visible at once, real `:focus`/`:hover` states, dark/light toggle) and surface it via SendUserFile `render`. Delete the file once the owner decides.
 
 ## 2. Repo map
 
@@ -54,6 +55,10 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   for the app UI.** Read it BEFORE any apps/app UI change. Apple/macOS/iOS
   consistency: one radius ladder, one control-height ladder, one spacing grid,
   one motion grammar. Never invent values it doesn't define — extend it first.
+- **Living doc — always update it.** AFTER every apps/app UI change, update
+  `apps/app/design.md` in the same change (new values/patterns first, then
+  code; rewrite any section the change made untrue). The doc always describes
+  the current state — that is how the app stays consistent.
 - **Apple × Luma × shadcn/ui** — minimal, generous whitespace, soft
   borders/shadows, no visual noise. Tokens live in
   `apps/app/src/main/ui/globals.css`; extend tokens there, never fork

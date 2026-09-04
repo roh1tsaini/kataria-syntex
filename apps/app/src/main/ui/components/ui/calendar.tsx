@@ -127,7 +127,7 @@ export function Calendar({
         <Button
           variant="ghost"
           size="icon"
-          className="size-10 sm:size-8 rounded-lg text-muted-foreground hover:text-foreground"
+          className="size-11 sm:size-10 rounded-lg text-muted-foreground hover:text-foreground"
           onClick={prevMonth}
           aria-label="Previous month"
         >
@@ -141,7 +141,7 @@ export function Calendar({
         <Button
           variant="ghost"
           size="icon"
-          className="size-10 sm:size-8 rounded-lg text-muted-foreground hover:text-foreground"
+          className="size-11 sm:size-10 rounded-lg text-muted-foreground hover:text-foreground"
           onClick={nextMonth}
           aria-label="Next month"
         >
@@ -180,7 +180,7 @@ export function Calendar({
                 }
               }}
               className={cn(
-                "relative flex size-10 sm:size-8 items-center justify-center rounded-md text-xs transition-colors outline-none",
+                "relative flex size-11 sm:size-10 items-center justify-center rounded-md text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 !isCurrentMonth && "text-muted-foreground/40",
                 isCurrentMonth &&
                   !isSelected &&
@@ -203,7 +203,7 @@ export function Calendar({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+          className="px-2 text-xs text-muted-foreground hover:text-foreground"
           onClick={() => {
             const today = formatDateStr(new Date());
             setViewDate(new Date());
@@ -216,7 +216,7 @@ export function Calendar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="px-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => onChange?.("")}
           >
             Clear

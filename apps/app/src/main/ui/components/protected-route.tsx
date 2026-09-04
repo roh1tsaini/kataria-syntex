@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { useAuth, usePermission, type Permission } from "@/store/auth";
+import { EASE_OUT } from "@/ui/lib/motion";
 
 function Splash() {
   const reduceMotion = useReducedMotion();
@@ -13,8 +14,10 @@ function Splash() {
           scale: reduceMotion ? 1 : 0.96,
         }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-        className="relative grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground"
+        transition={
+          reduceMotion ? { duration: 0 } : { duration: 0.22, ease: EASE_OUT }
+        }
+        className="relative grid size-14 place-items-center rounded-xl bg-primary text-primary-foreground"
       >
         <span
           className="text-2xl font-extrabold leading-none tracking-tight"
@@ -22,7 +25,7 @@ function Splash() {
         >
           K
         </span>
-        <span className="sr-only">Loading Kataria Challan</span>
+        <span className="sr-only">Loading Kataria Syntex Biz App</span>
       </motion.div>
     </div>
   );

@@ -40,6 +40,7 @@ import {
 import { Reveal, Skeleton } from "@/ui/components/motion";
 import { cn } from "@/ui/lib/cn";
 import { fmtBoxes, fmtWt } from "@/ui/lib/format";
+import { friendlyError } from "@/ui/lib/errors";
 
 const REPORTS: {
   id: string;
@@ -106,7 +107,7 @@ function ReportGrid() {
       <PageHeader
         eyebrow="Insights"
         title="Reports"
-        description="Pick a report to view its details."
+        description="Totals by period, party and stock."
       />
 
       <Reveal className="mt-6">
@@ -117,8 +118,8 @@ function ReportGrid() {
               to={`/reports/${r.id}`}
               className="data-card group flex h-full items-start gap-3 p-4"
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground">
-                <r.icon className="size-4" aria-hidden />
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                <r.icon className="size-5" aria-hidden />
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-semibold tracking-tight">
@@ -161,7 +162,7 @@ function ReportView({ reportId }: { reportId: string }) {
     () => reportCache[baseKey] ?? null,
   );
   const [loading, setLoading] = useState(() => !reportCache[baseKey]);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [hiddenCols, setHiddenCols] = useState<Record<string, boolean>>(() => {
@@ -189,17 +190,17 @@ function ReportView({ reportId }: { reportId: string }) {
     if (!reportCache[cacheKey]) {
       setLoading(true);
     }
-    setLoadError(false);
+    setLoadError(null);
     try {
       const res = await api<{ items: Record<string, unknown>[] }>(
         `/reports/${reportId}${qs}`,
       );
       reportCache[cacheKey] = res;
       setData(res);
-    } catch {
+    } catch (err) {
       // Clear stale rows so a failure never reads as "no data".
       setData(null);
-      setLoadError(true);
+      setLoadError(friendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -296,9 +297,7 @@ function ReportView({ reportId }: { reportId: string }) {
       {loading ? (
         <Card className="mt-4 overflow-hidden">
           <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              {title}
-            </span>
+            <span className="micro-label">{title}</span>
             <Skeleton className="h-5 w-16 rounded-sm" />
           </div>
           <div aria-hidden className="divide-y divide-border/60 px-4 sm:px-5">
@@ -323,9 +322,7 @@ function ReportView({ reportId }: { reportId: string }) {
             </EmptyMedia>
             <EmptyHeader>
               <EmptyTitle>Could not load the report.</EmptyTitle>
-              <EmptyDescription>
-                Check your connection and try again.
-              </EmptyDescription>
+              <EmptyDescription>{loadError}</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <Button variant="outline" onClick={() => void load()}>
@@ -352,9 +349,7 @@ function ReportView({ reportId }: { reportId: string }) {
       ) : (
         <Card className="mt-4 overflow-hidden">
           <div className="flex items-center justify-between gap-2 border-b border-border bg-muted px-4 py-2.5">
-            <span className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              {title}
-            </span>
+            <span className="truncate micro-label">{title}</span>
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
@@ -368,16 +363,14 @@ function ReportView({ reportId }: { reportId: string }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-8 rounded-md text-muted-foreground hover:text-foreground"
+                    className="rounded-md text-muted-foreground hover:text-foreground touch-44"
                     aria-label="Toggle columns"
                   >
                     <SlidersHorizontal aria-hidden />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-52">
-                  <p className="px-2 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                    Show columns
-                  </p>
+                  <p className="px-2 pb-1.5 pt-1 micro-label">Show columns</p>
                   <div className="flex flex-col gap-0.5">
                     {columns.map((key) => {
                       const visible = !hiddenCols[key];
@@ -386,7 +379,16 @@ function ReportView({ reportId }: { reportId: string }) {
                       return (
                         <label
                           key={key}
-                          className="flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors [@media(hover:hover)]:hover:bg-muted"
+                          className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors [@media(hover:hover)]:hover:bg-muted"
+                          onClick={(e) => {
+                            // The custom Checkbox is a button, not a native
+                            // input — row taps must toggle it, button taps
+                            // must not double-fire.
+                            if ((e.target as HTMLElement).closest("button")) {
+                              return;
+                            }
+                            toggleHidden(key);
+                          }}
                         >
                           <Checkbox
                             checked={visible}
@@ -407,7 +409,7 @@ function ReportView({ reportId }: { reportId: string }) {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  <tr className="border-b border-border micro-label">
                     {visibleColumns.map((key, i) => (
                       <th
                         key={key}

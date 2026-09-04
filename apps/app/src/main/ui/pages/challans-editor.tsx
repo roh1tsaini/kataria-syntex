@@ -178,8 +178,7 @@ function PackingImportDialog({
         <DialogHeader>
           <DialogTitle>Import from Packing</DialogTitle>
           <DialogDescription>
-            Select packed items to add as challan rows. Only unlocked
-            (non-imported) items are shown.
+            Select unlocked packed items to add as challan rows.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
@@ -324,11 +323,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
   useEffect(() => {
     if (isEdit && id && !prefilled.current)
       void load(id).catch((err) => {
-        setError(
-          err instanceof Error
-            ? friendlyError(err)
-            : "Could not load the challan.",
-        );
+        setError(friendlyError(err, "Could not load the challan."));
       });
   }, [isEdit, id, load]);
 
@@ -534,7 +529,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
       setDirty(false);
       navigate(`${kind.listPath}/${saved.id}`);
     } catch (err) {
-      setError(friendlyError(err, "Something went wrong."));
+      setError(friendlyError(err));
       setSaving(false);
     }
   };
@@ -591,7 +586,10 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
       />
 
       {error && (
-        <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
+        >
           {error}
         </p>
       )}
@@ -697,7 +695,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                 <p className="page-eyebrow">Step 2</p>
                 <CardTitle className="mt-1 text-[15px]">Line items</CardTitle>
                 <CardDescription className="text-xs">
-                  One row per box. Weights, yarn & lot reference.
+                  One row per box with weights, yarn and lot.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -725,7 +723,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
             <div className="lg:overflow-x-auto">
               <div className="lg:min-w-[1080px]">
                 {/* Desktop header — full width now that Step1/Step2 are stacked */}
-                <div className="hidden lg:grid grid-cols-[48px_96px_76px_96px_96px_96px_76px_minmax(0,1fr)_minmax(0,1fr)_96px_minmax(0,1fr)_36px] gap-2 border-x border-transparent px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <div className="hidden lg:grid grid-cols-[48px_96px_76px_96px_96px_96px_76px_minmax(0,1fr)_minmax(0,1fr)_96px_minmax(0,1fr)_36px] gap-2 border-x border-transparent px-2 pb-2 micro-label">
                   <span className="text-center">Sr.</span>
                   <span>
                     {kind.type === "outward" ? "Sack no." : "Box no."}
@@ -756,7 +754,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                             : { opacity: 0, y: -8, scale: 0.98 }
                         }
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0 }}
+                        exit={{
+                          opacity: 0,
+                          y: -8,
+                          scale: 0.98,
+                          transition: reduceMotion
+                            ? { duration: 0 }
+                            : { duration: 0.15, ease: EASE },
+                        }}
                         transition={
                           reduceMotion
                             ? { duration: 0 }
@@ -764,7 +769,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                         }
                       >
                         {/* Mobile / Tablet card (<lg) */}
-                        <div className="lg:hidden rounded-lg border border-border bg-card p-3.5">
+                        <div className="lg:hidden rounded-lg border border-border bg-card p-4">
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-2 text-xs font-bold">
                               <span className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground text-xs">
@@ -785,7 +790,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               onClick={() => removeRow(i)}
                               disabled={rows.length <= 1}
                               aria-label={`Remove row ${i + 1}`}
-                              className="size-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                              className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 touch-44"
                             >
                               <X className="size-4" aria-hidden />
                             </Button>
@@ -793,12 +798,16 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
 
                           <div className="mt-3 grid grid-cols-2 gap-2.5">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-boxNo`}
+                                className="text-[11px] font-semibold"
+                              >
                                 {kind.type === "outward"
                                   ? "Sack no."
                                   : "Box no."}
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-boxNo`}
                                 value={r.boxNo}
                                 placeholder={
                                   kind.type === "outward" ? "S-001" : "B-001"
@@ -812,10 +821,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-cheese`}
+                                className="text-[11px] font-semibold"
+                              >
                                 {kind.type === "outward" ? "Cones" : "Cheese"}
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-cheese`}
                                 type="number"
                                 min={0}
                                 inputMode="numeric"
@@ -830,10 +843,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-grossWt`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Gross wt.
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-grossWt`}
                                 type="number"
                                 min={0}
                                 step="0.001"
@@ -851,10 +868,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-tareWt`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Tare wt.
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-tareWt`}
                                 type="number"
                                 min={0}
                                 step="0.001"
@@ -870,10 +891,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-netWt`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Net wt. *
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-netWt`}
                                 type="number"
                                 min={0}
                                 step="0.001"
@@ -889,10 +914,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-boxes`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Boxes
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-boxes`}
                                 type="number"
                                 min={1}
                                 step={1}
@@ -911,7 +940,10 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
 
                           <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-denier`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Denier *
                               </FieldLabel>
                               <Select
@@ -921,6 +953,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                                 }
                               >
                                 <SelectTrigger
+                                  id={`row-${i}-denier`}
                                   ref={setFieldRef(i, "denier")}
                                   className="h-11 sm:h-10"
                                 >
@@ -946,7 +979,10 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               </Select>
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-color`}
+                                className="text-[11px] font-semibold"
+                              >
                                 {kind.type === "outward"
                                   ? "Colour (optional)"
                                   : "Colour *"}
@@ -958,6 +994,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                                 }
                               >
                                 <SelectTrigger
+                                  id={`row-${i}-color`}
                                   ref={setFieldRef(i, "color")}
                                   className="h-11 sm:h-10"
                                 >
@@ -994,10 +1031,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
 
                           <div className="mt-2.5 grid grid-cols-2 gap-2.5">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-lotNo`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Lot no.
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-lotNo`}
                                 value={r.lotNo}
                                 placeholder="Lot"
                                 onChange={(e) =>
@@ -1009,10 +1050,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${i}-remarks`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Remarks
                               </FieldLabel>
                               <Input
+                                id={`row-${i}-remarks`}
                                 value={r.remarks}
                                 placeholder="Optional"
                                 onChange={(e) =>
@@ -1126,6 +1171,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                           >
                             <SelectTrigger
                               ref={setFieldRef(i, "denier")}
+                              aria-label={`Row ${i + 1} denier`}
                               className="h-11 sm:h-10 px-2.5 text-xs"
                             >
                               <SelectValue placeholder="Denier…" />
@@ -1154,6 +1200,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                           >
                             <SelectTrigger
                               ref={setFieldRef(i, "color")}
+                              aria-label={`Row ${i + 1} colour`}
                               className="h-11 sm:h-10 px-2.5 text-xs"
                             >
                               <SelectValue
@@ -1210,7 +1257,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                             onClick={() => removeRow(i)}
                             disabled={rows.length <= 1}
                             aria-label={`Remove row ${i + 1}`}
-                            className="size-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44"
                           >
                             <X className="size-4" aria-hidden />
                           </Button>
@@ -1237,18 +1284,14 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
       <Card className="mt-6 overflow-hidden">
         <CardContent className="grid gap-0 p-0 sm:grid-cols-3">
           <div className="border-b border-border px-5 py-4 sm:border-b-0 sm:border-r">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Total boxes
-            </div>
-            <div className="mt-1 text-xl font-bold tracking-tight tabular-nums">
+            <div className="micro-label">Total boxes</div>
+            <div className="mt-1 text-[17px] font-semibold tabular-nums tracking-[-0.01em]">
               {fmtBoxes(totals.boxes)}
             </div>
           </div>
           <div className="border-b border-border px-5 py-4 sm:border-b-0 sm:col-span-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Net weight
-            </div>
-            <div className="mt-1 text-xl font-bold tracking-tight tabular-nums">
+            <div className="micro-label">Net weight</div>
+            <div className="mt-1 text-[17px] font-semibold tabular-nums tracking-[-0.01em]">
               {fmtWt(totals.netWt)}{" "}
               <span className="text-sm font-semibold text-muted-foreground">
                 kg

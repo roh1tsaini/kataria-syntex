@@ -77,6 +77,7 @@ export function Hero() {
                 key={shade.code}
                 colors={shade.colors ?? [shade.hex]}
                 rowHeight={6}
+                seed={shade.code}
                 className="aspect-square rounded-[6px]"
               />
             ))}

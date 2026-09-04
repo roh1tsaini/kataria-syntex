@@ -3,17 +3,18 @@
 import { FilterPill } from "@/components/ui/filter-pill";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { type Shade } from "@/content/shades";
 import { Button } from "@/components/ui/button";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
+import { ShadeConeDialog } from "@/components/shade/ShadeConeDialog";
 import { cn } from "@/lib/utils";
 
 /**
  * Interactive shade card — shades grouped into card pages the way the
  * physical card is printed: one panel per page, each shade a wound-yarn
- * band with its code printed beneath. Selecting a shade opens a pulled-out
- * detail strip with its code, hex, and a pre-filled inquiry link. Code
+ * band with its code printed beneath. Selecting a shade opens it wound on
+ * a dye cone, with its code, hex, and a pre-filled inquiry link. Code
  * search filters across every page at once.
  */
 export function ShadeExplorer({
@@ -46,6 +47,18 @@ export function ShadeExplorer({
         .filter((group) => group.shades.length > 0),
     [pages, visible],
   );
+
+  /* Cone dialog walks across the currently visible shades. */
+  const selectedIndex = selected
+    ? visible.findIndex(
+        (shade) => shade.code === selected.code && shade.page === selected.page,
+      )
+    : -1;
+  const prevShade = selectedIndex > 0 ? visible[selectedIndex - 1] : null;
+  const nextShade =
+    selectedIndex >= 0 && selectedIndex < visible.length - 1
+      ? visible[selectedIndex + 1]
+      : null;
 
   return (
     <div className="mt-10 md:mt-14">
@@ -87,50 +100,27 @@ export function ShadeExplorer({
         </label>
       </div>
 
-      {/* Selected shade — pulled out of the card like a physical swatch tab */}
-      {selected ? (
-        <div className="ks-enter mt-6 flex flex-col gap-5 rounded-card border border-line bg-paper p-5 sm:flex-row sm:items-center md:p-6">
-          <div className="relative w-full shrink-0 overflow-hidden rounded-chip sm:w-48">
-            <YarnSwatch
-              colors={selected.colors ?? [selected.hex]}
-              rowHeight={13}
-              className="h-24 w-full rounded-chip sm:h-20"
-            />
-            <span className="tnum absolute bottom-2 left-2 rounded-[5px] bg-paper/95 px-2 py-0.5 font-mono text-[10px] font-medium text-navy shadow-card">
-              {selected.code}
-            </span>
-          </div>
-          <div>
-            <p className="font-body text-[11px] font-bold uppercase tracking-[0.07em] text-royal">
-              Selected shade
-            </p>
-            <p className="tnum mt-1 font-display text-2xl font-bold tracking-tight text-navy">
-              Shade {selected.code}
-            </p>
-            <p className="tnum mt-1 font-mono text-xs text-ink-soft">
-              {selected.hex.toUpperCase()} · CARD PAGE {selected.page}
-              {selected.colors ? " · MELANGE — MULTI-COLOR THREAD" : ""}
-            </p>
-          </div>
-          <div className="sm:ms-auto">
-            <Button asChild variant="primary">
-              <Link
-                href={`/contact?shade=${encodeURIComponent(selected.code)}`}
-              >
-                Request this shade
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      {/* Cone preview — the shade wound on a dye cone, over the grid */}
+      <ShadeConeDialog
+        shade={selected}
+        prev={prevShade}
+        next={nextShade}
+        onClose={() => setSelected(null)}
+        onPrev={() => {
+          if (prevShade) setSelected(prevShade);
+        }}
+        onNext={() => {
+          if (nextShade) setSelected(nextShade);
+        }}
+      />
 
       {/* Count */}
       <p
         aria-live="polite"
         className="tnum mt-8 font-mono text-[11px] text-ink-soft"
       >
-        {visible.length} OF {shades.length} SHADES
+        {visible.length} OF {shades.length} SHADES · SELECT A SHADE TO VIEW IT
+        ON THE CONE
       </p>
 
       {/* Card pages */}
@@ -152,14 +142,15 @@ export function ShadeExplorer({
                   <button
                     key={`${shade.page}-${shade.code}`}
                     type="button"
-                    onClick={() => setSelected(isActive ? null : shade)}
-                    aria-pressed={isActive}
-                    aria-label={`Shade ${shade.code}, hex ${shade.hex}`}
+                    onClick={() => setSelected(shade)}
+                    aria-haspopup="dialog"
+                    aria-label={`Shade ${shade.code}, hex ${shade.hex} — view on cone`}
                     className="group cursor-pointer rounded-chip"
                   >
                     <YarnSwatch
                       colors={shade.colors ?? [shade.hex]}
                       rowHeight={8}
+                      seed={shade.code}
                       className={cn(
                         "aspect-[3/4] w-full transition-[translate,box-shadow] duration-150 ease-[var(--ease-out)] group-hover:-translate-y-0.5",
                         isActive &&

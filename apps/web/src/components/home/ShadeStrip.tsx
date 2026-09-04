@@ -51,6 +51,7 @@ export function ShadeStrip() {
                   key={shade.code}
                   colors={shade.colors ?? [shade.hex]}
                   rowHeight={7}
+                  seed={shade.code}
                   className="h-[84px] min-w-[92px] flex-1 rounded-[3px]"
                 />
               ))}

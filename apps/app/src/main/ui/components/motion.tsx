@@ -23,7 +23,7 @@ export function Reveal({
       className={className}
       initial={{ opacity: 0, y }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.24, delay, ease: EASE_OUT }}
+      transition={{ duration: 0.2, delay, ease: EASE_OUT }}
     >
       {children}
     </motion.div>
@@ -91,7 +91,11 @@ export function PageTransition({
       className={className}
       initial={{ opacity: 0, y: reduce ? 0 : 4 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: reduce ? 0 : -4 }}
+      exit={{
+        opacity: 0,
+        y: reduce ? 0 : 4,
+        transition: { duration: reduce ? 0 : 0.13, ease: EASE_OUT },
+      }}
       transition={{ duration: reduce ? 0 : 0.16, ease: EASE_OUT }}
     >
       {children}

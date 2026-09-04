@@ -168,7 +168,7 @@ function MasterFormDialog<I extends { id: string }, In>({
           <FieldGroup className="gap-4">
             {config.fields.map((f) =>
               f.type === "select" && f.options ? (
-                <Field key={f.key}>
+                <Field key={f.key} data-invalid={!!error}>
                   <FieldLabel htmlFor={`f-${f.key}`}>{f.label}</FieldLabel>
                   <Select
                     value={draft[f.key] ?? f.options[0]?.value ?? ""}
@@ -176,7 +176,11 @@ function MasterFormDialog<I extends { id: string }, In>({
                       setDraft((d) => ({ ...d, [f.key]: v }))
                     }
                   >
-                    <SelectTrigger id={`f-${f.key}`}>
+                    <SelectTrigger
+                      id={`f-${f.key}`}
+                      aria-invalid={!!error}
+                      aria-describedby={error ? "master-error" : undefined}
+                    >
                       <SelectValue placeholder={f.placeholder} />
                     </SelectTrigger>
                     <SelectContent>
@@ -189,7 +193,7 @@ function MasterFormDialog<I extends { id: string }, In>({
                   </Select>
                 </Field>
               ) : (
-                <Field key={f.key}>
+                <Field key={f.key} data-invalid={!!error}>
                   <FieldLabel htmlFor={`f-${f.key}`}>{f.label}</FieldLabel>
                   <Input
                     id={`f-${f.key}`}
@@ -201,11 +205,13 @@ function MasterFormDialog<I extends { id: string }, In>({
                       setDraft((d) => ({ ...d, [f.key]: e.target.value }))
                     }
                     placeholder={f.placeholder}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? "master-error" : undefined}
                   />
                 </Field>
               ),
             )}
-            {error && <FieldError>{error}</FieldError>}
+            {error && <FieldError id="master-error">{error}</FieldError>}
           </FieldGroup>
           <div className="flex justify-end gap-2 border-t border-border pt-4">
             <Button
@@ -256,8 +262,7 @@ function MasterTab<I extends { id: string; name: string }, In>({
     setError(null);
     const ok = await confirm({
       title: `Delete "${item.name}"?`,
-      description:
-        "This cannot be undone. Existing challans keep their own copy of the name.",
+      description: "This cannot be undone, but challans keep their own copy.",
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -306,16 +311,17 @@ function MasterTab<I extends { id: string; name: string }, In>({
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
+        >
           {error}
         </p>
       )}
 
       <Card className="mt-4 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            {label}
-          </span>
+          <span className="micro-label">{label}</span>
           <Badge
             variant="secondary"
             className="font-medium tabular-nums whitespace-nowrap"
@@ -486,7 +492,7 @@ export function MastersPage() {
     remove: deleteCustomer,
     singular: "customer",
     icon: Users,
-    empty: "No customers yet. Add your first customer.",
+    empty: "Add your first customer.",
     fields: [
       {
         key: "name",
@@ -538,7 +544,7 @@ export function MastersPage() {
     remove: deleteJobWorker,
     singular: "job worker",
     icon: Factory,
-    empty: "No job workers yet. Add your first job worker.",
+    empty: "Add your first job worker.",
     fields: [
       {
         key: "name",
@@ -582,7 +588,7 @@ export function MastersPage() {
     remove: deleteDenier,
     singular: "denier",
     icon: Layers,
-    empty: "No deniers yet. Add deniers like 20D, 30D, 40D.",
+    empty: "Add deniers like 20D, 30D, 40D.",
     fields: [
       { key: "name", label: "Denier", placeholder: "e.g. 20D", maxLength: 60 },
       {
@@ -609,7 +615,7 @@ export function MastersPage() {
     remove: deleteSupplier,
     singular: "supplier",
     icon: Truck,
-    empty: "No suppliers yet. Add your first supplier.",
+    empty: "Add your first supplier.",
     fields: [
       {
         key: "name",
@@ -657,7 +663,7 @@ export function MastersPage() {
       <PageHeader
         eyebrow="Reference data"
         title="Masters"
-        description="Customers, job workers, suppliers and deniers used across your challans. Colors live in the Color Organiser."
+        description="Customers, job workers, suppliers and deniers used across challans."
       />
 
       <Tabs

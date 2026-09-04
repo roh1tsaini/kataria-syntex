@@ -70,18 +70,18 @@ AND the feature works when run. All three shells must stay compiling.
 
 Latest stable majors; never downgrade to escape a break.
 
-| Layer    | Tech                                                                     |
-| -------- | ------------------------------------------------------------------------ |
-| Frontend | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict) |
-| Styling  | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2   |
-| PWA      | vite-plugin-pwa (autoUpdate, Workbox) · workbox-window declared          |
-| API      | Hono 4 · zod 4 at every boundary                                         |
-| Data     | Drizzle ORM + drizzle-kit · Cloudflare D1                                |
-| PDF      | pdf-lib + fontkit · Inter TTFs bundled (no CDN)                          |
-| Desktop  | Electron 43 · electron-builder 26                                        |
-| Android  | Capacitor 8 (filesystem, share, printer, secure-storage)                 |
-| QR       | qrcode.react (show) · jsqr (scan) · input-otp                            |
-| CI       | GitHub Actions (`ci.yml`, `cf-deploy.yml`, `app-build.yml`)              |
+| Layer    | Tech                                                                               |
+| -------- | ---------------------------------------------------------------------------------- |
+| Frontend | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)           |
+| Styling  | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2             |
+| PWA      | vite-plugin-pwa (autoUpdate, Workbox) · workbox-window declared                    |
+| API      | Hono 4 · zod 4 at every boundary                                                   |
+| Data     | Drizzle ORM + drizzle-kit · Cloudflare D1                                          |
+| PDF      | pdf-lib + fontkit · Inter TTFs bundled (no CDN)                                    |
+| Desktop  | Electron 43 · electron-builder 26                                                  |
+| Android  | Capacitor 8 (filesystem, share, printer, secure-storage)                           |
+| QR       | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp |
+| CI       | GitHub Actions (`ci.yml`, `cf-deploy.yml`, `app-build.yml`)                        |
 
 ## 4 · Source map
 

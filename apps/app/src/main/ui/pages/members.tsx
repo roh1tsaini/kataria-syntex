@@ -28,6 +28,13 @@ import {
   CardDescription,
 } from "@/ui/components/ui/card";
 import { Badge } from "@/ui/components/ui/badge";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/ui/components/ui/empty";
 import { useConfirm } from "@/ui/components/confirm-dialog";
 import { roleBadge, permissionLabel } from "@/ui/components/role-badge";
 import { cn } from "@/ui/lib/cn";
@@ -105,16 +112,8 @@ function AddMemberForm() {
     try {
       const res = await addMember(identifier.trim(), permissions);
       setIdentifier("");
-      if (res.attached)
-        toastSuccess(
-          "Member added",
-          "Their account was linked to this workspace right away.",
-        );
-      else
-        toastSuccess(
-          "Member pre-added",
-          "They'll land in this workspace automatically when they first log in.",
-        );
+      if (res.attached) toastSuccess("Member added to this workspace.");
+      else toastSuccess("Member pre-added for first login.");
     } catch (err) {
       const msg = friendlyError(err);
       setError(msg);
@@ -145,6 +144,7 @@ function AddMemberForm() {
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="98765 43210 or name@email.com"
                 aria-invalid={!!error}
+                aria-describedby={error ? "member-error" : undefined}
                 required
               />
             </Field>
@@ -172,10 +172,10 @@ function AddMemberForm() {
             </div>
           </div>
 
-          <div>
-            <p className="micro-label">
+          <fieldset aria-describedby={error ? "member-error" : undefined}>
+            <legend className="micro-label">
               Permissions ({permissions.length} selected)
-            </p>
+            </legend>
             <div className="mt-2.5 grid gap-4 sm:grid-cols-2 sm:gap-6">
               {PERMISSION_GROUPS.map((group) => (
                 <div key={group.label} className="space-y-0.5">
@@ -197,7 +197,7 @@ function AddMemberForm() {
                 </div>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <div className="border-t border-border pt-4">
             <Button
@@ -210,7 +210,11 @@ function AddMemberForm() {
               <UserPlus aria-hidden />
               Add member
             </Button>
-            {error && <FieldError className="mt-2">{error}</FieldError>}
+            {error && (
+              <FieldError id="member-error" className="mt-2">
+                {error}
+              </FieldError>
+            )}
           </div>
         </form>
       </CardContent>
@@ -317,7 +321,7 @@ function MemberRow({
         )}
       </div>
       {editing && (
-        <div className="mt-3 space-y-3 rounded-lg border border-border bg-muted/50 p-3.5">
+        <div className="mt-3 space-y-3 rounded-lg border border-border bg-muted/50 p-4">
           <div className="flex flex-wrap gap-1.5">
             {BUNDLES.map((b) => (
               <Button
@@ -334,13 +338,19 @@ function MemberRow({
           <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             {PERMISSION_GROUPS.map((group) => (
               <div key={group.label} className="space-y-0.5">
-                <p className="px-0.5 pb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  {group.label}
-                </p>
+                <p className="px-0.5 pb-1 micro-label">{group.label}</p>
                 {group.perms.map((perm) => (
                   <label
                     key={perm}
-                    className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-0.5 text-[13px] transition-colors hover:bg-card/60"
+                    className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-0.5 text-[13px] transition-colors hover:bg-card/60"
+                    onClick={(e) => {
+                      // Custom Checkbox is a button — row taps toggle it,
+                      // direct button taps must not double-fire.
+                      if ((e.target as HTMLElement).closest("button")) {
+                        return;
+                      }
+                      togglePerm(perm);
+                    }}
                   >
                     <Checkbox
                       checked={draftPerms.includes(perm)}
@@ -416,22 +426,23 @@ export function MembersPage() {
         title="Members"
         description={
           canManage
-            ? "Add your team and assign granular permissions. Each phone/email can only belong to one workspace."
+            ? "Add your team and set what each member can do."
             : "Your workspace team."
         }
       />
 
       {error && (
-        <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
+        >
           {error}
         </p>
       )}
 
       <Card className="mt-6 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            Roster
-          </span>
+          <span className="micro-label">Roster</span>
           <Badge
             variant="secondary"
             className="font-medium tabular-nums whitespace-nowrap"
@@ -441,9 +452,17 @@ export function MembersPage() {
         </div>
         <CardContent className="p-0">
           {members.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-muted-foreground sm:px-5">
-              No members yet.
-            </p>
+            <Empty className="px-4 py-10">
+              <EmptyMedia variant="icon">
+                <UserPlus aria-hidden />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle>No members yet</EmptyTitle>
+                <EmptyDescription>
+                  Invite your team with the form above.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div>
               {members.map((m) => (
@@ -482,7 +501,7 @@ export function MembersPage() {
                         const ok = await confirm({
                           title: `Transfer primary admin to ${m.name}?`,
                           description:
-                            "You will become a regular member. This cannot be undone.",
+                            "You will become a regular member, and this cannot be undone.",
                           confirmLabel: "Transfer",
                           destructive: true,
                         });
@@ -503,9 +522,7 @@ export function MembersPage() {
       {canManage && pendingMembers.length > 0 && (
         <Card className="mt-6 overflow-hidden">
           <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Waiting to join
-            </span>
+            <span className="micro-label">Waiting to join</span>
             <Badge
               variant="secondary"
               className="font-medium tabular-nums whitespace-nowrap"

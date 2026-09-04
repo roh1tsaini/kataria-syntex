@@ -68,16 +68,18 @@ function IdentifierStep({
             type="text"
             inputMode="email"
             autoComplete="username"
-            placeholder="98765 43210 or you@company.com"
+            placeholder="+91 98765 43210 or you@gmail.com"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             aria-invalid={!!error}
+            aria-describedby={error ? "identifier-error" : undefined}
             required
             autoFocus
           />
         </Field>
         {error && (
           <motion.p
+            id="identifier-error"
             initial={reduceMotion ? false : { opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.18, ease: EASE }}
@@ -207,7 +209,7 @@ function OtpStep({
               </InputOTPGroup>
             </InputOTP>
             <FieldDescription>
-              Sent to {masked}. Expires in 5 minutes.
+              Sent to {masked}, expires in 5 minutes.
             </FieldDescription>
           </Field>
           {error && <FieldError>{error}</FieldError>}
@@ -239,13 +241,13 @@ function OtpStep({
           </Button>
         </div>
         {hasPassword && (
-          <button
-            type="button"
+          <Button
+            variant="link"
             onClick={onUsePassword}
-            className="text-center text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            className="min-h-11 w-full text-xs text-muted-foreground underline"
           >
             Use password instead
-          </button>
+          </Button>
         )}
       </form>
       {showQrFallback && (
@@ -308,15 +310,17 @@ function CreateStep({
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <FieldGroup className="gap-4">
-        <Field>
-          <FieldLabel htmlFor="name">Your name</FieldLabel>
+        <Field data-invalid={!!error}>
+          <FieldLabel htmlFor="create-name">Your name</FieldLabel>
           <Input
-            id="name"
+            id="create-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Full name"
             required
             autoFocus
+            aria-invalid={!!error}
+            aria-describedby={error ? "create-error" : undefined}
           />
         </Field>
         {hasInvite ? (
@@ -325,34 +329,40 @@ function CreateStep({
           </p>
         ) : (
           <>
-            <Field>
-              <FieldLabel htmlFor="ws">Company / workspace name</FieldLabel>
+            <Field data-invalid={!!error}>
+              <FieldLabel htmlFor="create-ws">
+                Company / workspace name
+              </FieldLabel>
               <Input
-                id="ws"
+                id="create-ws"
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
                 placeholder="e.g. Kataria Syntex"
                 required
+                aria-invalid={!!error}
+                aria-describedby={error ? "create-error" : undefined}
               />
             </Field>
-            <Field>
-              <FieldLabel htmlFor="pw">
+            <Field data-invalid={!!error}>
+              <FieldLabel htmlFor="create-pw">
                 Password{" "}
                 <span className="text-muted-foreground">(optional)</span>
               </FieldLabel>
               <Input
-                id="pw"
+                id="create-pw"
                 type="password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={10}
+                aria-invalid={!!error}
+                aria-describedby={error ? "create-error" : undefined}
               />
               <FieldDescription>Minimum 10 characters.</FieldDescription>
             </Field>
           </>
         )}
-        {error && <FieldError>{error}</FieldError>}
+        {error && <FieldError id="create-error">{error}</FieldError>}
       </FieldGroup>
       <Button
         type="submit"
@@ -443,7 +453,7 @@ function MethodTab({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "relative flex h-11 items-center justify-center gap-1.5 rounded-sm px-3 text-[13px] font-medium transition-colors duration-150 sm:h-10",
+        "relative flex h-11 items-center justify-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors duration-150 sm:h-10",
         active
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground",
@@ -453,7 +463,7 @@ function MethodTab({
         <motion.span
           layoutId="auth-method-thumb"
           transition={reduceMotion ? { duration: 0 } : SPRING}
-          className="absolute inset-0 rounded-sm border border-border bg-card shadow-soft"
+          className="absolute inset-0 rounded-md border border-border bg-card shadow-soft"
           aria-hidden
         />
       )}
@@ -518,9 +528,7 @@ export function AuthPage() {
 
   const title =
     step === "home"
-      ? authMethod === "qr"
-        ? "Instant QR login"
-        : "Log in"
+      ? "Sign in"
       : step === "create"
         ? "Set up account"
         : step === "password"
@@ -529,9 +537,7 @@ export function AuthPage() {
 
   const description =
     step === "home"
-      ? authMethod === "qr"
-        ? "Scan with an approved device to sign in."
-        : "Enter your phone number or email."
+      ? "Enter your phone number or email, or scan the QR code."
       : step === "create"
         ? "Enter your profile details."
         : step === "password"
@@ -539,7 +545,20 @@ export function AuthPage() {
           : null;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background p-4 sm:p-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
+      <div className="flex items-center gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
+          <span
+            className="text-lg font-semibold leading-none tracking-tight"
+            aria-hidden
+          >
+            K
+          </span>
+        </div>
+        <div className="text-[17px] font-semibold tracking-tight">
+          Kataria Syntex Biz App
+        </div>
+      </div>
       <motion.div
         initial={{
           opacity: 0,
@@ -548,45 +567,11 @@ export function AuthPage() {
         }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: reduceMotion ? 0.15 : 0.24, ease: EASE }}
-        className="w-full max-w-md"
+        className="w-full max-w-md sm:max-w-2xl"
       >
         <Card className="overflow-hidden">
           <CardHeader>
-            {/* Brand — same mark as the app shell */}
-            <div className="flex items-center gap-2.5">
-              <div className="grid size-7 shrink-0 place-items-center rounded-md bg-foreground text-background">
-                <span
-                  className="text-[11px] font-semibold leading-none tracking-tight"
-                  aria-hidden
-                >
-                  K
-                </span>
-              </div>
-              <div className="min-w-0 leading-tight">
-                <div className="text-[13px] font-semibold tracking-tight">
-                  Kataria Challan
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Internal operations portal
-                </div>
-              </div>
-            </div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{
-                delay: reduceMotion ? 0 : 0.1,
-                duration: reduceMotion ? 0 : 0.4,
-                ease: EASE,
-              }}
-              className="page-eyebrow mt-4"
-            >
-              Secure workspace
-            </motion.p>
-            <CardTitle className="text-2xl font-bold tracking-tight">
-              {title}
-            </CardTitle>
+            <CardTitle>{title}</CardTitle>
             {description && <CardDescription>{description}</CardDescription>}
           </CardHeader>
 
@@ -598,87 +583,123 @@ export function AuthPage() {
                     ? `home-${authMethod}`
                     : `${step}-${identifier}`
                 }
-                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                transition={{ duration: reduceMotion ? 0.15 : 0.2, ease: EASE }}
+                className="grid overflow-hidden"
+                initial={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, gridTemplateRows: "0fr" }
+                }
+                animate={{ opacity: 1, gridTemplateRows: "1fr" }}
+                exit={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : {
+                        opacity: 0,
+                        gridTemplateRows: "0fr",
+                        transition: { duration: 0.16, ease: EASE },
+                      }
+                }
+                transition={{ duration: reduceMotion ? 0 : 0.2, ease: EASE }}
               >
-                {step === "home" && (
-                  <div className="flex flex-col gap-5">
-                    {/* Segmented method switch — one shared thumb, equal heights */}
-                    <div
-                      role="group"
-                      aria-label="Sign-in method"
-                      className="grid grid-cols-2 gap-1 rounded-md border border-border bg-muted p-1"
-                    >
-                      <MethodTab
-                        active={authMethod === "phone"}
-                        reduceMotion={!!reduceMotion}
-                        onClick={() => setAuthMethod("phone")}
-                        icon={Smartphone}
-                        label="Phone / Email"
-                      />
-                      <MethodTab
-                        active={authMethod === "qr"}
-                        reduceMotion={!!reduceMotion}
-                        onClick={() => setAuthMethod("qr")}
-                        icon={QrCode}
-                        label="Instant QR Login"
-                      />
-                    </div>
-
-                    {authMethod === "phone" ? (
-                      <IdentifierStep
-                        busy={homeBusy}
-                        error={homeError}
-                        onNext={(value) => void handleIdentifier(value)}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-2">
-                        <QrLoginPanel />
+                <div className="min-h-0 overflow-hidden">
+                  {step === "home" && (
+                    <div className="flex flex-col gap-5">
+                      {/* Phones: one method at a time behind the segmented switch */}
+                      <div
+                        role="group"
+                        aria-label="Sign-in method"
+                        className="grid grid-cols-2 gap-1 rounded-md border border-border bg-muted p-1 sm:hidden"
+                      >
+                        <MethodTab
+                          active={authMethod === "phone"}
+                          reduceMotion={!!reduceMotion}
+                          onClick={() => setAuthMethod("phone")}
+                          icon={Smartphone}
+                          label="Phone / Email"
+                        />
+                        <MethodTab
+                          active={authMethod === "qr"}
+                          reduceMotion={!!reduceMotion}
+                          onClick={() => setAuthMethod("qr")}
+                          icon={QrCode}
+                          label="Instant QR Login"
+                        />
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="sm:hidden">
+                        {authMethod === "phone" ? (
+                          <IdentifierStep
+                            busy={homeBusy}
+                            error={homeError}
+                            onNext={(value) => void handleIdentifier(value)}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-2">
+                            <QrLoginPanel />
+                          </div>
+                        )}
+                      </div>
 
-                {step === "otp" && (
-                  <OtpStep
-                    identifier={identifier}
-                    draft={draft}
-                    hasPassword={accountExists && hasPassword}
-                    startWithQrFallback={otpFallback}
-                    onVerified={done}
-                    onNeedsSignup={() => {
-                      setDraft({ identifier });
-                      setStep("create");
-                    }}
-                    onUsePassword={() => setStep("password")}
-                    onBack={() => {
-                      setDraft(null);
-                      setStep("home");
-                    }}
-                  />
-                )}
+                      {/* Desktop: email/phone box left, QR always right */}
+                      <div className="hidden gap-6 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start">
+                        <div className="min-w-0">
+                          <IdentifierStep
+                            busy={homeBusy}
+                            error={homeError}
+                            onNext={(value) => void handleIdentifier(value)}
+                          />
+                        </div>
+                        <div
+                          aria-hidden
+                          className="w-px self-stretch bg-border"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex flex-col items-center justify-center">
+                            <QrLoginPanel />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {step === "create" && !accountExists && (
-                  <CreateStep
-                    identifier={identifier}
-                    hasInvite={pendingHasInvite}
-                    onReady={(d) => {
-                      setDraft(d);
-                      setStep("otp");
-                    }}
-                    onBack={() => setStep("home")}
-                  />
-                )}
+                  {step === "otp" && (
+                    <OtpStep
+                      identifier={identifier}
+                      draft={draft}
+                      hasPassword={accountExists && hasPassword}
+                      startWithQrFallback={otpFallback}
+                      onVerified={done}
+                      onNeedsSignup={() => {
+                        setDraft({ identifier });
+                        setStep("create");
+                      }}
+                      onUsePassword={() => setStep("password")}
+                      onBack={() => {
+                        setDraft(null);
+                        setStep("home");
+                      }}
+                    />
+                  )}
 
-                {step === "password" && (
-                  <PasswordStep
-                    identifier={identifier}
-                    onDone={done}
-                    onBack={() => setStep("otp")}
-                  />
-                )}
+                  {step === "create" && !accountExists && (
+                    <CreateStep
+                      identifier={identifier}
+                      hasInvite={pendingHasInvite}
+                      onReady={(d) => {
+                        setDraft(d);
+                        setStep("otp");
+                      }}
+                      onBack={() => setStep("home")}
+                    />
+                  )}
+
+                  {step === "password" && (
+                    <PasswordStep
+                      identifier={identifier}
+                      onDone={done}
+                      onBack={() => setStep("otp")}
+                    />
+                  )}
+                </div>
               </motion.div>
             </AnimatePresence>
           </CardContent>

@@ -1,7 +1,9 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/ui/lib/cn";
+import { EASE_OUT } from "@/ui/lib/motion";
 
 type PopoverContextType = {
   open: boolean;
@@ -126,11 +128,15 @@ PopoverTrigger.displayName = "PopoverTrigger";
 
 export const PopoverContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
+  // Narrow on purpose: motion redefines most DOM gesture/animation handlers,
+  // so a broad HTMLAttributes spread never typechecks against motion props.
+  {
     align?: "start" | "center" | "end";
     sideOffset?: number;
+    className?: string;
+    children?: React.ReactNode;
   }
->(({ className, align = "start", sideOffset = 4, children, ...props }, ref) => {
+>(({ className, align = "start", sideOffset = 4, children }, ref) => {
   const ctx = React.useContext(PopoverContext);
   if (!ctx) throw new Error("PopoverContent must be used inside Popover");
 
@@ -186,43 +192,58 @@ export const PopoverContent = React.forwardRef<
     (first ?? el).focus({ preventScroll: true });
   }, []);
 
-  if (!ctx.open) return null;
+  const reduceMotion = useReducedMotion();
 
-  const combinedRef = (node: HTMLDivElement | null) => {
+  const combinedRef = (node: HTMLDivElement | null): void => {
     (ctx.contentRef as React.MutableRefObject<HTMLDivElement | null>).current =
       node;
     if (typeof ref === "function") ref(node);
     else if (ref) ref.current = node;
   };
 
-  const alignClass =
+  // Alignment offset lives in the motion transform (a Tailwind translate
+  // class would be overwritten by the scale animation).
+  const alignX = align === "center" ? "-50%" : align === "end" ? "-100%" : "0%";
+  const origin =
     align === "center"
-      ? "-translate-x-1/2"
+      ? "top center"
       : align === "end"
-        ? "-translate-x-full"
-        : "";
+        ? "top right"
+        : "top left";
 
   return createPortal(
-    <div
-      ref={combinedRef}
-      role="dialog"
-      tabIndex={-1}
-      style={{
-        position: "fixed",
-        top: coords ? `${coords.top}px` : "0px",
-        left: coords ? `${coords.left}px` : "0px",
-        visibility: coords ? "visible" : "hidden",
-        zIndex: 50,
-      }}
-      className={cn(
-        "z-50 w-auto rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-overlay outline-none transition-all duration-150 animate-in fade-in-0 zoom-in-95",
-        alignClass,
-        className,
+    <AnimatePresence>
+      {ctx.open && (
+        <motion.div
+          ref={combinedRef}
+          role="dialog"
+          tabIndex={-1}
+          initial={{ opacity: 0, scale: 0.97, x: alignX }}
+          animate={{ opacity: 1, scale: 1, x: alignX }}
+          exit={{
+            opacity: 0,
+            scale: 0.97,
+            x: alignX,
+            transition: { duration: reduceMotion ? 0 : 0.12, ease: EASE_OUT },
+          }}
+          transition={{ duration: reduceMotion ? 0 : 0.15, ease: EASE_OUT }}
+          style={{
+            position: "fixed",
+            top: coords ? `${coords.top}px` : "0px",
+            left: coords ? `${coords.left}px` : "0px",
+            visibility: coords ? "visible" : "hidden",
+            zIndex: 50,
+            transformOrigin: origin,
+          }}
+          className={cn(
+            "z-50 w-auto rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-overlay outline-none",
+            className,
+          )}
+        >
+          {children}
+        </motion.div>
       )}
-      {...props}
-    >
-      {children}
-    </div>,
+    </AnimatePresence>,
     document.body,
   );
 });

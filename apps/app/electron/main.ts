@@ -1,5 +1,5 @@
 /**
- * Electron main process — kataria challan desktop shell.
+ * Electron main process — kataria syntex biz app desktop shell.
  *
  * Security posture (Electron best practices):
  * - contextIsolation always on, nodeIntegration off, sandboxed preload

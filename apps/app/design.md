@@ -20,6 +20,17 @@
    Borders are hairlines; shadows are whispers.
 5. **Respectful.** Reduced motion, reduced transparency, high contrast, safe
    areas, 44px touch targets — always on, never opt-in.
+6. **Say it once.** One concept, one label per screen. A heading never
+   repeats its field label; a tab never restates its panel title; helper
+   text never echoes the label above it.
+7. **No filler copy.** No taglines, no "portal / platform / solution"
+   platitudes, no decorative subheads. Every word orients or instructs —
+   otherwise delete it.
+8. **Short, plain words.** Helper text is one short sentence, everyday
+   English, no jargon. If it needs two sentences, rewrite it until it
+   needs one.
+9. **No jumps.** When swapped content changes the size, animate the size
+   as well as the opacity — panels grow and shrink smoothly, never snap.
 
 ## 2. Foundations
 
@@ -78,6 +89,10 @@ Tracking tightens as size grows; leading does the opposite.
 | Eyebrow/label | 11px uppercase       | 600    | +0.06em  | 1            |
 | Data/numbers  | inherits             | 500+   | —        | tabular-nums |
 
+Page totals use the page-title size; section totals use the section-head
+size. Pairing codes keep wide tracking (+0.18em) with tabular-nums as the
+one legibility exception.
+
 Hierarchy is weight+size+color. No italic, no underlines except links,
 no text-transform on body copy.
 
@@ -108,7 +123,9 @@ no text-transform on body copy.
 ### 2.6 Shadows & materials
 
 - `--shadow-soft` (rest) → `--shadow-lift` (hover) → `--shadow-overlay`
-  (floating). Cards rest flat with hairline borders; lift max −1px on hover.
+  (floating). `--shadow-lift` is `0 4px 12px -4px oklch(0 0 0 / 10%),
+0 2px 6px -2px oklch(0 0 0 / 6%)`.
+  Cards rest flat with hairline borders; lift max −1px on hover.
 - Floating chrome (app header, mobile tab bar, sticky action bars): translucent
   `color-mix` background + `backdrop-blur` + hairline edge. Content scrolls
   under it. `prefers-reduced-transparency` falls back to solid.
@@ -130,6 +147,19 @@ controls, and actions that sit together share one grouped background.
 - Applies on desktop AND mobile, everywhere in the shell (sidebar toggle,
   drawer close, footer theme/logout, header accent).
 - Primitive: `ui/circle-button.tsx` — `CircleButton`, `ButtonCapsule`.
+- Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
+  with a `size-5` icon. One treatment everywhere.
+
+### 2.8 App identity (names — never invent variants)
+
+| Form  | Value                      | Used for                                                                                    |
+| ----- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| Short | `KS Biz App`               | sidebar header, compact chrome                                                              |
+| Full  | `Kataria Syntex Biz App`   | document `<title>`, PWA manifest `name`, installer/product names (Electron, Capacitor, Android strings), auth header, release names |
+| Never | `Kataria Challan` etc.     | — (does not exist)                                                                          |
+
+`Kataria Syntex` alone is the company/workspace name (sidebar subtitle,
+placeholders, fallbacks) — never the app name.
 
 ## 3. Component specs (ui/*)
 
@@ -137,13 +167,13 @@ controls, and actions that sit together share one grouped background.
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Button                           | Radii/heights from §2.2/§2.3. Press: `scale(0.97)` @100ms on `:active`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. |
 | CircleButton / ButtonCapsule     | Shell-chrome icon actions (§2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)`. Adjacent pairs join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail). Never for navigation rows.                          |
-| Input/Select/Textarea/DatePicker | Height 40px, radius 10px, 1px border, focus = the hairline border brightens 40% toward foreground; no glow, no outline stacking (never layout shift). Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                     |
+| Input/Select/Textarea/DatePicker | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error. |
 | Card                             | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                             |
 | Dialog                           | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                             |
 | Dropdown/Popover                 | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                 |
 | Tabs                             | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                          |
-| Badge                            | 11px semibold, radius 8px, soft tint + ink; heights unified at 20/22px.                                                                                                                                                                                              |
-| Toast                            | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one-line copy.                                                                                                                                                                                       |
+| Badge                            | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                   |
+| Toast                            | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one line: title only, no restating description.                                                                                                                                                      |
 | Empty states                     | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                  |
 | Skeletons                        | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned.                                                                                                                                                                                   |
 | Tables                           | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                |
@@ -152,11 +182,20 @@ controls, and actions that sit together share one grouped background.
 
 - Content max width: 1200px for data pages, 640px for forms/auth.
 - Page structure is always: `PageHeader` (title + desc + actions) → optional
-  filter bar → content. One primary action top-right; secondary inside.
+  filter bar → content. Eyebrow, title, and description never repeat the
+  same concept. One primary action top-right; secondary inside.
 - Mobile: single column, cards; ≥sm: grids (`minmax(0,1fr)`); ≥xl: data grids
   up to 4 columns. Card grids keep equal heights (`grid` + stretch).
 - Mobile nav: bottom tab bar (translucent material, safe-area padding).
   Desktop: left sidebar. Same items, same order, same icons on both.
+  A collapsed sidebar expands on hover as an overlay — the page underneath
+  never moves. Opening waits ~120ms of hover intent; closing waits ~180ms
+  after the pointer leaves.
+- A parent item with sub-items is a toggle, never a selection: it never
+  takes the accent pill, even when one of its subs is active. The active
+  sub alone takes the pill; the parent renders `font-medium
+  text-foreground` while a sub is active. The collapsed rail keeps the
+  pill on the parent icon (its subs aren't visible there).
 - Every screen answers: Where am I? (header) Where can I go? (nav)
   How do I get out? (back/close) — wayfinding is never optional.
 
@@ -176,6 +215,9 @@ Presets live in `src/main/ui/lib/motion.ts` — import them, never re-derive.
 Rules:
 
 1. **Animate transform + opacity only.** Never width/height/top/left/margin.
+   Size changes use `grid-template-rows` animation, never `height` tweens.
+   One exception: the desktop app rail may tween `width` (200ms
+   `EASE_DRAWER`) when it expands on hover.
 2. **Enter and exit are the same path reversed.** Slide in from right → dismiss
    to right. Exits are ~20% faster than entries.
 3. **Origins anchor to the trigger.** Popovers grow from their button.
@@ -195,7 +237,9 @@ Rules:
 
 ## 6. Accessibility floor (non-negotiable)
 
-- 44×44px touch targets; visible focus ring (2px accent, 2px offset);
+- 44×44px touch targets on coarse pointers; dense 32/40px sizes stay on
+  desktop. Visible focus ring (2px accent, 2px offset) alongside the
+  hairline brighten;
   `aria-invalid` + inline error text; labels on every input (no placeholder-
   only labels); contrast ≥ 4.5:1 body / 3:1 large; safe-area insets honored;
   `tabular-nums` for anything numeric that updates.
@@ -224,3 +268,16 @@ Rules:
 - [ ] 44px targets + focus rings + labels verified on the mobile breakpoint.
 - [ ] Looks at home next to macOS System Settings / Linear / Luma. If it reads
       as "admin template", it is not done.
+- [ ] This document updated in the same change (§9).
+
+## 9. Keeping this document current
+
+This document is a living contract, not a snapshot. After every UI
+change, in the same change:
+
+1. If you used a value or pattern this document doesn't define, add it
+   here first (owner approves), then use it.
+2. If a change made any section above untrue, rewrite that section to
+   describe what IS now — current state only, no history narration.
+3. If code and this document disagree, the mismatch ships fixed in the
+   same change, never deferred.

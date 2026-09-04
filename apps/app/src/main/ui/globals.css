@@ -3,6 +3,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Coarse-pointer floor: every tappable element is at least 44px. Desktop
+   keeps its dense size; only coarse pointers get the minimum. */
+@utility touch-44 {
+  @media (pointer: coarse) {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
+
 /* Hide scrollbars while keeping the area scrollable (horizontal chip strips). */
 @utility scrollbar-none {
   scrollbar-width: none;
@@ -79,9 +88,13 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 5%);
+  --shadow-lift:
+    0 4px 12px -4px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
   --shadow-overlay:
     0 8px 24px -8px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* ── Accents ────────────────────────────────────────────────────────────── */
@@ -172,6 +185,7 @@
   color-scheme: light;
   --background: oklch(0.99 0 0);
   --foreground: oklch(0.145 0 0);
+  --qr-ink: var(--foreground);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -203,6 +217,9 @@
   color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
+  /* Login QR modules stay near-black: the code sits on a fixed white canvas
+     (quiet zone + scan contrast), so a light ink would vanish in dark mode. */
+  --qr-ink: oklch(0.145 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
@@ -373,30 +390,23 @@
       background-color 140ms ease;
   }
   .field-control:hover {
-    border-color: oklch(0.85 0 0);
+    border-color: color-mix(in oklch, var(--foreground) 18%, var(--border));
   }
   .field-control:focus-within,
-  .field-control:focus {
-    border-color: color-mix(in oklch, var(--foreground) 40%, var(--input));
+  .field-control:focus,
+  .field-control:focus-visible {
+    border-color: var(--ring);
     box-shadow: none;
-  }
-  /* The brightened hairline is the focus indicator — never stack outlines. */
-  .field-control:focus-visible,
-  .field-control:focus-within:focus-visible {
     outline: none;
   }
+  /* Border-only focus — no halo, so nothing can clip at container edges. */
   [data-slot="input-group"]:has(
     [data-slot="input-group-control"]:focus-visible
   ),
   [data-slot="input-group"]:focus-within {
-    border-color: color-mix(in oklch, var(--foreground) 40%, var(--input));
+    border-color: var(--ring);
     box-shadow: none;
-  }
-  [data-slot="input-group"]:focus-within {
     outline: none;
-  }
-  .dark .field-control:hover {
-    border-color: oklch(0.4 0 0);
   }
 
   .table-row {
@@ -406,12 +416,12 @@
     background-color: var(--muted);
   }
 
-  /* Apple card — generous padding, soft, no hard shadow */
+  /* Apple card — standard 16px padding (§2.1), soft, no hard shadow */
   .data-card {
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     background: var(--card);
-    padding: 1.125rem;
+    padding: 1rem;
     transition:
       border-color 180ms ease,
       background-color 180ms ease,
@@ -419,14 +429,11 @@
   }
   @media (hover: hover) and (pointer: fine) {
     .data-card:hover {
-      border-color: oklch(0.85 0 0);
+      border-color: color-mix(in oklch, var(--foreground) 18%, var(--border));
       background: var(--card);
       transform: translateY(-1px);
-      box-shadow: var(--shadow-soft);
+      box-shadow: var(--shadow-lift);
     }
-  }
-  .dark .data-card:hover {
-    border-color: oklch(0.35 0 0);
   }
 
   /* Sticky bottom bar — Vercel: solid card, flat border */
@@ -464,6 +471,23 @@
       black calc(100% - 24px),
       transparent
     );
+  }
+}
+
+@layer utilities {
+  /* Input focus = thin border highlight only (no halo, nothing to clip).
+     Lives in the utilities layer so it beats the `border-input` utility;
+     a components-layer rule alone loses to it regardless of specificity. */
+  .field-control:focus-within,
+  .field-control:focus,
+  .field-control:focus-visible,
+  [data-slot="input-group"]:has(
+    [data-slot="input-group-control"]:focus-visible
+  ),
+  [data-slot="input-group"]:focus-within {
+    border-color: var(--ring);
+    box-shadow: none;
+    outline: none;
   }
 }
 

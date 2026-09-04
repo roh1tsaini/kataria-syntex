@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AlertTriangle, CheckCircle2, CloudOff, RefreshCw } from "lucide-react";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -10,10 +10,19 @@ import {
   DialogTitle,
 } from "@/ui/components/ui/dialog";
 import { Input } from "@/ui/components/ui/input";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/ui/components/ui/empty";
 import { useSync } from "@/lib/offline/sync";
 import { listPending, type PendingChallan } from "@/lib/offline/core";
 import { resubmitWithNumber, retryErrored } from "@/lib/offline/sync";
 import { toastSuccess } from "@/store/toast";
+import { friendlyError } from "@/ui/lib/errors";
+import { ApiError } from "@/lib/api";
 import { EASE_OUT } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
 
@@ -28,7 +37,7 @@ export function SyncBanner({ onOpen }: { onOpen: () => void }) {
     useSync();
   const reduceMotion = useReducedMotion();
   const issues = conflictCount + errorCount;
-  if (online && pendingCount === 0 && issues === 0) return null;
+  const visible = !(online && pendingCount === 0 && issues === 0);
 
   const tone = issues
     ? "border-destructive/25 bg-destructive/10 text-destructive"
@@ -49,32 +58,48 @@ export function SyncBanner({ onOpen }: { onOpen: () => void }) {
   const Icon = issues ? AlertTriangle : online ? RefreshCw : CloudOff;
 
   return (
-    <motion.button
-      type="button"
-      onClick={onOpen}
-      initial={reduceMotion ? false : { opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={
-        reduceMotion ? { duration: 0 } : { duration: 0.22, ease: EASE_OUT }
-      }
-      className={cn(
-        "flex w-full items-center gap-2.5 border-b px-4 py-2 text-left text-xs font-semibold sm:px-6",
-        tone,
+    <AnimatePresence initial={false}>
+      {visible && (
+        <motion.button
+          key="sync-banner"
+          type="button"
+          onClick={onOpen}
+          initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{
+            opacity: 0,
+            y: reduceMotion ? 0 : -8,
+            transition: {
+              duration: reduceMotion ? 0 : 0.16,
+              ease: EASE_OUT,
+            },
+          }}
+          transition={
+            reduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }
+          }
+          className={cn(
+            "flex w-full items-center gap-2.5 border-b px-4 py-2 text-left text-xs font-semibold sm:px-6",
+            tone,
+          )}
+        >
+          <Icon className="size-3.5 shrink-0" aria-hidden />
+          <span className="flex-1">{label}</span>
+          {online && !issues && !syncing && (
+            <CheckCircle2
+              className="size-3.5 shrink-0 opacity-60"
+              aria-hidden
+            />
+          )}
+        </motion.button>
       )}
-    >
-      <Icon className="size-3.5 shrink-0" aria-hidden />
-      <span className="flex-1">{label}</span>
-      {online && !issues && !syncing && (
-        <CheckCircle2 className="size-3.5 shrink-0 opacity-60" aria-hidden />
-      )}
-    </motion.button>
+    </AnimatePresence>
   );
 }
 
 function StatusChip({ status }: { status: PendingChallan["status"] }) {
   if (status === "pending")
     return (
-      <span className="rounded-sm border border-border bg-muted px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+      <span className="rounded-sm border border-border bg-muted px-1.5 py-0.5 micro-label">
         Waiting
       </span>
     );
@@ -108,15 +133,15 @@ function ConflictRow({
     try {
       const res = await resubmitWithNumber(p.clientRef, value.trim());
       if (!res.ok) {
-        setError(res.error ?? "Could not fix");
+        setError(res.error ?? friendlyError(res.error));
         return;
       }
       // The conflict row remounts once restored to pending; tell the sheet to
       // re-read the queue so this entry disappears.
       onResolved();
       toastSuccess(`Challan ${value.trim()} resolved`);
-    } catch {
-      setError("Something went wrong. Try again.");
+    } catch (err) {
+      setError(friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -174,12 +199,7 @@ function ErrorRow({ p }: { p: PendingChallan }) {
       <span className="font-semibold tabular-nums">{p.challanNumber}</span>
       <StatusChip status={p.status} />
       <span className="flex-1 text-xs text-muted-foreground">
-        {p.errorCode === "invalid_customer" ||
-        p.errorCode === "invalid_job_worker"
-          ? "The party no longer exists on the server"
-          : p.errorCode === "fy_mismatch"
-            ? "The financial year changed for this date"
-            : `Server rejected it (${p.errorCode ?? "unknown"})`}
+        {friendlyError(p.errorCode ? new ApiError(0, p.errorCode) : null)}
       </span>
       <Button
         variant="outline"
@@ -230,16 +250,22 @@ export function SyncDialog({
 
         <div className="flex flex-col gap-4 overflow-y-auto">
           {pending.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              Nothing queued. Everything is saved on the server.
-            </p>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <CheckCircle2 aria-hidden />
+                </EmptyMedia>
+                <EmptyTitle>Nothing queued</EmptyTitle>
+                <EmptyDescription>
+                  Everything is saved on the server.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           )}
 
           {conflicts.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                Number clashes
-              </h4>
+              <h4 className="micro-label">Number clashes</h4>
               {conflicts.map((p) => (
                 <ConflictRow
                   key={p.clientRef}
@@ -252,9 +278,7 @@ export function SyncDialog({
 
           {errors.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                Failed to sync
-              </h4>
+              <h4 className="micro-label">Failed to sync</h4>
               {errors.map((p) => (
                 <ErrorRow key={p.clientRef} p={p} />
               ))}
@@ -263,7 +287,7 @@ export function SyncDialog({
 
           {waiting.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              <h4 className="micro-label">
                 Waiting to sync {syncing ? "— sending now…" : ""}
               </h4>
               {waiting.map((p) => (

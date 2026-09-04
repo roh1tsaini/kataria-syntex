@@ -399,7 +399,10 @@ export function SettingsPage() {
                   <span className="text-xs tabular-nums text-muted-foreground">
                     {fmtDate(currentFy.startsAt)} – {fmtDate(currentFy.endsAt)}
                   </span>
-                  <Badge className="border-transparent bg-accent text-accent-foreground tabular-nums">
+                  <Badge
+                    variant="outline"
+                    className="border-accent/25 bg-accent/10 text-accent-foreground tabular-nums"
+                  >
                     {currentFy.label}
                   </Badge>
                 </span>

@@ -99,7 +99,9 @@ export function friendlyError(
 ): string {
   if (err instanceof ApiError) {
     const key = err.code as keyof typeof MESSAGES;
-    return MESSAGES[key] ?? err.code;
+    return MESSAGES[key] ?? fallback;
   }
+  // Offline and proxy failures never reach the server — say so directly.
+  if (err instanceof TypeError) return MESSAGES.network_error;
   return fallback;
 }

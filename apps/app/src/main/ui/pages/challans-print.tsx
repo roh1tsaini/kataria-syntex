@@ -9,6 +9,7 @@ import { ChallanDocument } from "@/ui/components/challan-document";
 import { printPage } from "@/lib/platform";
 
 import { Button } from "@/ui/components/ui/button";
+import { Skeleton } from "@/ui/components/motion";
 
 import { type ChallanKind } from "./challans-shared";
 
@@ -52,8 +53,11 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
 
   if (!detail) {
     return (
-      <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
-        Loading…
+      <div className="flex min-h-dvh flex-col items-center gap-3 bg-muted p-4">
+        <span className="sr-only">Loading challan</span>
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full max-w-2xl" />
+        <Skeleton className="h-40 w-full max-w-2xl" />
       </div>
     );
   }

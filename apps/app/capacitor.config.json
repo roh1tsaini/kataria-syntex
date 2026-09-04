@@ -1,6 +1,6 @@
 {
   "appId": "com.katariasyntex.challan",
-  "appName": "Kataria Challan",
+  "appName": "Kataria Syntex Biz App",
   "webDir": "dist",
   "android": {
     "allowMixedContent": false

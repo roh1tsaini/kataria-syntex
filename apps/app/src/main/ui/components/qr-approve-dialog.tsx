@@ -22,9 +22,7 @@ export function QrApproveDialog({
         <DialogHeader>
           <DialogTitle>Approve a device</DialogTitle>
           <DialogDescription>
-            Scan the QR shown on the other device, or type the code under it. If
-            that device named a person, they'll be logged in — otherwise it logs
-            in as you.
+            Make sure the code matches the other device, then approve.
           </DialogDescription>
         </DialogHeader>
         <CodeEntryForm

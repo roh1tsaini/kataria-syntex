@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Kataria Challan</string>
-    <string name="title_activity_main">Kataria Challan</string>
+    <string name="app_name">Kataria Syntex Biz App</string>
+    <string name="title_activity_main">Kataria Syntex Biz App</string>
     <string name="package_name">com.katariasyntex.challan</string>
     <string name="custom_url_scheme">com.katariasyntex.challan</string>
 </resources>

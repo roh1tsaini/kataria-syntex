@@ -51,7 +51,7 @@ export const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
           }
         }}
         className={cn(
-          "peer flex size-5 shrink-0 items-center justify-center rounded-sm border border-input bg-card transition-all duration-150 outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50",
+          "peer flex size-5 shrink-0 items-center justify-center rounded-sm border border-input bg-card transition-[border-color,background-color,box-shadow,transform] duration-150 focus-visible:outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [@media(pointer:coarse)]:-m-3 [@media(pointer:coarse)]:p-3",
           checked &&
             "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
           className,

@@ -205,7 +205,7 @@ export function PackingPage() {
   return (
     <AppShell>
       <PageHeader
-        eyebrow="Packing station"
+        eyebrow="Dispatch"
         title="Packing"
         description="Weigh and record yarn before dispatch."
         actions={
@@ -244,7 +244,7 @@ export function PackingPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 mr-1 shrink-0 rounded-md"
+                className="mr-1 shrink-0 rounded-md touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >
@@ -270,15 +270,10 @@ export function PackingPage() {
 
       <Card className="mt-4 overflow-hidden">
         <div className="hidden sm:flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            Packing entries
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {activeTab === "sale" ? "Final yarn" : "Raw yarn"}
-          </span>
+          <span className="micro-label">Packing entries</span>
         </div>
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5 sm:hidden">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="micro-label">
             Entries •{" "}
             {filtered.length > 0 ? `${filtered.length} shown` : "register"}
           </span>
@@ -294,7 +289,7 @@ export function PackingPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Entry</th>
                       <th className="py-3.5 pr-3">Date</th>
                       <th className="py-3.5 pr-3 text-right">Items</th>
@@ -372,7 +367,7 @@ export function PackingPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Entry</th>
                       <th className="py-3.5 pr-3">Date</th>
                       <th className="py-3.5 pr-3 text-right">Items</th>
@@ -397,7 +392,7 @@ export function PackingPage() {
                           )}
                         >
                           <td className="py-2.5 pl-5 pr-3">
-                            <span className="font-mono text-[13px] font-bold">
+                            <span className="font-mono text-[13px] font-bold tabular-nums">
                               {entry.entryNumber}
                             </span>
                             {entry.hasImported && (
@@ -410,7 +405,7 @@ export function PackingPage() {
                               </Badge>
                             )}
                           </td>
-                          <td className="py-2.5 pr-3 font-medium text-muted-foreground whitespace-nowrap">
+                          <td className="py-2.5 pr-3 font-medium tabular-nums text-muted-foreground whitespace-nowrap">
                             {fmtDate(entry.date)}
                           </td>
                           <td className="py-2.5 pr-3 text-right font-medium tabular-nums">
@@ -458,14 +453,14 @@ export function PackingPage() {
                       <div
                         key={entry.id}
                         className={cn(
-                          "rounded-lg border border-border bg-card p-3.5",
+                          "rounded-lg border border-border bg-card p-4",
                           entry.hasImported && "opacity-75",
                         )}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="font-mono text-sm font-bold tracking-tight">
+                              <span className="font-mono text-sm font-bold tabular-nums tracking-tight">
                                 {entry.entryNumber}
                               </span>
                               {entry.hasImported && (
@@ -478,7 +473,7 @@ export function PackingPage() {
                                 </Badge>
                               )}
                             </div>
-                            <div className="mt-1 text-xs font-medium text-muted-foreground">
+                            <div className="mt-1 text-xs font-medium tabular-nums text-muted-foreground">
                               {fmtDate(entry.date)} · {entry.items.length}{" "}
                               {entry.items.length === 1 ? "item" : "items"}
                             </div>
@@ -503,7 +498,7 @@ export function PackingPage() {
                                   setEditingId(entry.id);
                                 }}
                                 aria-label={`Edit entry ${entry.entryNumber}`}
-                                className="-mr-1 -mt-1 size-8 rounded-md text-muted-foreground hover:text-foreground"
+                                className="-mr-1 -mt-1 rounded-md text-muted-foreground hover:text-foreground touch-44"
                               >
                                 <Pencil className="size-4" aria-hidden />
                               </Button>
@@ -701,10 +696,10 @@ function PackingForm({
             };
       if (editId) {
         await api(`/packing/${editId}`, { method: "PUT", body });
-        toastSuccess("Entry updated", "Packing entry has been saved.");
+        toastSuccess("Packing entry saved.");
       } else {
         await api("/packing", { method: "POST", body });
-        toastSuccess("Entry created", "Packing entry has been recorded.");
+        toastSuccess("Packing entry recorded.");
       }
       setDirty(false);
       onBack();
@@ -863,14 +858,21 @@ function PackingForm({
                             : { opacity: 0, y: -8, scale: 0.98 }
                         }
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0 }}
+                        exit={{
+                          opacity: 0,
+                          y: -8,
+                          scale: 0.98,
+                          transition: reduceMotion
+                            ? { duration: 0 }
+                            : { duration: 0.15, ease: EASE_OUT },
+                        }}
                         transition={
                           reduceMotion
                             ? { duration: 0 }
                             : { duration: 0.18, ease: EASE_OUT }
                         }
                       >
-                        <div className="rounded-lg border border-border bg-card p-3.5">
+                        <div className="rounded-lg border border-border bg-card p-4">
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-2 text-xs font-bold">
                               <span className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground text-xs">
@@ -897,7 +899,7 @@ function PackingForm({
                                   setDirty(true);
                                 }}
                                 aria-label={`Remove row ${idx + 1}`}
-                                className="size-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
                               >
                                 <Trash2 className="size-4" aria-hidden />
                               </Button>
@@ -1055,14 +1057,21 @@ function PackingForm({
                             : { opacity: 0, y: -8, scale: 0.98 }
                         }
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0 }}
+                        exit={{
+                          opacity: 0,
+                          y: -8,
+                          scale: 0.98,
+                          transition: reduceMotion
+                            ? { duration: 0 }
+                            : { duration: 0.15, ease: EASE_OUT },
+                        }}
                         transition={
                           reduceMotion
                             ? { duration: 0 }
                             : { duration: 0.18, ease: EASE_OUT }
                         }
                       >
-                        <div className="rounded-lg border border-border bg-card p-3.5">
+                        <div className="rounded-lg border border-border bg-card p-4">
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-2 text-xs font-bold">
                               <span className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground text-xs">
@@ -1089,7 +1098,7 @@ function PackingForm({
                                   setDirty(true);
                                 }}
                                 aria-label={`Remove row ${idx + 1}`}
-                                className="size-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
                               >
                                 <Trash2 className="size-4" aria-hidden />
                               </Button>

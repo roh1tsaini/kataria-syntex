@@ -77,8 +77,7 @@ function RowMenu({ kind, challan }: { kind: ChallanKind; challan: Challan }) {
   const onDelete = async () => {
     const ok = await confirm({
       title: `Delete ${kind.singular} ${challan.challanNumber}?`,
-      description:
-        "This cannot be undone. The challan and its line items will be permanently removed.",
+      description: "This permanently removes the challan and its lines.",
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -86,10 +85,7 @@ function RowMenu({ kind, challan }: { kind: ChallanKind; challan: Challan }) {
     setDeleting(true);
     try {
       await remove(challan.id);
-      toastSuccess(
-        "Challan deleted",
-        `${challan.challanNumber} was removed from the register.`,
-      );
+      toastSuccess(`${challan.challanNumber} deleted.`);
     } catch (err) {
       toastError(
         "Could not delete",
@@ -103,7 +99,7 @@ function RowMenu({ kind, challan }: { kind: ChallanKind; challan: Challan }) {
   const onCopyId = async () => {
     try {
       await navigator.clipboard.writeText(challan.id);
-      toastSuccess("Challan ID copied", challan.id);
+      toastSuccess("Challan ID copied.");
     } catch {
       toastError("Could not copy", "Clipboard is unavailable on this device.");
     }
@@ -253,7 +249,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 mr-1 shrink-0 rounded-md"
+                className="mr-1 shrink-0 rounded-md touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >
@@ -315,22 +311,23 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
+        >
           {error}
         </p>
       )}
 
       <Card className="mt-4 overflow-hidden">
         <div className="hidden sm:flex items-center justify-between border-b border-border bg-muted px-4 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            Issued challans
-          </span>
+          <span className="micro-label">Issued challans</span>
           <span className="hidden text-xs text-muted-foreground sm:inline">
             Select a record to view or print
           </span>
         </div>
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-2.5 sm:hidden">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="micro-label">
             Issued •{" "}
             {challans.length > 0 ? `${challans.length} shown` : "register"}
           </span>
@@ -346,7 +343,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Challan no.</th>
                       <th className="py-3.5 pr-3">Date</th>
                       <th className="py-3.5 pr-3">{kind.party}</th>
@@ -417,7 +414,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 z-[1] bg-card/95">
-                    <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <tr className="border-b border-border micro-label">
                       <th className="py-3.5 pl-5 pr-3">Challan no.</th>
                       <th className="py-3.5 pr-3">Date</th>
                       <th className="py-3.5 pr-3">{kind.party}</th>
@@ -438,7 +435,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                         <td className="py-2.5 pl-5 pr-3">
                           <Link
                             to={`${kind.listPath}/${c.id}`}
-                            className="inline-flex items-center gap-1.5 font-mono text-[13px] font-bold text-primary hover:underline underline-offset-2"
+                            className="inline-flex items-center gap-1.5 font-mono text-[13px] font-bold tabular-nums text-primary hover:underline underline-offset-2"
                           >
                             {c.challanNumber}
                             <ArrowUpRight
@@ -458,7 +455,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                             </span>
                           ) : null}
                         </td>
-                        <td className="py-2.5 pr-3 font-medium text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 pr-3 font-medium tabular-nums text-muted-foreground whitespace-nowrap">
                           {c.date}
                         </td>
                         <td className="py-2.5 pr-3 max-w-[200px]">
@@ -480,9 +477,12 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                           {fmtWt(c.totalNetWt)}
                         </td>
                         <td className="py-2.5 text-xs font-medium text-muted-foreground">
-                          <span className="rounded-sm bg-muted px-2 py-1 text-[11px] font-semibold">
+                          <Badge
+                            variant="secondary"
+                            className="px-2 py-1 tabular-nums"
+                          >
                             {c.fyLabel}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="py-2.5 pr-5 text-right">
                           <RowMenu kind={kind} challan={c} />
@@ -503,16 +503,19 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                     >
                       <Link
                         to={`${kind.listPath}/${c.id}`}
-                        className="group block min-w-0 flex-1 p-3.5"
+                        className="group block min-w-0 flex-1 p-4"
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="font-mono text-sm font-bold tracking-tight text-primary">
+                            <span className="font-mono text-sm font-bold tabular-nums tracking-tight text-primary">
                               {c.challanNumber}
                             </span>
-                            <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[11px] font-medium tracking-wider text-muted-foreground">
+                            <Badge
+                              variant="secondary"
+                              className="font-medium tabular-nums tracking-wider text-muted-foreground"
+                            >
                               {c.fyLabel}
-                            </span>
+                            </Badge>
                             {c.conflict ? (
                               <span className="inline-flex items-center gap-1 rounded-sm border border-destructive/20 bg-destructive/10 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-destructive">
                                 <AlertTriangle
@@ -533,7 +536,9 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                               className="size-3 shrink-0"
                               aria-hidden
                             />
-                            <span className="font-medium">{c.date}</span>
+                            <span className="font-medium tabular-nums">
+                              {c.date}
+                            </span>
                             <span
                               className="size-1 rounded-full bg-border shrink-0"
                               aria-hidden
@@ -545,24 +550,20 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                             </span>
                           </div>
                           {kind.type === "sales" && c.customerGstin && (
-                            <div className="mt-1 text-[11px] text-muted-foreground truncate">
+                            <div className="mt-1 text-[11px] tabular-nums text-muted-foreground truncate">
                               GSTIN {c.customerGstin}
                             </div>
                           )}
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2">
                           <div className="rounded-md bg-muted px-3 py-2">
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                              Boxes
-                            </div>
+                            <div className="micro-label">Boxes</div>
                             <div className="mt-0.5 text-sm font-bold tabular-nums">
                               {fmtBoxes(c.totalBoxes)}
                             </div>
                           </div>
                           <div className="rounded-md bg-muted px-3 py-2">
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                              Net wt
-                            </div>
+                            <div className="micro-label">Net wt</div>
                             <div className="mt-0.5 text-sm font-bold tabular-nums text-primary">
                               {fmtWt(c.totalNetWt)}{" "}
                               <span className="text-xs font-medium text-muted-foreground">

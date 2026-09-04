@@ -66,7 +66,7 @@ function VersionViewDialog({
         <DialogHeader>
           <DialogTitle>Version {version ?? "—"}</DialogTitle>
           <DialogDescription>
-            Saved snapshot — read-only. Restore it from the recipe details.
+            Read-only snapshot; restore it from the recipe details.
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -196,9 +196,7 @@ export function RecipeDetailDialog({
                 </p>
               )}
               <section className="space-y-1 border-t border-border pt-3">
-                <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                  Version history
-                </h4>
+                <h4 className="micro-label">Version history</h4>
                 {detail.versions.map((v) => (
                   <div
                     key={v.version}

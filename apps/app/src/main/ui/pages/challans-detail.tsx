@@ -137,8 +137,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
     if (!id) return;
     const ok = await confirm({
       title: `Delete ${kind.singular} ${challan.challanNumber}?`,
-      description:
-        "This cannot be undone. The challan and its line items will be permanently removed.",
+      description: "This permanently removes the challan and its lines.",
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -192,8 +191,10 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           </Link>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="page-title font-mono">{challan.challanNumber}</h1>
-              <Badge variant="secondary" className="font-medium">
+              <h1 className="page-title font-mono tabular-nums">
+                {challan.challanNumber}
+              </h1>
+              <Badge variant="secondary" className="font-medium tabular-nums">
                 FY {challan.fyLabel}
               </Badge>
               {challan.conflict ? (
@@ -275,9 +276,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
       <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4">
         <Card className="overflow-hidden">
           <CardContent className="p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              {kind.party}
-            </div>
+            <div className="micro-label">{kind.party}</div>
             <div className="mt-2 text-[15px] font-bold tracking-tight">
               {partyName}
             </div>
@@ -300,25 +299,23 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
         </Card>
         <Card className="overflow-hidden">
           <CardContent className="p-4 sm:text-right">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Summary
-            </div>
+            <div className="micro-label">Summary</div>
             <div className="mt-2 flex flex-wrap items-baseline gap-2 sm:justify-end">
-              <span className="text-2xl font-bold tracking-tight tabular-nums">
+              <span className="page-title tabular-nums">
                 {fmtBoxes(challan.totalBoxes)}
               </span>
               <span className="text-sm font-medium text-muted-foreground">
                 boxes
               </span>
               <span className="text-muted-foreground">·</span>
-              <span className="text-2xl font-bold tracking-tight tabular-nums text-primary">
+              <span className="page-title tabular-nums text-primary">
                 {fmtWt(challan.totalNetWt)}
               </span>
               <span className="text-sm font-medium text-muted-foreground">
                 kg
               </span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className="mt-2 text-xs tabular-nums text-muted-foreground">
               {items.length} {items.length === 1 ? "line" : "lines"} • FY{" "}
               {challan.fyLabel}
             </div>
@@ -328,9 +325,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
 
       <Card className="mt-6 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-            Line items
-          </span>
+          <span className="micro-label">Line items</span>
           <Badge variant="secondary" className="font-semibold tabular-nums">
             {items.length} {items.length === 1 ? "item" : "items"}
           </Badge>
@@ -340,7 +335,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-card">
-                <tr className="border-b border-border text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <tr className="border-b border-border micro-label">
                   <th className="py-3 pl-5 pr-3">#</th>
                   <th className="py-3 pr-3">Denier</th>
                   <th className="py-3 pr-3">Colour</th>
@@ -406,7 +401,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
             {items.map((i: ChallanItem, idx: number) => (
               <div
                 key={i.id}
-                className="rounded-lg border border-border bg-card p-3.5"
+                className="rounded-lg border border-border bg-card p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -466,7 +461,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           </div>
 
           {challan.notes && (
-            <div className="mx-3 sm:mx-5 mb-3 sm:mb-5 mt-3 rounded-lg border border-border bg-muted/40 p-3.5 text-sm leading-relaxed">
+            <div className="mx-3 sm:mx-5 mb-3 sm:mb-5 mt-3 rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed">
               <span className="font-semibold text-foreground">Notes: </span>
               <span className="text-muted-foreground">{challan.notes}</span>
             </div>

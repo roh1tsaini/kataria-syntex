@@ -52,7 +52,7 @@ import {
   type NavSection,
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
-import { EASE } from "@/ui/lib/motion";
+import { EASE, EASE_DRAWER } from "@/ui/lib/motion";
 import { roleBadge } from "@/ui/components/role-badge";
 
 function Brand({ compact }: { compact?: boolean }) {
@@ -64,10 +64,10 @@ function Brand({ compact }: { compact?: boolean }) {
     return (
       <div
         className="grid size-8 shrink-0 place-items-center rounded-md bg-foreground text-background"
-        title={`Kataria Challan — ${workspaceLabel}`}
+        title={`Kataria Syntex Biz App — ${workspaceLabel}`}
       >
         <span className="text-[11px] font-semibold leading-none" aria-hidden>
-          K
+          KS
         </span>
       </div>
     );
@@ -82,8 +82,8 @@ function Brand({ compact }: { compact?: boolean }) {
       </div>
       <div className="min-w-0 overflow-hidden leading-tight">
         <div className="flex items-center gap-1 truncate text-[13px] font-semibold tracking-tight">
-          <span>Kataria</span>
-          <span className="font-medium text-muted-foreground">Challan</span>
+          <span>KS</span>
+          <span className="font-medium text-muted-foreground">Biz App</span>
         </div>
         <div className="truncate text-[11px] font-normal text-muted-foreground">
           {workspaceLabel}
@@ -96,9 +96,7 @@ function Brand({ compact }: { compact?: boolean }) {
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <div className="px-2 pb-1 pt-3">
-      <span className="select-none text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-        {children}
-      </span>
+      <span className="select-none micro-label">{children}</span>
     </div>
   );
 }
@@ -133,7 +131,6 @@ function NavList({
                   isSubActive(sub, pathname, search),
                 ) ?? false;
               const isExpanded = expanded[item.to] ?? anySubActive;
-              const on = active || anySubActive;
 
               return (
                 <div key={item.to}>
@@ -143,9 +140,9 @@ function NavList({
                       onClick={() => onToggleGroup(item.to)}
                       aria-expanded={isExpanded}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors duration-150 ease-[var(--ease-out)]",
-                        on
-                          ? "bg-accent font-medium text-accent-foreground"
+                        "flex min-h-11 w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors duration-150 ease-[var(--ease-out)] sm:min-h-10",
+                        anySubActive
+                          ? "font-medium text-foreground"
                           : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
                       )}
                     >
@@ -265,7 +262,7 @@ function NavRail({
               title={item.label}
               aria-label={item.label}
               className={cn(
-                "grid size-9 shrink-0 place-items-center rounded-md transition-colors duration-150",
+                "grid size-10 shrink-0 place-items-center rounded-md transition-colors duration-150 touch-44",
                 active
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
@@ -423,7 +420,7 @@ function MobileDrawerContent({
           <div className="truncate text-[15px] font-semibold tracking-tight">
             {user?.name}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-[12px] text-muted-foreground">
+          <div className="mt-0.5 flex items-center gap-2 text-[13px] text-muted-foreground">
             <span className="truncate">
               {company?.name ?? workspace?.name ?? "Kataria Syntex"}
             </span>
@@ -439,7 +436,7 @@ function MobileDrawerContent({
           <button
             type="button"
             onClick={onOpenSync}
-            className="flex min-h-8 items-center gap-1.5 text-xs font-semibold text-primary"
+            className="flex min-h-11 items-center gap-1.5 text-xs font-semibold text-primary sm:min-h-10"
           >
             {online ? (
               <>
@@ -537,7 +534,7 @@ function MobileBottomNav({
           <span className="relative grid place-items-center">
             <MoreHorizontal className="size-4" aria-hidden />
             {pendingBadge != null && pendingBadge > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[9px] font-medium leading-none text-destructive-foreground">
+              <span className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-destructive text-[11px] font-medium leading-none text-destructive-foreground">
                 {pendingBadge > 9 ? "9+" : pendingBadge}
               </span>
             )}
@@ -695,6 +692,40 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     setRailCollapsed((v) => !v);
   }, []);
 
+  // Hovering the collapsed rail previews the full sidebar as an overlay.
+  // Timers give hover intent; the page underneath never moves.
+  const [railHot, setRailHot] = useState(false);
+  const railTimer = useRef<number | null>(null);
+  const clearRailTimer = () => {
+    if (railTimer.current) {
+      window.clearTimeout(railTimer.current);
+      railTimer.current = null;
+    }
+  };
+  useEffect(
+    () => () => {
+      if (railTimer.current) window.clearTimeout(railTimer.current);
+    },
+    [],
+  );
+  const onRailEnter = () => {
+    if (!railCollapsed) return;
+    clearRailTimer();
+    railTimer.current = window.setTimeout(() => setRailHot(true), 120);
+  };
+  const onRailLeave = () => {
+    clearRailTimer();
+    railTimer.current = window.setTimeout(() => setRailHot(false), 180);
+  };
+  // Pinning the sidebar open cancels any pending hover preview.
+  useEffect(() => {
+    if (!railCollapsed) {
+      clearRailTimer();
+      setRailHot(false);
+    }
+  }, [railCollapsed]);
+  const railOpen = !railCollapsed || railHot;
+
   useOfflineSync();
 
   useEffect(() => {
@@ -745,10 +776,11 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
         toggleRail();
       }
       if (e.key === "Escape" && mobileOpen) setMobileOpen(false);
+      if (e.key === "Escape" && railHot) setRailHot(false);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileOpen, toggleRail]);
+  }, [mobileOpen, toggleRail, railHot]);
 
   // Lock body scroll while the drawer is open.
   useEffect(() => {
@@ -760,10 +792,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     };
   }, [mobileOpen]);
 
-  const drawerTransition = reduceMotion
-    ? { duration: 0 }
-    : { duration: 0.24, ease: EASE };
-
   return (
     <AppShellContext.Provider value={true}>
       <div className="min-h-dvh w-full bg-background">
@@ -774,55 +802,96 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           Skip to main content
         </a>
 
-        {/* Desktop sidebar — static layout column, never an overlay.
-            Collapses to an icon rail; no hover-peek, no drag gestures. */}
+        {/* Desktop sidebar — pinned open it is a layout column; a collapsed
+            rail expands on hover as an overlay (design.md §4/§5). */}
         <aside
+          onMouseEnter={onRailEnter}
+          onMouseLeave={onRailLeave}
           className={cn(
-            "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card md:flex",
-            railCollapsed ? "w-14" : "w-60",
+            "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card transition-[width] duration-200 ease-[var(--ease-drawer)] motion-reduce:transition-none md:flex",
+            railOpen ? "w-60" : "w-14",
+            railHot && "z-50 border-r-transparent shadow-overlay",
           )}
         >
-          {railCollapsed ? (
-            <>
-              <div className="flex h-14 shrink-0 items-center justify-center border-b border-border">
-                <Brand compact />
-              </div>
-              <div className="flex justify-center pb-1 pt-2">
-                <CircleButton
-                  onClick={toggleRail}
-                  title="Expand sidebar (Ctrl+B)"
-                  aria-label="Expand sidebar"
-                >
-                  <PanelLeftOpen aria-hidden />
-                </CircleButton>
-              </div>
-              <NavRail sections={sections} pathname={location.pathname} />
-              <UserFooter compact />
-            </>
-          ) : (
-            <>
-              <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-2.5">
-                <div className="min-w-0 flex-1">
-                  <Brand />
+          <AnimatePresence mode="wait" initial={false}>
+            {!railOpen ? (
+              <motion.div
+                key="rail"
+                className="flex min-h-0 flex-1 flex-col"
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : {
+                        opacity: 0,
+                        transition: { duration: 0.11, ease: EASE },
+                      }
+                }
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.14, ease: EASE }
+                }
+              >
+                <div className="flex h-14 shrink-0 items-center justify-center border-b border-border">
+                  <Brand compact />
                 </div>
-                <CircleButton
-                  onClick={toggleRail}
-                  title="Collapse sidebar (Ctrl+B)"
-                  aria-label="Collapse sidebar"
-                >
-                  <PanelLeftClose aria-hidden />
-                </CircleButton>
-              </div>
-              <NavList
-                sections={sections}
-                expanded={expanded}
-                onToggleGroup={toggleGroup}
-                pathname={location.pathname}
-                search={location.search}
-              />
-              <UserFooter />
-            </>
-          )}
+                <div className="flex justify-center pb-1 pt-2">
+                  <CircleButton
+                    onClick={toggleRail}
+                    title="Expand sidebar (Ctrl+B)"
+                    aria-label="Expand sidebar"
+                  >
+                    <PanelLeftOpen aria-hidden />
+                  </CircleButton>
+                </div>
+                <NavRail sections={sections} pathname={location.pathname} />
+                <UserFooter compact />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="full"
+                className="flex min-h-0 flex-1 flex-col"
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : {
+                        opacity: 0,
+                        transition: { duration: 0.11, ease: EASE },
+                      }
+                }
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.14, ease: EASE }
+                }
+              >
+                <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-2.5">
+                  <div className="min-w-0 flex-1">
+                    <Brand />
+                  </div>
+                  <CircleButton
+                    onClick={toggleRail}
+                    title="Collapse sidebar (Ctrl+B)"
+                    aria-label="Collapse sidebar"
+                  >
+                    <PanelLeftClose aria-hidden />
+                  </CircleButton>
+                </div>
+                <NavList
+                  sections={sections}
+                  expanded={expanded}
+                  onToggleGroup={toggleGroup}
+                  pathname={location.pathname}
+                  search={location.search}
+                />
+                <UserFooter />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </aside>
 
         {/* Content column sits next to the sidebar; no reflow animation. */}
@@ -870,7 +939,13 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                 className="fixed inset-0 z-40 bg-background/60 md:hidden"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                exit={{
+                  opacity: 0,
+                  transition: {
+                    duration: reduceMotion ? 0 : 0.16,
+                    ease: EASE,
+                  },
+                }}
                 transition={
                   reduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE }
                 }
@@ -883,15 +958,17 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                 className="fixed inset-y-0 left-0 z-50 w-[84vw] max-w-[320px] md:hidden"
                 initial={{ x: "-100%" }}
                 animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
+                exit={{
+                  x: "-100%",
+                  transition: {
+                    duration: reduceMotion ? 0 : 0.19,
+                    ease: EASE_DRAWER,
+                  },
+                }}
                 transition={
                   reduceMotion
                     ? { duration: 0 }
-                    : {
-                        duration: 0.24,
-                        ease: EASE,
-                        // exits a touch faster than entries (design.md §5.2)
-                      }
+                    : { duration: 0.24, ease: EASE_DRAWER }
                 }
               >
                 <MobileDrawerContent

@@ -18,7 +18,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[13rem] overflow-y-auto overflow-x-hidden rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-overlay origin-[--radix-dropdown-menu-content-transform-origin] transition-[opacity,transform] duration-150 ease-[var(--ease-out)] data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=closed]:scale-[0.97]",
+        "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[13rem] overflow-y-auto overflow-x-hidden rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-overlay origin-[--radix-dropdown-menu-content-transform-origin] transition-[opacity,transform] duration-150 ease-[var(--ease-out)] data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=closed]:scale-[0.97] data-[state=closed]:duration-120",
         className,
       )}
       {...props}
@@ -54,7 +54,7 @@ const DropdownMenuLabel = React.forwardRef<
   <DropdownMenuPrimitive.Label
     ref={ref}
     className={cn(
-      "px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground",
+      "px-2.5 py-1.5 text-xs font-bold uppercase tracking-[0.06em] text-muted-foreground",
       inset && "pl-8",
       className,
     )}
