@@ -11,7 +11,7 @@
       },
     },
     "apps/app": {
-      "name": "@kataria-syntex/challan-app",
+      "name": "@kataria-syntex/biz-app",
       "version": "0.1.0",
       "dependencies": {
         "@capacitor/core": "^8.0.0",
@@ -553,7 +553,7 @@
 
     "@js-temporal/polyfill": ["@js-temporal/polyfill@0.5.1", "", { "dependencies": { "jsbi": "^4.3.0" } }, "sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ=="],
 
-    "@kataria-syntex/challan-app": ["@kataria-syntex/challan-app@workspace:apps/app"],
+    "@kataria-syntex/biz-app": ["@kataria-syntex/biz-app@workspace:apps/app"],
 
     "@kataria-syntex/shared": ["@kataria-syntex/shared@workspace:packages/shared"],
 

@@ -43,15 +43,7 @@ Written, never read by any route:
 
 Decide per column: surface it in a response, or drop it in the next migration.
 
-## 4. App ID mismatch between native shells
-
-- Electron: `com.kataria.challan` (`apps/app/electron-builder.yml`)
-- Capacitor: `com.katariasyntex.challan` (`apps/app/capacitor.config.json`)
-
-Pick one reverse-DNS id. Renaming either breaks existing installs/updates, so
-it's a product call, not a cleanup.
-
-## 5. Rate limits that only live in memory
+## 4. Rate limits that only live in memory
 
 `/api/auth/lookup` (exists/has-password oracle) and the CPU-heavy
 `GET /api/challans/:id/pdf` are guarded only by per-isolate in-memory IP

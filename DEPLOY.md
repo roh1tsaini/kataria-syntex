@@ -63,6 +63,29 @@ bunx wrangler secret put PINGRAM_BASE_URL
 Local dev reads the same keys from `apps/app/.dev.vars` (gitignored — never
 commit it).
 
+### 5. Android signing (once — before the first APK build)
+
+The release APK must be signed, and every future update must carry the same
+signature — create the keystore once and never lose it. A lost key means the
+app must be uninstalled and reinstalled on every device.
+
+```bash
+# keytool ships with the JDK
+keytool -genkeypair -v -keystore kataria-release.p12 -storetype PKCS12 \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias kataria
+base64 -w0 kataria-release.p12 > kataria-release.b64   # Git Bash on Windows
+```
+
+Add three repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret                 | Value                                        |
+| ---------------------- | -------------------------------------------- |
+| `ANDROID_KEY_BASE64`   | contents of `kataria-release.b64` (one line) |
+| `ANDROID_KEY_ALIAS`    | the alias chosen above (e.g. `kataria`)      |
+| `ANDROID_KEY_PASSWORD` | the keystore password                        |
+
+Keep the original `.p12` and its password somewhere durable outside GitHub.
+
 ## Day-to-day maintenance
 
 ### Database changes
@@ -86,14 +109,14 @@ Keep exports somewhere durable (GitHub private repo, Google Drive).
 
 ### Releases (desktop/Android)
 
-Repo → Actions → **Build Challan App** → Run workflow:
+Repo → Actions → **Build KS Biz App** → Run workflow:
 
 - `targets: all | desktop | android` — desktop-only skips the 90-min APK job.
 - Optional `version` → creates a `v<version>` GitHub Release with the
   `.exe` / `.dmg` / `.AppImage` / `.apk` files attached.
 
-Android signing needs the `ANDROID_KEY_BASE64/ALIAS/PASSWORD` secrets (PKCS#12
-keystore, base64-encoded).
+Android signing uses the secrets from first-time setup step 5 — the APK job
+fails fast when they are absent.
 
 ### Monitoring
 

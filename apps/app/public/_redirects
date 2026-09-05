@@ -1,3 +1,0 @@
-# Static assets and /api/* (Pages Functions) resolve first; everything else
-# is a client-side route and gets the SPA shell.
-/*    /index.html   200

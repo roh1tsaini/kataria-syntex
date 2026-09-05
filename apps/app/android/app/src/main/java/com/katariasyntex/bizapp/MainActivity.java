@@ -1,4 +1,4 @@
-package com.katariasyntex.challan;
+package com.katariasyntex.bizapp;
 
 import com.getcapacitor.BridgeActivity;
 

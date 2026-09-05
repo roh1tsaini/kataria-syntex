@@ -11,10 +11,10 @@
   "scripts": {
     "dev": "turbo dev",
     "dev:web": "turbo dev --filter=@kataria-syntex/web",
-    "dev:app": "turbo dev --filter=@kataria-syntex/challan-app",
+    "dev:app": "turbo dev --filter=@kataria-syntex/biz-app",
     "build": "turbo build",
     "build:web": "turbo build --filter=@kataria-syntex/web",
-    "build:app": "turbo build --filter=@kataria-syntex/challan-app",
+    "build:app": "turbo build --filter=@kataria-syntex/biz-app",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "format": "prettier --write .",

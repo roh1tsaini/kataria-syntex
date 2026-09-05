@@ -1,5 +1,8 @@
-appId: com.kataria.challan
+appId: com.katariasyntex.bizapp
 productName: Kataria Syntex Biz App
+# Derived binaries must be path-safe — the scoped package name
+# (@kataria-syntex/biz-app) breaks the AppImage target.
+executableName: kataria-syntex-biz-app
 copyright: Kataria Syntex
 
 directories:

@@ -1,4 +1,4 @@
-name: "Build Challan App"
+name: "Build KS Biz App"
 
 on:
   workflow_dispatch:
@@ -117,6 +117,8 @@ jobs:
         working-directory: apps/app
 
       - name: Rewrite CSP placeholder for the packaged renderer
+        # Bash syntax — the windows-latest runner defaults to PowerShell.
+        shell: bash
         env:
           APP_URL: ${{ vars.APP_URL }}
         run: |
@@ -136,7 +138,7 @@ jobs:
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: challan-${{ matrix.name }}
+          name: ks-biz-app-${{ matrix.name }}
           path: ${{ matrix.bundle_path }}
           if-no-files-found: error
 
@@ -215,8 +217,8 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-challan-${{ hashFiles('apps/app/android/**/*.gradle*', 'apps/app/android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: gradle-challan-
+          key: gradle-ks-biz-app-${{ hashFiles('apps/app/android/**/*.gradle*', 'apps/app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-ks-biz-app-
 
       - name: Build signed release APK
         working-directory: apps/app/android
@@ -225,7 +227,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: challan-android
+          name: ks-biz-app-android
           path: apps/app/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
