@@ -17,8 +17,9 @@ import { stockRoute } from "./routes/stock";
 import { reportsRoute } from "./routes/reports";
 import { apiError } from "./lib/api-error";
 
-// Served as a Pages Function (functions/api/[[route]].ts). Static SPA assets
-// are Pages' job — this app only knows /api/*.
+// The worker entry (src/server/worker.ts) routes every /api/* request here.
+// Static SPA assets are served by the assets layer — this app only knows
+// /api/*.
 export const app = new Hono<{ Bindings: Env }>();
 
 // Log requests without query strings — QR codes and other tokens ride in

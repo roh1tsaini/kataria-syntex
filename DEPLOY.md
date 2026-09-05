@@ -5,12 +5,12 @@ Cloudflare — free tier only.
 
 ## Stack overview
 
-| Piece        | Where it runs                          | Notes                                |
-| ------------ | -------------------------------------- | ------------------------------------ |
-| Website      | Cloudflare **Workers** (Vinext)        | `apps/web`, D1 for inquiries         |
-| Business app | Cloudflare **Pages** (SPA + Functions) | `apps/app`, D1 for business data     |
-| Databases    | Cloudflare **D1** (SQLite)             | `kataria-app`, `kataria-web-inquiry` |
-| CI/CD        | GitHub Actions                         | auto-deploys on push to `main`       |
+| Piece        | Where it runs                      | Notes                            |
+| ------------ | ---------------------------------- | -------------------------------- |
+| Website      | Cloudflare **Workers** (Vinext)    | `apps/web`, D1 for inquiries     |
+| Business app | Cloudflare **Workers** (SPA + API) | `apps/app`, D1 for business data |
+| Databases    | Cloudflare **D1** (SQLite)         | `ks-biz-app-db`, `ks-web-db`     |
+| CI/CD        | GitHub Actions                     | auto-deploys on push to `main`   |
 
 Native shells (Electron desktop, Capacitor Android) build from the same
 renderer via `.github/workflows/app-build.yml` (manual dispatch or
@@ -22,19 +22,19 @@ renderer via `.github/workflows/app-build.yml` (manual dispatch or
 
 Add two secrets (repo → Settings → Secrets and variables → Actions):
 
-| Secret                  | Value                                              |
-| ----------------------- | -------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`  | Token with **D1 Edit + Pages Edit + Workers Edit** |
-| `CLOUDFLARE_ACCOUNT_ID` | Your account id (Cloudflare dashboard → Workers)   |
+| Secret                  | Value                                            |
+| ----------------------- | ------------------------------------------------ |
+| `CLOUDFLARE_API_TOKEN`  | Token with **D1 Edit + Workers Edit**            |
+| `CLOUDFLARE_ACCOUNT_ID` | Your account id (Cloudflare dashboard → Workers) |
 
 The deploy workflow (`cf-deploy.yml`) **auto-provisions both D1 databases and
 injects their ids on the runner** — no manual dashboard steps, no ids to paste.
 
 ### 2. Set the app origin
 
-Add a repository **variable** `APP_URL` = the Pages app FQDN (e.g.
-`https://kataria-app.pages.dev`). Native builds and the APK CSP injection read
-it.
+Add a repository **variable** `APP_URL` = the app worker FQDN
+(`https://app.katariasyntex.workers.dev`). Native builds and the APK CSP
+injection read it.
 
 ### 3. Deploy
 
@@ -44,7 +44,7 @@ Push to `main`. On every push:
    targets + APK) on pushes to `main` touching `apps/app`, or on manual
    dispatch.
 2. `cf-deploy.yml` — website: build → ensure D1 → migrate → deploy Worker;
-   app: build SPA → ensure D1 → migrate → deploy Pages.
+   app: build SPA → ensure D1 → migrate → deploy Worker.
 
 After the first app deploy, set `APP_URL` (step 2) so native builds can reach
 the API.
@@ -55,9 +55,9 @@ The OTP sender needs real credentials in production:
 
 ```bash
 cd apps/app
-bunx wrangler pages secret put PINGRAM_API_KEY --project-name kataria-app
-bunx wrangler pages secret put PINGRAM_FROM --project-name kataria-app
-bunx wrangler pages secret put PINGRAM_BASE_URL --project-name kataria-app
+bunx wrangler secret put PINGRAM_API_KEY
+bunx wrangler secret put PINGRAM_FROM
+bunx wrangler secret put PINGRAM_BASE_URL
 ```
 
 Local dev reads the same keys from `apps/app/.dev.vars` (gitignored — never
@@ -71,15 +71,15 @@ commit it).
 2. `bun run db:generate` (inside `apps/app`) → review the generated migration.
 3. Push. CI applies migrations before deploying.
 
-Local: `bun run db:migrate:local`. Inspect: `bunx wrangler d1 execute kataria-app --local --command "..."`.
+Local: `bun run db:migrate:local`. Inspect: `bunx wrangler d1 execute ks-biz-app-db --local --command "..."`.
 
 ### Backups (zero-lock-in)
 
 D1 is plain SQLite — export any time:
 
 ```bash
-bunx wrangler d1 export kataria-app --output backup-app.sql
-bunx wrangler d1 export kataria-web-inquiry --output backup-web.sql
+bunx wrangler d1 export ks-biz-app-db --output backup-app.sql
+bunx wrangler d1 export ks-web-db --output backup-web.sql
 ```
 
 Keep exports somewhere durable (GitHub private repo, Google Drive).

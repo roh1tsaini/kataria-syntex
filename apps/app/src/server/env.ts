@@ -1,11 +1,11 @@
 /**
- * Bindings available on every request (Pages Functions `env`).
+ * Bindings available on every request (Worker `env`).
  * Secrets (PINGRAM_API_KEY) arrive via .dev.vars locally and
- * `wrangler pages secret` in production — never through wrangler.jsonc.
+ * `wrangler secret put` in production — never through wrangler.jsonc.
  */
 export type Env = {
   DB: D1Database;
-  /** Static assets of this Pages deployment (Inter TTFs for the PDF renderer). */
+  /** Static assets of this Worker deployment (Inter TTFs for the PDF renderer). */
   ASSETS: Fetcher;
   /** Comma-separated extra CORS origins (website). Optional. */
   CORS_ORIGIN?: string;

@@ -18,7 +18,7 @@ export const cardMeta = [
 export const cardLinks: CardLink[] = [
   {
     label: "Website",
-    detail: "katariasyntex.com",
+    detail: site.url.replace(/^https?:\/\//, ""),
     href: site.url,
     external: true,
     icon: "globe",

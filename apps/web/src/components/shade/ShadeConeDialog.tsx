@@ -3,13 +3,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Copy,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, X } from "lucide-react";
 import type { Shade } from "@/content/shades";
 import { YarnCone } from "@/components/shade/YarnCone";
 import { Button } from "@/components/ui/button";
@@ -207,7 +201,12 @@ function ConeBody({
               <ArrowRight aria-hidden="true" />
             </Link>
           </Button>
-          <Button type="button" variant="ghost" onClick={copyHex} className="border-line text-navy hover:border-royal hover:text-royal">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={copyHex}
+            className="border-line text-navy hover:border-royal hover:text-royal"
+          >
             {copied ? (
               <Check aria-hidden="true" className="text-success" />
             ) : (
@@ -218,16 +217,8 @@ function ConeBody({
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-8">
-          <PrevNextButton
-            direction="prev"
-            target={prev}
-            onClick={onPrev}
-          />
-          <PrevNextButton
-            direction="next"
-            target={next}
-            onClick={onNext}
-          />
+          <PrevNextButton direction="prev" target={prev} onClick={onPrev} />
+          <PrevNextButton direction="next" target={next} onClick={onNext} />
         </div>
         <p className="tnum mt-3 text-center font-mono text-[10px] text-ink-soft/60">
           ← → TO BROWSE · ESC TO CLOSE

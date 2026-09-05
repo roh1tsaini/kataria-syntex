@@ -3,7 +3,7 @@ import { inquirySchema } from "@/lib/validation/inquiry";
 
 export const dynamic = "force-dynamic";
 
-// Separate D1 (kataria-web-inquiry) keeps public inquiries isolated from the
+// Separate D1 (ks-web-db) keeps public inquiries isolated from the
 // business app D1. Free tier: 500MB/DB, 5M reads/day.
 
 function clientIp(request: Request): string {

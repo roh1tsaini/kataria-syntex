@@ -100,7 +100,7 @@ export function YarnCone({
   const leftBot = CX - BOT_RX;
   const rightBot = CX + BOT_RX;
 
-  /* 
+  /*
    * Authentic cone silhouette:
    * Matches the real-life reference photo:
    * - Soft rolled dome shoulder on top
@@ -172,7 +172,7 @@ export function YarnCone({
           />
         </filter>
 
-        {/* 
+        {/*
          * Open traverse diamond cross-winding lattice:
          * Visible crossing yarn cords with 3D strand relief matching reference photo (~33.7°)
          */}
@@ -379,13 +379,7 @@ export function YarnCone({
       {/* ---------------------------------------------------------------- */}
       {/* 1. Ground shadows & ambient glow                                 */}
       {/* ---------------------------------------------------------------- */}
-      <ellipse
-        cx={CX}
-        cy={175}
-        rx={125}
-        ry={130}
-        fill={`url(#${glowId})`}
-      />
+      <ellipse cx={CX} cy={175} rx={125} ry={130} fill={`url(#${glowId})`} />
 
       {/* Diffuse cast floor shadow trailing softly to rear/left */}
       <ellipse
@@ -478,7 +472,7 @@ export function YarnCone({
             ry={+(TOP_RY * (rx / TOP_RX)).toFixed(2)}
             fill="none"
             stroke={shift(hex, -0.22)}
-            strokeOpacity={0.20}
+            strokeOpacity={0.2}
             strokeWidth={0.9}
           />
         ))}

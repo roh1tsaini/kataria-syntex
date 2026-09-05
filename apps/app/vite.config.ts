@@ -5,8 +5,8 @@ import { VitePWA } from "vite-plugin-pwa";
 import { copyFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Copies the canonical Inter TTFs into dist/fonts so the Pages Functions
-// ASSETS binding can serve them to the server PDF renderer.
+// Copies the canonical Inter TTFs into dist/fonts so the Worker's ASSETS
+// binding can serve them to the server PDF renderer.
 function interFonts(): Plugin {
   return {
     name: "kataria-inter-fonts",

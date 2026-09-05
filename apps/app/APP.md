@@ -20,7 +20,7 @@ sales challans, job-work challans + returns, raw material purchase,
 packing, stock ledger, reports, color recipes.
 
 One SPA bundle. Three shells: web/PWA, Electron desktop, Capacitor Android.
-Backend = Hono on Cloudflare Pages Functions + D1 (SQLite).
+Backend = Hono on Cloudflare Workers + D1 (SQLite).
 
 ```
 purchase → job-work OUT (dyeing) → return → packing → sales challan
@@ -54,7 +54,7 @@ bun run format:check  # gate
 
 # inside apps/app
 bun run dev            # Vite :1420 (strict port, proxies /api → :3000)
-bun run dev:server     # wrangler pages dev :3000 (workerd + local D1)
+bun run dev:server     # wrangler dev :3000 (workerd + local D1)
 bun run electron:dev   # Electron shell over the Vite dev server
 bun run db:generate    # drizzle-kit generate (new migration)
 bun run db:migrate:local
@@ -87,9 +87,9 @@ Latest stable majors; never downgrade to escape a break.
 
 ```
 apps/app/
-├── functions/api/[[route]].ts   # Pages Function catch-all → Hono app
 ├── src/
 │   ├── server/                  # API (workers runtime)
+│   │   ├── worker.ts            # Worker entry: /api/* → Hono, else → assets
 │   │   ├── index.ts             # Hono app: logger, secureHeaders, CORS, routes
 │   │   ├── env.ts               # Env bindings type
 │   │   ├── db/schema.ts         # 30 tables (Drizzle)
@@ -107,11 +107,11 @@ apps/app/
 ├── electron/                    # main.ts (keychain, net bridge), preload, build
 ├── drizzle/                     # migrations (timestamped folders)
 ├── design.md                    # design system — read before any UI change
-└── wrangler.jsonc               # Pages + D1 config
+└── wrangler.jsonc               # Worker + assets + D1 config
 ```
 
 Request path:
-SPA → same-origin `/api/*` (Vite proxy in dev) → Pages Function → Hono
+SPA → same-origin `/api/*` (Vite proxy in dev) → Worker → Hono
 → `requireAuth` → `resolveMember` → `requirePermission` → lib module → D1.
 
 ## 5 · Platforms
@@ -379,12 +379,12 @@ lot chips, color dots, negative-balance alert.
 Cloudflare free tier only. No VM, no Docker, no paid tiers. Anything beyond
 this baseline needs an explicit owner question first.
 
-| Piece     | Choice                                                                                              |
-| --------- | --------------------------------------------------------------------------------------------------- |
-| apps/app  | Cloudflare **Pages** — static SPA + Pages Functions (Hono)                                          |
-| apps/web  | Cloudflare **Workers** via Vinext (separate project)                                                |
-| Database  | D1 `kataria-app` (app) · `kataria-web-inquiry` (website, isolated)                                  |
-| Hostnames | free `*.pages.dev` / `*.workers.dev` — final names TBD by owner; custom domain parked (no purchase) |
+| Piece     | Choice                                                                                                                 |
+| --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| apps/app  | Cloudflare **Workers** — one worker: static SPA + Hono API                                                             |
+| apps/web  | Cloudflare **Workers** via Vinext (separate project)                                                                   |
+| Database  | D1 `ks-biz-app-db` (app) · `ks-web-db` (website, isolated)                                                             |
+| Hostnames | `app.katariasyntex.workers.dev` (app) · `web.katariasyntex.workers.dev` (website) — custom domain parked (no purchase) |
 
 **Secrets & vars** — `.env*` / `.dev.vars` are owner-only. Never read, echo,
 copy, or commit them. Secrets enter only as env read at use site.
@@ -392,7 +392,7 @@ copy, or commit them. Secrets enter only as env read at use site.
 | Binding / var                             | What                                        |
 | ----------------------------------------- | ------------------------------------------- |
 | `DB`                                      | D1 binding                                  |
-| `ASSETS`                                  | Pages static assets (fonts for PDF render)  |
+| `ASSETS`                                  | Worker static assets (fonts for PDF render) |
 | `CORS_ORIGIN`                             | comma-separated extra origins (website)     |
 | `APP_ENV`                                 | `development` → error detail in responses   |
 | `PINGRAM_API_KEY` / `_FROM` / `_BASE_URL` | OTP sender (secret)                         |
@@ -404,9 +404,9 @@ copy, or commit them. Secrets enter only as env read at use site.
 **Workflows**
 
 - `ci.yml` — typecheck + lint + format + build on every push/PR.
-- `cf-deploy.yml` — main push: build SPA → ensure D1 exists (auto-provision,
-  inject real id into `wrangler.jsonc`) → apply migrations → `pages deploy`.
-  PRs: preview deploy, no D1. Website deploys its own worker + inquiry DB.
+- `cf-deploy.yml` — main push only: build SPA → ensure D1 exists (auto-
+  provision, inject real id into `wrangler.jsonc`) → apply migrations →
+  `wrangler deploy`. Website deploys its own worker + inquiry DB.
 - `app-build.yml` — manual: desktop (win-x64, mac-arm64, linux-x64) + Android
   APK → GitHub Release with artifacts. Requires `APP_URL` repo variable.
 
@@ -414,7 +414,7 @@ copy, or commit them. Secrets enter only as env read at use site.
 
 | Service           | Limit                                                                                                |
 | ----------------- | ---------------------------------------------------------------------------------------------------- |
-| Pages Functions   | 100k requests/day · 10 ms CPU/invocation                                                             |
+| Workers           | 100k requests/day · 10 ms CPU/invocation                                                             |
 | D1                | 500 MB storage · 5M row reads + 100k row writes/day · Time Travel 7 days                             |
 | `db.batch()`      | one atomic transaction — no interactive BEGIN                                                        |
 | Browser Rendering | unused (pdf-lib instead)                                                                             |

@@ -12,7 +12,9 @@ concurrency:
 
 jobs:
   app:
-    name: Business app (Pages)
+    name: Business app (Worker)
+    # Deploys to the single production worker — no PR previews for Workers.
+    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -28,12 +30,10 @@ jobs:
       - name: Build SPA
         run: bun run --cwd apps/app build
 
-      # Production database only — PR previews get Pages preview URLs without
-      # touching D1. Auto-provisions the DB and injects its real id into
-      # wrangler.jsonc on the runner, so a fresh Cloudflare account needs no
-      # manual dashboard step.
+      # Auto-provisions the DB and injects its real id into wrangler.jsonc on
+      # the runner, so a fresh Cloudflare account needs no manual dashboard
+      # step.
       - name: Ensure D1 database exists
-        if: github.event_name == 'push'
         working-directory: apps/app
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -42,30 +42,29 @@ jobs:
           set -euo pipefail
           API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "kataria-app") | .uuid' | head -1)
+          DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "ks-biz-app-db") | .uuid' | head -1)
           if [ -z "$DB_ID" ]; then
-            DB_ID=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" --data '{"name":"kataria-app"}' "$API" | jq -r '.result.uuid // empty')
+            DB_ID=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" --data '{"name":"ks-biz-app-db"}' "$API" | jq -r '.result.uuid // empty')
           fi
-          if [ -z "$DB_ID" ]; then echo "Failed to resolve kataria-app database id" >&2; exit 1; fi
+          if [ -z "$DB_ID" ]; then echo "Failed to resolve ks-biz-app-db database id" >&2; exit 1; fi
           sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
 
       - name: Apply D1 migrations
-        if: github.event_name == 'push'
         working-directory: apps/app
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: bunx wrangler d1 migrations apply kataria-app --remote
+        run: bunx wrangler d1 migrations apply ks-biz-app-db --remote
 
-      # On PRs this creates a preview deployment; on main it publishes.
-      - name: Deploy Pages
+      # Publishes the `app` worker — static SPA + Hono API in one deployment.
+      - name: Deploy Worker
         uses: cloudflare/wrangler-action@v4
         with:
           packageManager: bun
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/app
-          command: pages deploy dist --project-name=kataria-app
+          command: deploy
 
   web:
     name: Website (Workers)
@@ -96,11 +95,11 @@ jobs:
           set -euo pipefail
           API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "kataria-web-inquiry") | .uuid' | head -1)
+          DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "ks-web-db") | .uuid' | head -1)
           if [ -z "$DB_ID" ]; then
-            DB_ID=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" --data '{"name":"kataria-web-inquiry"}' "$API" | jq -r '.result.uuid // empty')
+            DB_ID=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" --data '{"name":"ks-web-db"}' "$API" | jq -r '.result.uuid // empty')
           fi
-          if [ -z "$DB_ID" ]; then echo "Failed to resolve kataria-web-inquiry database id" >&2; exit 1; fi
+          if [ -z "$DB_ID" ]; then echo "Failed to resolve ks-web-db database id" >&2; exit 1; fi
           sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
 
       - name: Apply D1 migrations (inquiry DB)
@@ -108,7 +107,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: bunx wrangler d1 migrations apply kataria-web-inquiry --remote
+        run: bunx wrangler d1 migrations apply ks-web-db --remote
 
       - name: Deploy Worker
         working-directory: apps/web

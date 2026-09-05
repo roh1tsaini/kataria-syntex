@@ -7,7 +7,7 @@ import { exportCountries } from "./markets";
 const phoneDigits = COMPANY_DETAILS.phone.replace(/\D/g, "");
 
 const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://katariasyntex.com"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://web.katariasyntex.workers.dev"
 ).replace(/\/+$/, "");
 
 /**

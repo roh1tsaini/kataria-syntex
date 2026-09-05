@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "kataria-web",
+  "name": "web",
   "main": "vinext/server/fetch-handler",
   "compatibility_date": "2026-08-30",
   "compatibility_flags": ["nodejs_compat"],
@@ -12,7 +12,7 @@
   "d1_databases": [
     {
       "binding": "INQUIRY_DB",
-      "database_name": "kataria-web-inquiry",
+      "database_name": "ks-web-db",
       // CI auto-provisions the database and injects the real id on deploy
       // (.github/workflows/cf-deploy.yml). Local dev reads bindings from this
       // file through the Cloudflare Vite plugin.

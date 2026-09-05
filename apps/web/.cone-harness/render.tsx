@@ -5,7 +5,11 @@ import { YarnCone } from "../src/components/shade/YarnCone";
 
 const cases: Array<{ code: string; hex: string; colors?: string[] }> = [
   { code: "100", hex: "#C62828" },
-  { code: "88LD", hex: "#880E4F", colors: ["#880E4F", "#9C27B0", "#7B1FA2", "#4A148C"] },
+  {
+    code: "88LD",
+    hex: "#880E4F",
+    colors: ["#880E4F", "#9C27B0", "#7B1FA2", "#4A148C"],
+  },
   { code: "58", hex: "#FFD700" },
   { code: "103D", hex: "#8D6E63" },
   { code: "60", hex: "#4DD0E1" },

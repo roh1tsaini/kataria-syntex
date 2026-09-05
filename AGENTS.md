@@ -24,12 +24,12 @@ workspace "while you're in there".
 
 ## 2. Repo map
 
-| Path                | What                                                                        | Stack                                                                                                                                    |
-| ------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/app`          | Internal business app (challans, job work, stock, packing, reports)         | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Pages Functions · D1 (Drizzle) · PWA + Electron desktop + Capacitor Android |
-| `apps/web`          | Public showcase website                                                     | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                                                          |
-| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`) | TypeScript                                                                                                                               |
-| `packages/tsconfig` | Shared TS config presets                                                    | —                                                                                                                                        |
+| Path                | What                                                                        | Stack                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/app`          | Internal business app (challans, job work, stock, packing, reports)         | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron desktop + Capacitor Android |
+| `apps/web`          | Public showcase website                                                     | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                                                  |
+| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`) | TypeScript                                                                                                                       |
+| `packages/tsconfig` | Shared TS config presets                                                    | —                                                                                                                                |
 
 ## 2.1 Platforms (apps/app — all three maintained)
 
@@ -92,7 +92,7 @@ bun run lint       # required gate
 bun run format:check
 
 # inside apps/app
-bun run dev:server   # Cloudflare Pages Functions API (workerd, wrangler pages dev)
+bun run dev:server   # Hono API (workerd, wrangler dev)
 bun run dev          # Vite frontend on :1420
 bun run electron:dev # Electron shell over the Vite dev server
 ```
@@ -147,7 +147,7 @@ Every part of this project must be:
 5. **Minimal maintenance** — boring, stable tech; few moving parts; strong
    typed codebase that doesn't need constant babysitting.
 
-Hosting baseline: **Cloudflare free tier** (Pages + Workers + D1, free
+Hosting baseline: **Cloudflare free tier** (Workers + D1, free
 Cloudflare hostnames). No VM, no Docker, no deSEC. Anything added on top of
 that baseline requires an explicit owner question first. D1 provisioning is
 automated in `.github/workflows/cf-deploy.yml`.
