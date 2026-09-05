@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 export default async function ContactPage({
   searchParams,
 }: {
-  searchParams: Promise<{ product?: string; shade?: string }>;
+  searchParams: Promise<{ product?: string }>;
 }) {
-  const { product, shade } = await searchParams;
+  const { product } = await searchParams;
 
   return (
     <Section>
@@ -30,11 +30,7 @@ export default async function ContactPage({
       <div className="mt-12 grid gap-12 lg:grid-cols-12">
         {/* Form */}
         <Reveal className="lg:col-span-7">
-          <InquiryForm
-            key={`${product ?? ""}-${shade ?? ""}`}
-            initialProduct={product}
-            initialShade={shade}
-          />
+          <InquiryForm key={product ?? ""} initialProduct={product} />
         </Reveal>
 
         {/* Contact ledger */}

@@ -7,15 +7,12 @@ import { Search } from "lucide-react";
 import { type Shade } from "@/content/shades";
 import { Button } from "@/components/ui/button";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
-import { ShadeConeDialog } from "@/components/shade/ShadeConeDialog";
-import { cn } from "@/lib/utils";
 
 /**
  * Interactive shade card — shades grouped into card pages the way the
  * physical card is printed: one panel per page, each shade a wound-yarn
- * band with its code printed beneath. Selecting a shade opens it wound on
- * a dye cone, with its code, hex, and a pre-filled inquiry link. Code
- * search filters across every page at once.
+ * band with its code printed beneath. Code search filters across every
+ * page at once.
  */
 export function ShadeExplorer({
   shades,
@@ -26,7 +23,6 @@ export function ShadeExplorer({
 }) {
   const [activePage, setActivePage] = useState<number | "all">("all");
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Shade | null>(null);
 
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -47,18 +43,6 @@ export function ShadeExplorer({
         .filter((group) => group.shades.length > 0),
     [pages, visible],
   );
-
-  /* Cone dialog walks across the currently visible shades. */
-  const selectedIndex = selected
-    ? visible.findIndex(
-        (shade) => shade.code === selected.code && shade.page === selected.page,
-      )
-    : -1;
-  const prevShade = selectedIndex > 0 ? visible[selectedIndex - 1] : null;
-  const nextShade =
-    selectedIndex >= 0 && selectedIndex < visible.length - 1
-      ? visible[selectedIndex + 1]
-      : null;
 
   return (
     <div className="mt-10 md:mt-14">
@@ -100,27 +84,12 @@ export function ShadeExplorer({
         </label>
       </div>
 
-      {/* Cone preview — the shade wound on a dye cone, over the grid */}
-      <ShadeConeDialog
-        shade={selected}
-        prev={prevShade}
-        next={nextShade}
-        onClose={() => setSelected(null)}
-        onPrev={() => {
-          if (prevShade) setSelected(prevShade);
-        }}
-        onNext={() => {
-          if (nextShade) setSelected(nextShade);
-        }}
-      />
-
       {/* Count */}
       <p
         aria-live="polite"
         className="tnum mt-8 font-mono text-[11px] text-ink-soft"
       >
-        {visible.length} OF {shades.length} SHADES · SELECT A SHADE TO VIEW IT
-        ON THE CONE
+        {visible.length} OF {shades.length} SHADES
       </p>
 
       {/* Card pages */}
@@ -140,40 +109,22 @@ export function ShadeExplorer({
               </p>
             </div>
             <div className="mt-4 grid grid-cols-4 gap-x-2 gap-y-3 xs:grid-cols-6 sm:grid-cols-8 md:grid-cols-10 xl:grid-cols-12">
-              {pageShades.map((shade) => {
-                const isActive = selected?.code === shade.code;
-                return (
-                  <button
-                    key={`${shade.page}-${shade.code}`}
-                    type="button"
-                    onClick={() => setSelected(shade)}
-                    aria-haspopup="dialog"
-                    aria-label={`Shade ${shade.code}, hex ${shade.hex} — view on cone`}
-                    className="group cursor-pointer rounded-chip"
-                  >
-                    <YarnSwatch
-                      colors={shade.colors ?? [shade.hex]}
-                      rowHeight={8}
-                      seed={shade.code}
-                      className={cn(
-                        "aspect-[3/4] w-full transition-[translate,box-shadow] duration-150 ease-[var(--ease-out)] group-hover:-translate-y-0.5",
-                        isActive &&
-                          "ring-2 ring-royal ring-offset-2 ring-offset-paper",
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        "tnum mt-1.5 block truncate text-center font-mono text-[10px] transition-colors",
-                        isActive
-                          ? "font-medium text-navy"
-                          : "text-ink-soft group-hover:text-navy",
-                      )}
-                    >
-                      {shade.code}
-                    </span>
-                  </button>
-                );
-              })}
+              {pageShades.map((shade) => (
+                <span
+                  key={`${shade.page}-${shade.code}`}
+                  className="block rounded-chip"
+                >
+                  <YarnSwatch
+                    colors={shade.colors ?? [shade.hex]}
+                    rowHeight={8}
+                    seed={shade.code}
+                    className="aspect-[3/4] w-full"
+                  />
+                  <span className="tnum mt-1.5 block truncate text-center font-mono text-[10px] text-ink-soft">
+                    {shade.code}
+                  </span>
+                </span>
+              ))}
             </div>
           </section>
         ))}

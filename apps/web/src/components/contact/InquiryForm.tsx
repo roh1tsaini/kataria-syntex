@@ -98,25 +98,18 @@ function FormField({ id, label, children, hint, error }: FormFieldProps) {
  * locally (localStorage), validation is shared with the server (Zod), and a
  * hidden honeypot field quietly filters bots.
  */
-export function InquiryForm({
-  initialProduct,
-  initialShade,
-}: {
-  initialProduct?: string;
-  initialShade?: string;
-}) {
+export function InquiryForm({ initialProduct }: { initialProduct?: string }) {
   const draft = useDraft();
   const [status, setStatus] = useState<Status>("idle");
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [website, setWebsite] = useState(""); // honeypot
 
-  // Deep links like /contact?product=... or ?shade=... pre-fill the draft.
+  // Deep links like /contact?product=... pre-fill the draft.
   useEffect(() => {
     if (initialProduct) draft.setField("product", initialProduct);
-    if (initialShade) draft.setField("shade", initialShade);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialProduct, initialShade]);
+  }, [initialProduct]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -28,7 +28,7 @@ export const products: YarnProduct[] = [
     headline: "Clean, even yarn for fine shirting and knit programs.",
     description:
       "Combed cotton yarn with low imperfection levels for buyers who need a smooth, uniform base for weaving and knitting. Suited to fine fabric construction where hand feel and appearance carry the product.",
-    image: "/images/cotton-yarn.png",
+    image: "/images/cotton-yarn.webp",
     imageAlt: "Cones of natural combed cotton yarn",
     specs: [
       { label: "Composition", value: "100% combed cotton" },
@@ -55,7 +55,7 @@ export const products: YarnProduct[] = [
     headline: "Workhorse cotton for denim, drills, and daily production.",
     description:
       "Carded cotton yarn for volume programs where strength, absorbency, and price discipline matter. A dependable base for heavy and medium constructions running on repeat orders.",
-    image: "/images/cotton-yarn.png",
+    image: "/images/cotton-yarn.webp",
     imageAlt: "Carded cotton yarn cones in a mill setting",
     specs: [
       { label: "Composition", value: "100% carded cotton" },
@@ -82,7 +82,7 @@ export const products: YarnProduct[] = [
     headline: "High-tenacity spun yarn built for hard-wearing fabric.",
     description:
       "100% polyester spun yarn with the tensile strength and abrasion resistance production units expect for uniforms, workwear, and blended-fabric programs. Quick-drying and dimensionally stable in finishing.",
-    image: "/images/polyester-yarn.png",
+    image: "/images/polyester-yarn.webp",
     imageAlt: "White polyester spun yarn cones",
     specs: [
       { label: "Composition", value: "100% polyester" },
@@ -109,7 +109,7 @@ export const products: YarnProduct[] = [
     headline: "Textured yarn with the bulk and stretch knits demand.",
     description:
       "Draw-textured polyester yarn for circular knits, warp knits, and activewear programs. Surat's core strength — steady availability across deniers with consistent crimp and dye uptake.",
-    image: "/images/polyester-yarn.png",
+    image: "/images/polyester-yarn.webp",
     imageAlt: "Draw-textured polyester yarn packages",
     specs: [
       { label: "Composition", value: "100% polyester, textured" },
@@ -136,7 +136,7 @@ export const products: YarnProduct[] = [
     headline: "Shade-true cotton, matched lot to lot for color-critical runs.",
     description:
       "Package-dyed cotton yarn matched to your lab dips and shade-card references. Color-critical programs get controlled dye lots with clear continuity records for reordering.",
-    image: "/images/dyed-yarn.png",
+    image: "/images/dyed-yarn.webp",
     imageAlt: "Dyed cotton yarn in deep shades",
     specs: [
       { label: "Composition", value: "100% cotton, package dyed" },
@@ -163,7 +163,7 @@ export const products: YarnProduct[] = [
     headline: "Deep, fast shades for polyester programs that can't fade.",
     description:
       "Disperse-dyed polyester yarn with strong light and wash fastness for outdoor, suiting, and furnishing programs. Shade-card colors and custom matches available across spun and DTY bases.",
-    image: "/images/dyed-yarn.png",
+    image: "/images/dyed-yarn.webp",
     imageAlt: "Dyed polyester yarn in saturated colors",
     specs: [
       { label: "Composition", value: "100% polyester, package dyed" },

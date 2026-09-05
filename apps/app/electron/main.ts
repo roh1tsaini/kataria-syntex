@@ -12,9 +12,21 @@
  * - external links open in the OS browser; in-window navigation away from
  *   the app is blocked
  */
-import { app, BrowserWindow, ipcMain, net, safeStorage, shell } from "electron";
-import { join } from "node:path";
+import { app, BrowserWindow, ipcMain, net, protocol, safeStorage, shell } from "electron";
+import { join, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 import { readFile, writeFile, unlink } from "node:fs/promises";
+
+// The packaged SPA must not load from file:// — Chromium blocks ES-module
+// scripts (CORS, null origin) and CSP 'self' matches nothing there, leaving
+// a black window. A privileged custom scheme gives the renderer a real
+// origin; the handler in whenReady serves dist/ under app://bundle/*.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "app",
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
+  },
+]);
 
 const DEV = process.env.KC_DEV === "1";
 // Baked at build time from APP_URL via electron/build.ts (--define
@@ -222,7 +234,7 @@ function createWindow(): void {
   win.webContents.on("will-navigate", (event, url) => {
     const allowed = DEV
       ? "http://localhost:1420"
-      : ["file://", API_ORIGIN].some((p) => url.startsWith(p));
+      : ["app://", API_ORIGIN].some((p) => url.startsWith(p));
     if (!allowed) {
       event.preventDefault();
       void shell.openExternal(url);
@@ -232,11 +244,24 @@ function createWindow(): void {
   if (DEV) {
     void win.loadURL("http://localhost:1420");
   } else {
-    void win.loadFile(join(APP_ROOT, "dist", "index.html"));
+    void win.loadURL("app://bundle/index.html");
   }
 }
 
 app.whenReady().then(() => {
+  // Serve the packaged renderer: app://bundle/<path> → APP_ROOT/dist/<path>.
+  // Host is ignored; only the path matters, and it may not escape dist/.
+  const distRoot = join(APP_ROOT, "dist");
+  protocol.handle("app", (request) => {
+    const { pathname } = new URL(request.url);
+    const rel = pathname.replace(/^\/+/, "") || "index.html";
+    const file = join(distRoot, rel);
+    if (file !== distRoot && !file.startsWith(distRoot + sep)) {
+      return new Response("forbidden", { status: 403 });
+    }
+    return net.fetch(pathToFileURL(file).toString());
+  });
+
   registerIpc();
   createWindow();
   app.on("activate", () => {

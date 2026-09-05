@@ -209,7 +209,7 @@ keep the main thread free while it drives scroll per frame:
 - `lerp 0.14, anchors: true`; touch stays native (`syncTouch` off).
 - While any Radix modal is open, Lenis parks: `body[data-scroll-locked]`
   is watched and `lenis.stop()` / `lenis.start()` wrap it.
-- Internally scrollable containers (shade cone dialog) carry
+- Internally scrollable containers carry
   `data-lenis-prevent` so gestures scroll the container, not the page.
 - Heavy grids (shade-card page groups) use the `paint-gate` utility
   (`content-visibility: auto` + `contain-intrinsic-size`) so off-screen

@@ -49,7 +49,10 @@ const nextConfig: NextConfig = {
   compress: true,
   outputFileTracingRoot: root,
   turbopack: { root },
-  images: { formats: ["image/avif", "image/webp"] },
+  // Images ship as pre-optimized static WebP (public/images/) — there is no
+  // server optimizer behind /_next/image (the Cloudflare adapter needs the
+  // paid Images binding), so next/image serves files as-is.
+  images: { unoptimized: true },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
