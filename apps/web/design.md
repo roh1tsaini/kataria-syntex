@@ -122,8 +122,9 @@ body copy.
 - Cards rest flat with `--line` hairlines; interactive cards lift
   `0 8px 24px rgb(10 37 64 / 0.08)` on hover, −1px translate, 140ms.
 - Floating visuals (shade-card panel): `0 24px 48px rgb(10 37 64 / 0.14)`.
-- Sticky nav: canvas/85 + `backdrop-blur` + hairline bottom; solid on
-  `prefers-reduced-transparency`.
+- Sticky nav: transparent over the canvas at top; solid `bg-canvas` +
+  hairline bottom once scrolled. **No `backdrop-blur`** — the per-frame GPU
+  filter while scrolling is a jank source.
 
 ### 2.7 Wound-yarn swatch texture (product content only)
 
@@ -193,10 +194,27 @@ them, never re-derive.
 3. **Load-in:** above-the-fold hero content enters once on page load with
    the same fade + rise (`ks-enter`, 640ms, same curve); siblings stagger
    40–60ms. Pure CSS, runs before hydration, collapses under reduced motion.
-4. Animate transform + opacity only.
+4. Animate transform + opacity only. Never animate `filter` (e.g. blur
+   crossfades) — it repaints per frame.
 5. No parallax, no looping backgrounds, no hover scale >1, no spinners —
    skeletons for async content.
 6. `prefers-reduced-motion`: everything collapses to opacity ≤200ms.
+
+### 4.1 Smooth scroll (Lenis) integration rules
+
+SmoothScroll is the only place Lenis is configured. Non-negotiables that
+keep the main thread free while it drives scroll per frame:
+
+- `autoRaf: true` — Lenis owns its rAF loop; never run a second one.
+- `lerp 0.14, anchors: true`; touch stays native (`syncTouch` off).
+- While any Radix modal is open, Lenis parks: `body[data-scroll-locked]`
+  is watched and `lenis.stop()` / `lenis.start()` wrap it.
+- Internally scrollable containers (shade cone dialog) carry
+  `data-lenis-prevent` so gestures scroll the container, not the page.
+- Heavy grids (shade-card page groups) use the `paint-gate` utility
+  (`content-visibility: auto` + `contain-intrinsic-size`) so off-screen
+  groups never raster their texture layers while scrolling.
+- No `backdrop-blur` anywhere that sits over scrolling content.
 
 ## 5. Accessibility floor (non-negotiable)
 

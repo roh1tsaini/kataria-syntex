@@ -108,3 +108,31 @@ export async function writeNativeToken(token: string | null): Promise<void> {
     }
   }
 }
+
+export type DesktopPlatform = "darwin" | "win32" | "linux";
+
+/** Window-control surface behind the custom title bar. Null on web/PWA and
+ * Capacitor — they have no window chrome. Everything touching
+ * window.desktop window IPC lives here so no UI file branches on platform. */
+export type DesktopWindow = {
+  platform: DesktopPlatform;
+  minimize: () => Promise<void>;
+  toggleMaximize: () => Promise<boolean>;
+  close: () => Promise<void>;
+  isMaximized: () => Promise<boolean>;
+  onMaximizedChange: (cb: (maximized: boolean) => void) => () => void;
+};
+
+export function desktopWindow(): DesktopWindow | null {
+  if (detectHost() !== "electron") return null;
+  const d = window.desktop;
+  if (!d?.minimizeWindow || !d.platform) return null;
+  return {
+    platform: d.platform,
+    minimize: () => d.minimizeWindow(),
+    toggleMaximize: () => d.toggleMaximizeWindow(),
+    close: () => d.closeWindow(),
+    isMaximized: () => d.isMaximizedWindow(),
+    onMaximizedChange: (cb) => d.onMaximizedChange(cb),
+  };
+}

@@ -794,7 +794,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
 
   return (
     <AppShellContext.Provider value={true}>
-      <div className="min-h-dvh w-full bg-background">
+      <div className="min-h-[calc(100dvh-var(--titlebar-h))] w-full bg-background">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
@@ -897,7 +897,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
         {/* Content column sits next to the sidebar; no reflow animation. */}
         <div
           className={cn(
-            "flex min-h-dvh flex-col",
+            "flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col",
             railCollapsed ? "md:pl-14" : "md:pl-60",
           )}
         >

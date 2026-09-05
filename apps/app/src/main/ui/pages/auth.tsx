@@ -545,7 +545,7 @@ export function AuthPage() {
           : null;
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
+    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
       <div className="flex items-center gap-3">
         <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
           <span

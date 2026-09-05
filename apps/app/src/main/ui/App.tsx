@@ -6,6 +6,7 @@ import { AppShell } from "@/ui/components/app-shell";
 import { Toaster } from "@/ui/components/toast";
 import { Skeleton } from "@/ui/components/motion";
 import { ErrorBoundary } from "@/ui/components/error-boundary";
+import { TitleBar } from "@/ui/components/title-bar";
 import { NotFoundPage } from "@/ui/pages/not-found";
 
 const AuthPage = lazy(() =>
@@ -116,6 +117,7 @@ export function App() {
   return (
     <>
       <ErrorBoundary>
+        <TitleBar />
         <Suspense fallback={<RouteLoader />}>
           <Routes>
             <Route path="/auth" element={<AuthPage />} />

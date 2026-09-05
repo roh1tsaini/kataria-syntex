@@ -1,10 +1,12 @@
 /**
  * Electron preload — the ONLY bridge between renderer and main.
  *
- * Sandboxed (no Node), exposes four calls via contextBridge:
+ * Sandboxed (no Node), exposes via contextBridge:
  * - getToken / setToken: encrypted session token in the OS keychain
  * - api: same-shape fetch that runs in the main process (no CORS)
  * - download: GET a file through the main process, base64 body
+ * - window controls for the custom title bar (minimize / toggle-maximize /
+ *   close / maximized state) + host platform
  * Nothing else crosses the boundary.
  */
 import { contextBridge, ipcRenderer } from "electron";
@@ -35,6 +37,21 @@ const desktop = {
     ipcRenderer.invoke("kc:api", { path, ...(init ?? {}) }),
   download: (path: string): Promise<DesktopDownloadResponse> =>
     ipcRenderer.invoke("kc:download", { path }),
+  platform: process.platform as "darwin" | "win32" | "linux",
+  minimizeWindow: (): Promise<void> => ipcRenderer.invoke("kc:win:minimize"),
+  toggleMaximizeWindow: (): Promise<boolean> =>
+    ipcRenderer.invoke("kc:win:toggle-maximize"),
+  closeWindow: (): Promise<void> => ipcRenderer.invoke("kc:win:close"),
+  isMaximizedWindow: (): Promise<boolean> =>
+    ipcRenderer.invoke("kc:win:is-maximized"),
+  onMaximizedChange: (cb: (maximized: boolean) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, maximized: boolean) =>
+      cb(maximized);
+    ipcRenderer.on("kc:win:maximized", listener);
+    return () => {
+      ipcRenderer.removeListener("kc:win:maximized", listener);
+    };
+  },
 };
 
 export type DesktopBridge = typeof desktop;

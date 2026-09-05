@@ -76,10 +76,9 @@ export function Testimonials() {
               <figure
                 key={testimonial.name}
                 aria-hidden={index !== active}
-                className="absolute inset-0 transition-[opacity,filter] duration-300 ease-[var(--ease-out)]"
+                className="absolute inset-0 transition-opacity duration-300 ease-[var(--ease-out)]"
                 style={{
                   opacity: index === active ? 1 : 0,
-                  filter: index === active ? "blur(0)" : "blur(2px)",
                   pointerEvents: index === active ? "auto" : "none",
                 }}
               >

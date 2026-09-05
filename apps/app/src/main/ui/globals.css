@@ -3,6 +3,17 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Electron custom title bar: root containers subtract it from 100dvh.
+   Set to 36px by the TitleBar component on documentElement, Electron only. */
+:root {
+  --titlebar-h: 0px;
+}
+@media print {
+  :root {
+    --titlebar-h: 0px !important;
+  }
+}
+
 /* Coarse-pointer floor: every tappable element is at least 44px. Desktop
    keeps its dense size; only coarse pointers get the minimum. */
 @utility touch-44 {

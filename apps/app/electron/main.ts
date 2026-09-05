@@ -23,6 +23,14 @@ const API_ORIGIN =
   process.env.KC_API_ORIGIN ??
   (DEV ? "http://localhost:3000" : "https://CHANGE_ME_APP_ORIGIN");
 
+// Runtime paths only — Bun's bundler replaces __dirname with the build
+// machine's source directory, which is fiction once the app is installed.
+// getAppPath() is resources/app.asar when packaged, apps/app in dev.
+const APP_ROOT = app.getAppPath();
+
+/** The single shell window — window-control IPC operates on this. */
+let mainWindow: BrowserWindow | null = null;
+
 const TOKEN_FILE = () => join(app.getPath("userData"), "session.token");
 
 async function readToken(): Promise<string | null> {
@@ -140,6 +148,21 @@ function registerIpc(): void {
   );
   ipcMain.handle("kc:api", handleApi);
   ipcMain.handle("kc:download", handleDownload);
+  // Custom title bar (frameless shell): the renderer draws its own controls;
+  // macOS keeps native traffic lights and never calls these.
+  ipcMain.handle("kc:win:minimize", () => mainWindow?.minimize());
+  ipcMain.handle("kc:win:toggle-maximize", () => {
+    const win = mainWindow;
+    if (!win) return false;
+    if (win.isMaximized()) win.unmaximize();
+    else win.maximize();
+    return win.isMaximized();
+  });
+  ipcMain.handle("kc:win:close", () => mainWindow?.close());
+  ipcMain.handle(
+    "kc:win:is-maximized",
+    () => mainWindow?.isMaximized() ?? false,
+  );
 }
 
 async function handleDownload(_event: unknown, raw: unknown) {
@@ -174,15 +197,20 @@ function createWindow(): void {
     minHeight: 640,
     show: false,
     backgroundColor: "#0a0a0a",
-    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    // macOS keeps native traffic lights over the app surface; Windows/Linux
+    // hide the system bar entirely — the renderer draws the chrome.
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
     webPreferences: {
-      preload: join(__dirname, "preload.js"),
+      preload: join(APP_ROOT, "dist-electron", "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
       spellcheck: false,
     },
   });
+  mainWindow = win;
+  win.on("maximize", () => win.webContents.send("kc:win:maximized", true));
+  win.on("unmaximize", () => win.webContents.send("kc:win:maximized", false));
 
   win.once("ready-to-show", () => win.show());
 
@@ -204,7 +232,7 @@ function createWindow(): void {
   if (DEV) {
     void win.loadURL("http://localhost:1420");
   } else {
-    void win.loadFile(join(__dirname, "../dist/index.html"));
+    void win.loadFile(join(APP_ROOT, "dist", "index.html"));
   }
 }
 

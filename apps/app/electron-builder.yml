@@ -17,9 +17,13 @@ files:
   - package.json
 
 # Main process entry relative to app root — package.json has no "main" so we
-# point the builder at it via electron-builder's extraMetadata below.
+# point the builder at it via electron-builder's extraMetadata below. The
+# bundles are CommonJS (electron/build.ts format: "cjs"), so the packaged app
+# must not inherit the workspace "type": "module" — Electron would load
+# main.js as ESM and crash on require.
 extraMetadata:
   main: dist-electron/main.js
+  type: commonjs
 
 asar: true
 

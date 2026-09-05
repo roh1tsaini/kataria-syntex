@@ -14,29 +14,43 @@ export function SmoothScroll() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    // autoRaf lets Lenis own its rAF loop (destroyed with the instance);
+    // lerp 0.14 keeps the glide right behind the pointer so frames never
+    // feel stale on high-refresh displays.
     const lenis = new Lenis({
-      // Responsive smoothing — low enough to glide, high enough to never
-      // feel laggy behind the pointer/wheel.
       lerp: 0.14,
       anchors: true,
+      autoRaf: true,
     });
 
-    let raf = 0;
-    const loop = (time: number) => {
-      lenis.raf(time);
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
+    // Radix modals lock native scroll via body[data-scroll-locked]; a
+    // running Lenis keeps fighting that lock. Park it while any modal is
+    // open, resume when the last one closes.
+    let locked = false;
+    const lockObserver = new MutationObserver(() => {
+      const isLocked = document.body.hasAttribute("data-scroll-locked");
+      if (isLocked === locked) return;
+      locked = isLocked;
+      if (isLocked) lenis.stop();
+      else lenis.start();
+    });
+    lockObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-scroll-locked"],
+    });
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = () => {
-      if (reduced.matches) lenis.destroy();
+      if (reduced.matches) {
+        lockObserver.disconnect();
+        lenis.destroy();
+      }
     };
     reduced.addEventListener("change", onChange);
 
     return () => {
       reduced.removeEventListener("change", onChange);
-      cancelAnimationFrame(raf);
+      lockObserver.disconnect();
       lenis.destroy();
     };
   }, []);

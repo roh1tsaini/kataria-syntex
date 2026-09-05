@@ -61,3 +61,4 @@ eslint-output.json
 apps/web/eslint-output.json
 /.agents
 skills-lock.json
+/.tmp-dl

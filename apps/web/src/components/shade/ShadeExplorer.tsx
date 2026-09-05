@@ -126,7 +126,11 @@ export function ShadeExplorer({
       {/* Card pages */}
       <div className="mt-3 space-y-10">
         {grouped.map(({ page, shades: pageShades }) => (
-          <section key={page} aria-label={`Card page ${page}`}>
+          <section
+            key={page}
+            aria-label={`Card page ${page}`}
+            className="paint-gate"
+          >
             <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
               <h3 className="font-display text-lg font-semibold tracking-tight text-navy">
                 Card page {page}

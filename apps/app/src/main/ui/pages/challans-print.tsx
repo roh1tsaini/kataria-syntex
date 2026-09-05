@@ -38,7 +38,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
 
   if (loadError) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+      <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
         Couldn't load the challan. Check your connection.
         <Button
           variant="outline"
@@ -53,7 +53,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
 
   if (!detail) {
     return (
-      <div className="flex min-h-dvh flex-col items-center gap-3 bg-muted p-4">
+      <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center gap-3 bg-muted p-4">
         <span className="sr-only">Loading challan</span>
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full max-w-2xl" />
@@ -65,7 +65,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
   const { challan } = detail;
 
   return (
-    <div className="min-h-dvh bg-muted p-4 print:bg-white print:p-0">
+    <div className="min-h-[calc(100dvh-var(--titlebar-h))] bg-muted p-4 print:bg-white print:p-0">
       <style>{`@page { size: 210mm 148mm; margin: 0; }
 .challan-sheet { page-break-after: always; }
 .challan-sheet:last-child { page-break-after: auto; }`}</style>

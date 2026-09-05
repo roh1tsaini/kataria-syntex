@@ -150,6 +150,28 @@ controls, and actions that sit together share one grouped background.
 - Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
   with a `size-5` icon. One treatment everywhere.
 
+### 2.7.1 Window chrome — Electron desktop (custom title bar)
+
+Frameless window, app-drawn chrome like modern Electron apps (Spotify,
+Discord). The system bar never appears on any platform.
+
+- Bar: 36px (`h-9`), full width, `bg-background`, no border, `select-none`,
+  entirely `-webkit-app-region: drag`. Double-click on a drag region toggles
+  maximize natively (HTCAPTION).
+- Controls (Windows/Linux only): three 48×36 no-drag buttons, right-aligned.
+  Glyphs are 10px inline SVG strokes (minimize, maximize/restore, close) —
+  never icon-font glyphs. Rest: `text-muted-foreground`; hover: `bg-muted` +
+  `text-foreground`; close hover: `bg-red-600 text-white`. Focus ring per §6.
+- macOS: no drawn controls — native traffic lights ride the strip
+  (`titleBarStyle: hiddenInset`), bar stays drag-only.
+- Height reservation: `--titlebar-h` (0px default; TitleBar sets 36px on
+  `document.documentElement` while mounted). Root containers use
+  `min-h-[calc(100dvh-var(--titlebar-h))]` — never hardcode `min-h-dvh`
+  alone. Print forces the variable back to 0.
+- Web/PWA and Capacitor render nothing. The only window-control IPC path is
+  `platform.ts` → `desktopWindow()`; UI never calls `window.desktop`
+  directly.
+
 ### 2.8 App identity (names — never invent variants)
 
 | Form  | Value                    | Used for                                                                                                                            |
