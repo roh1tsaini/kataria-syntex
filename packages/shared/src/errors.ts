@@ -62,6 +62,7 @@ const API_CODES = [
   // recipes
   "recipe_exists",
   "recipe_version_missing",
+  "recipe_version_conflict",
   // qr login
   "qr_code_invalid",
   "qr_code_expired",

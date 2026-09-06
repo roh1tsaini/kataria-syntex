@@ -11,13 +11,14 @@ import {
 import { cn } from "@/ui/lib/cn";
 
 /** Header control for picking the app accent (persisted; drives all primary/accent tokens). */
-export function AccentPicker() {
+export function AccentPicker({ size }: { size?: "md" | "touch" }) {
   const { accent, setAccent } = useAccent();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <CircleButton
+          size={size}
           aria-label="Change accent colour"
           title="Change accent colour"
         >

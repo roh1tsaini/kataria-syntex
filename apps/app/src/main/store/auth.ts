@@ -64,11 +64,13 @@ export type PendingMember = {
   id: string;
   identifier: string;
   permissions: Permission[];
+  invitedByName: string | null;
 };
 export type Device = {
   id: string;
   label: string;
   platform: string;
+  userAgent: string | null;
   lastSeenAt: string;
   isCurrent: boolean;
 };

@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 
-/** Extracts a QR-login code from a scan result (URL or raw text). */
+/**
+ * Extracts a QR-login code from a scan result. The QR payload is the
+ * approve-page URL (<origin>/login/scan/<code>), so the code is its last
+ * path segment; a bare code is accepted too.
+ */
 function parseScanResult(data: string): string | null {
-  try {
-    const parsed = JSON.parse(data) as { c?: string };
-    if (parsed.c) return parsed.c.trim().toUpperCase();
-  } catch {
-    // not JSON — treat the raw text as the code
-  }
-  const code = data.trim().toUpperCase();
-  return code.length >= 4 ? code : null;
+  const fromUrl = data.match(/\/login\/scan\/([^/?#\s]+)/);
+  const raw = (
+    fromUrl ? decodeURIComponent(fromUrl[1]) : data.trim()
+  ).toUpperCase();
+  return raw.length >= 4 ? raw : null;
 }
 
 export function useCameraScanner(

@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
+import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth, usePermission, type Permission } from "@/store/auth";
 import { EASE_OUT } from "@/ui/lib/motion";
 
@@ -25,7 +26,7 @@ function Splash() {
         >
           K
         </span>
-        <span className="sr-only">Loading Kataria Syntex Biz App</span>
+        <span className="sr-only">Loading {COMPANY_DETAILS.name} Biz App</span>
       </motion.div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
+import { useMastersLoad } from "@/ui/hooks/use-masters-load";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -57,6 +58,7 @@ import {
   SelectValue,
 } from "@/ui/components/ui/select";
 import { cn } from "@/ui/lib/cn";
+import { round3Str } from "@kataria-syntex/shared";
 
 type PackingEntry = {
   id: string;
@@ -539,20 +541,15 @@ function PackingForm({
   const [error, setError] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [mastersError, setMastersError] = useState(false);
-  const [mastersNonce, setMastersNonce] = useState(0);
   const [dirty, setDirty] = useState(false);
 
   // Warn before closing/reloading the tab with uncommitted edits (browsers
   // show a native confirm — the SPA's own Cancel button runs onBack).
   useDirtyGuard(dirty);
 
-  useEffect(() => {
-    setMastersError(false);
-    void Promise.all([refreshDeniers(), refreshColors()]).catch(() =>
-      setMastersError(true),
-    );
-  }, [mastersNonce, refreshDeniers, refreshColors]);
+  const { failed: mastersError, retry: retryMasters } = useMastersLoad(() =>
+    Promise.all([refreshDeniers(), refreshColors()]),
+  );
 
   useEffect(() => {
     if (!editId) return;
@@ -616,7 +613,7 @@ function PackingForm({
         if (field === "grossWt" || field === "tareWt") {
           const g = parseFloat(updated.grossWt) || 0;
           const t = parseFloat(updated.tareWt) || 0;
-          if (g > 0) updated.netWt = (g - t).toFixed(3);
+          if (g > 0) updated.netWt = round3Str(g - t);
         }
         return updated;
       }),
@@ -636,7 +633,7 @@ function PackingForm({
         if (field === "sackWt" || field === "sacks") {
           const sw = parseFloat(updated.sackWt) || 0;
           const sk = parseInt(updated.sacks) || 0;
-          if (sw > 0 && sk > 0) updated.netWt = (sw * sk).toFixed(3);
+          if (sw > 0 && sk > 0) updated.netWt = round3Str(sw * sk);
         }
         return updated;
       }),
@@ -762,11 +759,7 @@ function PackingForm({
           <p className="text-sm text-destructive">
             Couldn't load deniers and colours. Save is disabled until they load.
           </p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setMastersNonce((n) => n + 1)}
-          >
+          <Button size="sm" variant="outline" onClick={retryMasters}>
             Retry
           </Button>
         </div>
@@ -908,7 +901,10 @@ function PackingForm({
 
                           <div className="mt-3 grid grid-cols-2 gap-2.5">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-denier`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Denier
                               </FieldLabel>
                               <Select
@@ -917,7 +913,10 @@ function PackingForm({
                                   updateSaleRow(idx, "denierId", v)
                                 }
                               >
-                                <SelectTrigger className="h-11 sm:h-10">
+                                <SelectTrigger
+                                  id={`row-${row.id}-denier`}
+                                  className="h-11 sm:h-10"
+                                >
                                   <SelectValue placeholder="Select denier" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -930,7 +929,10 @@ function PackingForm({
                               </Select>
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-color`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Colour
                               </FieldLabel>
                               <Select
@@ -939,7 +941,10 @@ function PackingForm({
                                   updateSaleRow(idx, "colorId", v)
                                 }
                               >
-                                <SelectTrigger className="h-11 sm:h-10">
+                                <SelectTrigger
+                                  id={`row-${row.id}-color`}
+                                  className="h-11 sm:h-10"
+                                >
                                   <SelectValue placeholder="Select colour" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -955,10 +960,14 @@ function PackingForm({
 
                           <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-tare`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Tare (kg)
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-tare`}
                                 className="h-11 sm:h-10"
                                 type="number"
                                 step="0.001"
@@ -970,10 +979,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-gross`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Gross (kg)
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-gross`}
                                 className="h-11 sm:h-10"
                                 type="number"
                                 step="0.001"
@@ -985,10 +998,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-net`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Net (kg)
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-net`}
                                 className="h-11 sm:h-10 font-semibold"
                                 type="number"
                                 step="0.001"
@@ -1001,10 +1018,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-cones`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Cones
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-cones`}
                                 className="h-11 sm:h-10"
                                 type="number"
                                 value={row.cones}
@@ -1018,10 +1039,14 @@ function PackingForm({
 
                           <div className="mt-2.5 grid grid-cols-2 gap-2.5">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-boxNo`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Box no.
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-boxNo`}
                                 className="h-11 sm:h-10"
                                 value={row.boxNo}
                                 onChange={(e) =>
@@ -1031,10 +1056,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-lotNo`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Lot no.
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-lotNo`}
                                 className="h-11 sm:h-10"
                                 value={row.lotNo}
                                 onChange={(e) =>
@@ -1107,7 +1136,10 @@ function PackingForm({
 
                           <div className="mt-3 grid grid-cols-2 gap-2.5">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-denier`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Denier
                               </FieldLabel>
                               <Select
@@ -1116,7 +1148,10 @@ function PackingForm({
                                   updateJobRow(idx, "denierId", v)
                                 }
                               >
-                                <SelectTrigger className="h-11 sm:h-10">
+                                <SelectTrigger
+                                  id={`row-${row.id}-denier`}
+                                  className="h-11 sm:h-10"
+                                >
                                   <SelectValue placeholder="Select denier" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1129,7 +1164,10 @@ function PackingForm({
                               </Select>
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-color`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Colour
                               </FieldLabel>
                               <Select
@@ -1138,7 +1176,10 @@ function PackingForm({
                                   updateJobRow(idx, "colorId", v)
                                 }
                               >
-                                <SelectTrigger className="h-11 sm:h-10">
+                                <SelectTrigger
+                                  id={`row-${row.id}-color`}
+                                  className="h-11 sm:h-10"
+                                >
                                   <SelectValue placeholder="Select colour" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1154,10 +1195,14 @@ function PackingForm({
 
                           <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-sack`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Sack wt (kg)
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-sack`}
                                 className="h-11 sm:h-10"
                                 type="number"
                                 step="0.001"
@@ -1169,10 +1214,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-sacks`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Sacks
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-sacks`}
                                 className="h-11 sm:h-10"
                                 type="number"
                                 value={row.sacks}
@@ -1183,10 +1232,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-net`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Net (kg)
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-net`}
                                 className="h-11 sm:h-10 font-semibold"
                                 type="number"
                                 step="0.001"
@@ -1199,10 +1252,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-cones`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Cones
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-cones`}
                                 className="h-11 sm:h-10"
                                 type="number"
                                 value={row.cones}
@@ -1216,10 +1273,14 @@ function PackingForm({
 
                           <div className="mt-2.5 grid grid-cols-2 gap-2.5">
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-lotNo`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Lot no.
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-lotNo`}
                                 className="h-11 sm:h-10"
                                 value={row.lotNo}
                                 onChange={(e) =>
@@ -1229,10 +1290,14 @@ function PackingForm({
                               />
                             </Field>
                             <Field className="gap-1.5">
-                              <FieldLabel className="text-[11px] font-semibold">
+                              <FieldLabel
+                                htmlFor={`row-${row.id}-remarks`}
+                                className="text-[11px] font-semibold"
+                              >
                                 Remarks
                               </FieldLabel>
                               <Input
+                                id={`row-${row.id}-remarks`}
                                 className="h-11 sm:h-10"
                                 value={row.remarks}
                                 onChange={(e) =>

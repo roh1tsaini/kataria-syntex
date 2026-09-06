@@ -1,0 +1,1 @@
+ALTER TABLE `qr_logins` DROP COLUMN `ip`;

@@ -22,6 +22,12 @@ type CodeEntryFormProps = {
   success?: ReactNode;
 };
 
+/** Uppercase alphanumerics regrouped into 4s with dashes — the exact stored shape. */
+function canonicalCode(value: string): string {
+  const alnum = value.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  return (alnum.match(/.{1,4}/g) ?? []).join("-");
+}
+
 export function CodeEntryForm({
   submit,
   onDone,
@@ -41,14 +47,15 @@ export function CodeEntryForm({
     await run(c);
   }, scanning);
 
-  // Codes are the 8-char unambiguous alphabet grouped "XXXX-XXXX". Accept any
-  // length >= 4 (the scanner's threshold) so a scanned/dashed/dev code can be
-  // typed back in, and always submit the dash-free canonical form.
+  // Login codes are the 16-char unambiguous alphabet grouped
+  // "XXXX-XXXX-XXXX-XXXX" (server/lib/token.ts). Accept typed input with or
+  // without dashes and always submit the canonical dashed form — the server
+  // matches codes exactly as stored.
   const run = async (c: string) => {
     setError(null);
     setBusy(true);
     try {
-      await submit(c.replace(/[^A-Z0-9]/g, ""));
+      await submit(canonicalCode(c));
       if (success) setApproved(true);
       else onDone?.();
     } catch (err) {
@@ -86,8 +93,8 @@ export function CodeEntryForm({
             onChange={(e) =>
               setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))
             }
-            placeholder="XXXX-XXXX"
-            maxLength={9}
+            placeholder="XXXX-XXXX-XXXX-XXXX"
+            maxLength={19}
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}

@@ -63,6 +63,14 @@ function DeviceRow({
             ? new Date(device.lastSeenAt).toLocaleString()
             : "unknown"}
         </div>
+        {device.userAgent && (
+          <div
+            className="mt-0.5 truncate text-xs text-muted-foreground/75"
+            title={device.userAgent}
+          >
+            {device.userAgent}
+          </div>
+        )}
       </div>
       {!device.isCurrent && (
         <Button
@@ -176,14 +184,3 @@ export function DevicesPage() {
     </AppShell>
   );
 }
-
-export type RecentChallan = {
-  id: string;
-  number: string;
-  type: "sales" | "outward";
-  date: string;
-  createdAt: string;
-  party: string;
-  boxes: number;
-  netWt: number;
-};

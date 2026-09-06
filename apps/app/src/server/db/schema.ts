@@ -44,7 +44,7 @@ export const workspaces = sqliteTable("workspaces", {
   createdAt: text("created_at").notNull(),
 });
 
-// ── Memberships (permission-based, no fixed roles — see ADR-0001) ──────────
+// ── Memberships (permission-based, no fixed roles) ─────────────────────────
 
 export const memberships = sqliteTable(
   "memberships",
@@ -157,7 +157,6 @@ export const loginAttempts = sqliteTable(
 export const qrLogins = sqliteTable("qr_logins", {
   id: text("id", { length: 36 }).primaryKey(),
   code: text("code", { length: 64 }).notNull().unique(),
-  ip: text("ip", { length: 45 }).notNull(),
   status: text("status", { length: 10 }).notNull().default("pending"),
   // Optional — when the requester named an identifier, approval grants THAT
   // account to the waiting device instead of the approver's own.
@@ -657,7 +656,7 @@ export const packingItems = sqliteTable(
   (t) => [index("idx_packing_items_entry").on(t.entryId)],
 );
 
-// ── Challan item sources (import linkage — exclusive, see ADR-0003) ────────
+// ── Challan item sources (import linkage — one packing item feeds one challan item)
 
 export const challanItemSources = sqliteTable(
   "challan_item_sources",
@@ -677,6 +676,14 @@ export const challanItemSources = sqliteTable(
     index("idx_sources_challan_item").on(t.challanItemId),
   ],
 );
+
+// ── Rate-limit counters (D1-backed sliding windows, see lib/rate-limit.ts) ─
+
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key", { length: 120 }).primaryKey(),
+  count: integer("count").notNull().default(0),
+  windowStart: text("window_start").notNull(),
+});
 
 // ── Stock ledger (2 inventory systems: raw + dyed, with lot_no) ────────────
 

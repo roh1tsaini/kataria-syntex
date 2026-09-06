@@ -208,9 +208,23 @@ placeholders, fallbacks) — never the app name.
   same concept. One primary action top-right; secondary inside.
 - Mobile: single column, cards; ≥sm: grids (`minmax(0,1fr)`); ≥xl: data grids
   up to 4 columns. Card grids keep equal heights (`grid` + stretch).
-- Mobile nav: bottom tab bar (translucent material, safe-area padding).
-  Desktop: left sidebar. Same items, same order, same icons on both.
-  A collapsed sidebar expands on hover as an overlay — the page underneath
+- Mobile nav: bottom tab bar (translucent material, safe-area padding) for
+  the four primary destinations, plus a **full-screen nav sheet** for
+  everything else. Desktop: left sidebar. Same items, same order, same icons
+  on all three surfaces.
+- Full-screen nav sheet (opens from the header avatar / "More" tab): covers
+  the viewport (`inset-0`, `bg-background`), slides from the left 280ms
+  `EASE_DRAWER`, exits 20% faster, no scrim (nothing remains visible to tap).
+  Closed by X, Escape or navigation. Layout top→bottom: brand title
+  (`text-2xl`, 700, −0.022em, "KS Biz App") with workspace + role line, a
+  capsule of touch circles (accent picker, close) top-right, an FY + sync
+  status strip (hairline border, `bg-card`, tap opens sync), the roomy nav
+  list, and a pinned footer: identity (avatar 36px + name + workspace) left,
+  one primary action (`New challan`, accent) right. Nav rows in the sheet use
+  the roomy ladder: `min-h-12`, 15px labels, `size-5` icons, `gap-3`,
+  `rounded-md` selection (never circles), subs `min-h-11`/13px under an
+  `ml-5` rule. Reduced-motion collapses to opacity.
+- A collapsed sidebar expands on hover as an overlay — the page underneath
   never moves. Opening waits ~120ms of hover intent; closing waits ~180ms
   after the pointer leaves.
 - A parent item with sub-items is a toggle, never a selection: it never

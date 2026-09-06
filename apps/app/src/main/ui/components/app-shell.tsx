@@ -32,6 +32,7 @@ import {
   X,
   MoreHorizontal,
 } from "lucide-react";
+import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { Button } from "@/ui/components/ui/button";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
@@ -64,7 +65,7 @@ function Brand({ compact }: { compact?: boolean }) {
     return (
       <div
         className="grid size-8 shrink-0 place-items-center rounded-md bg-foreground text-background"
-        title={`Kataria Syntex Biz App — ${workspaceLabel}`}
+        title={`${COMPANY_DETAILS.name} Biz App — ${workspaceLabel}`}
       >
         <span className="text-[11px] font-semibold leading-none" aria-hidden>
           KS
@@ -101,7 +102,8 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
-/** Expanded sidebar navigation with collapsible groups. */
+/** Expanded sidebar navigation with collapsible groups. `roomy` = full-screen
+ * mobile sizing: taller rows, larger type and icons. */
 function NavList({
   sections,
   expanded,
@@ -109,6 +111,7 @@ function NavList({
   pathname,
   search,
   onNavigate,
+  roomy = false,
 }: {
   sections: NavSection[];
   expanded: Record<string, boolean>;
@@ -116,9 +119,25 @@ function NavList({
   pathname: string;
   search: string;
   onNavigate?: () => void;
+  roomy?: boolean;
 }) {
+  const rowCls = roomy
+    ? "min-h-12 gap-3 rounded-md px-3 text-[15px]"
+    : "min-h-11 gap-2 rounded-md px-2 py-1.5 text-[13px] sm:min-h-10";
+  const iconCls = roomy ? "size-5" : "size-4";
+  const chevronCls = roomy ? "size-4" : "size-3.5";
+  const subRowCls = roomy
+    ? "min-h-11 gap-2.5 px-3 text-[13px]"
+    : "gap-2 px-2 py-1.5 text-xs";
+  const subDotCls = roomy ? "size-1.5" : "size-1";
+
   return (
-    <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 [scrollbar-width:thin]">
+    <nav
+      className={cn(
+        "flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]",
+        roomy ? "px-3 py-3" : "px-2 py-2",
+      )}
+    >
       {sections.map((section, i) => (
         <div key={section.title} className={cn(i > 0 && "mt-3")}>
           <SectionLabel>{section.title}</SectionLabel>
@@ -140,19 +159,24 @@ function NavList({
                       onClick={() => onToggleGroup(item.to)}
                       aria-expanded={isExpanded}
                       className={cn(
-                        "flex min-h-11 w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors duration-150 ease-[var(--ease-out)] sm:min-h-10",
+                        "flex w-full items-center transition-colors duration-150 ease-[var(--ease-out)]",
+                        rowCls,
                         anySubActive
                           ? "font-medium text-foreground"
                           : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
                       )}
                     >
-                      <item.icon className="size-4 shrink-0" aria-hidden />
+                      <item.icon
+                        className={cn(iconCls, "shrink-0")}
+                        aria-hidden
+                      />
                       <span className="min-w-0 flex-1 truncate text-left">
                         {item.label}
                       </span>
                       <ChevronDown
                         className={cn(
-                          "size-3.5 shrink-0 opacity-60 transition-transform duration-150",
+                          chevronCls,
+                          "shrink-0 opacity-60 transition-transform duration-150",
                           isExpanded ? "rotate-0" : "-rotate-90",
                         )}
                         aria-hidden
@@ -164,13 +188,17 @@ function NavList({
                       end={item.end}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors duration-150 ease-[var(--ease-out)]",
+                        "flex items-center transition-colors duration-150 ease-[var(--ease-out)]",
+                        rowCls,
                         active
                           ? "bg-accent font-medium text-accent-foreground"
                           : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
                       )}
                     >
-                      <item.icon className="size-4 shrink-0" aria-hidden />
+                      <item.icon
+                        className={cn(iconCls, "shrink-0")}
+                        aria-hidden
+                      />
                       <span className="min-w-0 flex-1 truncate">
                         {item.label}
                       </span>
@@ -186,7 +214,12 @@ function NavList({
                       )}
                     >
                       <div className="min-h-0 overflow-hidden">
-                        <div className="ml-4 flex flex-col gap-0.5 border-l border-border pl-3">
+                        <div
+                          className={cn(
+                            "flex flex-col gap-0.5 border-l border-border pl-3",
+                            roomy ? "ml-5" : "ml-4",
+                          )}
+                        >
                           {item.subItems?.map((sub) => {
                             const subActive = isSubActive(
                               sub,
@@ -199,7 +232,8 @@ function NavList({
                                 to={sub.to}
                                 onClick={onNavigate}
                                 className={cn(
-                                  "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors duration-150",
+                                  "flex items-center rounded-md transition-colors duration-150",
+                                  subRowCls,
                                   subActive
                                     ? "bg-accent font-medium text-accent-foreground"
                                     : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted/60 [@media(hover:hover)]:hover:text-foreground",
@@ -207,7 +241,8 @@ function NavList({
                               >
                                 <span
                                   className={cn(
-                                    "size-1 shrink-0 rounded-full",
+                                    subDotCls,
+                                    "shrink-0 rounded-full",
                                     subActive
                                       ? "bg-accent-foreground"
                                       : "bg-muted-foreground/40",
@@ -363,7 +398,8 @@ function UserFooter({ compact }: { compact?: boolean }) {
   );
 }
 
-/** Mobile drawer body: profile, quick actions, full nav, footer. */
+/** Mobile full-screen nav: brand header, FY/sync strip, roomy nav, footer
+ * with identity left and the one primary action right. */
 function MobileDrawerContent({
   sections,
   pathname,
@@ -389,54 +425,42 @@ function MobileDrawerContent({
     setExpanded((prev) => ({ ...prev, [to]: !prev[to] }));
 
   return (
-    <div className="flex h-full flex-col bg-card text-card-foreground">
-      <div className="shrink-0 border-b border-border p-4 pb-3.5 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
-        <div className="flex items-start justify-between">
-          <div className="relative">
-            <Avatar className="size-11 bg-muted text-sm font-semibold text-foreground">
-              <AvatarFallback>
-                {user?.name.slice(0, 2).toUpperCase() ?? "KS"}
-              </AvatarFallback>
-            </Avatar>
-            <span
-              className={cn(
-                "absolute bottom-0 right-0 size-3 rounded-full ring-2 ring-card",
-                online ? "bg-success" : "bg-warning",
-              )}
-              aria-hidden
-            />
+    <div className="flex h-full flex-col bg-background text-foreground">
+      <div className="shrink-0 px-4 pb-3 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 pt-1">
+            <div className="truncate text-2xl font-bold tracking-[-0.022em]">
+              KS Biz App
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <span className="truncate">
+                {company?.name ?? workspace?.name ?? COMPANY_DETAILS.name}
+              </span>
+              {roleBadge(workspace?.isPrimaryAdmin)}
+            </div>
           </div>
-          <CircleButton
-            size="touch"
-            onClick={onClose}
-            aria-label="Close navigation"
-            title="Close navigation"
-          >
-            <X aria-hidden />
-          </CircleButton>
+          <ButtonCapsule>
+            <AccentPicker size="touch" />
+            <CircleButton
+              size="touch"
+              onClick={onClose}
+              aria-label="Close navigation"
+              title="Close navigation"
+            >
+              <X aria-hidden />
+            </CircleButton>
+          </ButtonCapsule>
         </div>
 
-        <div className="mt-3">
-          <div className="truncate text-[15px] font-semibold tracking-tight">
-            {user?.name}
-          </div>
-          <div className="mt-0.5 flex items-center gap-2 text-[13px] text-muted-foreground">
-            <span className="truncate">
-              {company?.name ?? workspace?.name ?? "Kataria Syntex"}
-            </span>
-            {roleBadge(workspace?.isPrimaryAdmin)}
-          </div>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-2.5 py-2 text-xs">
-          <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
+        <div className="mt-4 flex min-h-11 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-xs">
+          <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
             <CalendarDays className="size-3.5" aria-hidden />
             <span>FY {currentFy?.label ?? "—"}</span>
-          </div>
+          </span>
           <button
             type="button"
             onClick={onOpenSync}
-            className="flex min-h-11 items-center gap-1.5 text-xs font-semibold text-primary sm:min-h-10"
+            className="flex min-h-11 items-center gap-1.5 font-semibold text-primary"
           >
             {online ? (
               <>
@@ -453,23 +477,6 @@ function MobileDrawerContent({
             )}
           </button>
         </div>
-
-        {can(["create_challan"]) && (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button asChild variant="accent" className="w-full">
-              <Link to="/challans/new" onClick={onClose}>
-                <Plus className="size-4" aria-hidden />
-                Sales challan
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/outward/new" onClick={onClose}>
-                <Plus className="size-4" aria-hidden />
-                Job work
-              </Link>
-            </Button>
-          </div>
-        )}
       </div>
 
       <NavList
@@ -479,10 +486,35 @@ function MobileDrawerContent({
         pathname={pathname}
         search={search}
         onNavigate={onClose}
+        roomy
       />
 
-      <div className="shrink-0 border-t border-border p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-        <AccentPicker />
+      <div className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Avatar className="size-9 shrink-0 bg-muted text-sm font-semibold text-foreground">
+              <AvatarFallback>
+                {user?.name.slice(0, 1).toUpperCase() ?? "K"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-[13px] font-medium">
+                {user?.name}
+              </div>
+              <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                {workspace?.name}
+              </div>
+            </div>
+          </div>
+          {can(["create_challan"]) && (
+            <Button asChild variant="accent" className="shrink-0">
+              <Link to="/challans/new" onClick={onClose}>
+                <Plus className="size-4" aria-hidden />
+                New challan
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -619,7 +651,7 @@ function HeaderBar({
         <span className="inline-flex min-w-0 items-center gap-1 rounded-sm border border-border bg-card px-2 py-1 text-xs font-medium text-muted-foreground">
           <Building2 className="size-3 shrink-0" aria-hidden />
           <span className="hidden truncate max-w-[140px] min-[380px]:inline">
-            {company?.name ?? "Kataria Syntex"}
+            {company?.name ?? COMPANY_DETAILS.name}
           </span>
           <span className="truncate max-w-[72px] min-[380px]:hidden">
             {(company?.name ?? "Kataria").split(" ")[0]}
@@ -927,62 +959,42 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           pendingBadge={pendingCount}
         />
 
-        {/* Mobile drawer — plain slide-in over a scrim. Opened by buttons,
-            closed by scrim tap, X, Escape or navigation. No drag gestures. */}
+        {/* Mobile nav — full-screen sheet. Opened by buttons, closed by X,
+            Escape or navigation. No scrim: the sheet covers the viewport. */}
         <AnimatePresence>
           {mobileOpen && (
-            <>
-              <motion.button
-                type="button"
-                aria-label="Close navigation"
-                onClick={() => setMobileOpen(false)}
-                className="fixed inset-0 z-40 bg-background/60 md:hidden"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{
-                  opacity: 0,
-                  transition: {
-                    duration: reduceMotion ? 0 : 0.16,
-                    ease: EASE,
-                  },
+            <motion.div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation"
+              className="fixed inset-0 z-50 md:hidden"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{
+                x: "-100%",
+                transition: {
+                  duration: reduceMotion ? 0 : 0.2,
+                  ease: EASE_DRAWER,
+                },
+              }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.28, ease: EASE_DRAWER }
+              }
+            >
+              <MobileDrawerContent
+                sections={sections}
+                pathname={location.pathname}
+                search={location.search}
+                onClose={() => setMobileOpen(false)}
+                onOpenSync={() => {
+                  setMobileOpen(false);
+                  setSyncOpen(true);
                 }}
-                transition={
-                  reduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE }
-                }
               />
-              <motion.div
-                ref={drawerRef}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Navigation"
-                className="fixed inset-y-0 left-0 z-50 w-[84vw] max-w-[320px] md:hidden"
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                exit={{
-                  x: "-100%",
-                  transition: {
-                    duration: reduceMotion ? 0 : 0.19,
-                    ease: EASE_DRAWER,
-                  },
-                }}
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : { duration: 0.24, ease: EASE_DRAWER }
-                }
-              >
-                <MobileDrawerContent
-                  sections={sections}
-                  pathname={location.pathname}
-                  search={location.search}
-                  onClose={() => setMobileOpen(false)}
-                  onOpenSync={() => {
-                    setMobileOpen(false);
-                    setSyncOpen(true);
-                  }}
-                />
-              </motion.div>
-            </>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

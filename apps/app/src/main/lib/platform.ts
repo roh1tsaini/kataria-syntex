@@ -27,6 +27,18 @@ export function detectHost(): Host {
 
 export const isNative = () => detectHost() !== "web";
 
+/** Human-readable device label for the offline device identity. Reads the
+ * user-agent directly (Android WebViews and Electron both announce themselves
+ * there) so no other module sniffs the UA for platform decisions. */
+export function deviceLabel(): string {
+  const ua = navigator.userAgent;
+  return /android/i.test(ua)
+    ? "Android"
+    : /electron/i.test(ua)
+      ? "Desktop"
+      : "Browser";
+}
+
 /** Opens the device print dialog. Android has no window.print() in the
  * Capacitor WebView, so it goes through the native PrintManager plugin;
  * everything else uses the browser/Electron print dialog. Prints the current

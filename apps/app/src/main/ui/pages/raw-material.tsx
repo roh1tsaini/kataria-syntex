@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useMemo } from "react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
+import { useMastersLoad } from "@/ui/hooks/use-masters-load";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -47,6 +48,7 @@ import { Skeleton } from "@/ui/components/motion";
 import { toastSuccess, toastError } from "@/store/toast";
 import { friendlyError } from "@/ui/lib/errors";
 import { fmtDate, fmtWt, todayLocal } from "@/ui/lib/format";
+import { round3Str } from "@kataria-syntex/shared";
 import {
   Select,
   SelectContent,
@@ -87,8 +89,6 @@ type ItemRow = {
   packingUnit: "" | "bags" | "boxes";
   packingCount: string;
 };
-
-import { round3Str } from "@kataria-syntex/shared";
 
 const today = todayLocal;
 const emptyRow = (): ItemRow => ({
@@ -451,22 +451,15 @@ function RawMaterialForm({
   const [error, setError] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [mastersError, setMastersError] = useState(false);
-  const [mastersNonce, setMastersNonce] = useState(0);
   const [dirty, setDirty] = useState(false);
 
   // Warn before closing/reloading the tab with uncommitted edits (browsers
   // show a native confirm — the SPA's own Cancel button runs onBack).
   useDirtyGuard(dirty);
 
-  useEffect(() => {
-    setMastersError(false);
-    void Promise.all([
-      refreshSuppliers(),
-      refreshDeniers(),
-      refreshColors(),
-    ]).catch(() => setMastersError(true));
-  }, [mastersNonce, refreshSuppliers, refreshDeniers, refreshColors]);
+  const { failed: mastersError, retry: retryMasters } = useMastersLoad(() =>
+    Promise.all([refreshSuppliers(), refreshDeniers(), refreshColors()]),
+  );
 
   useEffect(() => {
     if (!editId) return;
@@ -634,11 +627,7 @@ function RawMaterialForm({
             Couldn't load deniers, colours and suppliers. Save is disabled until
             they load.
           </p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setMastersNonce((n) => n + 1)}
-          >
+          <Button size="sm" variant="outline" onClick={retryMasters}>
             Retry
           </Button>
         </div>
@@ -806,14 +795,20 @@ function RawMaterialForm({
 
                   <div className="mt-3 grid grid-cols-2 gap-2.5">
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-denier`}
+                        className="text-[11px] font-semibold"
+                      >
                         Denier
                       </FieldLabel>
                       <Select
                         value={row.denierId}
                         onValueChange={(v) => updateRow(idx, "denierId", v)}
                       >
-                        <SelectTrigger className="h-11 sm:h-10">
+                        <SelectTrigger
+                          id={`row-${row.id}-denier`}
+                          className="h-11 sm:h-10"
+                        >
                           <SelectValue placeholder="Select denier" />
                         </SelectTrigger>
                         <SelectContent>
@@ -826,14 +821,20 @@ function RawMaterialForm({
                       </Select>
                     </Field>
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-color`}
+                        className="text-[11px] font-semibold"
+                      >
                         Colour (grey/raw)
                       </FieldLabel>
                       <Select
                         value={row.colorId}
                         onValueChange={(v) => updateRow(idx, "colorId", v)}
                       >
-                        <SelectTrigger className="h-11 sm:h-10">
+                        <SelectTrigger
+                          id={`row-${row.id}-color`}
+                          className="h-11 sm:h-10"
+                        >
                           <SelectValue placeholder="Select colour" />
                         </SelectTrigger>
                         <SelectContent>
@@ -849,10 +850,14 @@ function RawMaterialForm({
 
                   <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-gross`}
+                        className="text-[11px] font-semibold"
+                      >
                         Gross wt (kg)
                       </FieldLabel>
                       <Input
+                        id={`row-${row.id}-gross`}
                         className="h-11 sm:h-10"
                         type="number"
                         step="0.001"
@@ -864,10 +869,14 @@ function RawMaterialForm({
                       />
                     </Field>
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-tare`}
+                        className="text-[11px] font-semibold"
+                      >
                         Tare wt (kg)
                       </FieldLabel>
                       <Input
+                        id={`row-${row.id}-tare`}
                         className="h-11 sm:h-10"
                         type="number"
                         step="0.001"
@@ -879,10 +888,14 @@ function RawMaterialForm({
                       />
                     </Field>
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-net`}
+                        className="text-[11px] font-semibold"
+                      >
                         Net wt (kg)
                       </FieldLabel>
                       <Input
+                        id={`row-${row.id}-net`}
                         className="h-11 sm:h-10 font-semibold"
                         type="number"
                         step="0.001"
@@ -895,10 +908,14 @@ function RawMaterialForm({
                       />
                     </Field>
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-cones`}
+                        className="text-[11px] font-semibold"
+                      >
                         Cones
                       </FieldLabel>
                       <Input
+                        id={`row-${row.id}-cones`}
                         className="h-11 sm:h-10"
                         type="number"
                         value={row.cones}
@@ -912,10 +929,14 @@ function RawMaterialForm({
 
                   <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-lotNo`}
+                        className="text-[11px] font-semibold"
+                      >
                         Lot no.
                       </FieldLabel>
                       <Input
+                        id={`row-${row.id}-lotNo`}
                         className="h-11 sm:h-10"
                         value={row.lotNo}
                         onChange={(e) =>
@@ -925,10 +946,14 @@ function RawMaterialForm({
                       />
                     </Field>
                     <Field className="gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-boxNo`}
+                        className="text-[11px] font-semibold"
+                      >
                         Box no.
                       </FieldLabel>
                       <Input
+                        id={`row-${row.id}-boxNo`}
                         className="h-11 sm:h-10"
                         value={row.boxNo}
                         onChange={(e) =>
@@ -938,7 +963,10 @@ function RawMaterialForm({
                       />
                     </Field>
                     <Field className="col-span-2 sm:col-span-1 gap-1.5">
-                      <FieldLabel className="text-[11px] font-semibold">
+                      <FieldLabel
+                        htmlFor={`row-${row.id}-packing`}
+                        className="text-[11px] font-semibold"
+                      >
                         Packing
                       </FieldLabel>
                       <div className="flex items-center gap-1">
@@ -977,6 +1005,7 @@ function RawMaterialForm({
                           Boxes
                         </Button>
                         <Input
+                          id={`row-${row.id}-packing`}
                           className="h-11 sm:h-10 w-full min-w-0 flex-1"
                           type="number"
                           value={row.packingCount}

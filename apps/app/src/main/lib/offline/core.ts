@@ -19,6 +19,7 @@ import type {
   Supplier,
 } from "@/store/masters";
 import type { Numbering } from "@kataria-syntex/shared";
+import { deviceLabel } from "../platform";
 
 // ── Keys ────────────────────────────────────────────────────────────────────
 
@@ -72,13 +73,7 @@ const isDeviceIdentity = (v: unknown): v is DeviceIdentity =>
 export function deviceIdentity(): DeviceIdentity {
   const stored = readJson(K_DEVICE, isDeviceIdentity);
   if (stored) return stored;
-  const ua = navigator.userAgent;
-  const label = /android/i.test(ua)
-    ? "Android"
-    : /electron/i.test(ua)
-      ? "Desktop"
-      : "Browser";
-  const identity: DeviceIdentity = { ref: randomId(), label };
+  const identity: DeviceIdentity = { ref: randomId(), label: deviceLabel() };
   try {
     localStorage.setItem(K_DEVICE, JSON.stringify(identity));
   } catch {

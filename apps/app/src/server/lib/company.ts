@@ -9,8 +9,6 @@ import {
 import {
   DEFAULT_NUMBERING,
   fyForDate as sharedFyForDate,
-  formatChallanNumber as sharedFormatChallanNumber,
-  formatEntryNumber as sharedFormatEntryNumber,
 } from "@kataria-syntex/shared";
 import { generateId } from "./token";
 
@@ -177,75 +175,97 @@ export async function getOrCreateFyForDate(
   };
 }
 
-/** Thin wrappers — single source lives in @kataria-syntex/shared */
-export const formatChallanNumber = sharedFormatChallanNumber;
-const formatEntryNumber = sharedFormatEntryNumber;
-
 /**
- * Allocates the next packing/raw number using compare-and-swap on the FY counter.
- * Single atomic UPDATE per attempt — must NOT run inside db.batch(): a failed
- * CAS (0 changes) doesn't error the batch, so the condition has to be checked
- * here before any dependent writes are collected.
+ * Allocates the next number in a series via compare-and-swap on the FY
+ * counter, retrying on contention. Must run BEFORE the caller's db.batch():
+ * a failed CAS (0 changes) doesn't error the batch, so the condition has to
+ * be checked here before any dependent writes are collected.
  */
-export async function allocateEntryNumber(
+
+/** FY counter column per number series. */
+const FY_COUNTERS = {
+  sales: "salesNext",
+  outward: "outwardNext",
+  packing_s: "packingSaleNext",
+  packing_j: "packingJobNext",
+  raw: "rawNext",
+} as const;
+
+export type FyCounterKey = keyof typeof FY_COUNTERS;
+
+export async function allocateFyNumber(
   d: Queryable,
   workspaceId: string,
   date: Date,
+  key: FyCounterKey,
+  format: (config: NumberingConfig, seq: number, fyLabel: string) => string,
   config: NumberingConfig,
-  type: "packing_s" | "packing_j" | "raw",
-): Promise<{ entryNumber: string; fyId: string; fyLabel: string }> {
+): Promise<{ number: string; fyId: string; fyLabel: string }> {
   for (let attempt = 0; attempt < 10; attempt++) {
-    const fy = await getOrCreateFyForDate(d, workspaceId, date);
-    const fyRow = await d
-      .select()
-      .from(financialYears)
-      .where(eq(financialYears.id, fy.id))
-      .get();
-    if (!fyRow) throw new Error("financial_year_missing");
+    const fyRow = await getOrCreateFyForDate(d, workspaceId, date);
+    const seq = fyRow[FY_COUNTERS[key]];
+    const number = format(config, seq, fyRow.label);
 
-    const seq =
-      type === "packing_s"
-        ? fyRow.packingSaleNext
-        : type === "packing_j"
-          ? fyRow.packingJobNext
-          : fyRow.rawNext;
-    const entryNumber = formatEntryNumber(config, type, seq);
-
-    // Type-safe CAS: explicit branch retains Drizzle column typing
+    // Type-safe CAS: explicit branches retain Drizzle column typing
     const res =
-      type === "packing_s"
+      key === "sales"
         ? await d
             .update(financialYears)
-            .set({ packingSaleNext: seq + 1 })
+            .set({ salesNext: seq + 1 })
             .where(
               and(
-                eq(financialYears.id, fy.id),
-                eq(financialYears.packingSaleNext, seq),
+                eq(financialYears.id, fyRow.id),
+                eq(financialYears.salesNext, seq),
               ),
             )
-        : type === "packing_j"
+            .run()
+        : key === "outward"
           ? await d
               .update(financialYears)
-              .set({ packingJobNext: seq + 1 })
+              .set({ outwardNext: seq + 1 })
               .where(
                 and(
-                  eq(financialYears.id, fy.id),
-                  eq(financialYears.packingJobNext, seq),
+                  eq(financialYears.id, fyRow.id),
+                  eq(financialYears.outwardNext, seq),
                 ),
               )
-          : await d
-              .update(financialYears)
-              .set({ rawNext: seq + 1 })
-              .where(
-                and(
-                  eq(financialYears.id, fy.id),
-                  eq(financialYears.rawNext, seq),
-                ),
-              );
+              .run()
+          : key === "packing_s"
+            ? await d
+                .update(financialYears)
+                .set({ packingSaleNext: seq + 1 })
+                .where(
+                  and(
+                    eq(financialYears.id, fyRow.id),
+                    eq(financialYears.packingSaleNext, seq),
+                  ),
+                )
+                .run()
+            : key === "packing_j"
+              ? await d
+                  .update(financialYears)
+                  .set({ packingJobNext: seq + 1 })
+                  .where(
+                    and(
+                      eq(financialYears.id, fyRow.id),
+                      eq(financialYears.packingJobNext, seq),
+                    ),
+                  )
+                  .run()
+              : await d
+                  .update(financialYears)
+                  .set({ rawNext: seq + 1 })
+                  .where(
+                    and(
+                      eq(financialYears.id, fyRow.id),
+                      eq(financialYears.rawNext, seq),
+                    ),
+                  )
+                  .run();
 
     if (res.meta.changes > 0) {
-      return { entryNumber, fyId: fy.id, fyLabel: fy.label };
+      return { number, fyId: fyRow.id, fyLabel: fyRow.label };
     }
   }
-  throw new Error("entry_number_conflict");
+  throw new Error("fy_number_conflict");
 }

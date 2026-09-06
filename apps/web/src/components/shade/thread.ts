@@ -15,7 +15,7 @@
  */
 
 /** FNV-1a 32-bit — small deterministic string hash for seeding. */
-export function hashSeed(input: string): number {
+function hashSeed(input: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < input.length; i += 1) {
     h ^= input.charCodeAt(i);
@@ -25,7 +25,7 @@ export function hashSeed(input: string): number {
 }
 
 /** Deterministic PRNG — stable per shade, SSR-safe (no Math.random). */
-export function mulberry32(seed: number): () => number {
+function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a |= 0;
@@ -36,11 +36,11 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-export function normalizeSeed(seed: string | number): number {
+function normalizeSeed(seed: string | number): number {
   return typeof seed === "number" ? seed >>> 0 : hashSeed(seed);
 }
 
-export interface ThreadSegment {
+interface ThreadSegment {
   /** Segment start within its row, in the caller's units. */
   x0: number;
   /** Segment end within its row. */

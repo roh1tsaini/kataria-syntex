@@ -343,7 +343,7 @@ export function SettingsPage() {
         </Section>
 
         <Section
-          title="Challan numbering"
+          title="Document numbering"
           description="One format for all years — each financial year restarts the sequence at 1 automatically."
         >
           {numbering ? (
@@ -359,6 +359,18 @@ export function SettingsPage() {
                 value={numbering.outward}
                 disabled={!canEdit}
                 onChange={(v) => editNumbering({ outward: v })}
+              />
+              <NumberingGroup
+                type="packing_s"
+                value={numbering.packing_s}
+                disabled={!canEdit}
+                onChange={(v) => editNumbering({ packing_s: v })}
+              />
+              <NumberingGroup
+                type="packing_j"
+                value={numbering.packing_j}
+                disabled={!canEdit}
+                onChange={(v) => editNumbering({ packing_j: v })}
               />
               <NumberingGroup
                 type="raw"
@@ -381,6 +393,7 @@ export function SettingsPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-3" aria-hidden>
+              <Skeleton className="h-44 rounded-lg" />
               <Skeleton className="h-44 rounded-lg" />
               <Skeleton className="h-44 rounded-lg" />
             </div>

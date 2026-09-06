@@ -14,7 +14,7 @@ stockRoute.use("*", requireAuth, resolveMember());
 // ── Stock summary (raw or dyed) ──────────────────────────────────────────────
 
 stockRoute.get("/", requirePermission("view_stock"), async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const stockType = c.req.query("type") === "raw" ? "raw" : "dyed";
   const denierId = c.req.query("denierId")?.trim();

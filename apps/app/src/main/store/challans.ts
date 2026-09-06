@@ -43,6 +43,17 @@ export type ChallanListFilter = {
   limit?: number;
 };
 
+export type RecentChallan = {
+  id: string;
+  number: string;
+  type: "sales" | "outward";
+  date: string;
+  createdAt: string;
+  party: string;
+  boxes: number;
+  netWt: number;
+};
+
 type ChallansState = {
   challans: Challan[];
   total: number;
@@ -105,6 +116,10 @@ export const useChallans = create<ChallansState>()((set, get) => {
   // stale response must never clobber newer state.
   let refreshSeq = 0;
   let loadSeq = 0;
+  // The list page's current query. Post-mutation refreshes (create/update/
+  // remove) pass no filter — reusing this keeps the paginated page state
+  // (rows + total) consistent instead of resetting it to an unfiltered read.
+  let lastFilter: ChallanListFilter | undefined;
 
   return {
     challans: [],
@@ -115,6 +130,8 @@ export const useChallans = create<ChallansState>()((set, get) => {
 
     refresh: async (filter) => {
       const seq = ++refreshSeq;
+      const active = filter ?? lastFilter;
+      if (filter) lastFilter = filter;
       if (get().challans.length === 0) {
         set({ loading: true, error: null });
       } else {
@@ -122,18 +139,18 @@ export const useChallans = create<ChallansState>()((set, get) => {
       }
       try {
         const params = new URLSearchParams();
-        if (filter?.type) params.set("type", filter.type);
-        if (filter?.fy) params.set("fy", filter.fy);
-        if (filter?.q) params.set("q", filter.q);
-        if (filter?.page) params.set("page", String(filter.page));
-        if (filter?.limit) params.set("limit", String(filter.limit));
+        if (active?.type) params.set("type", active.type);
+        if (active?.fy) params.set("fy", active.fy);
+        if (active?.q) params.set("q", active.q);
+        if (active?.page) params.set("page", String(active.page));
+        if (active?.limit) params.set("limit", String(active.limit));
         const qs = params.toString();
         const res = await api<{ items: Challan[]; total: number }>(
           `/challans${qs ? `?${qs}` : ""}`,
         );
         if (seq !== refreshSeq) return;
         set({
-          challans: mergePending(res.items, filter),
+          challans: mergePending(res.items, active),
           total: res.total ?? res.items.length,
         });
       } catch (err) {
@@ -142,7 +159,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
           void import("@/lib/offline/sync").then(({ setOnline }) =>
             setOnline(false),
           );
-          const local = pendingProjections(filter);
+          const local = pendingProjections(active);
           // Keep stale synced rows visible offline; only when nothing has been
           // loaded yet does the pending list stand in as the whole list.
           const keep = get().challans.length > 0;

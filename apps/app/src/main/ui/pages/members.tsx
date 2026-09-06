@@ -545,6 +545,11 @@ export function MembersPage() {
                     <div className="truncate text-sm font-medium">
                       {p.identifier}
                     </div>
+                    {p.invitedByName && (
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        Invited by {p.invitedByName}
+                      </div>
+                    )}
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {p.permissions.map((perm) => (
                         <Badge

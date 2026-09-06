@@ -133,7 +133,13 @@ function ConflictRow({
     try {
       const res = await resubmitWithNumber(p.clientRef, value.trim());
       if (!res.ok) {
-        setError(res.error ?? friendlyError(res.error));
+        // res.error is a server code or an offline-layer message — codes map
+        // through errors.ts, human copy passes through untouched.
+        setError(
+          res.error
+            ? friendlyError(new ApiError(0, res.error), res.error)
+            : friendlyError(null),
+        );
         return;
       }
       // The conflict row remounts once restored to pending; tell the sheet to

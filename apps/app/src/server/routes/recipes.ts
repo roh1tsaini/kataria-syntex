@@ -16,6 +16,7 @@ import {
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import { apiError } from "../lib/api-error";
+import type { ApiCode } from "@kataria-syntex/shared";
 
 export const recipesRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -42,6 +43,9 @@ const recipeBody = z.object({
 });
 
 const restoreBody = z.object({ version: z.number().int().min(1) });
+
+// Path param — the :version segment arrives as a string.
+const versionParam = z.coerce.number().int().min(1);
 
 type RecipePayload = {
   ingredients: { seq: number; name: string; quantity: number; unit: string }[];
@@ -89,7 +93,7 @@ function isUniqueRecipeConflict(err: unknown): boolean {
 
 /** Workspace-scoped list of recipes with color/denier names joined in. */
 recipesRoute.get("/", requirePermission("manage_masters"), async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const colorId = c.req.query("colorId")?.trim();
   const db = getDb(c.env.DB);
   const rows = await db
@@ -128,7 +132,7 @@ recipesRoute.get("/", requirePermission("manage_masters"), async (c) => {
 /** Single recipe by color+denier — the challan detail "View recipe" path.
  * Returns just the id; clients then fetch full detail via /:id. */
 recipesRoute.get("/lookup", async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const colorId = c.req.query("colorId")?.trim() ?? "";
   const denierId = c.req.query("denierId")?.trim() ?? "";
   if (!colorId || !denierId) return apiError(c, "invalid_request", 400);
@@ -153,8 +157,8 @@ recipesRoute.post("/", requirePermission("manage_masters"), async (c) => {
   const parsed = recipeBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return apiError(c, "invalid_request", 400);
   const body = parsed.data;
-  const workspaceId = c.get("member")!.workspaceId;
-  const userId = c.get("auth")!.userId;
+  const workspaceId = c.get("member").workspaceId;
+  const userId = c.get("auth").userId;
   const db = getDb(c.env.DB);
 
   const [colorRow] = await db
@@ -216,7 +220,7 @@ recipesRoute.post("/", requirePermission("manage_masters"), async (c) => {
 /** Full recipe detail: current ingredients + version list. Any member may
  * read (challan detail links here); writes stay manage_masters-gated. */
 recipesRoute.get("/:id", async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const rows = await db
     .select()
@@ -255,10 +259,10 @@ recipesRoute.get("/:id", async (c) => {
 
 /** One historical snapshot. */
 recipesRoute.get("/:id/versions/:version", async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
-  const version = Number.parseInt(c.req.param("version"), 10);
-  if (!Number.isFinite(version) || version < 1)
-    return apiError(c, "invalid_request", 400);
+  const workspaceId = c.get("member").workspaceId;
+  const parsedVersion = versionParam.safeParse(c.req.param("version"));
+  if (!parsedVersion.success) return apiError(c, "invalid_request", 400);
+  const version = parsedVersion.data;
   const db = getDb(c.env.DB);
   const rows = await db
     .select({ payload: colorRecipeVersions.payload })
@@ -293,60 +297,73 @@ async function saveNewVersion(
     restoredFrom: number | null;
     userId: string;
   },
-) {
+): Promise<{ ok: true } | { error: ApiCode; status: 409 }> {
   const nowIso = toIso(new Date());
   const nextVersion = opts.currentVersion + 1;
   // Keep only the newest MAX_VERSIONS snapshot rows.
   const oldestToKeep = nextVersion - MAX_VERSIONS + 1;
-  await db.batch([
-    db
-      .delete(colorRecipeIngredients)
-      .where(eq(colorRecipeIngredients.recipeId, opts.recipeId)),
-    db
-      .insert(colorRecipeIngredients)
-      .values(ingredientRows(opts.recipeId, opts.payload)),
-    db
-      .update(colorRecipes)
-      .set({
-        processTempC: opts.payload.processTempC,
-        processTimeHrs: opts.payload.processTimeHrs,
-        processTimeMin: opts.payload.processTimeMin,
-        processTimeSec: opts.payload.processTimeSec,
-        notes: opts.payload.notes,
+  try {
+    await db.batch([
+      db
+        .delete(colorRecipeIngredients)
+        .where(eq(colorRecipeIngredients.recipeId, opts.recipeId)),
+      db
+        .insert(colorRecipeIngredients)
+        .values(ingredientRows(opts.recipeId, opts.payload)),
+      db
+        .update(colorRecipes)
+        .set({
+          processTempC: opts.payload.processTempC,
+          processTimeHrs: opts.payload.processTimeHrs,
+          processTimeMin: opts.payload.processTimeMin,
+          processTimeSec: opts.payload.processTimeSec,
+          notes: opts.payload.notes,
+          version: nextVersion,
+          updatedAt: nowIso,
+        })
+        .where(eq(colorRecipes.id, opts.recipeId)),
+      db.insert(colorRecipeVersions).values({
+        id: generateId(),
+        recipeId: opts.recipeId,
         version: nextVersion,
-        updatedAt: nowIso,
-      })
-      .where(eq(colorRecipes.id, opts.recipeId)),
-    db.insert(colorRecipeVersions).values({
-      id: generateId(),
-      recipeId: opts.recipeId,
-      version: nextVersion,
-      payload: JSON.stringify(opts.payload),
-      restoredFrom: opts.restoredFrom,
-      savedBy: opts.userId,
-      createdAt: nowIso,
-    }),
-    ...(oldestToKeep > 1
-      ? [
-          db
-            .delete(colorRecipeVersions)
-            .where(
-              and(
-                eq(colorRecipeVersions.recipeId, opts.recipeId),
-                lt(colorRecipeVersions.version, oldestToKeep),
+        payload: JSON.stringify(opts.payload),
+        restoredFrom: opts.restoredFrom,
+        savedBy: opts.userId,
+        createdAt: nowIso,
+      }),
+      ...(oldestToKeep > 1
+        ? [
+            db
+              .delete(colorRecipeVersions)
+              .where(
+                and(
+                  eq(colorRecipeVersions.recipeId, opts.recipeId),
+                  lt(colorRecipeVersions.version, oldestToKeep),
+                ),
               ),
-            ),
-        ]
-      : []),
-  ]);
+          ]
+        : []),
+    ]);
+  } catch (err) {
+    // Two concurrent saves read the same currentVersion; the loser hits the
+    // (recipe_id, version) unique index — answer 409 instead of a raw 500.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      msg.includes("uq_recipe_versions_recipe_version") ||
+      msg.includes("color_recipe_versions.recipe_id")
+    )
+      return { error: "recipe_version_conflict", status: 409 };
+    throw err;
+  }
+  return { ok: true };
 }
 
 recipesRoute.put("/:id", requirePermission("manage_masters"), async (c) => {
   const parsed = recipeBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return apiError(c, "invalid_request", 400);
   const body = parsed.data;
-  const workspaceId = c.get("member")!.workspaceId;
-  const userId = c.get("auth")!.userId;
+  const workspaceId = c.get("member").workspaceId;
+  const userId = c.get("auth").userId;
   const db = getDb(c.env.DB);
 
   const rows = await db
@@ -363,13 +380,14 @@ recipesRoute.put("/:id", requirePermission("manage_masters"), async (c) => {
   if (!recipe) return apiError(c, "not_found", 404);
 
   // The pair is immutable; editing keeps the recipe's color+denier.
-  await saveNewVersion(db, {
+  const saved = await saveNewVersion(db, {
     recipeId: recipe.id,
     currentVersion: recipe.version,
     payload: toPayload(body),
     restoredFrom: null,
     userId,
   });
+  if ("error" in saved) return apiError(c, saved.error, saved.status);
   return c.json({ ok: true, version: recipe.version + 1 });
 });
 
@@ -379,8 +397,8 @@ recipesRoute.post(
   async (c) => {
     const parsed = restoreBody.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return apiError(c, "invalid_request", 400);
-    const workspaceId = c.get("member")!.workspaceId;
-    const userId = c.get("auth")!.userId;
+    const workspaceId = c.get("member").workspaceId;
+    const userId = c.get("auth").userId;
     const db = getDb(c.env.DB);
 
     const rows = await db
@@ -409,19 +427,20 @@ recipesRoute.post(
     const versionRow = versionRows[0];
     if (!versionRow) return apiError(c, "recipe_version_missing", 404);
 
-    await saveNewVersion(db, {
+    const saved = await saveNewVersion(db, {
       recipeId: recipe.id,
       currentVersion: recipe.version,
       payload: JSON.parse(versionRow.payload) as RecipePayload,
       restoredFrom: parsed.data.version,
       userId,
     });
+    if ("error" in saved) return apiError(c, saved.error, saved.status);
     return c.json({ ok: true, version: recipe.version + 1 });
   },
 );
 
 recipesRoute.delete("/:id", requirePermission("manage_masters"), async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const rows = await db
     .select({ id: colorRecipes.id })

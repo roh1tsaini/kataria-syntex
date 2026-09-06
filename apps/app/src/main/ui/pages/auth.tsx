@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
+import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth } from "@/store/auth";
 import { friendlyError } from "@/ui/lib/errors";
 import { QrLoginPanel } from "@/ui/components/qr-login-panel";
@@ -556,7 +557,7 @@ export function AuthPage() {
           </span>
         </div>
         <div className="text-[17px] font-semibold tracking-tight">
-          Kataria Syntex Biz App
+          {COMPANY_DETAILS.name} Biz App
         </div>
       </div>
       <motion.div

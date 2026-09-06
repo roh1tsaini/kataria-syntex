@@ -1349,5 +1349,3 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
     </AppShell>
   );
 }
-
-// ── Detail ───────────────────────────────────────────────────────────────────

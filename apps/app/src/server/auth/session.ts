@@ -14,8 +14,14 @@ export type AuthContext = {
   deviceId: string;
 };
 
+/**
+ * Variables after the auth middlewares have run. `auth` is set by requireAuth
+ * — every handler that reads it sits behind that middleware, so the env
+ * promises it non-optional. requireAuth itself keeps runtime guards against a
+ * misordered chain.
+ */
 export type AuthVariables = {
-  auth?: AuthContext;
+  auth: AuthContext;
 };
 
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;

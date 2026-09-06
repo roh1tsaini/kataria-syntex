@@ -40,7 +40,7 @@ membersRoute.post("/invite", requirePermission("manage_members"), async (c) => {
   if (!parsed.success) return apiError(c, "invalid_request", 400);
   const ident = detectIdentifier(parsed.data.identifier);
   if (!ident) return apiError(c, "invalid_identifier", 400);
-  const member = c.get("member")!;
+  const member = c.get("member");
 
   const perms = parsed.data.permissions.filter((p): p is Permission =>
     (ALL_PERMISSIONS as readonly string[]).includes(p),
@@ -89,7 +89,7 @@ membersRoute.post("/invite", requirePermission("manage_members"), async (c) => {
   await addPendingMember(
     db,
     member.workspaceId,
-    c.get("auth")!.userId,
+    c.get("auth").userId,
     ident,
     perms,
   );
@@ -98,13 +98,13 @@ membersRoute.post("/invite", requirePermission("manage_members"), async (c) => {
 
 // Anyone with manage_members: read the roster + who is waiting to join.
 membersRoute.get("/", requirePermission("manage_members"), async (c) => {
-  const member = c.get("member")!;
+  const member = c.get("member");
   const db = getDb(c.env.DB);
   const [members, pending] = await Promise.all([
     listMembers(db, member.workspaceId),
     listPendingMembers(db, member.workspaceId),
   ]);
-  const auth = c.get("auth")!;
+  const auth = c.get("auth");
   return c.json({
     members: members.map((m) => ({
       id: m.userId,
@@ -124,7 +124,7 @@ membersRoute.delete(
   "/pending/:id",
   requirePermission("manage_members"),
   async (c) => {
-    const member = c.get("member")!;
+    const member = c.get("member");
     const db = getDb(c.env.DB);
     const rows = await db
       .select()
@@ -141,7 +141,7 @@ membersRoute.delete(
 // Primary admin only: update a member's permissions. (manage_members alone
 // would let a manager edit their own permissions — privilege escalation.)
 membersRoute.put("/:id", async (c) => {
-  const member = c.get("member")!;
+  const member = c.get("member");
   if (!member.isPrimaryAdmin) return apiError(c, "forbidden", 403);
   const parsed = z
     .object({ permissions: z.array(z.string()).min(0) })
@@ -172,7 +172,7 @@ membersRoute.put("/:id", async (c) => {
 
 // Primary admin only: remove a member (revokes their sessions/devices).
 membersRoute.delete("/:id", async (c) => {
-  const member = c.get("member")!;
+  const member = c.get("member");
   if (!member.isPrimaryAdmin) return apiError(c, "forbidden", 403);
   const db = getDb(c.env.DB);
   const rows = await db
@@ -202,12 +202,12 @@ membersRoute.post(
       .object({ toUserId: z.string().min(1) })
       .safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return apiError(c, "invalid_request", 400);
-    const member = c.get("member")!;
+    const member = c.get("member");
     if (!member.isPrimaryAdmin) return apiError(c, "forbidden", 403);
     const ok = await transferOwnership(
       getDb(c.env.DB),
       member.workspaceId,
-      c.get("auth")!.userId,
+      c.get("auth").userId,
       parsed.data.toUserId,
     );
     if (!ok) return apiError(c, "not_found", 404);

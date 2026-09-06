@@ -21,7 +21,11 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth } from "@/store/auth";
-import { useChallans, type Challan } from "@/store/challans";
+import {
+  useChallans,
+  type Challan,
+  type RecentChallan,
+} from "@/store/challans";
 import { api } from "@/lib/api";
 import { toastError } from "@/store/toast";
 import { friendlyError } from "@/ui/lib/errors";
@@ -59,7 +63,6 @@ import {
   revenueBuckets,
   type Period,
 } from "@/ui/lib/dashboard-math";
-import type { RecentChallan } from "@/ui/pages/devices";
 
 function recentFrom(
   list: Challan[],
@@ -124,7 +127,7 @@ function VolumeChart({
           <div
             className="mt-4 flex h-40 items-end gap-1.5"
             role="img"
-            aria-label="Dispatch volume over time bar chart"
+            aria-label="Job-work volume over time bar chart"
           >
             {buckets.map((b, i) => (
               <motion.div
@@ -140,7 +143,7 @@ function VolumeChart({
                 }}
                 style={{ transformOrigin: "bottom" }}
                 className="flex-1 origin-bottom self-stretch rounded-t-md bg-primary/70 transition-colors [@media(hover:hover)]:hover:bg-primary"
-                title={`${b.count > 0 ? `${fmtWt(b.netWt)} kg` : "No dispatch"} · ${b.count} challan${b.count === 1 ? "" : "s"}`}
+                title={`${b.count > 0 ? `${fmtWt(b.netWt)} kg` : "No job work"} · ${b.count} challan${b.count === 1 ? "" : "s"}`}
               />
             ))}
           </div>
@@ -161,7 +164,7 @@ function VolumeChart({
             <EmptyMedia variant="icon">
               <Package aria-hidden />
             </EmptyMedia>
-            <EmptyTitle>No dispatch in this period</EmptyTitle>
+            <EmptyTitle>No job work in this period</EmptyTitle>
             <EmptyDescription>
               Outward challans will show up here.
             </EmptyDescription>
@@ -522,9 +525,9 @@ export function Dashboard() {
       .slice(0, 6);
   }, [sales, outward, period, currentFy]);
 
-  const revenueBucketsList = useMemo(
-    () => revenueBuckets(sales, period, currentFy?.label ?? ""),
-    [sales, period, currentFy],
+  const volumeBuckets = useMemo(
+    () => revenueBuckets(outward, period, currentFy?.label ?? ""),
+    [outward, period, currentFy],
   );
 
   const salesWindow = useMemo(() => {
@@ -653,14 +656,14 @@ export function Dashboard() {
       <div className="mt-6 grid gap-3 sm:gap-4 lg:grid-cols-2">
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 bg-muted/35 px-4 py-3">
-            <span className="micro-label">Dispatch volume over time</span>
+            <span className="micro-label">Job-work volume over time</span>
             <span className="text-xs text-muted-foreground">Kilograms</span>
           </div>
           <CardContent className="p-4">
             {loading ? (
               <Skeleton className="h-52 w-full rounded-md" />
             ) : (
-              <VolumeChart buckets={revenueBucketsList} />
+              <VolumeChart buckets={volumeBuckets} />
             )}
           </CardContent>
         </Card>

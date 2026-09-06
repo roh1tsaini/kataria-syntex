@@ -10,7 +10,6 @@ import {
   authPayload,
   SESSION_COOKIE,
   isHttpsRequest,
-  type AuthContext,
   type AuthEnv,
 } from "./auth-shared";
 import { apiError } from "../lib/api-error";
@@ -20,7 +19,7 @@ export const authSessionRoute = new Hono<AuthEnv>();
 // ── Authed endpoints ────────────────────────────────────────────────────────
 
 authSessionRoute.get("/me", requireAuth, async (c) => {
-  const auth = c.get("auth") as AuthContext;
+  const auth = c.get("auth");
   const db = getDb(c.env.DB);
   const payload = await authPayload(db, auth.userId);
   if (!payload) return apiError(c, "unauthorized", 401);
@@ -38,7 +37,7 @@ authSessionRoute.get("/me", requireAuth, async (c) => {
 });
 
 authSessionRoute.post("/logout", requireAuth, async (c) => {
-  const auth = c.get("auth") as AuthContext;
+  const auth = c.get("auth");
   await getDb(c.env.DB)
     .update(sessions)
     .set({ revokedAt: toIso(new Date()) })
@@ -48,7 +47,7 @@ authSessionRoute.post("/logout", requireAuth, async (c) => {
 });
 
 authSessionRoute.get("/devices", requireAuth, async (c) => {
-  const auth = c.get("auth") as AuthContext;
+  const auth = c.get("auth");
   const list = await getDb(c.env.DB)
     .select()
     .from(devices)
@@ -59,6 +58,7 @@ authSessionRoute.get("/devices", requireAuth, async (c) => {
       id: d.id,
       label: d.label,
       platform: d.platform,
+      userAgent: d.userAgent,
       lastSeenAt: d.lastSeenAt,
       isCurrent: d.id === auth.deviceId,
     })),
@@ -66,7 +66,7 @@ authSessionRoute.get("/devices", requireAuth, async (c) => {
 });
 
 authSessionRoute.delete("/devices/:id", requireAuth, async (c) => {
-  const auth = c.get("auth") as AuthContext;
+  const auth = c.get("auth");
   const deviceId = c.req.param("id");
   const db = getDb(c.env.DB);
   const deviceRows = await db

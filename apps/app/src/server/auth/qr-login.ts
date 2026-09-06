@@ -10,7 +10,6 @@ export const QR_TTL_SECONDS = 10 * 60;
 
 export async function createQrLogin(
   d: Db,
-  ip: string,
   ident: Identifier | null,
 ): Promise<{ code: string; expiresAt: Date }> {
   const now = new Date();
@@ -21,7 +20,6 @@ export async function createQrLogin(
   await d.insert(qrLogins).values({
     id: generateId(),
     code,
-    ip,
     status: "pending",
     identifier: ident?.value ?? null,
     grantedTo: null,

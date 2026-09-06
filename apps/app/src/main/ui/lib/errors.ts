@@ -81,6 +81,8 @@ const MESSAGES = {
   // recipes
   recipe_exists: "This colour already has a recipe for that denier.",
   recipe_version_missing: "That version no longer exists.",
+  recipe_version_conflict:
+    "This recipe changed while you were saving. Re-open and try again.",
   // qr login
   qr_code_invalid: "That code is not valid or was already used.",
   qr_code_expired: "That code has expired. Ask for a new one.",

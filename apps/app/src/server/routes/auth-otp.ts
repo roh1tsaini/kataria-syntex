@@ -15,6 +15,7 @@ import { detectIdentifier } from "../lib/identifier";
 import { hashPassword } from "../lib/password";
 import { generateId } from "../lib/token";
 import { DEFAULT_NUMBERING_JSON } from "../lib/company";
+import { consumeBudget } from "../lib/rate-limit";
 import {
   requestOtp,
   verifyOtp,
@@ -49,6 +50,8 @@ export const authOtpRoute = new Hono<AuthEnv>();
 
 authOtpRoute.post("/lookup", async (c) => {
   // Throttled hard — this is an unauthenticated exists/has-password oracle.
+  // In-memory IP budget short-circuits the cheap bursts; the D1 budgets below
+  // hold across isolates (per source IP and per probed identifier).
   if (ipBudgetRemaining("lookup", clientIp(c), 30) <= 0)
     return apiError(c, "rate_limited", 429);
   recordIpAttempt("lookup", clientIp(c));
@@ -61,6 +64,11 @@ authOtpRoute.post("/lookup", async (c) => {
   if (!ident) return badRequest(c, "invalid_identifier");
 
   const db = getDb(c.env.DB);
+  if (!(await consumeBudget(db, `lookup:ip:${clientIp(c)}`, 30, 60_000)))
+    return apiError(c, "rate_limited", 429);
+  if (!(await consumeBudget(db, `lookup:id:${ident.value}`, 10, 60_000)))
+    return apiError(c, "rate_limited", 429);
+
   const user = await findUserByIdentifier(db, ident);
   let hasInvite = false;
   if (!user) {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
+import { useMastersLoad } from "@/ui/hooks/use-masters-load";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -437,22 +438,15 @@ function ReturnForm({
   const [error, setError] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [mastersError, setMastersError] = useState(false);
-  const [mastersNonce, setMastersNonce] = useState(0);
   const [dirty, setDirty] = useState(false);
 
   // Warn before closing/reloading the tab with uncommitted edits (browsers
   // show a native confirm — the SPA's own Cancel button runs onBack).
   useDirtyGuard(dirty);
 
-  useEffect(() => {
-    setMastersError(false);
-    void Promise.all([
-      refreshJobWorkers(),
-      refreshDeniers(),
-      refreshColors(),
-    ]).catch(() => setMastersError(true));
-  }, [mastersNonce, refreshJobWorkers, refreshDeniers, refreshColors]);
+  const { failed: mastersError, retry: retryMasters } = useMastersLoad(() =>
+    Promise.all([refreshJobWorkers(), refreshDeniers(), refreshColors()]),
+  );
 
   useEffect(() => {
     if (!editId) return;
@@ -641,11 +635,7 @@ function ReturnForm({
             Couldn't load job workers, deniers and colours. Save is disabled
             until they load.
           </p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setMastersNonce((n) => n + 1)}
-          >
+          <Button size="sm" variant="outline" onClick={retryMasters}>
             Retry
           </Button>
         </div>
@@ -856,14 +846,20 @@ function ReturnForm({
 
                     <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                       <Field className="gap-1.5">
-                        <FieldLabel className="text-[11px] font-semibold">
+                        <FieldLabel
+                          htmlFor={`row-${row.id}-challan`}
+                          className="text-[11px] font-semibold"
+                        >
                           Challan
                         </FieldLabel>
                         <Select
                           value={row.challanId}
                           onValueChange={(v) => updateRow(idx, "challanId", v)}
                         >
-                          <SelectTrigger className="h-11 sm:h-10">
+                          <SelectTrigger
+                            id={`row-${row.id}-challan`}
+                            className="h-11 sm:h-10"
+                          >
                             <SelectValue placeholder="Select challan" />
                           </SelectTrigger>
                           <SelectContent>
@@ -876,14 +872,20 @@ function ReturnForm({
                         </Select>
                       </Field>
                       <Field className="gap-1.5">
-                        <FieldLabel className="text-[11px] font-semibold">
+                        <FieldLabel
+                          htmlFor={`row-${row.id}-denier`}
+                          className="text-[11px] font-semibold"
+                        >
                           Denier
                         </FieldLabel>
                         <Select
                           value={row.denierId}
                           onValueChange={(v) => updateRow(idx, "denierId", v)}
                         >
-                          <SelectTrigger className="h-11 sm:h-10">
+                          <SelectTrigger
+                            id={`row-${row.id}-denier`}
+                            className="h-11 sm:h-10"
+                          >
                             <SelectValue placeholder="Select denier" />
                           </SelectTrigger>
                           <SelectContent>
@@ -896,14 +898,20 @@ function ReturnForm({
                         </Select>
                       </Field>
                       <Field className="gap-1.5">
-                        <FieldLabel className="text-[11px] font-semibold">
+                        <FieldLabel
+                          htmlFor={`row-${row.id}-color`}
+                          className="text-[11px] font-semibold"
+                        >
                           Colour
                         </FieldLabel>
                         <Select
                           value={row.colorId}
                           onValueChange={(v) => updateRow(idx, "colorId", v)}
                         >
-                          <SelectTrigger className="h-11 sm:h-10">
+                          <SelectTrigger
+                            id={`row-${row.id}-color`}
+                            className="h-11 sm:h-10"
+                          >
                             <SelectValue placeholder="Select colour" />
                           </SelectTrigger>
                           <SelectContent>
@@ -919,10 +927,14 @@ function ReturnForm({
 
                     <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                       <Field className="gap-1.5">
-                        <FieldLabel className="text-[11px] font-semibold">
+                        <FieldLabel
+                          htmlFor={`row-${row.id}-lotNo`}
+                          className="text-[11px] font-semibold"
+                        >
                           Lot no.
                         </FieldLabel>
                         <Input
+                          id={`row-${row.id}-lotNo`}
                           className="h-11 sm:h-10"
                           value={row.lotNo}
                           onChange={(e) =>
@@ -932,10 +944,14 @@ function ReturnForm({
                         />
                       </Field>
                       <Field className="gap-1.5">
-                        <FieldLabel className="text-[11px] font-semibold">
+                        <FieldLabel
+                          htmlFor={`row-${row.id}-net`}
+                          className="text-[11px] font-semibold"
+                        >
                           Net wt (kg)
                         </FieldLabel>
                         <Input
+                          id={`row-${row.id}-net`}
                           className="h-11 sm:h-10 font-semibold"
                           type="number"
                           step="0.001"
@@ -948,10 +964,14 @@ function ReturnForm({
                         />
                       </Field>
                       <Field className="gap-1.5">
-                        <FieldLabel className="text-[11px] font-semibold">
+                        <FieldLabel
+                          htmlFor={`row-${row.id}-cones`}
+                          className="text-[11px] font-semibold"
+                        >
                           Cones
                         </FieldLabel>
                         <Input
+                          id={`row-${row.id}-cones`}
                           className="h-11 sm:h-10"
                           type="number"
                           value={row.cones}

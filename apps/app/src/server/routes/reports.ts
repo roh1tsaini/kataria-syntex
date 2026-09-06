@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import { and, eq, gte, lte, desc, asc, sql, inArray } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
@@ -12,88 +13,96 @@ import {
 } from "../db/schema";
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
+import { apiError } from "../lib/api-error";
+import { returnedTotalsByChallan } from "../lib/document-pipeline";
 import { round3 } from "@kataria-syntex/shared";
 
 export const reportsRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
 reportsRoute.use("*", requireAuth, resolveMember());
 
+const dateRangeSchema = z.object({
+  from: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+});
+
+/** Validated from/to query params; null when either isn't a YYYY-MM-DD date. */
 function parseDateRange(c: {
   req: { query: (k: string) => string | undefined };
-}) {
-  const from = c.req.query("from")?.trim();
-  const to = c.req.query("to")?.trim();
-  return { from, to };
+}): { from?: string; to?: string } | null {
+  const parsed = dateRangeSchema.safeParse({
+    from: c.req.query("from"),
+    to: c.req.query("to"),
+  });
+  return parsed.success ? parsed.data : null;
 }
+
+/** transaction-log ?source= — the movement sources stock.ts writes. */
+const stockSourceSchema = z
+  .string()
+  .trim()
+  .pipe(z.enum(["sales", "job_work_send", "job_work_return", "raw_entry"]))
+  .optional();
 
 // ── Dashboard: flow-stage cards ───────────────────────────────────────────────
 
 reportsRoute.get("/dashboard", requirePermission("view_reports"), async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
 
-  const [sentRows, returnedRows, rawStockRows, dyedStockRows, soldRows] =
-    await Promise.all([
-      db
-        .select({
-          total: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`,
-        })
-        .from(challans)
-        .where(
-          and(
-            eq(challans.workspaceId, workspaceId),
-            eq(challans.type, "outward"),
-          ),
+  // Three grouped sums cover all five cards: challan totals by kind,
+  // returned items, stock by ledger.
+  const [typeRows, returnedRows, stockRows] = await Promise.all([
+    db
+      .select({
+        type: challans.type,
+        total: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`.mapWith(
+          Number,
         ),
-      db
-        .select({
-          total: sql<number>`COALESCE(SUM(${jobWorkReturnItems.netWt}), 0)`,
-        })
-        .from(jobWorkReturnItems)
-        .innerJoin(
-          jobWorkReturns,
-          eq(jobWorkReturnItems.returnId, jobWorkReturns.id),
-        )
-        .where(eq(jobWorkReturns.workspaceId, workspaceId)),
-      db
-        .select({
-          total: sql<number>`COALESCE(SUM(${stockEntries.netWt}), 0)`,
-        })
-        .from(stockEntries)
-        .where(
-          and(
-            eq(stockEntries.workspaceId, workspaceId),
-            eq(stockEntries.stockType, "raw"),
+      })
+      .from(challans)
+      .where(eq(challans.workspaceId, workspaceId))
+      .groupBy(challans.type),
+    db
+      .select({
+        total:
+          sql<number>`COALESCE(SUM(${jobWorkReturnItems.netWt}), 0)`.mapWith(
+            Number,
           ),
+      })
+      .from(jobWorkReturnItems)
+      .innerJoin(
+        jobWorkReturns,
+        eq(jobWorkReturnItems.returnId, jobWorkReturns.id),
+      )
+      .where(eq(jobWorkReturns.workspaceId, workspaceId)),
+    db
+      .select({
+        stockType: stockEntries.stockType,
+        total: sql<number>`COALESCE(SUM(${stockEntries.netWt}), 0)`.mapWith(
+          Number,
         ),
-      db
-        .select({
-          total: sql<number>`COALESCE(SUM(${stockEntries.netWt}), 0)`,
-        })
-        .from(stockEntries)
-        .where(
-          and(
-            eq(stockEntries.workspaceId, workspaceId),
-            eq(stockEntries.stockType, "dyed"),
-          ),
-        ),
-      db
-        .select({
-          total: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`,
-        })
-        .from(challans)
-        .where(
-          and(
-            eq(challans.workspaceId, workspaceId),
-            eq(challans.type, "sales"),
-          ),
-        ),
-    ]);
-  const sent = round3(sentRows[0]?.total ?? 0);
+      })
+      .from(stockEntries)
+      .where(eq(stockEntries.workspaceId, workspaceId))
+      .groupBy(stockEntries.stockType),
+  ]);
+
+  const byType = new Map(typeRows.map((r) => [r.type, round3(r.total)]));
+  const byStock = new Map(stockRows.map((r) => [r.stockType, round3(r.total)]));
+  const sent = byType.get("outward") ?? 0;
+  const sold = byType.get("sales") ?? 0;
   const returned = round3(returnedRows[0]?.total ?? 0);
-  const rawStock = round3(rawStockRows[0]?.total ?? 0);
-  const dyedStock = round3(dyedStockRows[0]?.total ?? 0);
-  const sold = round3(soldRows[0]?.total ?? 0);
+  const rawStock = byStock.get("raw") ?? 0;
+  const dyedStock = byStock.get("dyed") ?? 0;
 
   return c.json({
     cards: [
@@ -127,9 +136,11 @@ reportsRoute.get(
   "/job-work-balance",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
+    const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
-    const { from, to } = parseDateRange(c);
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
+    const { from, to } = range;
     const jobWorkerId = c.req.query("jobWorkerId")?.trim();
 
     // Get all outward challans
@@ -155,17 +166,9 @@ reportsRoute.get(
       .orderBy(asc(challans.date));
 
     if (chRows.length === 0) return c.json({ items: [] });
-    const challanIds = chRows.map((c) => c.id);
-    const returnedByChallan = await db
-      .select({
-        challanId: jobWorkReturnItems.challanId,
-        total: sql<number>`COALESCE(SUM(${jobWorkReturnItems.netWt}), 0)`,
-      })
-      .from(jobWorkReturnItems)
-      .where(inArray(jobWorkReturnItems.challanId, challanIds))
-      .groupBy(jobWorkReturnItems.challanId);
-    const returnedMap = new Map(
-      returnedByChallan.map((r) => [r.challanId, round3(r.total)]),
+    const returnedMap = await returnedTotalsByChallan(
+      db,
+      chRows.map((ch) => ch.id),
     );
     const result = chRows.map((ch) => {
       const returned = returnedMap.get(ch.id) ?? 0;
@@ -190,7 +193,7 @@ reportsRoute.get(
   "/over-receipts",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
+    const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
 
     const rows = await db
@@ -228,7 +231,7 @@ reportsRoute.get(
   "/stock-summary",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
+    const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
 
     const grouped = await db
@@ -261,73 +264,74 @@ reportsRoute.get(
   },
 );
 
-// ── Sales register ───────────────────────────────────────────────────────────
+// ── Sales / job-work registers ───────────────────────────────────────────────
+
+/** Both registers read the same challan columns, filtered by kind — the
+ * endpoints project the party column their screen shows. */
+async function readRegister(
+  db: ReturnType<typeof getDb>,
+  workspaceId: string,
+  type: "sales" | "outward",
+  range: { from?: string; to?: string },
+) {
+  const conditions = [
+    eq(challans.workspaceId, workspaceId),
+    eq(challans.type, type),
+  ];
+  if (range.from) conditions.push(gte(challans.date, range.from));
+  if (range.to) conditions.push(lte(challans.date, range.to));
+
+  return db
+    .select({
+      id: challans.id,
+      challanNumber: challans.challanNumber,
+      date: challans.date,
+      customerName: challans.customerName,
+      jobWorkerName: challans.jobWorkerName,
+      totalBoxes: challans.totalBoxes,
+      totalCheese: challans.totalCheese,
+      totalNetWt: challans.totalNetWt,
+    })
+    .from(challans)
+    .where(and(...conditions))
+    .orderBy(desc(challans.date));
+}
 
 reportsRoute.get(
   "/sales-register",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
-    const db = getDb(c.env.DB);
-    const { from, to } = parseDateRange(c);
-
-    const conditions = [
-      eq(challans.workspaceId, workspaceId),
-      eq(challans.type, "sales"),
-    ];
-    if (from) conditions.push(gte(challans.date, from));
-    if (to) conditions.push(lte(challans.date, to));
-
-    const rows = await db
-      .select({
-        id: challans.id,
-        challanNumber: challans.challanNumber,
-        date: challans.date,
-        customerName: challans.customerName,
-        totalBoxes: challans.totalBoxes,
-        totalCheese: challans.totalCheese,
-        totalNetWt: challans.totalNetWt,
-      })
-      .from(challans)
-      .where(and(...conditions))
-      .orderBy(desc(challans.date));
-
-    return c.json({ items: rows });
+    const workspaceId = c.get("member").workspaceId;
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
+    const rows = await readRegister(
+      getDb(c.env.DB),
+      workspaceId,
+      "sales",
+      range,
+    );
+    return c.json({
+      items: rows.map(({ jobWorkerName, ...rest }) => rest),
+    });
   },
 );
-
-// ── Job-work register ────────────────────────────────────────────────────────
 
 reportsRoute.get(
   "/job-work-register",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
-    const db = getDb(c.env.DB);
-    const { from, to } = parseDateRange(c);
-
-    const conditions = [
-      eq(challans.workspaceId, workspaceId),
-      eq(challans.type, "outward"),
-    ];
-    if (from) conditions.push(gte(challans.date, from));
-    if (to) conditions.push(lte(challans.date, to));
-
-    const rows = await db
-      .select({
-        id: challans.id,
-        challanNumber: challans.challanNumber,
-        date: challans.date,
-        jobWorkerName: challans.jobWorkerName,
-        totalBoxes: challans.totalBoxes,
-        totalCheese: challans.totalCheese,
-        totalNetWt: challans.totalNetWt,
-      })
-      .from(challans)
-      .where(and(...conditions))
-      .orderBy(desc(challans.date));
-
-    return c.json({ items: rows });
+    const workspaceId = c.get("member").workspaceId;
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
+    const rows = await readRegister(
+      getDb(c.env.DB),
+      workspaceId,
+      "outward",
+      range,
+    );
+    return c.json({
+      items: rows.map(({ customerName, ...rest }) => rest),
+    });
   },
 );
 
@@ -337,10 +341,14 @@ reportsRoute.get(
   "/transaction-log",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
+    const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
-    const { from, to } = parseDateRange(c);
-    const source = c.req.query("source")?.trim();
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
+    const { from, to } = range;
+    const parsedSource = stockSourceSchema.safeParse(c.req.query("source"));
+    if (!parsedSource.success) return apiError(c, "invalid_request", 400);
+    const source = parsedSource.data;
 
     const conditions = [eq(stockEntries.workspaceId, workspaceId)];
     if (from) conditions.push(gte(stockEntries.date, from));
@@ -364,7 +372,7 @@ reportsRoute.get(
   "/party-summary",
   requirePermission("view_reports"),
   async (c) => {
-    const workspaceId = c.get("member")!.workspaceId;
+    const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
 
     // Customers: total sold
@@ -372,8 +380,13 @@ reportsRoute.get(
       .select({
         id: customers.id,
         name: customers.name,
-        totalSold: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`,
-        challanCount: sql<number>`COUNT(*)`,
+        // .as() names the output column so ORDER BY can reference it.
+        totalSold: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`.as(
+          "total_sold",
+        ),
+        // COUNT(challans.id), not COUNT(*) — the left join's null-extended
+        // row makes a zero-challan party report a count of 1.
+        challanCount: sql<number>`COUNT(${challans.id})`,
       })
       .from(customers)
       .leftJoin(
@@ -382,15 +395,19 @@ reportsRoute.get(
       )
       .where(eq(customers.workspaceId, workspaceId))
       .groupBy(customers.id)
-      .orderBy(desc(sql`totalSold`));
+      .orderBy(desc(sql`total_sold`));
 
     // Job workers: sent, returned, balance
     const jwRows = await db
       .select({
         id: jobWorkers.id,
         name: jobWorkers.name,
-        totalSent: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`,
-        challanCount: sql<number>`COUNT(*)`,
+        totalSent: sql<number>`COALESCE(SUM(${challans.totalNetWt}), 0)`.as(
+          "total_sent",
+        ),
+        // COUNT(challans.id), not COUNT(*) — the left join's null-extended
+        // row makes a zero-challan party report a count of 1.
+        challanCount: sql<number>`COUNT(${challans.id})`,
       })
       .from(jobWorkers)
       .leftJoin(
@@ -402,7 +419,7 @@ reportsRoute.get(
       )
       .where(eq(jobWorkers.workspaceId, workspaceId))
       .groupBy(jobWorkers.id)
-      .orderBy(desc(sql`totalSent`));
+      .orderBy(desc(sql`total_sent`));
 
     const returnedByJw =
       jwRows.length > 0

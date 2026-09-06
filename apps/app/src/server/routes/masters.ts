@@ -78,7 +78,7 @@ function registerMaster<TInput>(
       .from(table)
       .where(
         and(
-          eq(table.workspaceId, c.get("member")!.workspaceId),
+          eq(table.workspaceId, c.get("member").workspaceId),
           q ? likeContains(table.name, q) : undefined,
         ),
       )
@@ -93,11 +93,7 @@ function registerMaster<TInput>(
       const parsed = schema.safeParse(await c.req.json().catch(() => null));
       if (!parsed.success) return apiError(c, "invalid_request", 400);
       const nowIso = toIso(new Date());
-      const row = toInsertRow(
-        parsed.data,
-        c.get("member")!.workspaceId,
-        nowIso,
-      );
+      const row = toInsertRow(parsed.data, c.get("member").workspaceId, nowIso);
       await getDb(c.env.DB).insert(table).values(row);
       return c.json({ ok: true, item: row });
     },
@@ -109,7 +105,7 @@ function registerMaster<TInput>(
     async (c) => {
       const parsed = schema.safeParse(await c.req.json().catch(() => null));
       if (!parsed.success) return apiError(c, "invalid_request", 400);
-      const workspaceId = c.get("member")!.workspaceId;
+      const workspaceId = c.get("member").workspaceId;
       const db = getDb(c.env.DB);
       const existingRows = await db
         .select()
@@ -137,7 +133,7 @@ function registerMaster<TInput>(
     `/${path}/:id`,
     requirePermission("manage_masters"),
     async (c) => {
-      const workspaceId = c.get("member")!.workspaceId;
+      const workspaceId = c.get("member").workspaceId;
       const db = getDb(c.env.DB);
       const existingRows = await db
         .select({ id: table.id })

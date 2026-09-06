@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+// Reads keystore.properties (written by CI from the ANDROID_KEY_* secrets).
+// Declared at script scope — both the signing config and the release build
+// type reference it. If the file is absent the release build stays unsigned —
+// local/dev builds don't need a keystore.
+def propsFile = rootProject.file('keystore.properties')
+
 android {
     namespace = "com.katariasyntex.bizapp"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -17,10 +23,6 @@ android {
         }
     }
     signingConfigs {
-        // Reads keystore.properties (written by CI from the ANDROID_KEY_* secrets).
-        // If the file is absent the release build stays unsigned — local/dev builds
-        // don't need a keystore.
-        def propsFile = rootProject.file('keystore.properties')
         release {
             if (propsFile.exists()) {
                 def props = new Properties()

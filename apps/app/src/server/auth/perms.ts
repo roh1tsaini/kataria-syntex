@@ -8,8 +8,8 @@ import type { AuthVariables } from "./session";
 import { apiError } from "../lib/api-error";
 
 /**
- * Permission-based access control middleware (see ADR-0001).
- * Replaces the old owner/admin/packer role system.
+ * Permission-based access control middleware — the only authorization model
+ * in the app. Members hold explicit permissions; the primary admin holds all.
  *
  * Usage:
  *   const requireMember = resolveMember();
@@ -25,7 +25,8 @@ export type MemberContext = {
 
 export type PermsEnv = {
   Variables: AuthVariables & {
-    member?: MemberContext;
+    /** Set by resolveMember() — every reader sits behind that middleware. */
+    member: MemberContext;
   };
 };
 

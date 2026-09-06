@@ -6,11 +6,8 @@ import type { Env } from "../env";
 import { packingEntries, packingItems, challanItemSources } from "../db/schema";
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
-import { generateId } from "../lib/token";
-import { round3, dateStringSchema, fyForDate } from "@kataria-syntex/shared";
-import { validateMasters } from "../lib/masters";
-import { createPacking } from "../lib/document-pipeline";
-import { toDate } from "../lib/datetime";
+import { dateStringSchema } from "@kataria-syntex/shared";
+import { createPacking, updatePacking } from "../lib/document-pipeline";
 import { apiError } from "../lib/api-error";
 
 export const packingRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -43,7 +40,7 @@ const packingBody = z.object({
 // ── List ────────────────────────────────────────────────────────────────────
 
 packingRoute.get("/", async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const type = c.req.query("type")?.trim();
   const createdBy = c.req.query("createdBy")?.trim();
@@ -106,7 +103,7 @@ packingRoute.get("/", async (c) => {
 // ── Detail ──────────────────────────────────────────────────────────────────
 
 packingRoute.get("/:id", async (c) => {
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const headerRows = await db
     .select()
@@ -155,11 +152,11 @@ packingRoute.get("/:id", async (c) => {
 packingRoute.post("/", requirePermission("create_packing"), async (c) => {
   const parsed = packingBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return apiError(c, "invalid_request", 400);
-  const workspaceId = c.get("member")!.workspaceId;
+  const workspaceId = c.get("member").workspaceId;
   const result = await createPacking(
     getDb(c.env.DB),
     workspaceId,
-    c.get("auth")!.userId,
+    c.get("auth").userId,
     parsed.data,
   );
   if ("error" in result) return apiError(c, result.error, 400);
@@ -176,99 +173,12 @@ packingRoute.post("/", requirePermission("create_packing"), async (c) => {
 packingRoute.put("/:id", requirePermission("edit_packing"), async (c) => {
   const parsed = packingBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return apiError(c, "invalid_request", 400);
-  const workspaceId = c.get("member")!.workspaceId;
-  const db = getDb(c.env.DB);
-
-  const existingRows = await db
-    .select()
-    .from(packingEntries)
-    .where(
-      and(
-        eq(packingEntries.id, c.req.param("id")),
-        eq(packingEntries.workspaceId, workspaceId),
-      ),
-    );
-  const existing = existingRows[0];
-  if (!existing) return apiError(c, "not_found", 404);
-
-  // An entry never changes kind — the number belongs to the sale or job-work
-  // series it was issued from.
-  if (parsed.data.type !== existing.type)
-    return apiError(c, "type_change_not_allowed", 400);
-
-  // The number belongs to the FY it was issued in — a date change across FYs
-  // is rejected.
-  if (
-    fyForDate(toDate(existing.date)).label !==
-    fyForDate(toDate(parsed.data.date)).label
-  )
-    return apiError(c, "fy_change_not_allowed", 400);
-
-  // Check if any item is imported — if so, entry is locked
-  const itemRows = await db
-    .select({ id: packingItems.id })
-    .from(packingItems)
-    .where(eq(packingItems.entryId, existing.id));
-  const itemIds = itemRows.map((r) => r.id);
-  if (itemIds.length > 0) {
-    const imported = await db
-      .select({ id: challanItemSources.id })
-      .from(challanItemSources)
-      .where(inArray(challanItemSources.packingItemId, itemIds))
-      .limit(1);
-    if (imported.length > 0) return apiError(c, "entry_locked", 400);
-  }
-
-  const denierIds2 = [...new Set(parsed.data.items.map((i) => i.denierId))];
-  const colorIds2 = [...new Set(parsed.data.items.map((i) => i.colorId))];
-  const validated2 = await validateMasters(
-    db,
-    workspaceId,
-    denierIds2,
-    colorIds2,
+  const result = await updatePacking(
+    getDb(c.env.DB),
+    c.get("member").workspaceId,
+    c.req.param("id"),
+    parsed.data,
   );
-  if ("error" in validated2) return apiError(c, validated2.error, 400);
-  const { denierById, colorById } = validated2;
-  const nowIso = new Date().toISOString();
-
-  const items = parsed.data.items.map((i, idx) => {
-    const denier = denierById.get(i.denierId)!;
-    const color = colorById.get(i.colorId)!;
-    return {
-      id: generateId(),
-      entryId: existing.id,
-      seq: idx + 1,
-      denierId: i.denierId,
-      denierName: denier.name,
-      colorId: i.colorId,
-      colorName: color.name,
-      colorCode: color.code,
-      tareWt: i.tareWt ?? null,
-      grossWt: i.grossWt ?? null,
-      sackWt: i.sackWt ?? null,
-      sacks: i.sacks ?? null,
-      cones: i.cones ?? null,
-      boxNo: i.boxNo || null,
-      lotNo: i.lotNo || null,
-      remarks: i.remarks || null,
-      netWt: round3(i.netWt),
-      createdAt: nowIso,
-    };
-  });
-
-  // Delete old items, recreate — one atomic D1 batch, no reads in between.
-  await db.batch([
-    db.delete(packingItems).where(eq(packingItems.entryId, existing.id)),
-    db
-      .update(packingEntries)
-      .set({
-        type: parsed.data.type,
-        date: parsed.data.date,
-        updatedAt: nowIso,
-      })
-      .where(eq(packingEntries.id, existing.id)),
-    ...items.map((item) => db.insert(packingItems).values(item)),
-  ]);
-
-  return c.json({ ok: true, entryId: existing.id, items });
+  if ("error" in result) return apiError(c, result.error, result.status ?? 400);
+  return c.json({ ok: true, entryId: result.entryId, items: result.items });
 });

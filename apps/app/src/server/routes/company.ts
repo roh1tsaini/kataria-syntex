@@ -74,7 +74,7 @@ function toCompanyDto(
 }
 
 companyRoute.get("/", async (c) => {
-  const member = c.get("member")!;
+  const member = c.get("member");
   const db = getDb(c.env.DB);
   const row = await getOrCreateCompany(db, member.workspaceId);
 
@@ -90,7 +90,7 @@ companyRoute.get("/", async (c) => {
       rawNext: financialYears.rawNext,
     })
     .from(financialYears)
-    .where(eq(financialYears.workspaceId, c.get("member")!.workspaceId))
+    .where(eq(financialYears.workspaceId, c.get("member").workspaceId))
     .orderBy(desc(financialYears.startsAt));
 
   return c.json({
@@ -103,7 +103,7 @@ companyRoute.get("/", async (c) => {
 companyRoute.put("/", requirePermission("manage_settings"), async (c) => {
   const parsed = detailsSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return apiError(c, "invalid_request", 400);
-  const member = c.get("member")!;
+  const member = c.get("member");
   const db = getDb(c.env.DB);
   const company = await getOrCreateCompany(db, member.workspaceId);
   const nowIso = toIso(new Date());
@@ -117,7 +117,7 @@ companyRoute.put("/", requirePermission("manage_settings"), async (c) => {
     phone1: parsed.data.phone1 || null,
     phone2: parsed.data.phone2 || null,
     updatedAt: nowIso,
-    updatedBy: c.get("auth")!.userId,
+    updatedBy: c.get("auth").userId,
   };
   await db.update(companies).set(updated).where(eq(companies.id, company.id));
   return c.json({
@@ -134,7 +134,7 @@ companyRoute.put(
       await c.req.json().catch(() => null),
     );
     if (!parsed.success) return apiError(c, "invalid_request", 400);
-    const member = c.get("member")!;
+    const member = c.get("member");
     const db = getDb(c.env.DB);
     const company = await getOrCreateCompany(db, member.workspaceId);
     const nowIso = toIso(new Date());
@@ -143,7 +143,7 @@ companyRoute.put(
       .set({
         numbering: JSON.stringify(parsed.data),
         updatedAt: nowIso,
-        updatedBy: c.get("auth")!.userId,
+        updatedBy: c.get("auth").userId,
       })
       .where(eq(companies.id, company.id));
     return c.json({ ok: true, numbering: parsed.data });

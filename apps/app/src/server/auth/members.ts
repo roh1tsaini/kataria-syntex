@@ -56,6 +56,7 @@ export type PendingMemberRow = {
   id: string;
   identifier: string;
   permissions: Permission[];
+  invitedByName: string | null;
 };
 
 export async function listPendingMembers(
@@ -63,8 +64,15 @@ export async function listPendingMembers(
   workspaceId: string,
 ): Promise<PendingMemberRow[]> {
   const rows = await d
-    .select()
+    .select({
+      id: invites.id,
+      phone: invites.phone,
+      email: invites.email,
+      permissions: invites.permissions,
+      invitedByName: users.name,
+    })
     .from(invites)
+    .leftJoin(users, eq(users.id, invites.invitedBy))
     .where(
       and(eq(invites.workspaceId, workspaceId), isNull(invites.consumedAt)),
     );
@@ -72,6 +80,7 @@ export async function listPendingMembers(
     id: r.id,
     identifier: r.phone ?? r.email ?? "",
     permissions: parsePermissions(r.permissions),
+    invitedByName: r.invitedByName,
   }));
 }
 
@@ -306,7 +315,6 @@ export async function transferOwnership(
   const target = rows[0];
   if (!target || target.userId === fromUserId) return false;
 
-  const nowIso = toIso(new Date());
   // D1 has no interactive transactions, so order matters: a committed demote
   // with a failed promote would leave ZERO primary admins. Promote runs first
   // as its own CAS — if it misses, nothing changed yet and false matches the
@@ -315,7 +323,9 @@ export async function transferOwnership(
   // already the sole admin, so the transfer still holds.
   const promote = await d
     .update(memberships)
-    .set({ isPrimaryAdmin: true, joinedAt: nowIso })
+    // joinedAt stays untouched — listMembers orders by it and promotion must
+    // not reorder the roster.
+    .set({ isPrimaryAdmin: true })
     .where(
       and(
         eq(memberships.workspaceId, workspaceId),

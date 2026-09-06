@@ -1,4 +1,3 @@
-import type { ApiCode } from "@kataria-syntex/shared";
 /**
  * Document Pipeline — deep module for all document creation.
  *
@@ -14,6 +13,20 @@ import type { ApiCode } from "@kataria-syntex/shared";
 
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
+import {
+  challanTotals,
+  formatChallanNumber,
+  formatEntryNumber,
+  fyForDate,
+  parseSeqFromNumber,
+  round3,
+  type ApiCode,
+  type ChallanBody,
+  type ChallanDto,
+  type ChallanItemDto,
+  type ChallanItemInput,
+  type NumberingConfig,
+} from "@kataria-syntex/shared";
 import type { Db, Queryable } from "./db";
 import {
   challanItemSources,
@@ -31,9 +44,9 @@ import {
   rawMaterialItems,
   suppliers,
 } from "../db/schema";
+import { toDate } from "./datetime";
 import {
-  allocateEntryNumber,
-  formatChallanNumber,
+  allocateFyNumber,
   getOrCreateCompany,
   getOrCreateFyForDate,
   parseNumbering,
@@ -45,17 +58,6 @@ import {
   buildReturnStockStatements,
 } from "./stock";
 import { generateId } from "./token";
-import {
-  challanTotals,
-  fyForDate,
-  parseSeqFromNumber,
-  round3,
-  type ChallanBody,
-  type ChallanDto,
-  type ChallanItemDto,
-  type ChallanItemInput,
-} from "@kataria-syntex/shared";
-import { toDate } from "./datetime";
 
 // ── Common helpers ─────────────────────────────────────────────────────────
 
@@ -66,13 +68,19 @@ async function allocatedEntryNumber(
   type: "packing_s" | "packing_j" | "raw",
 ): Promise<{ entryNumber: string; fyId: string; fyLabel: string }> {
   const company = await getOrCreateCompany(d, workspaceId);
-  return allocateEntryNumber(
+  const alloc = await allocateFyNumber(
     d,
     workspaceId,
     date,
-    parseNumbering(company.numbering),
     type,
+    (config, seq) => formatEntryNumber(config, type, seq),
+    parseNumbering(company.numbering),
   );
+  return {
+    entryNumber: alloc.number,
+    fyId: alloc.fyId,
+    fyLabel: alloc.fyLabel,
+  };
 }
 
 /**
@@ -86,28 +94,21 @@ async function allocatedChallanNumber(
   workspaceId: string,
   date: Date,
   type: "sales" | "outward",
+  config: NumberingConfig,
 ): Promise<{ challanNumber: string; fyId: string; fyLabel: string }> {
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const fyRow = await getOrCreateFyForDate(d, workspaceId, date);
-    const company = await getOrCreateCompany(d, workspaceId);
-    const config = parseNumbering(company.numbering);
-    const seq = type === "sales" ? fyRow.salesNext : fyRow.outwardNext;
-    const challanNumber = formatChallanNumber(config, type, seq, fyRow.label);
-    const set =
-      type === "sales" ? { salesNext: seq + 1 } : { outwardNext: seq + 1 };
-    const counterCond =
-      type === "sales"
-        ? eq(financialYears.salesNext, seq)
-        : eq(financialYears.outwardNext, seq);
-    const res = await d
-      .update(financialYears)
-      .set(set)
-      .where(and(eq(financialYears.id, fyRow.id), counterCond))
-      .run();
-    if (res.meta.changes === 1)
-      return { challanNumber, fyId: fyRow.id, fyLabel: fyRow.label };
-  }
-  throw new Error("challan_number_conflict");
+  const alloc = await allocateFyNumber(
+    d,
+    workspaceId,
+    date,
+    type,
+    (cfg, seq, fyLabel) => formatChallanNumber(cfg, type, seq, fyLabel),
+    config,
+  );
+  return {
+    challanNumber: alloc.number,
+    fyId: alloc.fyId,
+    fyLabel: alloc.fyLabel,
+  };
 }
 
 // ── Raw material ───────────────────────────────────────────────────────────
@@ -133,6 +134,60 @@ export type RawCreateInput = {
   items: RawItemInput[];
 };
 
+type ValidatedMasters = Exclude<
+  Awaited<ReturnType<typeof validateMasters>>,
+  { error: ApiCode }
+>;
+
+async function resolveSupplier(
+  d: Queryable,
+  workspaceId: string,
+  supplierId?: string,
+): Promise<{ supplier?: typeof suppliers.$inferSelect; error?: ApiCode }> {
+  if (!supplierId) return {};
+  const rows = await d
+    .select()
+    .from(suppliers)
+    .where(
+      and(eq(suppliers.id, supplierId), eq(suppliers.workspaceId, workspaceId)),
+    );
+  if (!rows[0]) return { error: "invalid_supplier" };
+  return { supplier: rows[0] };
+}
+
+function buildRawItems(
+  validated: ValidatedMasters,
+  rawItems: RawItemInput[],
+  entryId: string,
+  nowIso: string,
+) {
+  return rawItems.map((i, idx) => {
+    const denier = validated.denierById.get(i.denierId)!;
+    const color = validated.colorById.get(i.colorId)!;
+    return {
+      id: generateId(),
+      entryId,
+      seq: idx + 1,
+      denierId: i.denierId,
+      denierName: denier.name,
+      colorId: i.colorId,
+      colorName: color.name,
+      colorCode: color.code,
+      netWt: round3(i.netWt),
+      grossWt: i.grossWt ?? null,
+      tareWt: i.tareWt ?? null,
+      cones: i.cones ?? null,
+      lotNo: i.lotNo,
+      boxNo: i.boxNo || null,
+      packingUnit: i.packingUnit ?? null,
+      packingCount: i.packingCount ?? null,
+      createdAt: nowIso,
+    };
+  });
+}
+
+type RawItemRow = ReturnType<typeof buildRawItems>[number];
+
 export async function createRawMaterial(
   d: Db,
   workspaceId: string,
@@ -143,21 +198,8 @@ export async function createRawMaterial(
   | { error: ApiCode }
 > {
   const date = toDate(input.date);
-
-  let supplier: typeof suppliers.$inferSelect | undefined;
-  if (input.supplierId) {
-    const rows = await d
-      .select()
-      .from(suppliers)
-      .where(
-        and(
-          eq(suppliers.id, input.supplierId),
-          eq(suppliers.workspaceId, workspaceId),
-        ),
-      );
-    supplier = rows[0];
-    if (!supplier) return { error: "invalid_supplier" };
-  }
+  const party = await resolveSupplier(d, workspaceId, input.supplierId);
+  if (party.error) return { error: party.error };
 
   const denierIds = [...new Set(input.items.map((i) => i.denierId))];
   const colorIds = [...new Set(input.items.map((i) => i.colorId))];
@@ -177,30 +219,7 @@ export async function createRawMaterial(
   );
   const nowIso = new Date().toISOString();
   const entryId = generateId();
-
-  const items = input.items.map((i, idx) => {
-    const denier = validated.denierById.get(i.denierId)!;
-    const color = validated.colorById.get(i.colorId)!;
-    return {
-      id: generateId(),
-      entryId,
-      seq: idx + 1,
-      denierId: i.denierId,
-      denierName: denier.name,
-      colorId: i.colorId,
-      colorName: color.name,
-      colorCode: color.code,
-      netWt: round3(i.netWt),
-      grossWt: i.grossWt ?? null,
-      tareWt: i.tareWt ?? null,
-      cones: i.cones ?? null,
-      lotNo: i.lotNo,
-      boxNo: i.boxNo ?? null,
-      packingUnit: i.packingUnit ?? null,
-      packingCount: i.packingCount ?? null,
-      createdAt: nowIso,
-    };
-  });
+  const items = buildRawItems(validated, input.items, entryId, nowIso);
 
   await d.batch([
     d.insert(rawMaterialEntries).values({
@@ -208,8 +227,8 @@ export async function createRawMaterial(
       workspaceId,
       financialYearId: fyId,
       entryNumber,
-      supplierId: supplier?.id ?? null,
-      supplierName: supplier?.name ?? null,
+      supplierId: party.supplier?.id ?? null,
+      supplierName: party.supplier?.name ?? null,
       supplierChallanNo: input.supplierChallanNo || null,
       date: input.date,
       notes: input.notes || null,
@@ -229,6 +248,105 @@ export async function createRawMaterial(
   ]);
 
   return { ok: true as const, entryId, entryNumber, fyLabel };
+}
+
+/**
+ * Full raw-entry update: re-resolves supplier and masters, rebuilds item
+ * snapshots and the raw stock movements, and replaces the item rows — all
+ * writes commit in ONE batch. The number never moves across FYs, and an
+ * entry whose raw stock was already consumed is locked.
+ */
+export async function updateRawMaterial(
+  d: Db,
+  workspaceId: string,
+  id: string,
+  input: RawCreateInput,
+): Promise<
+  | { ok: true; entryId: string; items: RawItemRow[] }
+  | { error: ApiCode; status?: 400 | 404 }
+> {
+  const existingRows = await d
+    .select()
+    .from(rawMaterialEntries)
+    .where(
+      and(
+        eq(rawMaterialEntries.id, id),
+        eq(rawMaterialEntries.workspaceId, workspaceId),
+      ),
+    );
+  const existing = existingRows[0];
+  if (!existing) return { error: "not_found", status: 404 };
+
+  // The number belongs to the FY it was issued in — a date change across FYs
+  // is rejected.
+  if (
+    fyForDate(toDate(existing.date)).label !==
+    fyForDate(toDate(input.date)).label
+  )
+    return { error: "fy_change_not_allowed" };
+
+  // This entry's raw stock may already be consumed (dyed out of it) — the
+  // update deletes + recreates its "in" stock rows, so refuse when any "out"
+  // movement references the entry.
+  const stockOut = await d
+    .select({ id: stockEntries.id })
+    .from(stockEntries)
+    .where(
+      and(
+        eq(stockEntries.sourceRefId, existing.id),
+        eq(stockEntries.movement, "out"),
+      ),
+    )
+    .limit(1);
+  if (stockOut.length > 0) return { error: "stock_consumed" };
+
+  const party = await resolveSupplier(d, workspaceId, input.supplierId);
+  if (party.error) return { error: party.error };
+
+  const denierIds = [...new Set(input.items.map((i) => i.denierId))];
+  const colorIds = [...new Set(input.items.map((i) => i.colorId))];
+  const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
+  if ("error" in validated) return { error: validated.error };
+  for (const c of validated.colorById.values()) {
+    if (c.stockType !== "raw") return { error: "color_not_raw" };
+  }
+
+  const nowIso = new Date().toISOString();
+  const items = buildRawItems(validated, input.items, existing.id, nowIso);
+
+  await d.batch([
+    d
+      .delete(stockEntries)
+      .where(
+        and(
+          eq(stockEntries.sourceRefId, existing.id),
+          eq(stockEntries.workspaceId, workspaceId),
+        ),
+      ),
+    d.delete(rawMaterialItems).where(eq(rawMaterialItems.entryId, existing.id)),
+    d
+      .update(rawMaterialEntries)
+      .set({
+        supplierId: party.supplier?.id ?? null,
+        supplierName: party.supplier?.name ?? null,
+        supplierChallanNo: input.supplierChallanNo || null,
+        date: input.date,
+        notes: input.notes || null,
+        updatedAt: nowIso,
+      })
+      .where(eq(rawMaterialEntries.id, existing.id)),
+    ...items.map((it) => d.insert(rawMaterialItems).values(it)),
+    ...buildRawStockStatements(
+      d,
+      workspaceId,
+      existing.id,
+      items,
+      input.date,
+      nowIso,
+    ),
+  ]);
+
+  return { ok: true as const, entryId: existing.id, items };
 }
 
 // ── Packing ────────────────────────────────────────────────────────────────
@@ -253,32 +371,13 @@ export type PackingCreateInput = {
   items: PackingItemInput[];
 };
 
-export async function createPacking(
-  d: Db,
-  workspaceId: string,
-  userId: string,
-  input: PackingCreateInput,
-): Promise<
-  | { ok: true; entryId: string; entryNumber: string; fyLabel: string }
-  | { error: ApiCode }
-> {
-  const date = toDate(input.date);
-
-  const denierIds = [...new Set(input.items.map((i) => i.denierId))];
-  const colorIds = [...new Set(input.items.map((i) => i.colorId))];
-  const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
-  if ("error" in validated) return { error: validated.error };
-
-  const numType = input.type === "sale" ? "packing_s" : ("packing_j" as const);
-  const { entryNumber, fyId, fyLabel } = await allocatedEntryNumber(
-    d,
-    workspaceId,
-    date,
-    numType as "packing_s" | "packing_j",
-  );
-  const nowIso = new Date().toISOString();
-  const entryId = generateId();
-  const items = input.items.map((i, idx) => {
+function buildPackingItems(
+  validated: ValidatedMasters,
+  packingItemsIn: PackingItemInput[],
+  entryId: string,
+  nowIso: string,
+) {
+  return packingItemsIn.map((i, idx) => {
     const denier = validated.denierById.get(i.denierId)!;
     const color = validated.colorById.get(i.colorId)!;
     return {
@@ -295,13 +394,43 @@ export async function createPacking(
       sackWt: i.sackWt ?? null,
       sacks: i.sacks ?? null,
       cones: i.cones ?? null,
-      boxNo: i.boxNo ?? null,
-      lotNo: i.lotNo ?? null,
-      remarks: i.remarks ?? null,
+      boxNo: i.boxNo || null,
+      lotNo: i.lotNo || null,
+      remarks: i.remarks || null,
       netWt: round3(i.netWt),
       createdAt: nowIso,
     };
   });
+}
+
+type PackingItemRow = ReturnType<typeof buildPackingItems>[number];
+
+export async function createPacking(
+  d: Db,
+  workspaceId: string,
+  userId: string,
+  input: PackingCreateInput,
+): Promise<
+  | { ok: true; entryId: string; entryNumber: string; fyLabel: string }
+  | { error: ApiCode }
+> {
+  const date = toDate(input.date);
+
+  const denierIds = [...new Set(input.items.map((i) => i.denierId))];
+  const colorIds = [...new Set(input.items.map((i) => i.colorId))];
+  const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
+  if ("error" in validated) return { error: validated.error };
+
+  const numType = input.type === "sale" ? "packing_s" : "packing_j";
+  const { entryNumber, fyId, fyLabel } = await allocatedEntryNumber(
+    d,
+    workspaceId,
+    date,
+    numType,
+  );
+  const nowIso = new Date().toISOString();
+  const entryId = generateId();
+  const items = buildPackingItems(validated, input.items, entryId, nowIso);
 
   await d.batch([
     d.insert(packingEntries).values({
@@ -319,6 +448,80 @@ export async function createPacking(
   ]);
 
   return { ok: true as const, entryId, entryNumber, fyLabel };
+}
+
+/**
+ * Full packing-entry update: revalidates masters and rebuilds the item rows —
+ * one atomic batch. Packing writes no stock movements; an entry whose items
+ * were already imported into a challan is locked.
+ */
+export async function updatePacking(
+  d: Db,
+  workspaceId: string,
+  id: string,
+  input: PackingCreateInput,
+): Promise<
+  | { ok: true; entryId: string; items: PackingItemRow[] }
+  | { error: ApiCode; status?: 400 | 404 }
+> {
+  const existingRows = await d
+    .select()
+    .from(packingEntries)
+    .where(
+      and(
+        eq(packingEntries.id, id),
+        eq(packingEntries.workspaceId, workspaceId),
+      ),
+    );
+  const existing = existingRows[0];
+  if (!existing) return { error: "not_found", status: 404 };
+
+  // An entry never changes kind — the number belongs to the sale or job-work
+  // series it was issued from.
+  if (input.type !== existing.type) return { error: "type_change_not_allowed" };
+
+  // The number belongs to the FY it was issued in — a date change across FYs
+  // is rejected.
+  if (
+    fyForDate(toDate(existing.date)).label !==
+    fyForDate(toDate(input.date)).label
+  )
+    return { error: "fy_change_not_allowed" };
+
+  // Any item already imported into a challan locks the whole entry.
+  const itemRows = await d
+    .select({ id: packingItems.id })
+    .from(packingItems)
+    .where(eq(packingItems.entryId, existing.id));
+  const itemIds = itemRows.map((r) => r.id);
+  if (itemIds.length > 0) {
+    const imported = await d
+      .select({ id: challanItemSources.id })
+      .from(challanItemSources)
+      .where(inArray(challanItemSources.packingItemId, itemIds))
+      .limit(1);
+    if (imported.length > 0) return { error: "entry_locked" };
+  }
+
+  const denierIds = [...new Set(input.items.map((i) => i.denierId))];
+  const colorIds = [...new Set(input.items.map((i) => i.colorId))];
+  const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
+  if ("error" in validated) return { error: validated.error };
+
+  const nowIso = new Date().toISOString();
+  const items = buildPackingItems(validated, input.items, existing.id, nowIso);
+
+  // Delete old items, recreate — one atomic D1 batch, no reads in between.
+  await d.batch([
+    d.delete(packingItems).where(eq(packingItems.entryId, existing.id)),
+    d
+      .update(packingEntries)
+      .set({ date: input.date, updatedAt: nowIso })
+      .where(eq(packingEntries.id, existing.id)),
+    ...items.map((it) => d.insert(packingItems).values(it)),
+  ]);
+
+  return { ok: true as const, entryId: existing.id, items };
 }
 
 // ── Returns ────────────────────────────────────────────────────────────────
@@ -339,6 +542,111 @@ export type ReturnCreateInput = {
   remarks?: string;
   items: ReturnItemInput[];
 };
+
+/** Resolves the receiving job worker and validates every referenced challan:
+ * exists in the workspace, is outward, and belongs to that job worker. */
+async function resolveReturnParty(
+  d: Queryable,
+  workspaceId: string,
+  input: ReturnCreateInput,
+): Promise<{ jobWorker: typeof jobWorkers.$inferSelect } | { error: ApiCode }> {
+  const jwRows = await d
+    .select()
+    .from(jobWorkers)
+    .where(
+      and(
+        eq(jobWorkers.id, input.jobWorkerId),
+        eq(jobWorkers.workspaceId, workspaceId),
+      ),
+    );
+  const jw = jwRows[0];
+  if (!jw) return { error: "invalid_job_worker" };
+  const challanIds = [...new Set(input.items.map((i) => i.challanId))];
+  const challanRows = await d
+    .select()
+    .from(challans)
+    .where(
+      and(
+        eq(challans.workspaceId, workspaceId),
+        inArray(challans.id, challanIds),
+      ),
+    );
+  if (challanRows.length !== challanIds.length)
+    return { error: "invalid_challan" };
+  for (const ch of challanRows) {
+    if (ch.type !== "outward") return { error: "challan_not_outward" };
+    if (ch.jobWorkerId !== input.jobWorkerId)
+      return { error: "challan_job_worker_mismatch" };
+  }
+  return { jobWorker: jw };
+}
+
+function buildReturnItems(
+  validated: ValidatedMasters,
+  returnItems: ReturnItemInput[],
+  balances: Map<string, { sent: number; returned: number }>,
+  returnId: string,
+  nowIso: string,
+) {
+  const remainingByChallan = new Map<string, number>();
+  for (const [cid, bal] of balances)
+    remainingByChallan.set(cid, round3(bal.sent - bal.returned));
+  return returnItems.map((i, idx) => {
+    const denier = validated.denierById.get(i.denierId)!;
+    const color = validated.colorById.get(i.colorId)!;
+    const remainingBefore = remainingByChallan.get(i.challanId) ?? 0;
+    const overReceipt = i.netWt > remainingBefore;
+    const overReceiptQty = overReceipt
+      ? round3(i.netWt - remainingBefore)
+      : null;
+    // Consume this item's qty so sibling items against the same challan
+    // in the SAME submission are measured against what actually remains.
+    remainingByChallan.set(i.challanId, round3(remainingBefore - i.netWt));
+    return {
+      id: generateId(),
+      returnId,
+      challanId: i.challanId,
+      seq: idx + 1,
+      denierId: i.denierId,
+      denierName: denier.name,
+      colorId: i.colorId,
+      colorName: color.name,
+      colorCode: color.code,
+      lotNo: i.lotNo,
+      netWt: round3(i.netWt),
+      cones: i.cones ?? null,
+      overReceipt,
+      overReceiptQty,
+      createdAt: nowIso,
+    };
+  });
+}
+
+type ReturnItemRow = ReturnType<typeof buildReturnItems>[number];
+
+/** Grouped returned net weight per challan (2 round-trips become 1).
+ * `excludeReturnId` drops one return's items (edit path — its old items still
+ * exist until the batch commits). */
+export async function returnedTotalsByChallan(
+  d: Queryable,
+  challanIds: string[],
+  excludeReturnId?: string,
+): Promise<Map<string, number>> {
+  const returnConds = [inArray(jobWorkReturnItems.challanId, challanIds)];
+  if (excludeReturnId)
+    returnConds.push(ne(jobWorkReturnItems.returnId, excludeReturnId));
+  const returnRows = await d
+    .select({
+      challanId: jobWorkReturnItems.challanId,
+      total: sql<number>`COALESCE(SUM(${jobWorkReturnItems.netWt}), 0)`.mapWith(
+        Number,
+      ),
+    })
+    .from(jobWorkReturnItems)
+    .where(and(...returnConds))
+    .groupBy(jobWorkReturnItems.challanId);
+  return new Map(returnRows.map((r) => [r.challanId, round3(r.total)]));
+}
 
 /**
  * Batched balance for N challans at once: two grouped SUM queries total,
@@ -369,22 +677,14 @@ export async function getChallanBalances(
     if (cur) cur.sent = round3(r.total);
   }
 
-  const returnConds = [inArray(jobWorkReturnItems.challanId, challanIds)];
-  if (excludeReturnId)
-    returnConds.push(ne(jobWorkReturnItems.returnId, excludeReturnId));
-  const returnRows = await d
-    .select({
-      challanId: jobWorkReturnItems.challanId,
-      total: sql<number>`COALESCE(SUM(${jobWorkReturnItems.netWt}), 0)`.mapWith(
-        Number,
-      ),
-    })
-    .from(jobWorkReturnItems)
-    .where(and(...returnConds))
-    .groupBy(jobWorkReturnItems.challanId);
-  for (const r of returnRows) {
-    const cur = result.get(r.challanId);
-    if (cur) cur.returned = round3(r.total);
+  const returnedMap = await returnedTotalsByChallan(
+    d,
+    challanIds,
+    excludeReturnId,
+  );
+  for (const [challanId, total] of returnedMap) {
+    const cur = result.get(challanId);
+    if (cur) cur.returned = total;
   }
 
   return result;
@@ -396,34 +696,9 @@ export async function createReturn(
   userId: string,
   input: ReturnCreateInput,
 ): Promise<{ ok: true; returnId: string } | { error: ApiCode }> {
-  const jwRows = await d
-    .select()
-    .from(jobWorkers)
-    .where(
-      and(
-        eq(jobWorkers.id, input.jobWorkerId),
-        eq(jobWorkers.workspaceId, workspaceId),
-      ),
-    );
-  const jw = jwRows[0];
-  if (!jw) return { error: "invalid_job_worker" };
-  const challanIds = [...new Set(input.items.map((i) => i.challanId))];
-  const challanRows = await d
-    .select()
-    .from(challans)
-    .where(
-      and(
-        eq(challans.workspaceId, workspaceId),
-        inArray(challans.id, challanIds),
-      ),
-    );
-  if (challanRows.length !== challanIds.length)
-    return { error: "invalid_challan" };
-  for (const ch of challanRows) {
-    if (ch.type !== "outward") return { error: "challan_not_outward" };
-    if (ch.jobWorkerId !== input.jobWorkerId)
-      return { error: "challan_job_worker_mismatch" };
-  }
+  const party = await resolveReturnParty(d, workspaceId, input);
+  if ("error" in party) return { error: party.error };
+
   const denierIds = [...new Set(input.items.map((i) => i.denierId))];
   const colorIds = [...new Set(input.items.map((i) => i.colorId))];
   const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
@@ -431,46 +706,22 @@ export async function createReturn(
 
   const nowIso = new Date().toISOString();
   const returnId = generateId();
+  const challanIds = [...new Set(input.items.map((i) => i.challanId))];
   const balances = await getChallanBalances(d, challanIds);
-  const remainingByChallan = new Map<string, number>();
-  for (const [cid, bal] of balances)
-    remainingByChallan.set(cid, round3(bal.sent - bal.returned));
-  const items = input.items.map((i, idx) => {
-    const denier = validated.denierById.get(i.denierId)!;
-    const color = validated.colorById.get(i.colorId)!;
-    const remainingBefore = remainingByChallan.get(i.challanId) ?? 0;
-    const overReceipt = i.netWt > remainingBefore;
-    const overReceiptQty = overReceipt
-      ? round3(i.netWt - remainingBefore)
-      : null;
-    // Consume this item's qty so sibling items against the same challan
-    // in the SAME submission are measured against what actually remains.
-    remainingByChallan.set(i.challanId, round3(remainingBefore - i.netWt));
-    return {
-      id: generateId(),
-      returnId,
-      challanId: i.challanId,
-      seq: idx + 1,
-      denierId: i.denierId,
-      denierName: denier.name,
-      colorId: i.colorId,
-      colorName: color.name,
-      colorCode: color.code,
-      lotNo: i.lotNo,
-      netWt: round3(i.netWt),
-      cones: i.cones ?? null,
-      overReceipt,
-      overReceiptQty,
-      createdAt: nowIso,
-    };
-  });
+  const items = buildReturnItems(
+    validated,
+    input.items,
+    balances,
+    returnId,
+    nowIso,
+  );
 
   await d.batch([
     d.insert(jobWorkReturns).values({
       id: returnId,
       workspaceId,
       jobWorkerId: input.jobWorkerId,
-      jobWorkerName: jw.name,
+      jobWorkerName: party.jobWorker.name,
       invoiceNo: input.invoiceNo,
       date: input.date,
       remarks: input.remarks || null,
@@ -478,18 +729,118 @@ export async function createReturn(
       createdAt: nowIso,
       updatedAt: nowIso,
     }),
-    ...items.map((it) => d.insert(jobWorkReturnItems).values(it as never)),
+    ...items.map((it) => d.insert(jobWorkReturnItems).values(it)),
     ...buildReturnStockStatements(
       d,
       workspaceId,
       returnId,
-      items as never,
+      items,
       input.date,
       nowIso,
     ),
   ]);
 
   return { ok: true as const, returnId };
+}
+
+/**
+ * Full return update: re-resolves the job worker and challans, rebuilds item
+ * snapshots and dyed stock movements, and replaces the item rows — one atomic
+ * batch. The balance excludes this return's own items (this edit replaces
+ * them), and consumed dyed stock locks the return.
+ */
+export async function updateReturn(
+  d: Db,
+  workspaceId: string,
+  id: string,
+  input: ReturnCreateInput,
+): Promise<
+  | { ok: true; returnId: string; items: ReturnItemRow[] }
+  | { error: ApiCode; status?: 400 | 404 }
+> {
+  const existingRows = await d
+    .select()
+    .from(jobWorkReturns)
+    .where(
+      and(
+        eq(jobWorkReturns.id, id),
+        eq(jobWorkReturns.workspaceId, workspaceId),
+      ),
+    );
+  const existing = existingRows[0];
+  if (!existing) return { error: "not_found", status: 404 };
+
+  // This return's dyed stock may already be consumed, and the update deletes +
+  // recreates its "in" stock rows — refuse when any "out" movement references
+  // the return.
+  const stockOut = await d
+    .select({ id: stockEntries.id })
+    .from(stockEntries)
+    .where(
+      and(
+        eq(stockEntries.sourceRefId, existing.id),
+        eq(stockEntries.movement, "out"),
+      ),
+    )
+    .limit(1);
+  if (stockOut.length > 0) return { error: "stock_consumed" };
+
+  const party = await resolveReturnParty(d, workspaceId, input);
+  if ("error" in party) return { error: party.error };
+
+  const denierIds = [...new Set(input.items.map((i) => i.denierId))];
+  const colorIds = [...new Set(input.items.map((i) => i.colorId))];
+  const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
+  if ("error" in validated) return { error: validated.error };
+
+  const nowIso = new Date().toISOString();
+  const challanIds = [...new Set(input.items.map((i) => i.challanId))];
+  const balances = await getChallanBalances(d, challanIds, existing.id);
+  const items = buildReturnItems(
+    validated,
+    input.items,
+    balances,
+    existing.id,
+    nowIso,
+  );
+
+  // Delete old items + stock movements, then recreate — one atomic D1 batch,
+  // no reads in between.
+  await d.batch([
+    d
+      .delete(stockEntries)
+      .where(
+        and(
+          eq(stockEntries.sourceRefId, existing.id),
+          eq(stockEntries.workspaceId, workspaceId),
+        ),
+      ),
+    d
+      .delete(jobWorkReturnItems)
+      .where(eq(jobWorkReturnItems.returnId, existing.id)),
+    d
+      .update(jobWorkReturns)
+      .set({
+        jobWorkerId: input.jobWorkerId,
+        jobWorkerName: party.jobWorker.name,
+        invoiceNo: input.invoiceNo,
+        date: input.date,
+        remarks: input.remarks || null,
+        updatedAt: nowIso,
+      })
+      .where(eq(jobWorkReturns.id, existing.id)),
+    ...items.map((it) => d.insert(jobWorkReturnItems).values(it)),
+    ...buildReturnStockStatements(
+      d,
+      workspaceId,
+      existing.id,
+      items,
+      input.date,
+      nowIso,
+    ),
+  ]);
+
+  return { ok: true as const, returnId: existing.id, items };
 }
 
 // ── Challans (sales/outward) ───────────────────────────────────────────────
@@ -591,8 +942,8 @@ export async function createChallan(
   // Idempotency: an offline clientRef that already exists answers with the
   // stored challan instead of creating a duplicate.
   if (input.offline) {
-    const existing = await d
-      .select({ id: challans.id })
+    const rows = await d
+      .select()
       .from(challans)
       .where(
         and(
@@ -600,21 +951,15 @@ export async function createChallan(
           eq(challans.clientRef, input.offline.clientRef),
         ),
       );
-    if (existing[0]) {
-      const rows = await d
+    const row = rows[0];
+    if (row) {
+      // Replay answers with the full stored document, not just the header.
+      const storedItems = await d
         .select()
-        .from(challans)
-        .where(eq(challans.id, existing[0].id));
-      const row = rows[0];
-      if (row) {
-        // Replay answers with the full stored document, not just the header.
-        const storedItems = await d
-          .select()
-          .from(challanItems)
-          .where(eq(challanItems.challanId, row.id))
-          .orderBy(asc(challanItems.seq));
-        return { ok: true as const, challan: row, items: storedItems };
-      }
+        .from(challanItems)
+        .where(eq(challanItems.challanId, row.id))
+        .orderBy(asc(challanItems.seq));
+      return { ok: true as const, challan: row, items: storedItems };
     }
   }
 
@@ -706,6 +1051,7 @@ export async function createChallan(
       workspaceId,
       date,
       input.type,
+      config,
     );
     challanNumber = alloc.challanNumber;
     fyId = alloc.fyId;
@@ -748,8 +1094,8 @@ export async function createChallan(
   );
   try {
     await d.batch([
-      d.insert(challans).values(row as never),
-      ...items.map((it) => d.insert(challanItems).values(it as never)),
+      d.insert(challans).values(row),
+      ...items.map((it) => d.insert(challanItems).values(it)),
       ...stockStmts,
       // Order irrelevant: the catch-up touches financial_years, whose row
       // already exists — it cannot conflict with the challan inserts.
@@ -831,7 +1177,7 @@ export async function updateChallan(
   input: ChallanCreateInput,
 ): Promise<
   | { ok: true; challan: ChallanDto; items: ChallanItemDto[] }
-  | ({ error: ApiCode } & ({ status: 404 } | { status?: never }))
+  | ({ error: ApiCode } & ({ status: 404 | 409 } | { status?: never }))
 > {
   const existingRows = await d
     .select()
@@ -839,6 +1185,16 @@ export async function updateChallan(
     .where(and(eq(challans.id, id), eq(challans.workspaceId, workspaceId)));
   const existing = existingRows[0];
   if (!existing) return { error: "not_found", status: 404 };
+
+  // Same guard as challan delete: job_work_return_items.challan_id is a
+  // non-cascading FK and the update rebuilds item rows + stock movements —
+  // answer 409 instead of a 500.
+  const returnRows = await d
+    .select({ id: jobWorkReturnItems.id })
+    .from(jobWorkReturnItems)
+    .where(eq(jobWorkReturnItems.challanId, existing.id));
+  if (returnRows.length > 0)
+    return { error: "challan_has_returns", status: 409 };
 
   // A challan never changes kind (sales stays sales, outward stays outward).
   if (input.type !== existing.type) return { error: "type_change_not_allowed" };
@@ -918,7 +1274,7 @@ export async function updateChallan(
         ]
       : []),
     d.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
-    ...built.items.map((i) => d.insert(challanItems).values(i as never)),
+    ...built.items.map((i) => d.insert(challanItems).values(i)),
     ...stockStmts,
   ]);
 

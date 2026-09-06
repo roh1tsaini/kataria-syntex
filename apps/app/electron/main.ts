@@ -23,7 +23,7 @@ import {
 } from "electron";
 import { join, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { readFile, writeFile, unlink } from "node:fs/promises";
+import { readFile, writeFile, unlink, stat } from "node:fs/promises";
 
 // The packaged SPA must not load from file:// — Chromium blocks ES-module
 // scripts (CORS, null origin) and CSP 'self' matches nothing there, leaving
@@ -38,10 +38,16 @@ protocol.registerSchemesAsPrivileged([
 
 const DEV = process.env.KC_DEV === "1";
 // Baked at build time from APP_URL via electron/build.ts (--define
-// KC_API_ORIGIN); dev overrides with localhost.
+// KC_API_ORIGIN); dev overrides with localhost. A packaged build without the
+// define must fail loudly — a placeholder origin would silently dead-end
+// every API call.
 const API_ORIGIN =
-  process.env.KC_API_ORIGIN ??
-  (DEV ? "http://localhost:3000" : "https://CHANGE_ME_APP_ORIGIN");
+  process.env.KC_API_ORIGIN ?? (DEV ? "http://localhost:3000" : "");
+if (!DEV && !API_ORIGIN.startsWith("https://")) {
+  throw new Error(
+    "KC_API_ORIGIN missing — rebuild the desktop bundle via electron/build.ts",
+  );
+}
 
 // Runtime paths only — Bun's bundler replaces __dirname with the build
 // machine's source directory, which is fiction once the app is installed.
@@ -259,15 +265,23 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Serve the packaged renderer: app://bundle/<path> → APP_ROOT/dist/<path>.
   // Host is ignored; only the path matters, and it may not escape dist/.
+  // Paths with no file behind them (deep links, reload on /challans, …) fall
+  // back to index.html — the SPA router owns every URL, same contract as the
+  // web deployment's single-page-application not_found handling.
   const distRoot = join(APP_ROOT, "dist");
-  protocol.handle("app", (request) => {
+  protocol.handle("app", async (request) => {
     const { pathname } = new URL(request.url);
     const rel = pathname.replace(/^\/+/, "") || "index.html";
     const file = join(distRoot, rel);
     if (file !== distRoot && !file.startsWith(distRoot + sep)) {
       return new Response("forbidden", { status: 403 });
     }
-    return net.fetch(pathToFileURL(file).toString());
+    const isFile = await stat(file)
+      .then((s) => s.isFile())
+      .catch(() => false);
+    return net.fetch(
+      pathToFileURL(isFile ? file : join(distRoot, "index.html")).toString(),
+    );
   });
 
   registerIpc();
