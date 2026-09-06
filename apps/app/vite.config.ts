@@ -2,8 +2,17 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+
+// Single source of truth for the app version across all three shells
+// (web/PWA, Electron, Android — build.gradle parses this same file). Baked
+// into the renderer as __APP_VERSION__.
+const APP_VERSION = (
+  JSON.parse(
+    readFileSync(resolve(import.meta.dirname, "package.json"), "utf8"),
+  ) as { version: string }
+).version;
 
 // Copies the canonical Inter TTFs into dist/fonts so the Worker's ASSETS
 // binding can serve them to the server PDF renderer.
@@ -28,6 +37,9 @@ function interFonts(): Plugin {
 // Capacitor/Android reuses this bundle via `cap sync`; Electron packages the
 // same renderer output (see electron/build.ts for main/preload).
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   plugins: [
     interFonts(),
     react(),

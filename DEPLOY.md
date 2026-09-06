@@ -56,8 +56,6 @@ The OTP sender needs real credentials in production:
 ```bash
 cd apps/app
 bunx wrangler secret put PINGRAM_API_KEY
-bunx wrangler secret put PINGRAM_FROM
-bunx wrangler secret put PINGRAM_BASE_URL
 ```
 
 Local dev reads the same keys from `apps/app/.dev.vars` (gitignored — never
@@ -107,13 +105,26 @@ bunx wrangler d1 export ks-web-db --output backup-web.sql
 
 Keep exports somewhere durable (GitHub private repo, Google Drive).
 
+### Versioning (one source of truth)
+
+The app version lives only in `apps/app/package.json`. Everything reads it:
+
+- **Electron** — installers are stamped with it by electron-builder.
+- **Android** — `build.gradle` parses the same file: `versionName` = the
+  version, `versionCode` = `major*10000 + minor*100 + patch` (0.3.0 → 300).
+  Every bump raises the code — Android rejects updates that don't.
+- **App UI** — Settings → About shows it (injected at build time).
+- **Releases** — the `v<version>` GitHub Release tag is read from the file.
+
 ### Releases (desktop/Android)
 
-Repo → Actions → **Build KS Biz App** → Run workflow:
+Bump `apps/app/package.json`, push, then Repo → Actions → **Build KS Biz App**
+→ Run workflow:
 
 - `targets: all | desktop | android` — desktop-only skips the 90-min APK job.
-- Optional `version` → creates a `v<version>` GitHub Release with the
-  `.exe` / `.dmg` / `.AppImage` / `.apk` files attached.
+- The release job tags `v<version>` from `apps/app/package.json` and attaches
+  the `.exe` / `.dmg` / `.AppImage` / `.apk` files. Re-releasing a version
+  whose tag already exists fails the run — bump first.
 
 Android signing uses the secrets from first-time setup step 5 — the APK job
 fails fast when they are absent.

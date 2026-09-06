@@ -167,9 +167,12 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* Native scrolling only — smooth for anchor jumps, never a JS
+       scroll animator: fractional-offset scrolling resamples text and
+       images at subpixel positions, which reads as glitch/tear on
+       dpr-1 displays. */
+    scroll-behavior: smooth;
   }
-  /* No CSS `scroll-behavior: smooth` — Lenis owns scrolling (anchors, wheel,
-     keyboard). A second animator here is the known Lenis jank source. */
 
   body {
     @apply bg-canvas text-navy font-body antialiased;
@@ -210,18 +213,6 @@
     "tnum" 1,
     "lnum" 1;
   font-variant-numeric: tabular-nums lining-nums;
-}
-
-/*
- * Offscreen paint skip for heavy grids (shade-card page groups). The wound-
- * yarn texture stacks blend modes + SVG grain per swatch; skipping raster
- * for groups below the viewport keeps scrolling light. `auto <length>`
- * keeps the last rendered size once a group has painted, so the scrollbar
- * never jumps while the estimate covers first paint.
- */
-@utility paint-gate {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 600px;
 }
 
 /*
@@ -350,21 +341,6 @@
 html.js .ks-reveal[data-shown="false"] {
   opacity: 0;
   translate: 0 14px;
-}
-
-/* Lenis smooth scroll — keep native scroll-behavior from fighting it. */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-.lenis.lenis-stopped {
-  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

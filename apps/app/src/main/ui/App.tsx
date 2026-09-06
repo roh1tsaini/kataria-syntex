@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect, useRef } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
@@ -109,185 +109,197 @@ function Home() {
 
 export function App() {
   const bootstrap = useAuth((s) => s.bootstrap);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
 
+  // The desktop shell scrolls the routed view in .app-scroll (the document
+  // itself never scrolls there) — reset it on navigation. On web this div
+  // has no own scroll, so this is a no-op and AppShell's window.scrollTo
+  // stays the one that matters.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+
   return (
     <>
       <ErrorBoundary>
         <TitleBar />
-        <Suspense fallback={<RouteLoader />}>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/login/scan/:code" element={<ScanApprovePage />} />
-            <Route
-              path="/challans/:id/print"
-              element={
-                <ProtectedRoute>
-                  <ChallanPrintPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/outward/:id/print"
-              element={
-                <ProtectedRoute>
-                  <OutwardChallanPrintPage />
-                </ProtectedRoute>
-              }
-            />
+        <div ref={scrollRef} className="app-scroll">
+          <Suspense fallback={<RouteLoader />}>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/login/scan/:code" element={<ScanApprovePage />} />
+              <Route
+                path="/challans/:id/print"
+                element={
+                  <ProtectedRoute>
+                    <ChallanPrintPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/outward/:id/print"
+                element={
+                  <ProtectedRoute>
+                    <OutwardChallanPrintPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Persistent In-App Layout */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppShell />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Home />} />
+              {/* Persistent In-App Layout */}
               <Route
-                path="devices"
                 element={
-                  <ProtectedRoute requirePermission="manage_settings">
-                    <DevicesPage />
+                  <ProtectedRoute>
+                    <AppShell />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="members"
-                element={
-                  <ProtectedRoute requirePermission="manage_members">
-                    <MembersPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="masters"
-                element={
-                  <ProtectedRoute requirePermission="manage_masters">
-                    <MastersPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="colors"
-                element={
-                  <ProtectedRoute requirePermission="manage_masters">
-                    <ColorsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="settings"
-                element={
-                  <ProtectedRoute requirePermission="manage_settings">
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="challans" element={<ChallansPage />} />
-              <Route
-                path="challans/new"
-                element={
-                  <ProtectedRoute requirePermission="create_challan">
-                    <ChallanEditorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="challans/:id" element={<ChallanDetailPage />} />
-              <Route
-                path="challans/:id/edit"
-                element={
-                  <ProtectedRoute requirePermission="edit_challan">
-                    <ChallanEditorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="outward" element={<OutwardChallansPage />} />
-              <Route
-                path="outward/new"
-                element={
-                  <ProtectedRoute requirePermission="create_challan">
-                    <OutwardChallanEditorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="outward/:id"
-                element={<OutwardChallanDetailPage />}
-              />
-              <Route
-                path="outward/:id/edit"
-                element={
-                  <ProtectedRoute requirePermission="edit_challan">
-                    <OutwardChallanEditorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="returns"
-                element={
-                  <ProtectedRoute requirePermission="create_return">
-                    <ReturnsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="raw-material"
-                element={
-                  <ProtectedRoute requirePermission="create_raw_material">
-                    <RawMaterialPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="stock/raw"
-                element={
-                  <ProtectedRoute requirePermission="view_stock">
-                    <StockPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="stock/dyed"
-                element={
-                  <ProtectedRoute requirePermission="view_stock">
-                    <StockPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="packing"
-                element={
-                  <ProtectedRoute requirePermission="create_packing">
-                    <PackingPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="reports"
-                element={
-                  <ProtectedRoute requirePermission="view_reports">
-                    <ReportsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="reports/:reportId"
-                element={
-                  <ProtectedRoute requirePermission="view_reports">
-                    <ReportsPage />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
+              >
+                <Route index element={<Home />} />
+                <Route
+                  path="devices"
+                  element={
+                    <ProtectedRoute requirePermission="manage_settings">
+                      <DevicesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="members"
+                  element={
+                    <ProtectedRoute requirePermission="manage_members">
+                      <MembersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="masters"
+                  element={
+                    <ProtectedRoute requirePermission="manage_masters">
+                      <MastersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="colors"
+                  element={
+                    <ProtectedRoute requirePermission="manage_masters">
+                      <ColorsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <ProtectedRoute requirePermission="manage_settings">
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="challans" element={<ChallansPage />} />
+                <Route
+                  path="challans/new"
+                  element={
+                    <ProtectedRoute requirePermission="create_challan">
+                      <ChallanEditorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="challans/:id" element={<ChallanDetailPage />} />
+                <Route
+                  path="challans/:id/edit"
+                  element={
+                    <ProtectedRoute requirePermission="edit_challan">
+                      <ChallanEditorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="outward" element={<OutwardChallansPage />} />
+                <Route
+                  path="outward/new"
+                  element={
+                    <ProtectedRoute requirePermission="create_challan">
+                      <OutwardChallanEditorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="outward/:id"
+                  element={<OutwardChallanDetailPage />}
+                />
+                <Route
+                  path="outward/:id/edit"
+                  element={
+                    <ProtectedRoute requirePermission="edit_challan">
+                      <OutwardChallanEditorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="returns"
+                  element={
+                    <ProtectedRoute requirePermission="create_return">
+                      <ReturnsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="raw-material"
+                  element={
+                    <ProtectedRoute requirePermission="create_raw_material">
+                      <RawMaterialPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="stock/raw"
+                  element={
+                    <ProtectedRoute requirePermission="view_stock">
+                      <StockPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="stock/dyed"
+                  element={
+                    <ProtectedRoute requirePermission="view_stock">
+                      <StockPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="packing"
+                  element={
+                    <ProtectedRoute requirePermission="create_packing">
+                      <PackingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="reports"
+                  element={
+                    <ProtectedRoute requirePermission="view_reports">
+                      <ReportsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="reports/:reportId"
+                  element={
+                    <ProtectedRoute requirePermission="view_reports">
+                      <ReportsPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
 
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </div>
       </ErrorBoundary>
       <Toaster />
     </>

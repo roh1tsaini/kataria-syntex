@@ -155,19 +155,28 @@ controls, and actions that sit together share one grouped background.
 Frameless window, app-drawn chrome like modern Electron apps (Spotify,
 Discord). The system bar never appears on any platform.
 
-- Bar: 36px (`h-9`), full width, `bg-background`, no border, `select-none`,
+- Bar: `h-9` (2.25rem), full width, `bg-background`, no border, `select-none`,
   entirely `-webkit-app-region: drag`. Double-click on a drag region toggles
   maximize natively (HTCAPTION).
-- Controls (Windows/Linux only): three 48×36 no-drag buttons, right-aligned.
-  Glyphs are 10px inline SVG strokes (minimize, maximize/restore, close) —
-  never icon-font glyphs. Rest: `text-muted-foreground`; hover: `bg-muted` +
-  `text-foreground`; close hover: `bg-red-600 text-white`. Focus ring per §6.
+- Controls (Windows/Linux only): three `w-12` no-drag buttons, right-aligned,
+  stretched to the bar height. Glyphs are 10px inline SVG strokes (minimize,
+  maximize/restore, close) — never icon-font glyphs. Rest:
+  `text-muted-foreground`; hover: `bg-muted` + `text-foreground`; close
+  hover: `bg-destructive text-destructive-foreground`. Focus ring per §6.
 - macOS: no drawn controls — native traffic lights ride the strip
   (`titleBarStyle: hiddenInset`), bar stays drag-only.
-- Height reservation: `--titlebar-h` (0px default; TitleBar sets 36px on
-  `document.documentElement` while mounted). Root containers use
+- Desktop shell scroll model: `<html data-shell="desktop">` (set by the
+  entry before first paint, together with `--titlebar-h: 2.25rem`) pins the
+  document (`overflow: hidden`, `#root` a full-height flex column). The bar
+  is a fixed strip at the top; routed content scrolls inside `.app-scroll`
+  (`flex-1 overflow-y-auto` under the bar), so the window controls sit flush
+  against the window edge — the root scrollbar can never inset them.
+- Height reservation: `--titlebar-h` (0px default; the entry sets 2.25rem on
+  `document.documentElement` before first paint when `window.desktop`
+  exists). Root containers use
   `min-h-[calc(100dvh-var(--titlebar-h))]` — never hardcode `min-h-dvh`
-  alone. Print forces the variable back to 0.
+  alone. Print forces the variable back to 0 and restores document flow
+  (multi-page print), and the bar itself is `print:hidden`.
 - Web/PWA and Capacitor render nothing. The only window-control IPC path is
   `platform.ts` → `desktopWindow()`; UI never calls `window.desktop`
   directly.

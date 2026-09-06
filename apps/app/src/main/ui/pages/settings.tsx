@@ -450,6 +450,16 @@ export function SettingsPage() {
             </SettingsRow>
           </Card>
         </Section>
+
+        <Section title="About">
+          <Card>
+            <SettingsRow label="Version">
+              <span className="font-mono text-[13px] font-semibold tabular-nums text-primary">
+                v{__APP_VERSION__}
+              </span>
+            </SettingsRow>
+          </Card>
+        </Section>
       </div>
     </AppShell>
   );

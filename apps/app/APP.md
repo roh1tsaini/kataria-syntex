@@ -137,6 +137,13 @@ Native builds bake the API origin (`APP_URL` / `VITE_API_URL`) at build time.
 Android WebView can't `window.print()` → native Printer plugin;
 Electron downloads via `kc:download`; PDFs save/share via Capacitor plugins.
 
+Desktop shell notes: one instance per installation (second launch focuses
+the first), no menu bar in packaged Windows/Linux builds, pinch/ctrl-wheel
+zoom locked, packaged renderer served at `app://bundle/` with SPA deep-link
+fallback, and the document never scrolls — routed content scrolls in
+`.app-scroll` under the custom title bar so the window controls sit flush
+against the window edge (see design.md §2.7.1).
+
 ## 6 · Domain: documents
 
 Six modules. Counters live on the FY row, allocated by CAS retry
@@ -389,17 +396,17 @@ this baseline needs an explicit owner question first.
 **Secrets & vars** — `.env*` / `.dev.vars` are owner-only. Never read, echo,
 copy, or commit them. Secrets enter only as env read at use site.
 
-| Binding / var                             | What                                        |
-| ----------------------------------------- | ------------------------------------------- |
-| `DB`                                      | D1 binding                                  |
-| `ASSETS`                                  | Worker static assets (fonts for PDF render) |
-| `CORS_ORIGIN`                             | comma-separated extra origins (website)     |
-| `APP_ENV`                                 | `development` → error detail in responses   |
-| `PINGRAM_API_KEY` / `_FROM` / `_BASE_URL` | OTP sender (secret)                         |
-| `OTP_DAILY_BUDGET`                        | global daily OTP send ceiling (default 300) |
-| `TRUST_PROXY`                             | `1` → trust rightmost XFF (behind a proxy)  |
-| `VITE_API_URL`                            | native builds → deployed API origin         |
-| `VITE_PROXY_TARGET`                       | dev proxy target (default `localhost:3000`) |
+| Binding / var       | What                                        |
+| ------------------- | ------------------------------------------- |
+| `DB`                | D1 binding                                  |
+| `ASSETS`            | Worker static assets (fonts for PDF render) |
+| `CORS_ORIGIN`       | comma-separated extra origins (website)     |
+| `APP_ENV`           | `development` → error detail in responses   |
+| `PINGRAM_API_KEY`   | OTP sender (secret)                         |
+| `OTP_DAILY_BUDGET`  | global daily OTP send ceiling (default 300) |
+| `TRUST_PROXY`       | `1` → trust rightmost XFF (behind a proxy)  |
+| `VITE_API_URL`      | native builds → deployed API origin         |
+| `VITE_PROXY_TARGET` | dev proxy target (default `localhost:3000`) |
 
 **Workflows**
 

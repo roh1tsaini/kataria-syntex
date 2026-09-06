@@ -35,7 +35,6 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        data-lenis-prevent
         className={cn(
           "fixed inset-0 z-50 flex flex-col bg-navy ks-aurora-dark text-paper outline-none transition-[opacity,translate] duration-400 ease-[var(--ease-out)] data-[state=open]:translate-y-0 data-[state=open]:opacity-100 data-[state=closed]:translate-y-3 data-[state=closed]:opacity-0",
           className,

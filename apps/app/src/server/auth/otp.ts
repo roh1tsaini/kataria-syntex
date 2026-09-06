@@ -17,10 +17,7 @@ const OTP_MAX_PER_HOUR = 5;
 const OTP_MAX_PER_DAY = 12;
 
 /** Bindings requestOtp needs — passed down from the route's c.env. */
-type OtpEnv = Pick<
-  Env,
-  "PINGRAM_API_KEY" | "PINGRAM_FROM" | "PINGRAM_BASE_URL" | "OTP_DAILY_BUDGET"
->;
+type OtpEnv = Pick<Env, "PINGRAM_API_KEY" | "OTP_DAILY_BUDGET">;
 
 const OTP_MAX_VERIFY_ATTEMPTS_PER_IP = 30;
 const OTP_MAX_REQUESTS_PER_IP = 10;
@@ -139,21 +136,9 @@ export async function requestOtp(
 
   try {
     if (ident.type === "email") {
-      await sendOtpEmail(
-        apiKey,
-        ident.value,
-        code,
-        env.PINGRAM_FROM,
-        env.PINGRAM_BASE_URL,
-      );
+      await sendOtpEmail(apiKey, ident.value, code);
     } else {
-      await sendOtpSms(
-        apiKey,
-        ident.value,
-        code,
-        env.PINGRAM_FROM,
-        env.PINGRAM_BASE_URL,
-      );
+      await sendOtpSms(apiKey, ident.value, code);
     }
   } catch (err) {
     // The message never went out — un-charge the budget and drop the row so

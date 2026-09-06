@@ -226,7 +226,7 @@ hardcoded in components.
 
 ## 4. Motion grammar
 
-Presets live with `src/components/motion/*` (Reveal, SmoothScroll) — import
+Presets live with `src/components/motion/*` (Reveal) — import
 them, never re-derive. Eases: `--ease-out = cubic-bezier(0.22,1,0.36,1)`,
 `--ease-spring = cubic-bezier(0.34,1.45,0.5,1)` for small arrow/checkbox
 kicks.
@@ -247,23 +247,24 @@ kicks.
    skeletons for async content.
 7. `prefers-reduced-motion`: everything collapses to opacity ≤200ms.
 
-### 4.1 Smooth scroll (Lenis) integration rules
+### 4.1 Scrolling rules
 
-SmoothScroll is the only place Lenis is configured. Non-negotiables that
-keep the main thread free while it drives scroll per frame:
+Scrolling is native — no JS scroll animator. CSS `scroll-behavior: smooth`
+on `html` covers anchor jumps. Non-negotiables:
 
-- `autoRaf: true` — Lenis owns its rAF loop; never run a second one.
-- `lerp 0.14, anchors: true`; touch stays native (`syncTouch` off).
-- While any Radix modal is open, Lenis parks: `body[data-scroll-locked]`
-  is watched and `lenis.stop()` / `lenis.start()` wrap it.
-- Internally scrollable containers carry
-  `data-lenis-prevent` so gestures scroll the container, not the page.
-- Heavy grids (shade-card page groups) use the `paint-gate` utility
-  (`content-visibility: auto` + `contain-intrinsic-size`) so off-screen
-  groups never raster their texture layers while scrolling.
+- Never mount a library that drives scroll per rAF frame (Lenis-style
+  smooth scroll): it moves the page through fractional pixel offsets,
+  which resamples text and images at subpixel positions every frame and
+  reads as glitch/tearing on dpr-1 displays.
 - `backdrop-blur` appears only on the fixed header and the modal overlay
   (both static while content moves beneath them) — never on elements that
-  scroll with the page.
+  scroll with the page. The header carries a single filter pass (blur
+  only, no saturate) to keep per-frame GPU cost inside the 6.9ms budget
+  of a 144Hz display.
+- Never gate rendering with `content-visibility` size estimates on
+  scroll-traversed content: an estimate that differs from real height
+  makes the page lurch as groups paint. The wound-yarn swatch grids
+  scroll at full frame rate without it.
 
 ## 5. Accessibility floor (non-negotiable)
 

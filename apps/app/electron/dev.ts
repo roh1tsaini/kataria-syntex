@@ -44,6 +44,24 @@ if (!(await waitForVite())) {
   shutdown(1);
 }
 
+// Dev bundles for main/preload — deliberately without the KC_API_ORIGIN
+// define, so the main process reads it at runtime and DEV routes API calls
+// to localhost:3000 (the packaging build in electron/build.ts bakes the
+// production origin instead).
+const built = await Bun.build({
+  entrypoints: ["./electron/main.ts", "./electron/preload.ts"],
+  outdir: "dist-electron",
+  target: "node",
+  format: "cjs",
+  external: ["electron"],
+  naming: "[dir]/[name].[ext]",
+});
+if (!built.success) {
+  console.error("electron main/preload build failed");
+  for (const log of built.logs) console.error(log);
+  shutdown(1);
+}
+
 electron = spawn("bunx", ["electron", "."], {
   stdio: "inherit",
   env: { ...process.env, KC_DEV: "1" },

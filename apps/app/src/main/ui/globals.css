@@ -301,6 +301,28 @@
     min-height: 100dvh;
     isolation: isolate;
   }
+  /* Electron desktop shell: the document itself never scrolls — the routed
+     view scrolls in .app-scroll under the title bar, so the window controls
+     sit flush against the window edge with no scrollbar/gutter inset. */
+  [data-shell="desktop"] {
+    height: 100%;
+    overflow: hidden;
+  }
+  [data-shell="desktop"] body {
+    height: 100%;
+    overflow: hidden;
+  }
+  [data-shell="desktop"] #root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  [data-shell="desktop"] .app-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
   ::selection {
     background-color: color-mix(in oklch, var(--a-strong) 20%, transparent);
   }
@@ -505,6 +527,20 @@
 @media print {
   body {
     background: none !important;
+  }
+  /* Printing flows the document again — a clipped, fixed-height shell
+     would truncate multi-page challans to the window height. */
+  [data-shell="desktop"],
+  [data-shell="desktop"] body {
+    height: auto;
+    overflow: visible;
+  }
+  [data-shell="desktop"] #root {
+    height: auto;
+    display: block;
+  }
+  [data-shell="desktop"] .app-scroll {
+    overflow: visible;
   }
 }
 

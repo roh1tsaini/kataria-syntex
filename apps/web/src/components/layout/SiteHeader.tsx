@@ -50,8 +50,8 @@ export function SiteHeader() {
       className={cn(
         "sticky top-0 z-40 border-b transition-[background-color,border-color,box-shadow] duration-300 ease-[var(--ease-out)]",
         scrolled
-          ? "border-line bg-canvas/85 shadow-xs backdrop-blur-xl backdrop-saturate-150"
-          : "border-transparent bg-canvas/50 backdrop-blur-md backdrop-saturate-150",
+          ? "border-line bg-canvas/85 shadow-xs backdrop-blur-xl"
+          : "border-transparent bg-canvas/50 backdrop-blur-md",
       )}
     >
       <div className="mx-auto flex h-16 max-w-[1180px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">

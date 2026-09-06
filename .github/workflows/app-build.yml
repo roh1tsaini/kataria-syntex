@@ -11,17 +11,12 @@ on:
           - desktop
           - android
         default: all
-      version:
-        description: "Release version (e.g. 0.1.0). Creates a v<version> tag + Release with direct .exe/.dmg/.AppImage/.apk files."
-        type: string
-        default: "0.1.0"
   push:
     branches: [main]
     paths:
       - "apps/app/**"
       - "packages/**"
       - ".github/workflows/**"
-      - ".github/scripts/**"
       - "package.json"
       - "turbo.json"
   pull_request:
@@ -205,11 +200,22 @@ jobs:
 
       - name: Write keystore.properties
         working-directory: apps/app
+        shell: bash
         env:
           KEYSTORE_FILE: ${{ runner.temp }}/keystore.p12
           KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: python3 ../../.github/scripts/capacitor-android-signing.py android
+        run: |
+          if [ -z "$KEYSTORE_ALIAS" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::ANDROID_KEY_ALIAS or ANDROID_KEY_PASSWORD secret is missing."
+            exit 1
+          fi
+          cat > android/keystore.properties <<EOF
+          storeFile=$KEYSTORE_FILE
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEYSTORE_ALIAS
+          keyPassword=$KEYSTORE_PASSWORD
+          EOF
 
       - name: Cache Gradle
         uses: actions/cache@v6
@@ -238,6 +244,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - name: Read app version
+        id: app_version
+        run: echo "version=$(jq -r .version apps/app/package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if the release tag already exists
+        run: |
+          if git rev-parse "v${{ steps.app_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "::error::Tag v${{ steps.app_version.outputs.version }} already exists — bump the version in apps/app/package.json before releasing."
+            exit 1
+          fi
+
       - name: Download all bundles
         uses: actions/download-artifact@v8
         with:
@@ -250,8 +267,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ inputs.version }}
-          name: Kataria Syntex Biz App v${{ inputs.version }}
+          tag_name: v${{ steps.app_version.outputs.version }}
+          name: Kataria Syntex Biz App v${{ steps.app_version.outputs.version }}
           body: |
             Direct-download installers — one file per device (no zip):
 

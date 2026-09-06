@@ -16,6 +16,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  Menu,
   net,
   protocol,
   safeStorage,
@@ -36,7 +37,7 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-const DEV = process.env.KC_DEV === "1";
+const DEV = process.env.KC_DEV === "1" && !app.isPackaged;
 // Baked at build time from APP_URL via electron/build.ts (--define
 // KC_API_ORIGIN); dev overrides with localhost. A packaged build without the
 // define must fail loudly — a placeholder origin would silently dead-end
@@ -56,6 +57,19 @@ const APP_ROOT = app.getAppPath();
 
 /** The single shell window — window-control IPC operates on this. */
 let mainWindow: BrowserWindow | null = null;
+
+// One window per installation: a second launch focuses the first instead of
+// racing it for the encrypted token file.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    const win = mainWindow;
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  });
+}
 
 const TOKEN_FILE = () => join(app.getPath("userData"), "session.token");
 
@@ -238,6 +252,9 @@ function createWindow(): void {
   win.on("maximize", () => win.webContents.send("kc:win:maximized", true));
   win.on("unmaximize", () => win.webContents.send("kc:win:maximized", false));
 
+  // Touchpad pinch / ctrl-wheel must not zoom the UI like a webpage.
+  win.webContents.setVisualZoomLevelLimits(1, 1);
+
   win.once("ready-to-show", () => win.show());
 
   // External links → OS browser; never navigate the window elsewhere.
@@ -258,11 +275,19 @@ function createWindow(): void {
   if (DEV) {
     void win.loadURL("http://localhost:1420");
   } else {
-    void win.loadURL("app://bundle/index.html");
+    // Directory root, not index.html — the router treats the URL path as a
+    // route, and "/index.html" is not one.
+    void win.loadURL("app://bundle/");
   }
 }
 
 app.whenReady().then(() => {
+  // Packaged Windows/Linux ship no menu bar — the app is the chrome. The
+  // default menu's accelerators (Ctrl+R reload wiping form state, devtools)
+  // have no place in a production business app; macOS keeps its standard
+  // menu because app lifecycle and edit shortcuts live there.
+  if (!DEV && process.platform !== "darwin") Menu.setApplicationMenu(null);
+
   // Serve the packaged renderer: app://bundle/<path> → APP_ROOT/dist/<path>.
   // Host is ignored; only the path matters, and it may not escape dist/.
   // Paths with no file behind them (deep links, reload on /challans, …) fall

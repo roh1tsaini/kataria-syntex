@@ -8,8 +8,9 @@ import { cn } from "@/ui/lib/cn";
  * Windows/Linux get app-drawn controls; macOS keeps its native traffic
  * lights riding the strip. Web/PWA and Capacitor render nothing.
  *
- * Reserves its height globally through --titlebar-h (globals.css), so every
- * root container's 100dvh math stays correct without per-page changes.
+ * Its height is published as --titlebar-h on <html> by the entry
+ * (src/main/main.tsx) before first paint, so every root container's 100dvh
+ * math stays correct without per-page changes.
  */
 
 const dragStyle = { WebkitAppRegion: "drag" } as CSSProperties;
@@ -84,7 +85,7 @@ function ControlButton({
         "grid w-12 touch-44 h-auto place-items-center text-muted-foreground",
         "transition-colors hover:bg-muted hover:text-foreground",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-        destructive && "hover:bg-red-600 hover:text-white",
+        destructive && "hover:bg-destructive hover:text-destructive-foreground",
       )}
     >
       {children}
@@ -104,19 +105,14 @@ export function TitleBar() {
       .isMaximized()
       .then(setMaximized)
       .catch(() => {});
-    const off = w.onMaximizedChange(setMaximized);
-    document.documentElement.style.setProperty("--titlebar-h", "2.25rem");
-    return () => {
-      off();
-      document.documentElement.style.removeProperty("--titlebar-h");
-    };
+    return w.onMaximizedChange(setMaximized);
   }, []);
 
   if (!win) return null;
 
   return (
     <header
-      className="relative z-50 flex h-9 shrink-0 select-none items-stretch bg-background"
+      className="relative z-50 flex h-9 shrink-0 select-none items-stretch bg-background print:hidden"
       style={dragStyle}
     >
       {/* Drag surfaces — double-click toggles maximize natively via the
