@@ -12,7 +12,15 @@
  * - external links open in the OS browser; in-window navigation away from
  *   the app is blocked
  */
-import { app, BrowserWindow, ipcMain, net, protocol, safeStorage, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  net,
+  protocol,
+  safeStorage,
+  shell,
+} from "electron";
 import { join, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readFile, writeFile, unlink } from "node:fs/promises";
