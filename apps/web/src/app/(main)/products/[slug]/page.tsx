@@ -34,7 +34,7 @@ export default async function ProductPage({
   const inquiryHref = `/contact?product=${encodeURIComponent(product.name)}`;
 
   return (
-    <article className="mx-auto max-w-[1180px] px-4 py-14 sm:px-6 md:py-21 lg:px-8">
+    <article className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6 md:py-16 lg:px-8">
       <Link
         href="/products"
         className="inline-flex min-h-[44px] items-center gap-2 py-2 font-mono text-xs text-ink-soft transition-colors hover:text-royal"
@@ -43,20 +43,20 @@ export default async function ProductPage({
         Back to the yarn index
       </Link>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-12">
+      <div className="mt-8 grid gap-12 lg:grid-cols-12">
         {/* Visual */}
         <div className="lg:col-span-5">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-card border border-line">
+          <div className="art-duotone relative aspect-[4/5] overflow-hidden rounded-card shadow-card ring-1 ring-royal/20">
             <Image
               src={product.image}
               alt={product.imageAlt}
               fill
               priority
               sizes="(min-width: 1024px) 40vw, 100vw"
-              className="object-cover"
+              className="art-duotone-img object-cover"
             />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {product.applications.map((application) => (
               <Badge key={application}>{application}</Badge>
             ))}
@@ -73,18 +73,18 @@ export default async function ProductPage({
               {product.category}
             </p>
           </div>
-          <h1 className="mt-3 font-display text-4xl font-bold leading-[1.02] tracking-tight text-navy md:text-5xl">
+          <h1 className="mt-3 text-balance font-display text-4xl font-bold leading-[1.02] tracking-tight text-navy md:text-5xl">
             {product.name}
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-soft md:text-lg">
+          <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft md:text-lg">
             {product.description}
           </p>
 
-          <dl className="mt-8 border-t border-line">
+          <dl className="card-sheen mt-8 overflow-hidden rounded-card border border-line bg-paper shadow-card">
             {product.specs.map((spec) => (
               <div
                 key={spec.label}
-                className="grid grid-cols-2 gap-4 border-b border-line py-3.5"
+                className="grid grid-cols-2 gap-4 border-b border-line px-5 py-3.5 transition-colors last:border-b-0 hover:bg-canvas/50"
               >
                 <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
                   {spec.label}

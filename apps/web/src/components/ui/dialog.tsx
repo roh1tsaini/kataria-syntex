@@ -17,7 +17,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-navy/60 transition-opacity duration-200 ease-[var(--ease-out)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0",
+        "fixed inset-0 z-50 bg-navy/70 backdrop-blur-sm transition-opacity duration-300 ease-[var(--ease-out)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0",
         className,
       )}
       {...props}
@@ -37,11 +37,15 @@ function DialogContent({
         data-slot="dialog-content"
         data-lenis-prevent
         className={cn(
-          "fixed inset-0 z-50 flex flex-col bg-navy text-paper outline-none transition-opacity duration-200 ease-[var(--ease-out)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0",
+          "fixed inset-0 z-50 flex flex-col bg-navy ks-aurora-dark text-paper outline-none transition-[opacity,translate] duration-400 ease-[var(--ease-out)] data-[state=open]:translate-y-0 data-[state=open]:opacity-100 data-[state=closed]:translate-y-3 data-[state=closed]:opacity-0",
           className,
         )}
         {...props}
       >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 ks-noise opacity-[0.16] mix-blend-overlay"
+        />
         {children}
         <DialogPrimitive.Close className="absolute right-5 top-5 cursor-pointer p-2.5 text-paper transition-colors hover:text-sky">
           <X className="size-6" aria-hidden />

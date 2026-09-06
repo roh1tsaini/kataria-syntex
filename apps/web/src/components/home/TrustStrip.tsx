@@ -1,6 +1,5 @@
 "use client";
 
-import { Section } from "@/components/section/Section";
 import { useEffect, useRef, useState } from "react";
 import { trustMetrics } from "@/content/site";
 import { Reveal } from "@/components/motion/Reveal";
@@ -8,29 +7,37 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { useInViewOnce } from "@/lib/use-in-view-once";
 
 /**
- * Trust metrics band — navy ground, sky numbers that count up once
- * when they enter the viewport (final value renders on the server and
- * under reduced motion; the count is pure enhancement).
+ * Trust metrics panel — a navy tile floating on the hero's lower edge.
+ * Sky numbers count up once when they enter the viewport (final value
+ * renders on the server and under reduced motion; the count is pure
+ * enhancement).
  */
 export function TrustStrip() {
   return (
-    <section aria-label="Trade figures" className="bg-navy">
-      <Section>
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line-dark bg-line-dark lg:grid-cols-4">
-          {trustMetrics.map((metric, index) => (
-            <Reveal
-              key={metric.label}
-              delay={index * 60}
-              className="bg-navy p-6 md:p-8"
-            >
-              <MetricValue value={metric.value} />
-              <p className="mt-2 font-mono text-xs uppercase tracking-[0.14em] text-ice-soft">
-                {metric.label}
-              </p>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
+    <section aria-label="Trade figures">
+      <div className="mx-auto -mt-16 max-w-[1180px] px-4 sm:px-6 md:-mt-24 lg:px-8">
+        <Reveal className="relative overflow-hidden rounded-hero border border-line-dark bg-navy shadow-float">
+          <div aria-hidden="true" className="absolute inset-0 ks-aurora-dark" />
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-sky/40 to-transparent"
+          />
+          <div className="relative grid grid-cols-2 gap-px bg-line-dark lg:grid-cols-4">
+            {trustMetrics.map((metric, index) => (
+              <Reveal
+                key={metric.label}
+                delay={index * 60}
+                className="bg-navy p-6 transition-colors duration-300 hover:bg-white/[0.04] md:p-8"
+              >
+                <MetricValue value={metric.value} />
+                <p className="mt-2 font-mono text-xs uppercase tracking-[0.14em] text-ice-soft">
+                  {metric.label}
+                </p>
+              </Reveal>
+            ))}
+          </div>
+        </Reveal>
+      </div>
     </section>
   );
 }
@@ -69,7 +76,7 @@ function MetricValue({ value }: { value: string }) {
   return (
     <p
       ref={ref}
-      className="tnum font-display text-[26px] font-bold tracking-tight text-sky md:text-[28px]"
+      className="tnum font-display text-[28px] font-bold tracking-tight text-sky md:text-[30px]"
     >
       {text}
     </p>

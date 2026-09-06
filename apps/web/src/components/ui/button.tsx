@@ -8,12 +8,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-control font-body text-sm font-semibold transition-[background-color,color,border-color,transform] duration-100 ease-[var(--ease-out)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-control font-body text-sm font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-200 ease-[var(--ease-out)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-royal text-white hover:bg-navy",
-        "on-dark": "bg-sky text-navy hover:bg-white",
+        primary:
+          "bg-royal text-white shadow-button hover:bg-navy hover:shadow-[0_10px_24px_-8px_rgb(10_37_64/0.6)]",
+        "on-dark":
+          "bg-sky text-navy shadow-[0_8px_20px_-8px_rgb(125_211_252/0.45)] hover:bg-white",
         ghost: "border-[1.5px] border-current bg-transparent",
       },
       size: {

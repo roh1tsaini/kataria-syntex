@@ -19,10 +19,10 @@ export function FilterPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "h-11 cursor-pointer rounded-full px-5 font-body text-sm font-semibold transition-colors",
+        "h-11 cursor-pointer rounded-full px-5 text-sm font-semibold transition-[background-color,color,border-color,box-shadow] duration-200 ease-[var(--ease-out)] active:scale-[0.97]",
         active
-          ? "bg-royal text-white"
-          : "border border-line bg-paper text-ink-soft hover:border-royal hover:text-royal",
+          ? "bg-royal text-white shadow-button"
+          : "border border-line bg-paper text-ink-soft shadow-xs hover:border-royal/40 hover:text-royal",
         className,
       )}
     >

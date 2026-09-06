@@ -25,15 +25,19 @@ export function SectionHead({
     <Reveal className={cn("max-w-3xl", className)}>
       <p
         className={cn(
-          "font-body text-[11px] font-bold uppercase tracking-[0.07em]",
+          "flex items-center gap-3 font-body text-[11px] font-bold uppercase tracking-[0.07em]",
           invert ? "text-sky" : "text-royal",
         )}
       >
+        <span
+          aria-hidden="true"
+          className={cn("h-px w-8", invert ? "bg-sky/50" : "bg-royal/40")}
+        />
         {kicker}
       </p>
       <Tag
         className={cn(
-          "mt-3 font-display text-[clamp(1.75rem,3.5vw,2.375rem)] font-bold leading-[1.08] tracking-tight",
+          "mt-4 text-balance font-display text-[clamp(1.875rem,3.6vw,2.625rem)] font-bold leading-[1.06] tracking-tight",
           invert ? "text-white" : "text-navy",
         )}
       >
@@ -42,7 +46,7 @@ export function SectionHead({
       {lede ? (
         <p
           className={cn(
-            "mt-4 max-w-xl text-base leading-relaxed",
+            "mt-4 max-w-xl text-pretty text-base leading-relaxed",
             invert ? "text-ice-soft" : "text-ink-soft",
           )}
         >

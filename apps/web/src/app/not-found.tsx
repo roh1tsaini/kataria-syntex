@@ -6,10 +6,17 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <div className="min-h-dvh bg-canvas flex flex-col">
+    <div className="flex min-h-dvh flex-col bg-canvas">
       <SiteHeader />
-      <main id="main" className="flex-1 grid place-items-center px-6 py-16">
-        <div className="max-w-md text-center">
+      <main
+        id="main"
+        className="relative flex flex-1 place-items-center overflow-hidden ks-aurora-light px-6 py-16"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 ks-grid-blue [mask-image:radial-gradient(70%_80%_at_50%_40%,black,transparent)]"
+        />
+        <div className="relative mx-auto max-w-md text-center">
           <p className="font-body text-xs font-bold tracking-[0.12em] text-royal">
             404 — NOT FOUND
           </p>

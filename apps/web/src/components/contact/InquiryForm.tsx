@@ -174,7 +174,7 @@ export function InquiryForm({ initialProduct }: { initialProduct?: string }) {
 
   if (status === "success") {
     return (
-      <div className="flex min-h-96 flex-col items-start justify-center gap-5 rounded-card border border-line bg-paper p-8 md:p-12 animate-fade-zoom-in">
+      <div className="card-sheen flex min-h-96 flex-col items-start justify-center gap-5 rounded-card border border-line bg-paper p-8 shadow-card md:p-12 animate-fade-zoom-in">
         <CheckCircle2 aria-hidden="true" className="size-10 text-success" />
         <h2 className="font-display text-3xl font-bold tracking-tight text-navy">
           Inquiry received.
@@ -277,8 +277,8 @@ export function InquiryForm({ initialProduct }: { initialProduct?: string }) {
             value={draft.product}
             onChange={(e) => draft.setField("product", e.target.value)}
             className={cn(
-              "h-11 w-full cursor-pointer rounded-control border border-line bg-paper px-3.5 font-body text-sm",
-              "transition-colors focus:border-royal focus:outline-none",
+              "h-11 w-full cursor-pointer rounded-control border border-line bg-paper px-3.5 font-body text-sm shadow-xs",
+              "transition-[border-color,box-shadow] focus:border-royal focus:shadow-[0_0_0_3px_rgb(30_58_138/0.12)] focus:outline-none",
               draft.product ? "text-navy" : "text-ink-soft/60",
             )}
           >

@@ -4,6 +4,43 @@ import { site, yearsOfExperience } from "@/content/site";
 import { exportCountries } from "@/content/markets";
 import { navLinks } from "@/content/nav";
 
+/* Brand glyphs — lucide no longer ships brand icons, so these two live here. */
+function InstagramGlyph() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="size-4"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
+function FacebookGlyph() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="size-4"
+    >
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
 export function SiteFooter() {
   const countries = `${exportCountries.length}+`;
   return (
@@ -21,6 +58,26 @@ export function SiteFooter() {
               units, exporters, and garment teams across India and{" "}
               <span className="tnum">{countries}</span> countries.
             </p>
+            <div className="mt-6 flex items-center gap-2">
+              <a
+                href={site.socials.instagram}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="grid size-10 place-items-center rounded-full border border-line-dark text-cornflower transition-colors duration-200 hover:border-sky/50 hover:text-sky"
+              >
+                <InstagramGlyph />
+              </a>
+              <a
+                href={site.socials.facebook}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Facebook"
+                className="grid size-10 place-items-center rounded-full border border-line-dark text-cornflower transition-colors duration-200 hover:border-sky/50 hover:text-sky"
+              >
+                <FacebookGlyph />
+              </a>
+            </div>
           </div>
 
           {/* Contact */}
@@ -107,7 +164,7 @@ export function SiteFooter() {
           Breathing room lives inside the bed (pb + loose leading), never
           negative margins, so descenders ("y") always clear the edge. */}
       <div aria-hidden="true" className="overflow-hidden">
-        <p className="whitespace-nowrap pb-[0.16em] text-center font-display text-[clamp(2.75rem,11vw,11rem)] font-bold leading-[1] tracking-tight text-white/[0.08]">
+        <p className="whitespace-nowrap bg-gradient-to-b from-white/[0.09] to-white/[0.03] bg-clip-text pb-[0.16em] text-center font-display text-[clamp(2.75rem,11vw,11rem)] font-bold leading-[1] tracking-tight text-transparent">
           {site.name}
         </p>
       </div>

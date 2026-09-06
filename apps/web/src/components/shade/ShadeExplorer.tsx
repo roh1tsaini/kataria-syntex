@@ -45,7 +45,7 @@ export function ShadeExplorer({
   );
 
   return (
-    <div className="mt-10 md:mt-14">
+    <div className="mt-10 md:mt-12">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div
@@ -71,7 +71,7 @@ export function ShadeExplorer({
           ))}
         </div>
 
-        <label className="flex h-11 w-full min-w-52 items-center gap-2 rounded-control border border-line bg-paper px-3.5 transition-colors focus-within:border-royal sm:w-auto sm:flex-1 lg:flex-none">
+        <label className="flex h-11 w-full min-w-52 items-center gap-2 rounded-full border border-line bg-paper px-4 shadow-xs transition-[border-color,box-shadow] focus-within:border-royal focus-within:shadow-[0_0_0_3px_rgb(30_58_138/0.12)] sm:w-auto sm:flex-1 lg:flex-none">
           <Search aria-hidden="true" className="size-4 text-ink-soft" />
           <span className="sr-only">Search by shade code</span>
           <input
@@ -112,7 +112,7 @@ export function ShadeExplorer({
               {pageShades.map((shade) => (
                 <span
                   key={`${shade.page}-${shade.code}`}
-                  className="block rounded-chip"
+                  className="group block rounded-chip transition-transform duration-300 ease-[var(--ease-out)] hover:-translate-y-0.5"
                 >
                   <YarnSwatch
                     colors={shade.colors ?? [shade.hex]}
@@ -120,7 +120,7 @@ export function ShadeExplorer({
                     seed={shade.code}
                     className="aspect-[3/4] w-full"
                   />
-                  <span className="tnum mt-1.5 block truncate text-center font-mono text-[10px] text-ink-soft">
+                  <span className="tnum mt-1.5 block truncate text-center font-mono text-[10px] text-ink-soft transition-colors group-hover:text-royal">
                     {shade.code}
                   </span>
                 </span>
@@ -131,7 +131,7 @@ export function ShadeExplorer({
       </div>
 
       {visible.length === 0 ? (
-        <div className="mt-6 rounded-card border border-line bg-paper p-6">
+        <div className="card-sheen mt-6 rounded-card border border-line bg-paper p-6 shadow-card">
           <p className="font-mono text-sm text-ink-soft">
             No shade matches “{query}”. Check the code on your physical card, or
             send us the shade you need — custom lab dips are part of the job.

@@ -128,11 +128,18 @@
   --radius-control: 11px;
   --radius-card: 16px;
   --radius-panel: 18px;
+  --radius-hero: 24px;
 
-  --shadow-card: 0 8px 24px rgb(10 37 64 / 0.08);
-  --shadow-float: 0 24px 48px rgb(10 37 64 / 0.14);
+  /* Layered depth: a tight contact shadow plus a wide ambient one. */
+  --shadow-xs: 0 1px 2px rgb(10 37 64 / 0.06);
+  --shadow-card:
+    0 1px 2px rgb(10 37 64 / 0.05), 0 10px 28px -8px rgb(10 37 64 / 0.1);
+  --shadow-float:
+    0 2px 6px rgb(10 37 64 / 0.06), 0 28px 56px -16px rgb(10 37 64 / 0.22);
+  --shadow-button: 0 8px 20px -8px rgb(30 58 138 / 0.55);
 
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
 
   --animate-accordion-down: accordion-down 200ms var(--ease-out);
   --animate-accordion-up: accordion-up 200ms var(--ease-out);
@@ -218,6 +225,97 @@
 }
 
 /*
+ * Atmosphere — brand-blue aurora washes that give light and navy bands
+ * depth without photography. Static by design (no looping backgrounds).
+ */
+@utility ks-aurora-light {
+  background-image:
+    radial-gradient(
+      52rem 30rem at 10% -8%,
+      rgb(125 211 252 / 0.34),
+      transparent 62%
+    ),
+    radial-gradient(
+      44rem 30rem at 94% 2%,
+      rgb(147 197 253 / 0.32),
+      transparent 60%
+    ),
+    radial-gradient(
+      64rem 40rem at 50% 122%,
+      rgb(30 58 138 / 0.1),
+      transparent 64%
+    );
+}
+
+@utility ks-aurora-dark {
+  background-image:
+    radial-gradient(
+      50rem 26rem at 14% -12%,
+      rgb(125 211 252 / 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      46rem 32rem at 96% -4%,
+      rgb(30 58 138 / 0.55),
+      transparent 62%
+    ),
+    radial-gradient(
+      72rem 36rem at 50% 128%,
+      rgb(125 211 252 / 0.07),
+      transparent 60%
+    );
+}
+
+/* Fine blueprint grid, faded radially via mask where it is used. */
+@utility ks-grid-blue {
+  background-image:
+    linear-gradient(to right, rgb(10 37 64 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(10 37 64 / 0.05) 1px, transparent 1px);
+  background-size: 54px 54px;
+}
+
+/* Fiber-grain overlay (feTurbulence) — sit it absolutely with mix-blend. */
+@utility ks-noise {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27160%27%20height%3D%27160%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.9%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url(%23n)%27%20opacity%3D%270.55%27%2F%3E%3C%2Fsvg%3E");
+}
+
+/*
+ * Card sheen — a 1px sky catch-light along a card's top edge so white
+ * surfaces pick up the ambient light instead of sitting flat.
+ */
+@utility card-sheen {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(125 211 252 / 0.55),
+      transparent
+    );
+    pointer-events: none;
+  }
+}
+
+/*
+ * Duotone product art — photos are grayscale and multiplied over royal so
+ * every image sits inside the blue family (white backgrounds read as royal
+ * fields). The treatment is applied in ProductCard / product pages.
+ */
+@utility art-duotone {
+  background-color: var(--color-royal);
+}
+
+@utility art-duotone-img {
+  filter: grayscale(1) brightness(1.16) contrast(0.98);
+  mix-blend-mode: multiply;
+}
+
+/*
  * Load-in — one-time entrance for above-the-fold content (hero column,
  * floating panel). Pure CSS so it runs before hydration; delays are set
  * inline per element. Uses the `translate` property so it never fights
@@ -226,7 +324,7 @@
 @keyframes ks-enter {
   from {
     opacity: 0;
-    translate: 0 10px;
+    translate: 0 16px;
   }
   to {
     opacity: 1;
@@ -234,11 +332,11 @@
   }
 }
 .ks-enter {
-  animation: ks-enter 640ms var(--ease-out) both;
+  animation: ks-enter 760ms var(--ease-out) both;
 }
 
 /*
- * Reveal — crossfade with a small rise. Hidden state only applies when
+ * Reveal — crossfade with a soft rise. Hidden state only applies when
  * JS is active (html.js), so server-rendered and no-JS pages stay fully
  * visible. Uses the `translate` property so it never fights transforms.
  */
@@ -246,12 +344,12 @@
   opacity: 1;
   translate: 0 0;
   transition:
-    opacity 240ms var(--ease-out),
-    translate 240ms var(--ease-out);
+    opacity 520ms var(--ease-out),
+    translate 520ms var(--ease-out);
 }
 html.js .ks-reveal[data-shown="false"] {
   opacity: 0;
-  translate: 0 6px;
+  translate: 0 14px;
 }
 
 /* Lenis smooth scroll — keep native scroll-behavior from fighting it. */

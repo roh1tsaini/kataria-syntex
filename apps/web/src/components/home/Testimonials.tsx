@@ -6,11 +6,19 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { testimonials } from "@/content/testimonials";
 import { SectionHead } from "@/components/section/SectionHead";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { cn } from "@/lib/utils";
+
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0] ?? "")
+    .slice(0, 2)
+    .join("");
 
 /**
- * Buyer voices — a crossfade ledger. Quotes swap through opacity only;
- * the tabular counter tracks position. Auto-advances, pauses on hover,
- * and freezes entirely under prefers-reduced-motion.
+ * Buyer voices — a ledger of quotes that swap with a fade and a soft rise.
+ * Auto-advances, pauses on hover, and freezes entirely under
+ * prefers-reduced-motion.
  */
 export function Testimonials() {
   const [active, setActive] = useState(0);
@@ -46,7 +54,7 @@ export function Testimonials() {
                 type="button"
                 onClick={() => step(-1)}
                 aria-label="Previous quote"
-                className="inline-flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-navy/30 text-navy transition-colors hover:border-royal hover:text-royal"
+                className="inline-flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-navy/30 text-navy transition-[border-color,color,transform] duration-200 ease-[var(--ease-out)] hover:border-royal hover:text-royal active:scale-[0.94]"
               >
                 <ArrowLeft className="size-4" />
               </button>
@@ -54,7 +62,7 @@ export function Testimonials() {
                 type="button"
                 onClick={() => step(1)}
                 aria-label="Next quote"
-                className="inline-flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-navy/30 text-navy transition-colors hover:border-royal hover:text-royal"
+                className="inline-flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-navy/30 text-navy transition-[border-color,color,transform] duration-200 ease-[var(--ease-out)] hover:border-royal hover:text-royal active:scale-[0.94]"
               >
                 <ArrowRight className="size-4" />
               </button>
@@ -66,28 +74,44 @@ export function Testimonials() {
           </div>
 
           <div
-            className="relative min-h-56 md:col-span-8"
+            className="relative min-h-64 md:col-span-8"
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
             onFocus={() => setHovering(true)}
             onBlur={() => setHovering(false)}
           >
+            <span
+              aria-hidden="true"
+              className="absolute -top-6 -left-1 font-display text-[96px] leading-none font-bold text-royal/15 select-none md:-left-4 md:text-[128px]"
+            >
+              “
+            </span>
             {testimonials.map((testimonial, index) => (
               <figure
                 key={testimonial.name}
                 aria-hidden={index !== active}
-                className="absolute inset-0 transition-opacity duration-300 ease-[var(--ease-out)]"
-                style={{
-                  opacity: index === active ? 1 : 0,
-                  pointerEvents: index === active ? "auto" : "none",
-                }}
+                className={cn(
+                  "absolute inset-0 flex flex-col justify-center transition-[opacity,translate] duration-500 ease-[var(--ease-out)]",
+                  index === active
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-3 opacity-0",
+                )}
+                style={{ pointerEvents: index === active ? "auto" : "none" }}
               >
-                <blockquote className="font-display text-2xl font-medium leading-snug tracking-tight text-navy md:text-3xl">
-                  “{testimonial.quote}”
+                <blockquote className="text-pretty font-display text-2xl leading-snug font-medium tracking-tight text-navy md:text-3xl">
+                  {testimonial.quote}
                 </blockquote>
-                <figcaption className="mt-6 font-mono text-xs text-ink-soft">
-                  {testimonial.name} · {testimonial.company} ·{" "}
-                  {testimonial.country}
+                <figcaption className="mt-7 flex items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-royal to-navy font-display text-[13px] font-bold text-white"
+                  >
+                    {initials(testimonial.name)}
+                  </span>
+                  <span className="font-mono text-xs text-ink-soft">
+                    <span className="text-navy">{testimonial.name}</span> ·{" "}
+                    {testimonial.company} · {testimonial.country}
+                  </span>
                 </figcaption>
               </figure>
             ))}

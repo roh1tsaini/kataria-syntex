@@ -8,9 +8,7 @@
 >
 > Applies to `apps/web` ONLY. `apps/app` has its own identity.
 > Tokens live in `src/app/globals.css` — code never hardcodes what a token
-> already provides. Brand blues were locked by the owner on 2026-09-01
-> (combo of navy + royal + sky + ice); they replace the old ecru/madder
-> identity, which is dead and gets deleted with the redesign.
+> already provides. Brand blues are owner-locked (navy + royal + sky + ice).
 
 ## 1. Principles
 
@@ -22,24 +20,29 @@
    bands (navy) alternate with intent; both use the same blue ramp. White is
    reserved for cards and controls — the page itself is always blue
    (owner call 2026-09-02: the site never sits on white).
-4. **Legible.** Hierarchy from weight + size + color. Borders are hairlines;
-   shadows are whispers; no gradients on text.
-5. **Print-twin.** The brand must survive CMYK: navy carries ink-heavy
+4. **Atmosphere, not flatness.** Light bands carry a brand-blue aurora wash
+   (`ks-aurora-light`), a fine blueprint grid (`ks-grid-blue`, radially
+   masked), and a fiber-grain overlay (`ks-noise`); navy bands and panels
+   carry `ks-aurora-dark` + grain. All static — no looping backgrounds.
+5. **Legible.** Hierarchy from weight + size + color. Borders are hairlines;
+   shadows are layered whispers; no gradients on text (the footer ghost
+   wordmark's vertical fade is the one decorative exception).
+6. **Print-twin.** The brand must survive CMYK: navy carries ink-heavy
    surfaces, sky is the single spot accent. What prints is what ships.
-6. **Respectful.** Reduced motion, high contrast, 44px touch targets —
+7. **Respectful.** Reduced motion, high contrast, 44px touch targets —
    always on, never opt-in.
 
 ## 2. Foundations
 
 ### 2.1 Brand color (owner-locked)
 
-| Token          | Hex       | CMYK (approx, proof before print) | Role                                                    |
-| -------------- | --------- | --------------------------------- | ------------------------------------------------------- |
-| `--navy`       | `#0A2540` | C85 M42 Y0 K75                    | ink on light; dark surfaces (bands, footer, card front) |
-| `--royal`      | `#1E3A8A` | C78 M58 Y0 K46                    | primary action on light (buttons, links, kickers)       |
-| `--sky`        | `#7DD3FC` | C50 M16 Y0 K1                     | accent on dark (numbers, tags, buttons on navy)         |
-| `--ice`        | `#B8D8F5` | C25 M12 Y0 K4                     | accent surface (chips, tags, card back)                 |
-| `--cornflower` | `#93C5FD` | C42 M22 Y0 K1                     | links/secondary accent on dark                          |
+| Token          | Hex       | CMYK (approx, proof before print) | Role                                                                 |
+| -------------- | --------- | --------------------------------- | -------------------------------------------------------------------- |
+| `--navy`       | `#0A2540` | C85 M42 Y0 K75                    | ink on light; dark surfaces (bands, panels, footer, card front)      |
+| `--royal`      | `#1E3A8A` | C78 M58 Y0 K46                    | primary action on light (buttons, links, kickers); duotone art field |
+| `--sky`        | `#7DD3FC` | C50 M16 Y0 K1                     | accent on dark (numbers, tags, buttons on navy)                      |
+| `--ice`        | `#B8D8F5` | C25 M12 Y0 K4                     | accent surface (chips, tags, card back)                              |
+| `--cornflower` | `#93C5FD` | C42 M22 Y0 K1                     | links/secondary accent on dark                                       |
 
 Ramp (gradients, tints, charts) — one family, use in order, never interpolate
 outside it:
@@ -61,6 +64,10 @@ Neutrals (blue-tinted, never warm):
 Rules:
 
 - Semantic tokens only in components; never raw hex outside `globals.css`.
+- Atmosphere utilities are named with the `ks-` prefix (`ks-aurora-light`,
+  `ks-aurora-dark`, `ks-grid-blue`, `ks-noise`) — never a `bg-` name, so
+  `tailwind-merge` cannot mistake them for background-color classes and drop
+  `bg-navy` from the same className.
 - On light: headings navy, body ink-soft, actions royal, kicker royal.
 - On navy: headings white, body ice-soft, actions sky (navy text), links
   cornflower, kickers/numbers sky.
@@ -80,13 +87,14 @@ Rules:
 
 ### 2.3 Radius ladder
 
-| Value | Used for                                      |
-| ----- | --------------------------------------------- |
-| 8px   | shade chips, small chips, code blocks         |
-| 11px  | buttons, inputs                               |
-| 16px  | cards, panels                                 |
-| 18px  | feature panels, floating visuals (shade card) |
-| pill  | tags/eyebrow badges only                      |
+| Value | Used for                                            |
+| ----- | --------------------------------------------------- |
+| 8px   | shade chips, small chips, code blocks               |
+| 11px  | buttons, inputs                                     |
+| 16px  | cards, panels                                       |
+| 18px  | feature panels                                      |
+| 24px  | hero panels, stat tiles, CTA tiles (`rounded-hero`) |
+| pill  | tags/eyebrow badges, nav links, search field        |
 
 A control's radius never depends on its page.
 
@@ -101,30 +109,47 @@ A control's radius never depends on its page.
 
 ### 2.5 Type (self-hosted, zero CDN)
 
-- **Display:** Space Grotesk Variable — headings only.
+- **Display:** Space Grotesk Variable — headings, wordmark, ghost wordmark.
 - **Body:** Inter Variable — everything else.
 - **Mono:** IBM Plex Mono — shade codes, stats, fine print, data.
 
 | Role           | Size           | Family/weight     | Tracking | Leading |
 | -------------- | -------------- | ----------------- | -------- | ------- |
-| Display (hero) | clamp(40→60px) | Grotesk 700       | −0.03em  | 1.05    |
-| Section head   | clamp(28→38px) | Grotesk 700       | −0.02em  | 1.1     |
-| Card title     | 17–20px        | Inter 700         | −0.01em  | 1.3     |
+| Display (hero) | clamp(44→68px) | Grotesk 700       | −0.03em  | 1.01    |
+| Page head      | clamp(36→52px) | Grotesk 700       | −0.02em  | 1.04    |
+| Section head   | clamp(30→42px) | Grotesk 700       | −0.02em  | 1.06    |
+| Card title     | 17–24px        | Grotesk/Inter 700 | −0.01em  | 1.3     |
 | Body           | 15–17px fluid  | Inter 400         | −0.011em | 1.6     |
 | Eyebrow/kicker | 11px uppercase | Inter 700         | +0.07em  | 1       |
 | Data/mono      | 12–13px        | Plex Mono 400/500 | 0        | 1.5     |
 
-Hierarchy is weight + size + color. No italic display, no text-transform on
-body copy.
+Hierarchy is weight + size + color. Display heads use `text-balance`, ledes
+use `text-pretty`. No italic display, no text-transform on body copy.
 
-### 2.6 Shadows & materials
+### 2.6 Shadows, materials & header
 
-- Cards rest flat with `--line` hairlines; interactive cards lift
-  `0 8px 24px rgb(10 37 64 / 0.08)` on hover, −1px translate, 140ms.
-- Floating visuals (shade-card panel): `0 24px 48px rgb(10 37 64 / 0.14)`.
-- Sticky nav: transparent over the canvas at top; solid `bg-canvas` +
-  hairline bottom once scrolled. **No `backdrop-blur`** — the per-frame GPU
-  filter while scrolling is a jank source.
+Shadow ladder (layered: contact + ambient), tokens in `globals.css`:
+
+| Token             | Shape                                   | Use                               |
+| ----------------- | --------------------------------------- | --------------------------------- |
+| `--shadow-xs`     | `0 1px 2px` @ 6%                        | inputs, resting chips             |
+| `--shadow-card`   | `0 1px 2px` + `0 10px 28px −8px`        | resting cards                     |
+| `--shadow-float`  | `0 2px 6px` + `0 28px 56px −16px` @ 22% | hero panel, stat/CTA tiles, hover |
+| `--shadow-button` | `0 8px 20px −8px` royal @ 55%           | primary / on-dark buttons         |
+
+Materials:
+
+- **Cards** rest on a hairline (`--line`) with `card-sheen` — a 1px sky
+  catch-light along the top edge so white surfaces pick up the ambient
+  light. Interactive cards lift −4px + `shadow-float` over 300ms.
+- **Sticky header** is frosted glass: `bg-canvas/50–85` + `backdrop-blur` +
+  `backdrop-saturate-150`; scrolled state adds the hairline + `shadow-xs`
+  (owner call: blur header). A fixed header is the one sanctioned
+  backdrop-blur; blur is never applied to elements that scroll with the page.
+- **Floating panels** (shade-card miniature, stat tile, CTA tile) are
+  `rounded-hero` with `shadow-float`; navy ones add `ks-aurora-dark`, a sky
+  hairline across the top edge, and grain.
+- **Forms**: focus = royal border + `0 0 0 3px rgb(30 58 138 / 0.12)` ring.
 
 ### 2.7 Wound-yarn swatch texture (product content only)
 
@@ -146,37 +171,54 @@ that with a pure-CSS texture engine (`src/components/shade/woven.ts` +
   ice) never get yarn texture. Codes print beneath the swatch in Plex Mono,
   like the printed card.
 
-### 2.8 Buttons
+### 2.8 Product art — duotone (art-duotone / art-duotone-img)
 
-| Variant | Style                                  | Use                      |
-| ------- | -------------------------------------- | ------------------------ |
-| primary | royal fill, white text                 | one per section on light |
-| on-dark | sky fill, navy text                    | one per section on navy  |
-| ghost   | 1.5px currentColor border, transparent | secondary                |
-| link    | royal (light) / cornflower (dark), 600 | inline actions           |
+Product photography is unified into the blue family: the art container is
+royal (`art-duotone`) and the photo is grayscale, slightly brightened, and
+`mix-blend-mode: multiply` (`art-duotone-img`). White product-shot
+backgrounds therefore read as royal fields, and every card and product page
+carries the same editorial treatment. Hover on card art: `scale(1.04)` over
+500ms. Art never gets text overlays.
 
-Press: `scale(0.97)` @100ms on `:active`. Radius 11px, height per §2.4.
+### 2.9 Buttons
+
+| Variant | Style                                   | Use                      |
+| ------- | --------------------------------------- | ------------------------ |
+| primary | royal fill, white text, `shadow-button` | one per section on light |
+| on-dark | sky fill, navy text, sky glow shadow    | one per section on navy  |
+| ghost   | 1.5px currentColor border, transparent  | secondary                |
+| link    | royal (light) / cornflower (dark), 600  | inline actions           |
+
+Press: `scale(0.97)` on `:active`. Radius 11px, height per §2.4. Primary
+hover deepens to navy with a stronger shadow; transitions 200ms.
 
 ## 3. Section grammar (page anatomy)
 
 Pages are alternating bands, always in this visual order when present:
 
-1. **Hero (light):** sits directly on the shared blue canvas (owner call
-   2026-09-02: light blue everywhere — no white page tops, no ice gradient
-   wash); eyebrow pill, display head (navy, one royal emphasis line max),
-   lede ink-soft, primary + ghost, mono fine-print line. Optional floating
-   panel on the right (shade card).
-2. **Stats band (navy):** 3–4 mono-labeled stats; numbers sky 26–28px
-   Grotesk, labels ice-soft 12.5px.
-3. **Index/cards (light, canvas-deep bg allowed):** kicker royal, section head,
-   sub, equal-height card grid (16px radius, hairline, family chip row).
-4. **Process (navy):** kicker sky, mono numbers sky, 3 steps max per row.
-5. **CTA band:** navy→royal 120° gradient; head white; sky primary +
+1. **Hero (light, home only):** `ks-aurora-light` + masked grid + grain;
+   eyebrow glass pill, display head (navy, one royal emphasis line max),
+   lede ink-soft, primary + ghost, mono fine-print line. Floating frosted
+   panel on the right (shade-card miniature) with a small lot-note chip.
+2. **Stats tile (navy, home only):** `rounded-hero` navy panel pulled up
+   over the hero's lower edge (`-mt`), `ks-aurora-dark` + top sky hairline;
+   2×2 mobile / 4-across desktop mono-labeled stats; numbers sky 28–30px
+   Grotesk; cells lighten on hover.
+3. **Index/cards (light, canvas-deep bg allowed):** kicker (hairline + royal
+   text), section head, equal-height card grid via the shared `ProductCard`
+   (duotone art, family chip row, spec ledger, hover lift).
+4. **Process (navy full-bleed):** kicker sky, rows lift to `white/[0.04]`
+   on hover with numbers waking from sky/50 to sky; 3 steps max per row.
+5. **CTA tile:** `CtaPanel` — `rounded-hero` navy tile on canvas with
+   aurora, grain, top sky hairline; left or centered; sky primary +
    cornflower ghost.
-6. **Footer (navy):** compact 4-column grid — brand + trade summary,
-   contact, desk hours, page index — ice-soft text, cornflower→sky links,
-   mono © line at the bottom under a `--line-dark` hairline. Contact stays
-   reachable from every page (business requirement).
+6. **Footer (navy):** compact 4-column grid — brand + trade summary +
+   social glyphs, contact, desk hours, page index — ice-soft text,
+   cornflower→sky links, mono © line, gradient ghost wordmark at the very
+   bottom. Contact stays reachable from every page (business requirement).
+
+Interior pages open with **PageHead**: the aurora band (masked grid) carrying
+kicker, `h1` display, and lede; content continues in a plain `Section` below.
 
 Rules: never two dark bands adjacent; never more than one primary button per
 band; product data (yarn specs, shades) comes from `src/content/*`, never
@@ -185,20 +227,25 @@ hardcoded in components.
 ## 4. Motion grammar
 
 Presets live with `src/components/motion/*` (Reveal, SmoothScroll) — import
-them, never re-derive.
+them, never re-derive. Eases: `--ease-out = cubic-bezier(0.22,1,0.36,1)`,
+`--ease-spring = cubic-bezier(0.34,1.45,0.5,1)` for small arrow/checkbox
+kicks.
 
-1. Enter = fade + 4–6px rise, ≤240ms, `cubic-bezier(0.16,1,0.3,1)`; siblings
-   stagger 40ms, max 5.
+1. Enter = fade + 14px rise, 520ms `--ease-out`; siblings stagger
+   60–80ms, max 5.
 2. Scroll reveals fire once, only above the fold edge; content is fully
    visible without JS.
 3. **Load-in:** above-the-fold hero content enters once on page load with
-   the same fade + rise (`ks-enter`, 640ms, same curve); siblings stagger
-   40–60ms. Pure CSS, runs before hydration, collapses under reduced motion.
-4. Animate transform + opacity only. Never animate `filter` (e.g. blur
-   crossfades) — it repaints per frame.
-5. No parallax, no looping backgrounds, no hover scale >1, no spinners —
+   the same fade + rise (`ks-enter`, 760ms); siblings stagger 50–70ms.
+   Pure CSS, runs before hydration, collapses under reduced motion.
+4. Animate transform, translate, opacity, and shadow only. Never animate
+   `filter` (e.g. blur crossfades) — it repaints per frame.
+5. Hover language: cards −4px lift + `shadow-float` (300ms); art
+   `scale(1.04)` (500ms); arrows translate 0.5–4px; nav links get a soft
+   pill (`bg-navy/[0.04–0.07]`); active nav link is a royal-tinted pill.
+6. No parallax, no looping backgrounds, no hover scale >1.04, no spinners —
    skeletons for async content.
-6. `prefers-reduced-motion`: everything collapses to opacity ≤200ms.
+7. `prefers-reduced-motion`: everything collapses to opacity ≤200ms.
 
 ### 4.1 Smooth scroll (Lenis) integration rules
 
@@ -214,7 +261,9 @@ keep the main thread free while it drives scroll per frame:
 - Heavy grids (shade-card page groups) use the `paint-gate` utility
   (`content-visibility: auto` + `contain-intrinsic-size`) so off-screen
   groups never raster their texture layers while scrolling.
-- No `backdrop-blur` anywhere that sits over scrolling content.
+- `backdrop-blur` appears only on the fixed header and the modal overlay
+  (both static while content moves beneath them) — never on elements that
+  scroll with the page.
 
 ## 5. Accessibility floor (non-negotiable)
 
@@ -240,11 +289,14 @@ keep the main thread free while it drives scroll per frame:
 | Concern                         | File                                           |
 | ------------------------------- | ---------------------------------------------- |
 | Tokens (color/radius/shadow)    | `src/app/globals.css`                          |
+| Atmosphere utilities (`ks-*`)   | `src/app/globals.css`                          |
 | Fonts (self-hosted WOFF2)       | `src/app/fonts/` + `@font-face` in globals.css |
 | Brand/company facts             | `packages/shared` → `src/content/site.ts`      |
 | Products/shades/markets content | `src/content/*`                                |
 | Motion primitives               | `src/components/motion/*`                      |
-| Layout chrome                   | `src/components/layout/*`                      |
+| Layout chrome (header/footer)   | `src/components/layout/*`                      |
+| Page head / CTA tiles           | `src/components/section/*`                     |
+| Shared product card             | `src/components/products/ProductCard.tsx`      |
 
 ## 8. Agent checklist (before any UI change ships)
 
@@ -253,6 +305,8 @@ keep the main thread free while it drives scroll per frame:
 - [ ] Radii/heights/spacing match §2.2–§2.4 — no new magic numbers.
 - [ ] Type roles match §2.5; Grotesk only for headings, Plex Mono only for data.
 - [ ] Motion per §4, reduced-motion honored, no spinners.
+- [ ] `ks-*` atmosphere utilities never share a className with `bg-navy`
+      (twMerge drops the color) — put them on separate elements.
 - [ ] 44px targets + focus rings + contrast verified at mobile width.
 - [ ] Would it print on the card without breaking §6? If not, rethink.
 - [ ] Looks at home next to Luma / Linear / Apple marketing pages. If it reads
