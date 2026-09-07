@@ -25,6 +25,13 @@ extraMetadata:
 
 asar: true
 
+# Generic feed — exists only to make electron-builder emit latest.yml /
+# latest-linux.yml next to the installers (CI uploads them to R2; the
+# updater re-points the feed per-OS at runtime, electron/updater.ts).
+publish:
+  provider: generic
+  url: https://app.katariasyntex.workers.dev/releases/app/desktop
+
 win:
   target:
     - target: nsis

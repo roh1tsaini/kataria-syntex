@@ -41,4 +41,7 @@
     <!-- QR-code scanning for QR login / device approval -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- Self-update: the app is sideloaded (no Play Store), so it stages its
+         own APK from /releases and hands it to the system installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

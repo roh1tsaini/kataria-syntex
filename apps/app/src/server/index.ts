@@ -16,6 +16,8 @@ import { packingRoute } from "./routes/packing";
 import { stockRoute } from "./routes/stock";
 import { reportsRoute } from "./routes/reports";
 import { apiError } from "./lib/api-error";
+import { versionGate } from "./lib/version-gate";
+import { APP_VERSION, MIN_APP_VERSION } from "./lib/app-version";
 
 // The worker entry (src/server/worker.ts) routes every /api/* request here.
 // Static SPA assets are served by the assets layer — this app only knows
@@ -59,6 +61,8 @@ app.use(
 );
 
 app.route("/api", healthRoute);
+// Force-update gate sits above every domain route — see lib/version-gate.ts.
+app.use("/api/*", versionGate);
 app.route("/api/auth", authRoute);
 app.route("/api/members", membersRoute);
 app.route("/api/company", companyRoute);

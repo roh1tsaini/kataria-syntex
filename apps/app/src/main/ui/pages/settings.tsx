@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Save } from "lucide-react";
+import { RefreshCw, Save } from "lucide-react";
 import {
   useAuth,
   usePermission,
   type Numbering,
   type NumberingType,
 } from "@/store/auth";
+import { useUpdates } from "@/store/updates";
 import { friendlyError } from "@/ui/lib/errors";
 import { fmtDate } from "@/ui/lib/format";
 import { toastError, toastSuccess } from "@/store/toast";
@@ -452,9 +453,76 @@ export function SettingsPage() {
                 v{__APP_VERSION__}
               </span>
             </SettingsRow>
+            <UpdateRow />
           </Card>
         </Section>
       </div>
     </>
+  );
+}
+
+/** "Check for updates" row — manual check + install action. The banner and
+ * the blocking gate cover automatic flow; this is the deliberate one. */
+function UpdateRow() {
+  const checkNow = useUpdates((s) => s.checkNow);
+  const installUpdate = useUpdates((s) => s.installUpdate);
+  const latestVersion = useUpdates((s) => s.latestVersion);
+  const checking = useUpdates((s) => s.checking);
+  const status = useUpdates((s) => s.status);
+  const percent = useUpdates((s) => s.percent);
+  const [result, setResult] = useState<string | null>(null);
+
+  const updateAvailable = latestVersion !== null && status === "ready";
+  const downloading = status === "downloading";
+
+  const check = async () => {
+    setResult(null);
+    const outcome = await checkNow();
+    setResult(
+      outcome === "up-to-date"
+        ? "You're on the latest version."
+        : outcome === "error"
+          ? "Couldn't reach the update service."
+          : null,
+    );
+  };
+
+  return (
+    <SettingsRow label="Updates" hint={result ?? undefined}>
+      <div className="flex items-center gap-2">
+        {updateAvailable && (
+          <span className="text-xs tabular-nums text-muted-foreground">
+            v{latestVersion} available
+          </span>
+        )}
+        {updateAvailable || downloading ? (
+          <Button
+            size="sm"
+            className="h-8"
+            onClick={() => void installUpdate()}
+            disabled={downloading}
+            loading={downloading}
+          >
+            {downloading
+              ? percent !== null
+                ? `${percent}%`
+                : "Downloading…"
+              : "Update"}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8"
+            onClick={() => void check()}
+            disabled={checking}
+            loading={checking}
+          >
+            <RefreshCw className="size-3.5" aria-hidden />
+            Check
+          </Button>
+        )}
+      </div>
+    </SettingsRow>
   );
 }

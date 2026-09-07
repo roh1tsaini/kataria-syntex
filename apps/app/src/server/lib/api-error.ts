@@ -4,7 +4,7 @@ import type { ApiCode } from "@kataria-syntex/shared";
 interface JsonEmitter {
   json(
     data: unknown,
-    status?: 400 | 401 | 403 | 404 | 409 | 429 | 500 | 502,
+    status?: 400 | 401 | 403 | 404 | 409 | 426 | 429 | 500 | 502,
   ): Response;
 }
 
@@ -17,7 +17,7 @@ interface JsonEmitter {
 export function apiError(
   c: JsonEmitter,
   code: ApiCode,
-  status: 400 | 401 | 403 | 404 | 409 | 429 | 500 | 502 = 400,
+  status: 400 | 401 | 403 | 404 | 409 | 426 | 429 | 500 | 502 = 400,
   extra?: Record<string, unknown>,
 ) {
   return c.json({ error: code, ...extra }, status);

@@ -7,8 +7,11 @@ export const Dialog = DialogPrimitive.Root;
 
 export const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    /** Blocking dialogs (update gate) render no close affordance. */
+    hideClose?: boolean;
+  }
+>(({ className, children, hideClose, ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[4px] transition-opacity duration-200 ease-[var(--ease-out)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=closed]:duration-150" />
     <DialogPrimitive.Content
@@ -23,10 +26,12 @@ export const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 grid size-11 place-items-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10">
-        <X className="size-4" aria-hidden />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
+      {!hideClose && (
+        <DialogPrimitive.Close className="absolute right-4 top-4 grid size-11 place-items-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10">
+          <X className="size-4" aria-hidden />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
 ));

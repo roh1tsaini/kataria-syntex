@@ -39,6 +39,18 @@ export function deviceLabel(): string {
       : "Browser";
 }
 
+/** OS name for download recommendations (entry + download pages). Only
+ * cosmetic — detection is never load-bearing and every platform stays
+ * selectable on the download page. */
+export function detectPlatformLabel(): string {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return "Android";
+  if (/iphone|ipad|mac/i.test(ua)) return "macOS";
+  if (/win/i.test(ua)) return "Windows";
+  if (/linux/i.test(ua)) return "Linux";
+  return "this device";
+}
+
 /** Opens the device print dialog. Android has no window.print() in the
  * Capacitor WebView, so it goes through the native PrintManager plugin;
  * everything else uses the browser/Electron print dialog. Prints the current

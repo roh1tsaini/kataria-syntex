@@ -26,6 +26,7 @@ import { join, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { readFile, writeFile, unlink, stat } from "node:fs/promises";
+import { initUpdater } from "./updater";
 
 // The packaged SPA must not load from file:// — Chromium blocks ES-module
 // scripts (CORS, null origin) and CSP 'self' matches nothing there, leaving
@@ -153,6 +154,9 @@ async function handleApi(_event: unknown, raw: unknown) {
   if (!req) return { status: 0, body: { error: "invalid_request" } };
   const url = `${API_ORIGIN}/api${req.path}`;
   const headers: Record<string, string> = { ...req.headers };
+  // Version gate (server/lib/version-gate.ts): the packaged build always
+  // announces itself — app.getVersion() beats anything the renderer claims.
+  headers["X-App-Version"] = app.getVersion();
   const token = await readToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const ctrl = new AbortController();
@@ -190,6 +194,14 @@ function registerIpc(): void {
   ipcMain.handle("kc:api", handleApi);
   ipcMain.handle("kc:download", handleDownload);
   ipcMain.handle("kc:render-pdf", handleRenderPdf);
+  // macOS update flow only: hand a published release URL to the OS browser.
+  // Locked to the app's own origin so the bridge can never be a general
+  // link-opener.
+  ipcMain.handle("kc:open-external", (_e, raw: unknown) => {
+    if (typeof raw !== "string" || !raw.startsWith(`${API_ORIGIN}/releases/`))
+      return;
+    void shell.openExternal(raw);
+  });
   // Custom title bar (frameless shell): the renderer draws its own controls;
   // macOS keeps native traffic lights and never calls these.
   ipcMain.handle("kc:win:minimize", () => mainWindow?.minimize());
@@ -214,7 +226,9 @@ async function handleDownload(_event: unknown, raw: unknown) {
   if (typeof path !== "string" || !path.startsWith("/"))
     return { status: 0, base64: null };
   const url = `${API_ORIGIN}/api${path}`;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    "X-App-Version": app.getVersion(),
+  };
   const token = await readToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const ctrl = new AbortController();
@@ -379,6 +393,7 @@ app.whenReady().then(() => {
   });
 
   registerIpc();
+  initUpdater(() => mainWindow);
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -92,6 +92,9 @@ const SERVER_MESSAGES = {
     "Too many QR codes requested from this network. Wait a moment and try again.",
   internal_server_error:
     "Something went wrong on our side. Try again in a moment.",
+  // updates — the blocking update gate handles this code; the entry only
+  // satisfies the exhaustive Record for toasts that never special-case it.
+  update_required: "This version is no longer supported. Update the app.",
 } satisfies Record<ApiCode, string>;
 
 /**

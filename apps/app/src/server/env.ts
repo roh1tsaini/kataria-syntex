@@ -7,6 +7,8 @@ export type Env = {
   DB: D1Database;
   /** Static assets of this Worker deployment (Inter TTFs for the PDF renderer). */
   ASSETS: Fetcher;
+  /** Release bucket — installers, APK and update manifests (see /releases). */
+  RELEASES: R2Bucket;
   /** Comma-separated extra CORS origins (website). Optional. */
   CORS_ORIGIN?: string;
   /** Only "development" exposes error detail in responses. */

@@ -155,6 +155,14 @@ document never scrolls — routed content scrolls in
 `.app-scroll` under the custom title bar so the window controls sit flush
 against the window edge (see design.md §2.7.1).
 
+**Logged-out entry flow (web only)**: unauthenticated visitors to `/` get
+the two-path entry screen (`ui/pages/entry.tsx` — Sign in / Install for
+<detected OS>); `/download` lists all four platform installers from the
+published manifest with brand glyphs (`ui/components/brand-icons.tsx`) and
+"This device" recommendation (detection is cosmetic, never load-bearing);
+the login screen links to `/download`. Signed-in users never see the entry
+screen. Native shells are unaffected.
+
 ## 6 · Domain: documents
 
 Six modules. Counters live on the FY row, allocated by CAS retry
@@ -412,9 +420,10 @@ this baseline needs an explicit owner question first.
 
 | Piece     | Choice                                                                                                                 |
 | --------- | ---------------------------------------------------------------------------------------------------------------------- |
-| apps/app  | Cloudflare **Workers** — one worker: static SPA + Hono API                                                             |
+| apps/app  | Cloudflare **Workers** — one worker: static SPA + Hono API + `/releases/*` object serving                              |
 | apps/web  | Cloudflare **Workers** via Vinext (separate project)                                                                   |
 | Database  | D1 `ks-biz-app-db` (app) · `ks-web-db` (website, isolated)                                                             |
+| Releases  | R2 `ks-releases` bucket — installers, APK, update manifests under `app/`, served publicly at `/releases/*`             |
 | Hostnames | `app.katariasyntex.workers.dev` (app) · `web.katariasyntex.workers.dev` (website) — custom domain parked (no purchase) |
 
 **Secrets & vars** — `.env*` / `.dev.vars` are owner-only. Never read, echo,
@@ -424,6 +433,7 @@ copy, or commit them. Secrets enter only as env read at use site.
 | ------------------- | ------------------------------------------- |
 | `DB`                | D1 binding                                  |
 | `ASSETS`            | Worker static assets (fonts for PDF render) |
+| `RELEASES`          | R2 release bucket (`/releases/*` serving)   |
 | `CORS_ORIGIN`       | comma-separated extra origins (website)     |
 | `APP_ENV`           | `development` → error detail in responses   |
 | `PINGRAM_API_KEY`   | OTP sender (secret)                         |
@@ -437,19 +447,51 @@ copy, or commit them. Secrets enter only as env read at use site.
 - `ci.yml` — typecheck + lint + format + build on every push/PR.
 - `cf-deploy.yml` — main push only: build SPA → ensure D1 exists (auto-
   provision, inject real id into `wrangler.jsonc`) → apply migrations →
-  `wrangler deploy`. Website deploys its own worker + inquiry DB.
-- `app-build.yml` — manual: desktop (win-x64, mac-arm64, linux-x64) + Android
-  APK → GitHub Release with artifacts. Requires `APP_URL` repo variable.
+  ensure `ks-releases` bucket exists → `wrangler deploy`. Website deploys
+  its own worker + inquiry DB.
+- `app-build.yml` — manual or main push: desktop (win-x64, mac-arm64,
+  linux-x64) + Android APK → GitHub Release (manual dispatch) → `publish-r2`
+  job uploads artifacts + rewrites `latest.json`/`latest*.yml` via
+  `scripts/publish-releases.ts` and prunes everything older (latest-only).
+  Push builds publish only when `package.json` `version` differs from the
+  published manifest — bumping the version IS the release action. Requires
+  `APP_URL` repo variable; `CLOUDFLARE_API_TOKEN` needs **Workers R2
+  Storage Edit**.
+
+## 14.1 · Updates & versioning
+
+Single source of truth: `apps/app/package.json` — `version` (this release)
+and `minAppVersion` (breaking-change floor; `0.0.0` = gate off). The server
+answers `426 update_required` to any client whose `X-App-Version` is below
+`minAppVersion` (`src/server/lib/version-gate.ts`); `/api/auth` and health
+stay reachable so the update UI can explain itself. The manifest
+(`app/android/latest.json`) carries `version`, `minVersion`, `releasedAt`
+and per-platform paths; the /download page, Android poller and macOS check
+all read it.
+
+| Shell          | Update mechanism                                                                                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web/PWA        | Service worker (`vite-plugin-pwa` autoUpdate) — new deploy precaches, reload swaps in                                                                                  |
+| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — check at launch + every 4h, silent download, install on quit ("Restart now" action)                      |
+| Electron Mac   | Unsigned builds can't self-install — manifest poll + "Download new dmg" dialog (`openReleaseUrl` → OS browser)                                                         |
+| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                  |
+| Android        | Manifest poll → banner → APK streamed into `Cache/updates/` (progress) → system installer via `KsInstaller` plugin; first install asks once for "install unknown apps" |
+
+Settings → About carries the manual "Check for updates" row. Force updates
+render the blocking `update-dialog.tsx` (undismissable, host-appropriate
+action). Breaking-change protocol lives in AGENTS.md §4.0.1: bump
+`version` + `minAppVersion` together, never keep old API shapes alive.
 
 **Free-tier limits** (Cloudflare — re-verify before claiming; limits change)
 
-| Service           | Limit                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------- |
-| Workers           | 100k requests/day · 10 ms CPU/invocation                                                             |
-| D1                | 500 MB storage · 5M row reads + 100k row writes/day · Time Travel 7 days                             |
-| `db.batch()`      | one atomic transaction — no interactive BEGIN                                                        |
-| Browser Rendering | Browser Run `/pdf`: 10 browser-min/day free, 1 req/10 s — per-user 120/h budget guards it            |
-| Pingram           | PAID per SMS/email — the only cost line, owner-approved; hard OTP ceilings above exist because of it |
+| Service           | Limit                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| Workers           | 100k requests/day · 10 ms CPU/invocation                                                                     |
+| D1                | 500 MB storage · 5M row reads + 100k row writes/day · Time Travel 7 days                                     |
+| R2                | 10 GB storage · Class B (read) 10M/month · Class A (write) 1M/month · egress free — one release set ≈ 400 MB |
+| `db.batch()`      | one atomic transaction — no interactive BEGIN                                                                |
+| Browser Rendering | Browser Run `/pdf`: 10 browser-min/day free, 1 req/10 s — per-user 120/h budget guards it                    |
+| Pingram           | PAID per SMS/email — the only cost line, owner-approved; hard OTP ceilings above exist because of it         |
 
 **Policy (owner-mandated)**: free forever ($0) · trusted durable providers ·
 zero lock-in (plain SQLite export, static bundles, env config) · minimal

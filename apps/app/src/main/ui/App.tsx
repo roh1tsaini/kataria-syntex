@@ -1,9 +1,11 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
+import { initUpdateChecks } from "@/store/updates";
 import { ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
 import { Toaster } from "@/ui/components/toast";
+import { UpdateSurface } from "@/ui/components/update-surface";
 import { ErrorBoundary } from "@/ui/components/error-boundary";
 import { TitleBar } from "@/ui/components/title-bar";
 import {
@@ -15,6 +17,12 @@ import { NotFoundPage } from "@/ui/pages/not-found";
 
 const AuthPage = lazy(() =>
   import("@/ui/pages/auth").then((m) => ({ default: m.AuthPage })),
+);
+const EntryPage = lazy(() =>
+  import("@/ui/pages/entry").then((m) => ({ default: m.EntryPage })),
+);
+const DownloadPage = lazy(() =>
+  import("@/ui/pages/download").then((m) => ({ default: m.DownloadPage })),
 );
 const ScanApprovePage = lazy(() =>
   import("@/ui/pages/scan-approve").then((m) => ({
@@ -97,6 +105,20 @@ function Home() {
   return <Dashboard />;
 }
 
+/** "/" when signed out — the two-path entry screen. Signed-in users get the
+ * full shell (this route sits outside the layout's guest redirect). */
+function EntryOrHome() {
+  const status = useAuth((s) => s.status);
+  if (status === "guest") return <EntryPage />;
+  return (
+    <ProtectedRoute>
+      <AppShell>
+        <Home />
+      </AppShell>
+    </ProtectedRoute>
+  );
+}
+
 export function App() {
   const bootstrap = useAuth((s) => s.bootstrap);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -104,6 +126,9 @@ export function App() {
 
   useEffect(() => {
     void bootstrap();
+    // Update pollers (native) + Electron status events — idempotent, and the
+    // web host is a no-op there.
+    initUpdateChecks();
   }, [bootstrap]);
 
   // The desktop shell scrolls the routed view in .app-scroll (the document
@@ -118,6 +143,7 @@ export function App() {
     <>
       <ErrorBoundary>
         <TitleBar />
+        <UpdateSurface />
         <div ref={scrollRef} className="app-scroll">
           {/* Shell routes never reach this boundary — AppShell's inner
               Suspense (page-skeletons.tsx routeSkeleton) sits closer to the
@@ -138,6 +164,22 @@ export function App() {
                 element={
                   <Suspense fallback={<ScanApproveSkeleton />}>
                     <ScanApprovePage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/download"
+                element={
+                  <Suspense fallback={null}>
+                    <DownloadPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <Suspense fallback={null}>
+                    <EntryOrHome />
                   </Suspense>
                 }
               />
@@ -170,7 +212,6 @@ export function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Home />} />
                 <Route
                   path="devices"
                   element={

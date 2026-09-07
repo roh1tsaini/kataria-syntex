@@ -23,6 +23,8 @@ const common = {
   sourcemap: "external" as const,
   define: {
     "process.env.KC_API_ORIGIN": JSON.stringify(apiOrigin),
+    // Same origin, used by the updater for /releases/* (see updater.ts).
+    __KC_UPDATE_FEED__: JSON.stringify(apiOrigin),
   },
 };
 

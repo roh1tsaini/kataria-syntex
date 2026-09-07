@@ -116,6 +116,22 @@ bun run electron:dev # Electron shell over the Vite dev server
    that mentions it — all in the same change. History lives in git and
    `dead-files/`, nowhere else.
 
+## 4.0.1 Updates & versioning (owner-mandated, apps/app)
+
+1. **No backward compatibility.** The API never keeps old paths/shapes alive
+   for stale clients. When a change breaks clients: bump `version` AND
+   `minAppVersion` in `apps/app/package.json` in the same change. Stale
+   clients get `426 update_required` (server gate,
+   `src/server/lib/version-gate.ts`) and show the blocking update dialog.
+2. **Bump `version` after coding.** Whenever an AI session finishes a
+   change that warrants a release, it bumps `apps/app/package.json`
+   `version` (patch for fixes, minor for features) as part of that change.
+   The CI push build publishes to R2 only when the version differs, so the
+   bump IS the release action.
+3. Releases ship from the `ks-releases` R2 bucket (`/releases/*` on the app
+   Worker) — see `apps/app/APP.md` §14. Latest version only; the manifest
+   is `app/android/latest.json`.
+
 ## 4.1 Decision authority (owner-mandated, overrides everything)
 
 - **Never decide on your own. Never touch code without telling the owner

@@ -264,7 +264,7 @@ jobs:
           tag_name: v${{ steps.app_version.outputs.version }}
           name: Kataria Syntex Biz App v${{ steps.app_version.outputs.version }}
           body: |
-            Direct-download installers — one file per device (no zip):
+            Internal record — installers ship from the app's /download page.
 
             - **Android** (all phones): `*.apk` — signed. Allow "Install unknown apps" and open the file.
             - **Windows**: `*-setup.exe` — NSIS installer. SmartScreen may warn (unsigned); click "More info → Run anyway".
@@ -273,3 +273,40 @@ jobs:
           generate_release_notes: false
           files: dist/**
           fail_on_unmatched_files: false
+
+  publish-r2:
+    name: "Publish releases to R2"
+    # Push builds publish only when package.json's version differs from what
+    # R2 hosts (enforced in publish-releases.ts); manual dispatch always
+    # publishes. Runs after the release job so GitHub history and R2 stay in
+    # step on dispatches.
+    if: ${{ !cancelled() && (needs.desktop.result == 'success' || needs.desktop.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') && (github.event_name != 'workflow_dispatch' || needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    needs: [desktop, android, release]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Read app version
+        id: app_version
+        run: echo "version=$(jq -r .version apps/app/package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Download all bundles
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Inspect downloaded files
+        run: ls -laR dist
+
+      - name: Upload to R2 + rewrite manifests (latest-only retention)
+        working-directory: apps/app
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          R2_BUCKET: ks-releases
+          VERSION: ${{ steps.app_version.outputs.version }}
+          DIST_DIR: ${{ github.workspace }}/dist
+          # Push builds: skip silently when this version is already live.
+          ONLY_IF_VERSION_CHANGED: ${{ github.event_name == 'push' && '1' || '0' }}
+        run: bun scripts/publish-releases.ts

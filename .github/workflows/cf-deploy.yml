@@ -56,6 +56,25 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: bunx wrangler d1 migrations apply ks-biz-app-db --remote
 
+      # Auto-provisions the R2 release bucket (installers + update manifests,
+      # served at /releases/*). The API token needs "Workers R2 Storage Edit"
+      # — a token without it fails here with Cloudflare's 403, loudly.
+      - name: Ensure R2 release bucket exists
+        working-directory: apps/app
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          EXISTS=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result.buckets[]? | select(.name == "ks-releases") | .name' | head -1)
+          if [ -z "$EXISTS" ]; then
+            CREATED=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+              --data '{"name":"ks-releases"}' "$API" | jq -r '.success')
+            if [ "$CREATED" != "true" ]; then echo "Failed to create ks-releases bucket (check token R2 permissions)" >&2; exit 1; fi
+          fi
+
       # Publishes the `app` worker — static SPA + Hono API in one deployment.
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v4

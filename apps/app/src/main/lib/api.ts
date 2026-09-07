@@ -32,6 +32,28 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Late-bound hook so a 426 update_required raises the blocking update dialog
+ * without a circular import (store/updates imports API_BASE from this module).
+ * Set once from store/updates.ts.
+ */
+let onUpdateRequired: ((minVersion: string) => void) | null = null;
+export function setUpdateRequiredHandler(
+  fn: (minVersion: string) => void,
+): void {
+  onUpdateRequired = fn;
+}
+
+/** Extracts the force-update floor from a 426 body and raises the dialog. */
+function raiseUpdateRequired(data: unknown): void {
+  if (!onUpdateRequired) return;
+  const min =
+    data !== null && typeof data === "object" && "minVersion" in data
+      ? (data as { minVersion: unknown }).minVersion
+      : undefined;
+  if (typeof min === "string" && min) onUpdateRequired(min);
+}
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 export { API_BASE };
 const FINGERPRINT_KEY = "auth.deviceFingerprint";
@@ -57,14 +79,25 @@ function deviceFingerprint(): string | null {
 
 export function deviceHeaders(): Record<string, string> {
   const host = detectHost();
+  // Version gate: every client announces its build (electron/main.ts
+  // overrides with the packaged app.getVersion() for the desktop shell).
+  const version = { "X-App-Version": __APP_VERSION__ };
   if (host === "electron")
-    return { "X-Platform": "desktop", "X-Device-Label": "Desktop app" };
+    return {
+      ...version,
+      "X-Platform": "desktop",
+      "X-Device-Label": "Desktop app",
+    };
   if (host === "capacitor")
-    return { "X-Platform": "android", "X-Device-Label": "Android app" };
+    return {
+      ...version,
+      "X-Platform": "android",
+      "X-Device-Label": "Android app",
+    };
   const fp = deviceFingerprint();
   return fp
-    ? { "X-Platform": "web", "X-Device-Fingerprint": fp }
-    : { "X-Platform": "web" };
+    ? { ...version, "X-Platform": "web", "X-Device-Fingerprint": fp }
+    : { ...version, "X-Platform": "web" };
 }
 
 /** Network-level failure (server unreachable) → ApiError(0, "network_error"). */
@@ -83,6 +116,7 @@ function classify<T>(status: number, body: unknown): T {
       const err = (body as { error: unknown }).error;
       if (typeof err === "string" && err) code = err;
     }
+    if (status === 426 || code === "update_required") raiseUpdateRequired(body);
     throw new ApiError(status, code, body);
   }
   if (status === 204 || body === undefined) return undefined as T;

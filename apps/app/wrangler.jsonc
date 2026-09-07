@@ -23,6 +23,16 @@
       "migrations_pattern": "drizzle/*/migration.sql",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "RELEASES",
+      // Installers, APK and update manifests under app/ — served publicly at
+      // /releases/* by the worker (src/server/lib/releases.ts). CI ensures
+      // the bucket exists before deploying (.github/workflows/cf-deploy.yml),
+      // mirroring the D1 flow; local dev simulates it with the same name.
+      "bucket_name": "ks-releases",
+    },
+  ],
   "vars": {
     // Non-secret config. Secrets (PINGRAM_API_KEY etc.) live in .dev.vars
     // locally and `wrangler secret put` in production.

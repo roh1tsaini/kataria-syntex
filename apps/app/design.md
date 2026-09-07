@@ -160,39 +160,51 @@ controls, and actions that sit together share one grouped background.
 - Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
   with a `size-5` icon. One treatment everywhere.
 
-### 2.7.1 Window chrome — Electron desktop (custom title bar)
+### 2.7.1 Window chrome — Electron desktop (blended, no bar)
 
-Frameless window, app-drawn chrome like modern Electron apps (Spotify,
-Discord). The system bar never appears on any platform.
+Frameless window, blended app-drawn chrome like Claude/VS Code: there is no
+title bar — the app surface runs to every window edge. The system bar never
+appears on any platform.
 
-- Bar: `h-9` (2.25rem), full width, `bg-background`, no border, `select-none`,
-  entirely `-webkit-app-region: drag`. Double-click on a drag region toggles
-  maximize natively (HTCAPTION).
-- Controls (Windows/Linux only): three `w-12` no-drag buttons, right-aligned,
-  stretched to the bar height. Glyphs are 10px inline SVG strokes (minimize,
-  maximize/restore, close) — never icon-font glyphs. Rest:
-  `text-muted-foreground`; hover: `bg-muted` + `text-foreground`; close
-  hover: `bg-destructive text-destructive-foreground`. Focus ring per §6.
-- macOS: no drawn controls — native traffic lights ride the strip
-  (`titleBarStyle: hiddenInset`), bar stays drag-only.
+- Layout: the sidebar is full window height (its brand row is the window's
+  top-left corner); the header is the full-height content column's top row.
+  Their `h-14` bottom borders form one continuous line across the window.
+- Drag regions: the header row itself is `-webkit-app-region: drag` (its
+  free middle moves the window; double-click toggles maximize via
+  HTCAPTION). Interactive islands inside it — avatar button, right chip
+  stack — are `no-drag`. Chrome-less routes (auth, print, scan, 404) drag
+  from the invisible fixed strip (`h-14`, `z-20`) laid across the top by
+  the TitleBar component. The sidebar is click-only.
+- Controls (Windows/Linux): a floating cluster pinned flush into the
+  top-right corner (`fixed top-0 right-0`, `h-14`, `z-40`) — three `w-10`
+  no-drag buttons stretched to full header height. Glyphs are 12px inline
+  SVG strokes at 1.2 (`minimize`, `maximize`/`restore`, `close`,
+  rounded caps) — never icon-font glyphs. Rest: `text-muted-foreground`;
+  hover: `bg-foreground/10` + `text-foreground`; close hover: `#e81123` +
+  white, full bleed into the corner (no gap — the corner click must land).
+- Reservation: `--wc-w` (3 × `w-10` = 120px, set on `documentElement` by
+  the entry before first paint when `window.desktop` exists and platform
+  ≠ darwin; 0px otherwise incl. print). The header reserves it via
+  `pr-[calc(1rem+var(--wc-w))]` / `sm:pr-[calc(1.5rem+var(--wc-w))]` so
+  content never slides beneath the controls.
+- macOS: no drawn controls — native traffic lights ride the sidebar's
+  top-left (`titleBarStyle: hiddenInset`). The entry sets `--tl-inset:
+2.25rem` on darwin; the sidebar carries `pt-[var(--tl-inset)]` so the
+  brand row clears the lights.
 - Desktop shell scroll model: `<html data-shell="desktop">` (set by the
-  entry before first paint, together with `--titlebar-h: 2.25rem`) pins the
-  document (`overflow: hidden`, `#root` a full-height flex column). The bar
-  is a sticky-pinned strip (`sticky top-0`) at the top; routed content scrolls
-  inside `.app-scroll` (`flex-1 overflow-y-auto` under the bar), so the window
-  controls sit flush against the window edge — the root scrollbar can never
-  inset them, and the bar never scrolls away. The shell resets the viewport
-  `scrollbar-gutter` to `auto` — `stable` would reserve a gutter even with
-  document scrolling disabled, insetting the bar from the window edge.
-- Height reservation: `--titlebar-h` (0px default; the entry sets 2.25rem on
-  `document.documentElement` before first paint when `window.desktop`
-  exists). Root containers use
-  `min-h-[calc(100dvh-var(--titlebar-h))]` — never hardcode `min-h-dvh`
-  alone. Print forces the variable back to 0 and restores document flow
-  (multi-page print), and the bar itself is `print:hidden`.
-- Web/PWA and Capacitor render nothing. The only window-control IPC path is
-  `platform.ts` → `desktopWindow()`; UI never calls `window.desktop`
-  directly.
+  entry before first paint) pins the document (`overflow: hidden`, `#root`
+  a full-height flex column); routed content scrolls inside `.app-scroll`
+  (`flex-1 overflow-y-auto`), so the floating controls stay flush against
+  the window edge — the root scrollbar can never inset them. The shell
+  resets the viewport `scrollbar-gutter` to `auto` — `stable` would
+  reserve a gutter even with document scrolling disabled.
+- Chrome-less routes: on the full-height sidebar breakpoint they show no
+  header; the TitleBar strip + floating controls still cover dragging and
+  window management over the bare page.
+- Web/PWA and Capacitor render nothing (no strip, no controls, no
+  reservation — `--wc-w`/`--tl-inset` stay 0px). The only window-control
+  IPC path is `platform.ts` → `desktopWindow()`; UI never calls
+  `window.desktop` directly.
 
 ### 2.8 App identity (names — never invent variants)
 
@@ -207,20 +219,23 @@ placeholders, fallbacks) — never the app name.
 
 ## 3. Component specs (ui/*)
 
-| Component                        | Contract                                                                                                                                                                                                                                                                                                                                                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Button                           | Radii/heights from §2.2/§2.3. Press: `scale(0.97)` @100ms on `:active` via `.btn-motion`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons. |
-| CircleButton / ButtonCapsule     | Shell-chrome icon actions (§2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent pairs join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail). Never for navigation rows.                                                                                                                                               |
-| Input/Select/Textarea/DatePicker | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                         |
-| Card                             | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                           |
-| Dialog                           | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                           |
-| Dropdown/Popover                 | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                                                                               |
-| Tabs                             | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                                                                        |
-| Badge                            | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                                                                                 |
-| Toast                            | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one line: title only, no restating description.                                                                                                                                                                                                                                                                                                    |
-| Empty states                     | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                |
-| Skeletons                        | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (§3.1).                                                                                                                                                                                                                                                                                 |
-| Tables                           | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                              |
+| Component                                            | Contract                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Button                                               | Radii/heights from §2.2/§2.3. Press: `scale(0.97)` @100ms on `:active` via `.btn-motion`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons. |
+| CircleButton / ButtonCapsule                         | Shell-chrome icon actions (§2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent pairs join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail). Never for navigation rows.                                                                                                                                               |
+| Input/Select/Textarea/DatePicker                     | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                         |
+| Card                                                 | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                           |
+| Dialog                                               | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                           |
+| Dropdown/Popover                                     | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                                                                               |
+| Tabs                                                 | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                                                                        |
+| Badge                                                | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                                                                                 |
+| Toast                                                | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one line: title only, no restating description.                                                                                                                                                                                                                                                                                                    |
+| Empty states                                         | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                |
+| Skeletons                                            | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (§3.1).                                                                                                                                                                                                                                                                                 |
+| Tables                                               | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                              |
+| Update banner (`update-surface.tsx`)                 | Full-width strip directly under the title bar, `border-b` + `bg-accent/10`, min-h 44px, 13px copy + 32px `Update` button. Animates height+opacity (§5), mirrors on exit. Only for non-blocking availability (Android/macOS); Windows/Linux use a toast instead.                                                                                                                                                    |
+| Update gate (`update-dialog.tsx`)                    | The one undismissable dialog: `hideClose`, no outside/Escape dismiss, icon + title + one-line description + single action button. Forced update only — never reuse this pattern for anything dismissable.                                                                                                                                                                                                          |
+| Entry / download pages (`entry.tsx`, `download.tsx`) | Standalone auth-surface pages sharing the auth header lockup (44px "K" tile + 17px semibold name). Platform cards reuse Card + brand glyphs (`brand-icons.tsx`, currentColor fill, 20px); recommended card gets the accent border, never a solid fill. Detection is cosmetic — every card stays clickable.                                                                                                         |
 
 ### 3.1 Loading skeletons — every screen gets its own shape
 
@@ -345,6 +360,8 @@ Rules:
 | Circular icon buttons & capsules (§2.7) | `src/main/ui/components/ui/circle-button.tsx` |
 | App frame (sidebar/tab bar/header)      | `src/main/ui/components/app-shell.tsx`        |
 | Page scaffold                           | `src/main/ui/components/page-header.tsx`      |
+| Update surface (banner/gate/toast)      | `src/main/ui/components/update-surface.tsx`   |
+| OS brand glyphs (download/entry)        | `src/main/ui/components/brand-icons.tsx`      |
 | Error-code → human copy                 | `src/main/ui/lib/errors.ts`                   |
 
 ## 8. Agent checklist (before any UI change ships)

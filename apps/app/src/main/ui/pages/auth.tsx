@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
@@ -546,7 +546,7 @@ export function AuthPage() {
           : null;
 
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
       <div className="flex items-center gap-3">
         <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
           <span
@@ -560,6 +560,12 @@ export function AuthPage() {
           {COMPANY_DETAILS.name} Biz App
         </div>
       </div>
+      <Link
+        to="/download"
+        className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+      >
+        Get the app for desktop or Android
+      </Link>
       <motion.div
         initial={{
           opacity: 0,

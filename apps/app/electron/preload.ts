@@ -8,9 +8,11 @@
  * - renderPdf: HTML → PDF with the shell's own Chromium (printToPDF)
  * - window controls for the custom title bar (minimize / toggle-maximize /
  *   close / maximized state) + host platform
+ * - update bridge: check / status events / quit-and-install / app version
  * Nothing else crosses the boundary.
  */
 import { contextBridge, ipcRenderer } from "electron";
+import type { UpdateStatus } from "./updater";
 
 export type DesktopApiInit = {
   method?: string;
@@ -55,6 +57,23 @@ const desktop = {
       ipcRenderer.removeListener("kc:win:maximized", listener);
     };
   },
+  // Update system (see electron/updater.ts): manual check, push status,
+  // quit-and-install (Windows/Linux), and the packaged version.
+  checkForUpdate: (): Promise<UpdateStatus> =>
+    ipcRenderer.invoke("kc:update:check"),
+  onUpdateStatus: (cb: (status: UpdateStatus) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, s: UpdateStatus) =>
+      cb(s);
+    ipcRenderer.on("kc:update:status", listener);
+    return () => {
+      ipcRenderer.removeListener("kc:update:status", listener);
+    };
+  },
+  restartToUpdate: (): Promise<void> => ipcRenderer.invoke("kc:update:restart"),
+  appVersion: (): Promise<string> => ipcRenderer.invoke("kc:update:version"),
+  /** /releases/* URLs only (main-validated) — macOS dmg download flow. */
+  openReleaseUrl: (url: string): Promise<void> =>
+    ipcRenderer.invoke("kc:open-external", url),
 };
 
 export type DesktopBridge = typeof desktop;
