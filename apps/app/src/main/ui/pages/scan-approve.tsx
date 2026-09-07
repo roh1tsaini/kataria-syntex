@@ -55,7 +55,7 @@ export function ScanApprovePage() {
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] items-center justify-center p-6">
+      <div className="flex min-h-dvh items-center justify-center p-6">
         <Skeleton className="h-64 w-full max-w-sm rounded-lg" />
       </div>
     );
@@ -81,7 +81,7 @@ export function ScanApprovePage() {
   const alreadyApproved = info?.status === "approved";
 
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] items-center justify-center p-4 sm:p-6">
+    <div className="flex min-h-dvh items-center justify-center p-4 sm:p-6">
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}

@@ -3,41 +3,44 @@ import { desktopWindow, type DesktopWindow } from "@/lib/platform";
 import { cn } from "@/ui/lib/cn";
 
 /**
- * Electron-only custom title bar — the window chrome modern Electron apps
- * draw themselves (Spotify, Discord): a 36px drag strip, no system bar.
- * Windows/Linux get app-drawn controls; macOS keeps its native traffic
- * lights riding the strip. Web/PWA and Capacitor render nothing.
+ * Electron window chrome, blended (design.md §2.7.1): there is no bar — the
+ * app surface runs to every window edge. Two floating pieces, Electron-only
+ * (web/PWA and Capacitor render nothing):
  *
- * Its height is published as --titlebar-h on <html> by the entry
- * (src/main/main.tsx) before first paint, so every root container's 100dvh
- * math stays correct without per-page changes.
- *
- * Sticky-pinned: the bar never scrolls away with the content underneath it.
+ * - An invisible drag strip across the top 3.5rem. On shell routes it sits
+ *   beneath the header and sidebar (the header carries the drag regions);
+ *   on chrome-less routes (auth, print, scan, 404) it is the drag surface.
+ * - The window-control cluster pinned flush into the top-right corner
+ *   (Windows/Linux; macOS keeps its native traffic lights instead). Its
+ *   width is reserved by --wc-w so header content never slides beneath it.
  */
 
 const dragStyle = { WebkitAppRegion: "drag" } as CSSProperties;
-const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
 
 function MinGlyph() {
   return (
-    <svg viewBox="0 0 10 10" className="size-2.5" aria-hidden>
-      <path d="M0 5h10" stroke="currentColor" strokeWidth="1" />
+    <svg viewBox="0 0 12 12" className="size-2.75" aria-hidden>
+      <path
+        d="M1.5 6h9"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function MaxGlyph() {
   return (
-    <svg viewBox="0 0 10 10" className="size-2.5" aria-hidden>
-      <rect
-        x="0.5"
-        y="0.5"
-        width="9"
-        height="9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
+    <svg
+      viewBox="0 0 12 12"
+      className="size-2.75"
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+    >
+      <rect x="2" y="2" width="8" height="8" rx="1.5" />
     </svg>
   );
 }
@@ -45,23 +48,28 @@ function MaxGlyph() {
 function RestoreGlyph() {
   return (
     <svg
-      viewBox="0 0 10 10"
-      className="size-2.5"
+      viewBox="0 0 12 12"
+      className="size-2.75"
       aria-hidden
       fill="none"
       stroke="currentColor"
-      strokeWidth="1"
+      strokeWidth="1.2"
     >
-      <path d="M2.5 2.5v-2h7v7h-2" />
-      <rect x="0.5" y="2.5" width="7" height="7" />
+      <path d="M4 2.5h5.5V8" strokeLinecap="round" />
+      <rect x="2" y="4" width="6" height="6" rx="1.5" />
     </svg>
   );
 }
 
 function CloseGlyph() {
   return (
-    <svg viewBox="0 0 10 10" className="size-2.5" aria-hidden>
-      <path d="M0 0l10 10M10 0L0 10" stroke="currentColor" strokeWidth="1" />
+    <svg viewBox="0 0 12 12" className="size-2.75" aria-hidden>
+      <path
+        d="M2 2l8 8M10 2l-8 8"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -84,10 +92,11 @@ function ControlButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "grid w-12 touch-44 h-auto place-items-center text-muted-foreground",
-        "transition-colors hover:bg-muted hover:text-foreground",
+        "grid w-10 touch-44 shrink-0 place-items-center text-muted-foreground",
+        "transition-colors hover:bg-foreground/10 hover:text-foreground",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-        destructive && "hover:bg-destructive hover:text-destructive-foreground",
+        // Windows close-button red, full bleed to the corner
+        destructive && "hover:bg-[#e81123] hover:text-white",
       )}
     >
       {children}
@@ -113,15 +122,16 @@ export function TitleBar() {
   if (!win) return null;
 
   return (
-    <header
-      className="sticky top-0 z-50 flex h-9 shrink-0 select-none items-stretch bg-background print:hidden"
-      style={dragStyle}
-    >
-      {/* Drag surfaces — double-click toggles maximize natively via the
-          HTCAPTION region; buttons stay no-drag islands. */}
-      <div className="flex-1" />
+    <>
+      {/* Invisible drag surface across the top; double-click toggles
+          maximize natively via the HTCAPTION region. */}
+      <div
+        className="fixed inset-x-0 top-0 z-20 h-14 print:hidden"
+        style={dragStyle}
+      />
+
       {win.platform !== "darwin" && (
-        <div className="flex items-stretch" style={noDragStyle}>
+        <div className="fixed top-0 right-0 z-40 flex h-14 items-stretch print:hidden">
           <ControlButton label="Minimize" onClick={() => void win.minimize()}>
             <MinGlyph />
           </ControlButton>
@@ -140,6 +150,6 @@ export function TitleBar() {
           </ControlButton>
         </div>
       )}
-    </header>
+    </>
   );
 }

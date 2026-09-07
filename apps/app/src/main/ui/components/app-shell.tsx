@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   type ReactNode,
   createContext,
   useContext,
@@ -55,6 +56,9 @@ import {
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
 import { EASE_OUT, EASE_DRAWER } from "@/ui/lib/motion";
+
+const dragStyle = { WebkitAppRegion: "drag" } as CSSProperties;
+const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
 import { roleBadge } from "@/ui/components/role-badge";
 
 function Brand({ compact }: { compact?: boolean }) {
@@ -608,13 +612,17 @@ function HeaderBar({
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card/80 px-4 backdrop-blur-xl sm:px-6"
-      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card/80 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))]"
+      style={{
+        ...dragStyle,
+        paddingTop: "env(safe-area-inset-top, 0px)",
+      }}
     >
       <button
         type="button"
         onClick={onOpenMobile}
         className="relative grid size-11 shrink-0 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+        style={noDragStyle}
         aria-label="Open navigation menu"
       >
         <Avatar className="size-8 bg-muted text-xs font-medium text-foreground">
@@ -641,7 +649,11 @@ function HeaderBar({
         {currentLabel}
       </div>
 
-      <div className="ml-auto flex min-w-0 items-center gap-1.5">
+      {/* Interactive islands stay clickable inside the draggable header. */}
+      <div
+        className="ml-auto flex min-w-0 items-center gap-1.5"
+        style={noDragStyle}
+      >
         <div className="hidden sm:flex items-center">
           <AccentPicker />
         </div>
@@ -816,7 +828,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
 
   return (
     <AppShellContext.Provider value={true}>
-      <div className="min-h-[calc(100dvh-var(--titlebar-h))] w-full bg-background">
+      <div className="min-h-dvh w-full bg-background">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
@@ -830,7 +842,9 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           onMouseEnter={onRailEnter}
           onMouseLeave={onRailLeave}
           className={cn(
-            "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card transition-[width] duration-200 ease-[var(--ease-drawer)] motion-reduce:transition-none md:flex",
+            // Full window height — the brand row is the top-left corner of
+            // the window; --tl-inset clears the macOS traffic lights above it.
+            "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card pt-[var(--tl-inset)] transition-[width] duration-200 ease-[var(--ease-drawer)] motion-reduce:transition-none md:flex",
             railOpen ? "w-60" : "w-14",
             railHot && "z-50 border-r-transparent shadow-overlay",
           )}
@@ -919,7 +933,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
         {/* Content column sits next to the sidebar; no reflow animation. */}
         <div
           className={cn(
-            "flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col",
+            "flex min-h-dvh flex-col",
             railCollapsed ? "md:pl-14" : "md:pl-60",
           )}
         >

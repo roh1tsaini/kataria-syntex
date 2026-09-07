@@ -8,7 +8,7 @@ import { EASE_OUT } from "@/ui/lib/motion";
 function Splash() {
   const reduceMotion = useReducedMotion();
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] items-center justify-center">
+    <div className="flex min-h-dvh items-center justify-center">
       <motion.div
         initial={{
           opacity: 0,

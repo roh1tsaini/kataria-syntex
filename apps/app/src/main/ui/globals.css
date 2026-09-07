@@ -3,14 +3,18 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Electron custom title bar: root containers subtract it from 100dvh.
-   Set to 36px by the TitleBar component on documentElement, Electron only. */
+/* Electron window chrome reserves (set on documentElement by the entry,
+   Electron only): --wc-w reserves room for the floating window controls in
+   the top-right corner (non-macOS); --tl-inset clears the native
+   traffic-light strip above the sidebar brand (macOS). 0px elsewhere. */
 :root {
-  --titlebar-h: 0px;
+  --wc-w: 0px;
+  --tl-inset: 0px;
 }
 @media print {
   :root {
-    --titlebar-h: 0px !important;
+    --wc-w: 0px !important;
+    --tl-inset: 0px !important;
   }
 }
 
@@ -302,8 +306,8 @@
     isolation: isolate;
   }
   /* Electron desktop shell: the document itself never scrolls — the routed
-  view scrolls in .app-scroll under the title bar, so the window controls
-  sit flush against the window edge with no scrollbar/gutter inset. */
+  view scrolls in .app-scroll, keeping the header and the floating window
+  controls flush against the window edge with no scrollbar/gutter inset. */
   [data-shell="desktop"] {
     height: 100%;
     overflow: hidden;

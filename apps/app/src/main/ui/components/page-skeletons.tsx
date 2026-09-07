@@ -629,7 +629,7 @@ export function MembersSkeleton() {
 
 export function AuthSkeleton() {
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
       <div className="flex items-center gap-3">
         <Skeleton className="size-11 rounded-xl" />
         <Skeleton className="h-5 w-44" />
@@ -651,7 +651,7 @@ export function AuthSkeleton() {
 
 export function ScanApproveSkeleton() {
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] items-center justify-center p-6">
+    <div className="flex min-h-dvh items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-4 rounded-lg border border-border bg-card p-6">
         <Skeleton className="h-5 w-44" />
         <Skeleton className="h-3 w-full" />
@@ -664,7 +664,7 @@ export function ScanApproveSkeleton() {
 
 export function PrintSkeleton() {
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center gap-3 bg-muted p-4">
+    <div className="flex min-h-dvh flex-col items-center gap-3 bg-muted p-4">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-64 w-full max-w-2xl" />
       <Skeleton className="h-40 w-full max-w-2xl" />

@@ -12,7 +12,7 @@ import { Button } from "@/ui/components/ui/button";
 
 export function NotFoundPage() {
   return (
-    <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] w-full items-center justify-center p-4">
+    <div className="flex min-h-dvh w-full items-center justify-center p-4">
       <Empty className="max-w-md">
         <EmptyMedia variant="icon">
           <FileQuestion className="size-5" aria-hidden />

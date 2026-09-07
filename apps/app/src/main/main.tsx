@@ -19,11 +19,17 @@ if (location.pathname.endsWith("/index.html")) {
 }
 
 // Desktop shell markers go on <html> before first paint: the CSS pins the
-// document and reserves the title bar strip from it (--titlebar-h), so the
-// window controls sit flush against the window edge with no layout shift.
+// document (overflow hidden, .app-scroll owns scrolling) and --wc-w reserves
+// the top-right corner for the floating window controls, so header content
+// never slides beneath them and there is no layout shift.
 if (window.desktop) {
   document.documentElement.dataset.shell = "desktop";
-  document.documentElement.style.setProperty("--titlebar-h", "2.25rem");
+  if (window.desktop.platform !== "darwin") {
+    document.documentElement.style.setProperty("--wc-w", "120px");
+  } else {
+    // Clear the native traffic-light strip above the sidebar brand.
+    document.documentElement.style.setProperty("--tl-inset", "2.25rem");
+  }
 }
 
 // PWA service worker (web/Android builds; the app:// scheme in Electron has
