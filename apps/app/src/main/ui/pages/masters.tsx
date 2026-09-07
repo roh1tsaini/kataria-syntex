@@ -25,7 +25,6 @@ import {
 } from "@/store/masters";
 import { friendlyError } from "@/ui/lib/errors";
 import { toastError, toastSuccess } from "@/store/toast";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -659,7 +658,7 @@ export function MastersPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Reference data"
         title="Masters"
@@ -711,6 +710,6 @@ export function MastersPage() {
           />
         </TabsContent>
       </Tabs>
-    </AppShell>
+    </>
   );
 }

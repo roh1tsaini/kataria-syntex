@@ -16,7 +16,6 @@ import {
 import { usePermission, useAuth } from "@/store/auth";
 import { api } from "@/lib/api";
 import { useMasters } from "@/store/masters";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -168,7 +167,7 @@ export function RawMaterialPage() {
   );
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Grey yarn intake"
         title="Raw material"
@@ -421,7 +420,7 @@ export function RawMaterialPage() {
           )}
         </CardContent>
       </Card>
-    </AppShell>
+    </>
   );
 }
 
@@ -584,7 +583,7 @@ function RawMaterialForm({
 
   if (loadingDetail) {
     return (
-      <AppShell>
+      <>
         <div className="flex items-center gap-3">
           <Skeleton className="size-10 rounded-lg" />
           <div>
@@ -594,12 +593,12 @@ function RawMaterialForm({
         </div>
         <Skeleton className="mt-6 h-40 rounded-lg" />
         <Skeleton className="mt-6 h-64 rounded-lg" />
-      </AppShell>
+      </>
     );
   }
 
   return (
-    <AppShell>
+    <>
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -1069,6 +1068,6 @@ function RawMaterialForm({
           </Button>
         </div>
       </form>
-    </AppShell>
+    </>
   );
 }

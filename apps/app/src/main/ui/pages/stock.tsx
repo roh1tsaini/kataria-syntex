@@ -4,7 +4,6 @@ import { Search, Warehouse, Layers, AlertTriangle, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/store/auth";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
@@ -112,7 +111,7 @@ export function StockPage() {
   );
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow={stockType === "raw" ? "Grey yarn" : "Dyed yarn"}
         title={stockType === "raw" ? "Raw stock" : "Dyed stock"}
@@ -390,6 +389,6 @@ export function StockPage() {
           )}
         </CardContent>
       </Card>
-    </AppShell>
+    </>
   );
 }

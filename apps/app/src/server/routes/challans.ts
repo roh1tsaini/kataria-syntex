@@ -7,7 +7,6 @@ import type { Env } from "../env";
 import {
   challanItems,
   challans,
-  challanItemSources,
   companies,
   customers,
   financialYears,
@@ -260,12 +259,6 @@ challansRoute.delete("/:id", requirePermission("delete_challan"), async (c) => {
     .where(eq(jobWorkReturnItems.challanId, existing.id));
   if (returnRows.length > 0) return apiError(c, "challan_has_returns", 409);
 
-  const oldItemRows = await db
-    .select({ id: challanItems.id })
-    .from(challanItems)
-    .where(eq(challanItems.challanId, existing.id));
-  const oldItemIds = oldItemRows.map((r) => r.id);
-
   await db.batch([
     db
       .delete(stockEntries)
@@ -275,13 +268,6 @@ challansRoute.delete("/:id", requirePermission("delete_challan"), async (c) => {
           eq(stockEntries.workspaceId, workspaceId),
         ),
       ),
-    ...(oldItemIds.length
-      ? [
-          db
-            .delete(challanItemSources)
-            .where(inArray(challanItemSources.challanItemId, oldItemIds)),
-        ]
-      : []),
     db.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
     db.delete(challans).where(eq(challans.id, existing.id)),
   ]);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { useInViewOnce } from "@/lib/use-in-view-once";
 

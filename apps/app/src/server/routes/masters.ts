@@ -5,7 +5,6 @@ import { and, asc, eq } from "drizzle-orm";
 import type { SQLiteTable, AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
-import { likeContains } from "../lib/like";
 import { generateId } from "../lib/token";
 import {
   colors,
@@ -71,17 +70,11 @@ function registerMaster<TInput>(
   toUpdateFields: (parsed: TInput, nowIso: string) => Record<string, unknown>,
 ) {
   mastersRoute.get(`/${path}`, async (c) => {
-    const q = c.req.query("q")?.trim();
     const db = getDb(c.env.DB);
     const rows = await db
       .select()
       .from(table)
-      .where(
-        and(
-          eq(table.workspaceId, c.get("member").workspaceId),
-          q ? likeContains(table.name, q) : undefined,
-        ),
-      )
+      .where(eq(table.workspaceId, c.get("member").workspaceId))
       .orderBy(asc(table.name));
     return c.json({ items: rows });
   });

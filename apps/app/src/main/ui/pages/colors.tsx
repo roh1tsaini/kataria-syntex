@@ -21,7 +21,6 @@ import {
 } from "@/store/recipes";
 import { friendlyError } from "@/ui/lib/errors";
 import { toastError, toastSuccess } from "@/store/toast";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import {
   RecipeDetailDialog,
@@ -672,7 +671,7 @@ export function ColorsPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Reference data"
         title="Color Organiser"
@@ -969,6 +968,6 @@ export function ColorsPage() {
         recipeId={detailRecipeId}
         onRestored={() => void refreshRecipes()}
       />
-    </AppShell>
+    </>
   );
 }

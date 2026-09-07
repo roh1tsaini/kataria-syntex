@@ -1,5 +1,5 @@
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { exportCountries } from "./markets";
+import { exportCountries, indianStates } from "./markets";
 
 // The core identity (name, tagline, established year, location, phone,
 // email) comes from packages/shared — the single source of truth for
@@ -20,6 +20,7 @@ export const site = {
   url: siteUrl,
   establishedYear: COMPANY_DETAILS.established,
   base: COMPANY_DETAILS.location,
+  city: COMPANY_DETAILS.location.split(",")[0],
   overview:
     "Kataria Syntex is a B2B yarn dealer and sourcing partner for textile businesses that need dependable supply, practical communication, and commercially clear decisions.",
   contact: {
@@ -40,6 +41,20 @@ export const site = {
     { days: "Saturday", time: "9:00 AM – 5:00 PM" },
     { days: "Sunday", time: "Closed" },
   ],
+  /**
+   * Machine-readable twin of `hours` for openStatus(): one entry per
+   * weekday (index 0 = Sunday), open/close as 24h "HH:MM", null when
+   * closed all day. Edit both together — `hours` is display, this is logic.
+   */
+  schedule: [
+    null,
+    { open: "09:00", close: "19:00" },
+    { open: "09:00", close: "19:00" },
+    { open: "09:00", close: "19:00" },
+    { open: "09:00", close: "19:00" },
+    { open: "09:00", close: "19:00" },
+    { open: "09:00", close: "17:00" },
+  ] as const,
   socials: {
     instagram: "https://www.instagram.com/katariasyntex",
     facebook: "https://www.facebook.com/katariasyntex",
@@ -50,10 +65,12 @@ export function yearsOfExperience(): number {
   return new Date().getFullYear() - site.establishedYear;
 }
 
+const highDemandStates = indianStates.filter((s) => s.demand === "high").length;
+
 export const trustMetrics = [
   { value: `${yearsOfExperience()}+`, label: "years in the yarn trade" },
   { value: `${exportCountries.length}+`, label: "export countries served" },
-  { value: "6+", label: "high-demand Indian states" },
+  { value: `${highDemandStates}+`, label: "high-demand Indian states" },
   { value: "01", label: "point of contact, start to dispatch" },
 ] as const;
 

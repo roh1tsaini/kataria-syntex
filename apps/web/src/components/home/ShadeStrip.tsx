@@ -1,9 +1,12 @@
-import { liftedCard } from "@/components/ui/lifted-card";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
+
+// Keep in sync with the same token in components/products/ProductCard.tsx.
+const liftedCard =
+  "card-sheen relative rounded-card border border-line bg-paper shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float";
 import { Section } from "@/components/section/Section";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { shadeBand, shades, shadePages } from "@/content/shades";
+import { shadeBand, shades, shadePages } from "@kataria-syntex/shared";
 import { SectionHead } from "@/components/section/SectionHead";
 import { Reveal } from "@/components/motion/Reveal";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";

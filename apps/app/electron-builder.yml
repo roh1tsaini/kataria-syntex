@@ -41,6 +41,10 @@ mac:
       arch: [arm64]
   category: public.app-category.business
   icon: resources/icon.png
+  # QR-code scan/approve uses the camera — macOS blocks capture without a
+  # usage description (the main process grants `media` only to app origins).
+  extendInfo:
+    NSCameraUsageDescription: Scan QR codes to sign in and approve devices.
 
 linux:
   target:

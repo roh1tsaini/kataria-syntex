@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { shades, shadePages } from "@/content/shades";
+import { shades, shadePages } from "@kataria-syntex/shared";
 import { ShadeExplorer } from "@/components/shade/ShadeExplorer";
 import { PageHead } from "@/components/section/PageHead";
 import { Section } from "@/components/section/Section";

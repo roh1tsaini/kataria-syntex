@@ -23,8 +23,9 @@ export const fmtDate = (iso: string) => {
   });
 };
 
-/** Today's date in the device timezone as YYYY-MM-DD (never UTC — entries created after midnight IST must not be filed under yesterday). */
-export const todayLocal = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+/** A Date as YYYY-MM-DD in the device timezone (never UTC — entries created after midnight IST must not be filed under yesterday). Single home for local date keys; daysAgoISO delegates to it. */
+export const localDateKey = (d: Date = new Date()): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Today's date in the device timezone as YYYY-MM-DD. */
+export const todayLocal = (): string => localDateKey();

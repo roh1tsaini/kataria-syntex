@@ -302,11 +302,15 @@
     isolation: isolate;
   }
   /* Electron desktop shell: the document itself never scrolls — the routed
-     view scrolls in .app-scroll under the title bar, so the window controls
-     sit flush against the window edge with no scrollbar/gutter inset. */
+  view scrolls in .app-scroll under the title bar, so the window controls
+  sit flush against the window edge with no scrollbar/gutter inset. */
   [data-shell="desktop"] {
     height: 100%;
     overflow: hidden;
+    /* No viewport scrollbar gutter: `stable` reserves space even with
+      overflow hidden, insetting the bar from the window edge. The inner
+      .app-scroll keeps its own scrollbar. */
+    scrollbar-gutter: auto;
   }
   [data-shell="desktop"] body {
     height: 100%;

@@ -11,6 +11,8 @@ import { cn } from "@/ui/lib/cn";
  * Its height is published as --titlebar-h on <html> by the entry
  * (src/main/main.tsx) before first paint, so every root container's 100dvh
  * math stays correct without per-page changes.
+ *
+ * Sticky-pinned: the bar never scrolls away with the content underneath it.
  */
 
 const dragStyle = { WebkitAppRegion: "drag" } as CSSProperties;
@@ -112,7 +114,7 @@ export function TitleBar() {
 
   return (
     <header
-      className="relative z-50 flex h-9 shrink-0 select-none items-stretch bg-background print:hidden"
+      className="sticky top-0 z-50 flex h-9 shrink-0 select-none items-stretch bg-background print:hidden"
       style={dragStyle}
     >
       {/* Drag surfaces — double-click toggles maximize natively via the

@@ -53,7 +53,7 @@ import {
   type NavSection,
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
-import { EASE, EASE_DRAWER } from "@/ui/lib/motion";
+import { EASE_OUT, EASE_DRAWER } from "@/ui/lib/motion";
 import { roleBadge } from "@/ui/components/role-badge";
 
 function Brand({ compact }: { compact?: boolean }) {
@@ -857,13 +857,13 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        transition: { duration: 0.11, ease: EASE },
+                        transition: { duration: 0.11, ease: EASE_OUT },
                       }
                 }
                 transition={
                   reduceMotion
                     ? { duration: 0 }
-                    : { duration: 0.14, ease: EASE }
+                    : { duration: 0.14, ease: EASE_OUT }
                 }
               >
                 <div className="flex h-14 shrink-0 items-center justify-center border-b border-border">
@@ -892,13 +892,13 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        transition: { duration: 0.11, ease: EASE },
+                        transition: { duration: 0.11, ease: EASE_OUT },
                       }
                 }
                 transition={
                   reduceMotion
                     ? { duration: 0 }
-                    : { duration: 0.14, ease: EASE }
+                    : { duration: 0.14, ease: EASE_OUT }
                 }
               >
                 <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-2.5">

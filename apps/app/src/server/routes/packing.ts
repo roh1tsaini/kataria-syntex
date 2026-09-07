@@ -3,7 +3,7 @@ import { z } from "zod";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
-import { packingEntries, packingItems, challanItemSources } from "../db/schema";
+import { packingEntries, packingItems } from "../db/schema";
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import { dateStringSchema } from "@kataria-syntex/shared";
@@ -43,12 +43,10 @@ packingRoute.get("/", async (c) => {
   const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const type = c.req.query("type")?.trim();
-  const createdBy = c.req.query("createdBy")?.trim();
 
   const conditions = [eq(packingEntries.workspaceId, workspaceId)];
   if (type === "sale" || type === "job_work")
     conditions.push(eq(packingEntries.type, type));
-  if (createdBy) conditions.push(eq(packingEntries.createdBy, createdBy));
 
   const rows = await db
     .select()
@@ -69,33 +67,10 @@ packingRoute.get("/", async (c) => {
     if (list) list.push(item);
     else itemsByEntry.set(item.entryId, [item]);
   }
-  const allItemIds = allItems.map((i) => i.id);
-  const sources =
-    allItemIds.length > 0
-      ? await db
-          .select({ packingItemId: challanItemSources.packingItemId })
-          .from(challanItemSources)
-          .where(inArray(challanItemSources.packingItemId, allItemIds))
-      : [];
-  const importedSet = new Set(sources.map((s) => s.packingItemId));
-  const result = rows.map((row) => {
-    const items = itemsByEntry.get(row.id) ?? [];
-    // Count imported per entry without re-querying
-    let hasImported = false;
-    for (const it of items)
-      if (importedSet.has(it.id)) {
-        hasImported = true;
-        break;
-      }
-    return {
-      ...row,
-      items: items.map((i) => ({
-        ...i,
-        imported: importedSet.has(i.id),
-      })),
-      hasImported,
-    };
-  });
+  const result = rows.map((row) => ({
+    ...row,
+    items: itemsByEntry.get(row.id) ?? [],
+  }));
 
   return c.json({ items: result });
 });
@@ -123,27 +98,9 @@ packingRoute.get("/:id", async (c) => {
     .where(eq(packingItems.entryId, header.id))
     .orderBy(asc(packingItems.seq));
 
-  const itemIds = items.map((i) => i.id);
-  const sources =
-    itemIds.length > 0
-      ? await db
-          .select({
-            packingItemId: challanItemSources.packingItemId,
-            challanItemId: challanItemSources.challanItemId,
-            qtyUsed: challanItemSources.qtyUsed,
-          })
-          .from(challanItemSources)
-          .where(inArray(challanItemSources.packingItemId, itemIds))
-      : [];
-  const sourceMap = new Map(sources.map((s) => [s.packingItemId, s]));
-
   return c.json({
     entry: header,
-    items: items.map((i) => ({
-      ...i,
-      imported: sourceMap.has(i.id),
-      source: sourceMap.get(i.id) ?? null,
-    })),
+    items,
   });
 });
 

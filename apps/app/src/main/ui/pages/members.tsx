@@ -9,7 +9,6 @@ import {
 } from "@/store/auth";
 import { friendlyError } from "@/ui/lib/errors";
 import { toastError, toastSuccess } from "@/store/toast";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -420,7 +419,7 @@ export function MembersPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Workspace & permissions"
         title="Members"
@@ -595,6 +594,6 @@ export function MembersPage() {
       {dialog}
 
       {canManage && <AddMemberForm />}
-    </AppShell>
+    </>
   );
 }

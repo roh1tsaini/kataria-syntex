@@ -135,9 +135,9 @@ export const useRecipes = create<RecipesState>()((set) => ({
 
   lookupRecipe: async (colorId, denierId) => {
     const qs = new URLSearchParams({ colorId, denierId });
-    const res = await api<{ recipe: null } | { recipeId: string }>(
+    const res = await api<{ recipeId: string | null }>(
       `/recipes/lookup?${qs.toString()}`,
     );
-    return "recipeId" in res ? res.recipeId : null;
+    return res.recipeId;
   },
 }));

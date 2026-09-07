@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/motion/Reveal";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 /**
  * Section heading block — a kicker, a display-size title, and an

@@ -3,7 +3,7 @@ import { Globe2, MapPin } from "lucide-react";
 import { exportCountries, indianStates } from "@/content/markets";
 import { SectionHead } from "@/components/section/SectionHead";
 import { Reveal } from "@/components/motion/Reveal";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 const demandTone: Record<string, string> = {
   high: "bg-sky/80",

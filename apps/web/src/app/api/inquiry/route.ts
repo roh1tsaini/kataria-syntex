@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { inquirySchema } from "@/lib/validation/inquiry";
+import { inquirySchema } from "@kataria-syntex/shared";
 
 export const dynamic = "force-dynamic";
 

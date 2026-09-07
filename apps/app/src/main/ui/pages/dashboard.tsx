@@ -31,7 +31,6 @@ import { toastError } from "@/store/toast";
 import { friendlyError } from "@/ui/lib/errors";
 
 import { PageHeader } from "@/ui/components/page-header";
-import { AppShell } from "@/ui/components/app-shell";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import { Badge } from "@/ui/components/ui/badge";
@@ -430,7 +429,6 @@ export function Dashboard() {
   const workspace = useAuth((s) => s.workspace);
   const company = useAuth((s) => s.company);
   const currentFy = useAuth((s) => s.currentFy);
-  const refreshCompany = useAuth((s) => s.refreshCompany);
   const summary = useChallans((s) => s.summary);
 
   const cacheKey = workspace?.id ?? "";
@@ -442,10 +440,6 @@ export function Dashboard() {
   );
   const [period, setPeriod] = useState<Period>("fy");
   const [loading, setLoading] = useState(() => !cached);
-
-  useEffect(() => {
-    void refreshCompany().catch(() => {});
-  }, [refreshCompany]);
 
   useEffect(() => {
     if (!currentFy || !cacheKey) {
@@ -543,7 +537,7 @@ export function Dashboard() {
   });
 
   return (
-    <AppShell>
+    <>
       <Reveal>
         <PageHeader
           eyebrow={todayLabel}
@@ -850,6 +844,6 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </>
   );
 }

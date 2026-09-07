@@ -4,7 +4,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { ProductCard } from "@/components/products/ProductCard";
 
 import { useState } from "react";
-import type { YarnProduct } from "@/content/products";
+import type { YarnProduct } from "@kataria-syntex/shared";
 import { Section } from "@/components/section/Section";
 
 /**

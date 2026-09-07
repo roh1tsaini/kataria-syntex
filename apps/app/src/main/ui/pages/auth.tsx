@@ -27,7 +27,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/ui/components/ui/field";
-import { EASE, SPRING } from "@/ui/lib/motion";
+import { EASE_OUT, SPRING } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
 
 type Step = "home" | "otp" | "password" | "create";
@@ -83,7 +83,7 @@ function IdentifierStep({
             id="identifier-error"
             initial={reduceMotion ? false : { opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.18, ease: EASE }}
+            transition={{ duration: reduceMotion ? 0 : 0.18, ease: EASE_OUT }}
             role="alert"
             className="text-sm text-destructive"
           >
@@ -567,7 +567,7 @@ export function AuthPage() {
           scale: reduceMotion ? 1 : 0.99,
         }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: reduceMotion ? 0.15 : 0.24, ease: EASE }}
+        transition={{ duration: reduceMotion ? 0.15 : 0.24, ease: EASE_OUT }}
         className="w-full max-w-md sm:max-w-2xl"
       >
         <Card className="overflow-hidden">
@@ -597,10 +597,13 @@ export function AuthPage() {
                     : {
                         opacity: 0,
                         gridTemplateRows: "0fr",
-                        transition: { duration: 0.16, ease: EASE },
+                        transition: { duration: 0.16, ease: EASE_OUT },
                       }
                 }
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: EASE }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.2,
+                  ease: EASE_OUT,
+                }}
               >
                 <div className="min-h-0 overflow-hidden">
                   {step === "home" && (

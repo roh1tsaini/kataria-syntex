@@ -25,7 +25,6 @@ import { useChallans, type Challan } from "@/store/challans";
 import { friendlyError } from "@/ui/lib/errors";
 
 import { toastError, toastSuccess } from "@/store/toast";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
@@ -212,7 +211,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
   }, [kind.type, fy, q, page, refresh]);
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow={
           kind.type === "sales" ? "Dispatch register" : "Dyeing movement"
@@ -618,6 +617,6 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
           </div>
         </div>
       )}
-    </AppShell>
+    </>
   );
 }

@@ -16,6 +16,7 @@ import {
 } from "./core";
 import {
   DEFAULT_NUMBERING,
+  challanTotals,
   fyLabelForDateString,
   formatNumberForType,
   round3,
@@ -76,13 +77,7 @@ export function createOfflineChallan(
     };
   });
 
-  const totals = {
-    totalBoxes: items.reduce((s, i) => s + i.boxes, 0),
-    totalCheese: items.reduce((s, i) => s + i.cheese, 0),
-    totalGrossWt: round3(items.reduce((s, i) => s + i.grossWt, 0)),
-    totalTareWt: round3(items.reduce((s, i) => s + i.tareWt, 0)),
-    totalNetWt: round3(items.reduce((s, i) => s + i.netWt, 0)),
-  };
+  const totals = challanTotals(items);
 
   const local: Challan = {
     id: clientRef,

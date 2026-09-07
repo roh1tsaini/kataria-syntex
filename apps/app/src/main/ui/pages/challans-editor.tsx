@@ -8,6 +8,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
+import { useMastersLoad } from "@/ui/hooks/use-masters-load";
 
 import { Download, Plus, Save, X } from "lucide-react";
 import { useAuth } from "@/store/auth";
@@ -17,7 +18,6 @@ import { useMasters } from "@/store/masters";
 import { friendlyError } from "@/ui/lib/errors";
 import { api } from "@/lib/api";
 
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -30,7 +30,6 @@ import {
 import { Input } from "@/ui/components/ui/input";
 
 import { DatePicker } from "@/ui/components/ui/date-picker";
-import { Checkbox } from "@/ui/components/ui/checkbox";
 
 import { Field, FieldGroup, FieldLabel } from "@/ui/components/ui/field";
 import {
@@ -43,16 +42,12 @@ import {
 import { Textarea } from "@/ui/components/ui/textarea";
 import { Badge } from "@/ui/components/ui/badge";
 
-import { Skeleton } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/ui/components/ui/dialog";
-import { EASE } from "@/ui/lib/motion";
+  PackingImportDialog,
+  type PackingItem,
+} from "@/ui/components/packing-import-dialog";
+import { EASE_OUT } from "@/ui/lib/motion";
 import { fmtBoxes, fmtWt, todayLocal } from "@/ui/lib/format";
 import { type ChallanKind } from "./challans-shared";
 
@@ -83,191 +78,6 @@ const emptyRow = (): ItemRow => ({
   lotNo: "",
   remarks: "",
 });
-
-type PackingItem = {
-  id: string;
-  entryNumber: string;
-  date: string;
-  denierId: string | null;
-  denierName: string;
-  colorId: string | null;
-  colorName: string;
-  colorCode: string | null;
-  netWt: number;
-  lotNo: string | null;
-  boxNo: string | null;
-  cones: number | null;
-};
-
-function PackingImportDialog({
-  open,
-  onOpenChange,
-  onImport,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onImport: (items: PackingItem[]) => void;
-}) {
-  const [entries, setEntries] = useState<
-    Array<{
-      id: string;
-      entryNumber: string;
-      date: string;
-      items: PackingItem[];
-      hasImported: boolean;
-    }>
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  /** Bumped by Retry — re-runs the fetch without closing the dialog. */
-  const [reloadNonce, setReloadNonce] = useState(0);
-
-  useEffect(() => {
-    if (!open) return;
-    void (async () => {
-      setLoading(true);
-      setLoadError(false);
-      try {
-        const res = await api<{
-          items: Array<{
-            id: string;
-            entryNumber: string;
-            date: string;
-            items: PackingItem[];
-            hasImported: boolean;
-          }>;
-        }>("/packing?type=sale");
-        // Flatten to show individual items grouped by entry
-        setEntries(
-          res.items.filter((e: { hasImported: boolean }) => !e.hasImported),
-        );
-      } catch {
-        setEntries([]);
-        setLoadError(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [open, reloadNonce]);
-
-  const toggle = (itemId: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) next.delete(itemId);
-      else next.add(itemId);
-      return next;
-    });
-  };
-
-  const importSelected = () => {
-    const items: PackingItem[] = [];
-    for (const entry of entries) {
-      for (const item of entry.items) {
-        if (selected.has(item.id)) items.push(item);
-      }
-    }
-    onImport(items);
-    onOpenChange(false);
-    setSelected(new Set());
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Import from Packing</DialogTitle>
-          <DialogDescription>
-            Select unlocked packed items to add as challan rows.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto">
-          {loading ? (
-            <div className="space-y-3 py-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : loadError ? (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <p className="text-sm text-destructive">
-                Couldn't load packing entries.
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setReloadNonce((n) => n + 1)}
-              >
-                Retry
-              </Button>
-            </div>
-          ) : entries.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No packing entries available for import
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {entries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-lg border border-border overflow-hidden"
-                >
-                  <div className="flex items-center gap-2 border-b border-border/40 bg-muted px-3 py-2">
-                    <span className="font-mono text-xs font-semibold">
-                      {entry.entryNumber}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {entry.date}
-                    </span>
-                  </div>
-                  {entry.items.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => toggle(item.id)}
-                      className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted transition-colors"
-                    >
-                      {/* Keyboard toggling goes through the checkbox itself;
-                          stop pointer clicks here so the row's onClick doesn't
-                          double-toggle. */}
-                      <Checkbox
-                        checked={selected.has(item.id)}
-                        onCheckedChange={() => toggle(item.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {item.denierName}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {item.colorName}
-                          </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.netWt.toFixed(3)} kg
-                          {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
-                          {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 pt-2 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={importSelected} disabled={selected.size === 0}>
-            Import {selected.size > 0 ? `(${selected.size})` : ""}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
   const { id } = useParams();
@@ -312,13 +122,18 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
   const partyLoading =
     kind.type === "sales" ? customersLoading : jobWorkersLoading;
 
-  useEffect(() => {
-    // Masters refreshers throw offline — the editor still works from cache.
-    void refreshCustomers().catch(() => {});
-    void refreshJobWorkers().catch(() => {});
-    void refreshDeniers().catch(() => {});
-    void refreshColors().catch(() => {});
-  }, [refreshCustomers, refreshJobWorkers, refreshDeniers, refreshColors]);
+  // Shared masters-load shape (see packing/returns/raw-material): a failed
+  // load blocks save until retry. Refreshers throw offline — the editor
+  // still works from cache, and the per-picker *Loading flags above keep
+  // their skeleton states.
+  const { failed: mastersFailed, retry: retryMasters } = useMastersLoad(() =>
+    Promise.all([
+      refreshCustomers(),
+      refreshJobWorkers(),
+      refreshDeniers(),
+      refreshColors(),
+    ]),
+  );
 
   useEffect(() => {
     if (isEdit && id && !prefilled.current)
@@ -482,6 +297,10 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
   })();
 
   const onSave = async () => {
+    if (mastersFailed) {
+      setError("Couldn't load the master data. Retry the load first.");
+      return;
+    }
     if (!partyId) {
       setError(`Select a ${kind.party.toLowerCase()}.`);
       return;
@@ -563,7 +382,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow={isEdit ? "Update record" : "Create dispatch note"}
         title={isEdit ? `Edit ${newLabel}` : `New ${newLabel}`}
@@ -592,6 +411,21 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
         >
           {error}
         </p>
+      )}
+
+      {mastersFailed && (
+        <div
+          role="alert"
+          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
+        >
+          <p className="text-sm text-destructive">
+            Couldn&apos;t load customers, job workers, deniers and colours. Save
+            is disabled until they load.
+          </p>
+          <Button size="sm" variant="outline" onClick={retryMasters}>
+            Retry
+          </Button>
+        </div>
       )}
 
       <div className="mt-6 flex flex-col gap-6">
@@ -760,12 +594,12 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                           scale: 0.98,
                           transition: reduceMotion
                             ? { duration: 0 }
-                            : { duration: 0.15, ease: EASE },
+                            : { duration: 0.15, ease: EASE_OUT },
                         }}
                         transition={
                           reduceMotion
                             ? { duration: 0 }
-                            : { duration: 0.18, ease: EASE }
+                            : { duration: 0.18, ease: EASE_OUT }
                         }
                       >
                         {/* Mobile / Tablet card (<lg) */}
@@ -1346,6 +1180,6 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
       />
 
       {dialog}
-    </AppShell>
+    </>
   );
 }

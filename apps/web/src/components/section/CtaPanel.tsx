@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/motion/Reveal";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 /**
  * Closing CTA panel — a navy gradient tile with aurora glow and fiber

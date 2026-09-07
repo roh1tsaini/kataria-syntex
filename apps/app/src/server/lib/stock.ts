@@ -1,6 +1,6 @@
 import type { Queryable } from "./db";
 import { colors, stockEntries } from "../db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { generateId } from "./token";
 import { round3 } from "@kataria-syntex/shared";
 
@@ -136,4 +136,64 @@ export function buildReturnStockStatements(
       createdAt: nowIso,
     }),
   );
+}
+
+export type StockLedgerRow = {
+  stockType: string;
+  denierId: string | null;
+  denierName: string;
+  colorId: string | null;
+  colorName: string;
+  colorCode: string | null;
+  lotNo: string;
+  totalWt: number;
+  movements: number;
+};
+
+/**
+ * Single canonical stock-ledger GROUP BY (denier×color×lot with summed
+ * weight). Shared by `GET /stock` and `GET /reports/stock-summary` — callers
+ * project their own envelope from these rows.
+ */
+export async function summarizeStockLedger(
+  d: Queryable,
+  workspaceId: string,
+  stockType?: "raw" | "dyed",
+): Promise<StockLedgerRow[]> {
+  const conditions = [eq(stockEntries.workspaceId, workspaceId)];
+  if (stockType) conditions.push(eq(stockEntries.stockType, stockType));
+  const grouped = await d
+    .select({
+      stockType: stockEntries.stockType,
+      denierId: stockEntries.denierId,
+      denierName: stockEntries.denierName,
+      colorId: stockEntries.colorId,
+      colorName: stockEntries.colorName,
+      colorCode: stockEntries.colorCode,
+      lotNo: stockEntries.lotNo,
+      totalWt: sql<number>`sum(${stockEntries.netWt})`.mapWith(Number),
+      movements: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(stockEntries)
+    .where(and(...conditions))
+    .groupBy(
+      stockEntries.stockType,
+      stockEntries.denierId,
+      stockEntries.denierName,
+      stockEntries.colorId,
+      stockEntries.colorName,
+      stockEntries.colorCode,
+      stockEntries.lotNo,
+    );
+  return grouped.map((r) => ({
+    stockType: r.stockType,
+    denierId: r.denierId,
+    denierName: r.denierName,
+    colorId: r.colorId,
+    colorName: r.colorName,
+    colorCode: r.colorCode,
+    lotNo: r.lotNo,
+    totalWt: round3(r.totalWt ?? 0),
+    movements: r.movements ?? 0,
+  }));
 }

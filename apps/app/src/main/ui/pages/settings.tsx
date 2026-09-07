@@ -9,7 +9,6 @@ import {
 import { friendlyError } from "@/ui/lib/errors";
 import { fmtDate } from "@/ui/lib/format";
 import { toastError, toastSuccess } from "@/store/toast";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -166,7 +165,6 @@ export function SettingsPage() {
   const company = useAuth((s) => s.company);
   const currentFy = useAuth((s) => s.currentFy);
   const financialYears = useAuth((s) => s.financialYears);
-  const refreshCompany = useAuth((s) => s.refreshCompany);
   const saveCompany = useAuth((s) => s.saveCompany);
   const saveNumbering = useAuth((s) => s.saveNumbering);
 
@@ -184,10 +182,6 @@ export function SettingsPage() {
   // True once the user edits anything — concurrent store refreshes
   // (AppShell, other pages) must not clobber half-typed values.
   const [dirty, setDirty] = useState(false);
-
-  useEffect(() => {
-    void refreshCompany().catch(() => {});
-  }, [refreshCompany]);
 
   useEffect(() => {
     if (company && !dirty) {
@@ -232,7 +226,7 @@ export function SettingsPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Company profile"
         title="Company settings"
@@ -461,6 +455,6 @@ export function SettingsPage() {
           </Card>
         </Section>
       </div>
-    </AppShell>
+    </>
   );
 }

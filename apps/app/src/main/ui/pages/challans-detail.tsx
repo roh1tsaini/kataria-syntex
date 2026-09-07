@@ -20,7 +20,6 @@ import { RecipeLinkButton } from "@/ui/components/recipe-detail";
 import { friendlyError } from "@/ui/lib/errors";
 import { ApiError } from "@/lib/api";
 import { toastError, toastSuccess } from "@/store/toast";
-import { AppShell } from "@/ui/components/app-shell";
 
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
@@ -68,7 +67,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
 
   if (notFound) {
     return (
-      <AppShell>
+      <>
         <Empty className="mt-6">
           <EmptyMedia variant="icon">
             <SearchX className="size-5" aria-hidden />
@@ -90,13 +89,13 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
             </Button>
           </EmptyContent>
         </Empty>
-      </AppShell>
+      </>
     );
   }
 
   if (error) {
     return (
-      <AppShell>
+      <>
         <p className="text-sm text-destructive">{error}</p>
         <Link
           to={kind.listPath}
@@ -105,13 +104,13 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           <ArrowLeft className="size-4" aria-hidden />
           Back
         </Link>
-      </AppShell>
+      </>
     );
   }
 
   if (!detail) {
     return (
-      <AppShell>
+      <>
         <div className="flex items-center gap-3">
           <Skeleton className="size-7 rounded-lg" />
           <div>
@@ -124,7 +123,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           <Skeleton className="h-28 rounded-lg" />
         </div>
         <Skeleton className="mt-6 h-64 rounded-lg" />
-      </AppShell>
+      </>
     );
   }
 
@@ -176,7 +175,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3 min-w-0">
           <Link
@@ -465,6 +464,6 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           )}
         </CardContent>
       </Card>
-    </AppShell>
+    </>
   );
 }

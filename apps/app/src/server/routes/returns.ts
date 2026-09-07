@@ -3,15 +3,15 @@ import { z } from "zod";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
-import { jobWorkReturns, jobWorkReturnItems, challans } from "../db/schema";
+import { jobWorkReturns, jobWorkReturnItems } from "../db/schema";
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import {
   createReturn,
-  returnedTotalsByChallan,
+  jobWorkBalances,
   updateReturn,
 } from "../lib/document-pipeline";
-import { round3, dateStringSchema } from "@kataria-syntex/shared";
+import { dateStringSchema } from "@kataria-syntex/shared";
 import { apiError } from "../lib/api-error";
 
 export const returnsRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -39,15 +39,11 @@ const returnBody = z.object({
 
 returnsRoute.get("/", async (c) => {
   const workspaceId = c.get("member").workspaceId;
-  const jobWorkerId = c.req.query("jobWorkerId")?.trim();
-
-  const conditions = [eq(jobWorkReturns.workspaceId, workspaceId)];
-  if (jobWorkerId) conditions.push(eq(jobWorkReturns.jobWorkerId, jobWorkerId));
 
   const rows = await getDb(c.env.DB)
     .select()
     .from(jobWorkReturns)
-    .where(and(...conditions))
+    .where(eq(jobWorkReturns.workspaceId, workspaceId))
     .orderBy(desc(jobWorkReturns.date), desc(jobWorkReturns.createdAt));
 
   return c.json({ items: rows });
@@ -82,46 +78,24 @@ returnsRoute.get("/:id", async (c) => {
 // ── Pending balance for a job worker's challans ──────────────────────────────
 
 returnsRoute.get("/balance/:jobWorkerId", async (c) => {
-  const workspaceId = c.get("member").workspaceId;
-  const jobWorkerId = c.req.param("jobWorkerId");
-  const db = getDb(c.env.DB);
-
-  // Outward challans for this job worker
-  const challanRows = await db
-    .select({
-      id: challans.id,
-      challanNumber: challans.challanNumber,
-      date: challans.date,
-      totalNetWt: challans.totalNetWt,
-    })
-    .from(challans)
-    .where(
-      and(
-        eq(challans.workspaceId, workspaceId),
-        eq(challans.jobWorkerId, jobWorkerId),
-        eq(challans.type, "outward"),
-      ),
-    )
-    .orderBy(asc(challans.date));
-
-  if (challanRows.length === 0) return c.json({ items: [] });
-  const returnedMap = await returnedTotalsByChallan(
-    db,
-    challanRows.map((ch) => ch.id),
+  const balances = await jobWorkBalances(
+    getDb(c.env.DB),
+    c.get("member").workspaceId,
+    { jobWorkerId: c.req.param("jobWorkerId") },
   );
-  const balances = challanRows.map((ch) => {
-    const returned = returnedMap.get(ch.id) ?? 0;
-    return {
-      challanId: ch.id,
-      challanNumber: ch.challanNumber,
-      date: ch.date,
-      sent: ch.totalNetWt,
-      returned,
-      balance: round3(ch.totalNetWt - returned),
-    };
-  });
 
-  return c.json({ items: balances });
+  return c.json({
+    items: balances.map(
+      ({ challanId, challanNumber, date, sent, returned, balance }) => ({
+        challanId,
+        challanNumber,
+        date,
+        sent,
+        returned,
+        balance,
+      }),
+    ),
+  });
 });
 
 // ── Create ──────────────────────────────────────────────────────────────────

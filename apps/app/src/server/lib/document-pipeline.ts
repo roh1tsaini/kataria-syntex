@@ -11,7 +11,7 @@
  * commits as ONE db.batch()).
  */
 
-import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import {
   challanTotals,
@@ -29,7 +29,6 @@ import {
 } from "@kataria-syntex/shared";
 import type { Db, Queryable } from "./db";
 import {
-  challanItemSources,
   challanItems,
   challans,
   stockEntries,
@@ -285,21 +284,7 @@ export async function updateRawMaterial(
   )
     return { error: "fy_change_not_allowed" };
 
-  // This entry's raw stock may already be consumed (dyed out of it) — the
-  // update deletes + recreates its "in" stock rows, so refuse when any "out"
-  // movement references the entry.
-  const stockOut = await d
-    .select({ id: stockEntries.id })
-    .from(stockEntries)
-    .where(
-      and(
-        eq(stockEntries.sourceRefId, existing.id),
-        eq(stockEntries.movement, "out"),
-      ),
-    )
-    .limit(1);
-  if (stockOut.length > 0) return { error: "stock_consumed" };
-
+  // Raw updates unconditionally rebuild their "in" stock rows (see batch below).
   const party = await resolveSupplier(d, workspaceId, input.supplierId);
   if (party.error) return { error: party.error };
 
@@ -452,8 +437,7 @@ export async function createPacking(
 
 /**
  * Full packing-entry update: revalidates masters and rebuilds the item rows —
- * one atomic batch. Packing writes no stock movements; an entry whose items
- * were already imported into a challan is locked.
+ * one atomic batch. Packing writes no stock movements.
  */
 export async function updatePacking(
   d: Db,
@@ -487,21 +471,6 @@ export async function updatePacking(
     fyForDate(toDate(input.date)).label
   )
     return { error: "fy_change_not_allowed" };
-
-  // Any item already imported into a challan locks the whole entry.
-  const itemRows = await d
-    .select({ id: packingItems.id })
-    .from(packingItems)
-    .where(eq(packingItems.entryId, existing.id));
-  const itemIds = itemRows.map((r) => r.id);
-  if (itemIds.length > 0) {
-    const imported = await d
-      .select({ id: challanItemSources.id })
-      .from(challanItemSources)
-      .where(inArray(challanItemSources.packingItemId, itemIds))
-      .limit(1);
-    if (imported.length > 0) return { error: "entry_locked" };
-  }
 
   const denierIds = [...new Set(input.items.map((i) => i.denierId))];
   const colorIds = [...new Set(input.items.map((i) => i.colorId))];
@@ -649,6 +618,67 @@ export async function returnedTotalsByChallan(
 }
 
 /**
+ * Job-work balance list: outward challans for a workspace with
+ * sent/returned/balance computed from one batched totals query.
+ * Single formula shared by `GET /reports/job-work-balance` and
+ * `GET /returns/balance/:jobWorkerId` — callers project their own envelope.
+ */
+export type JobWorkBalanceRow = {
+  challanId: string;
+  challanNumber: string;
+  date: string;
+  jobWorkerId: string | null;
+  jobWorkerName: string | null;
+  sent: number;
+  returned: number;
+  balance: number;
+};
+
+export async function jobWorkBalances(
+  d: Queryable,
+  workspaceId: string,
+  opts: { jobWorkerId?: string; from?: string; to?: string } = {},
+): Promise<JobWorkBalanceRow[]> {
+  const conds = [
+    eq(challans.workspaceId, workspaceId),
+    eq(challans.type, "outward"),
+  ];
+  if (opts.jobWorkerId) conds.push(eq(challans.jobWorkerId, opts.jobWorkerId));
+  if (opts.from) conds.push(gte(challans.date, opts.from));
+  if (opts.to) conds.push(lte(challans.date, opts.to));
+  const rows = await d
+    .select({
+      id: challans.id,
+      challanNumber: challans.challanNumber,
+      date: challans.date,
+      jobWorkerId: challans.jobWorkerId,
+      jobWorkerName: challans.jobWorkerName,
+      totalNetWt: challans.totalNetWt,
+    })
+    .from(challans)
+    .where(and(...conds))
+    .orderBy(asc(challans.date));
+  if (rows.length === 0) return [];
+  const returnedMap = await returnedTotalsByChallan(
+    d,
+    rows.map((r) => r.id),
+  );
+  return rows.map((r) => {
+    const returned = returnedMap.get(r.id) ?? 0;
+    return {
+      challanId: r.id,
+      challanNumber: r.challanNumber,
+      date: r.date,
+      jobWorkerId: r.jobWorkerId,
+      jobWorkerName: r.jobWorkerName,
+      sent: r.totalNetWt,
+      returned,
+      balance: round3(r.totalNetWt - returned),
+    };
+  });
+}
+
+/**
  * Batched balance for N challans at once: two grouped SUM queries total,
  * regardless of N. `excludeReturnId` drops one return's items (edit path —
  * its old items still exist until the batch commits).
@@ -770,21 +800,7 @@ export async function updateReturn(
   const existing = existingRows[0];
   if (!existing) return { error: "not_found", status: 404 };
 
-  // This return's dyed stock may already be consumed, and the update deletes +
-  // recreates its "in" stock rows — refuse when any "out" movement references
-  // the return.
-  const stockOut = await d
-    .select({ id: stockEntries.id })
-    .from(stockEntries)
-    .where(
-      and(
-        eq(stockEntries.sourceRefId, existing.id),
-        eq(stockEntries.movement, "out"),
-      ),
-    )
-    .limit(1);
-  if (stockOut.length > 0) return { error: "stock_consumed" };
-
+  // Return updates unconditionally rebuild their "in" stock rows (see batch below).
   const party = await resolveReturnParty(d, workspaceId, input);
   if ("error" in party) return { error: party.error };
 
@@ -1078,7 +1094,6 @@ export async function createChallan(
     totalNetWt: totals.totalNetWt,
     createdBy: userId,
     clientRef: input.offline?.clientRef ?? null,
-    originDevice: input.offline?.originDevice ?? null,
     createdAt: nowIso,
     updatedAt: nowIso,
   };
@@ -1220,12 +1235,6 @@ export async function updateChallan(
   if (built.error) return { error: built.error };
   const t = challanTotals(built.items);
 
-  const oldItemRows = await d
-    .select({ id: challanItems.id })
-    .from(challanItems)
-    .where(eq(challanItems.challanId, existing.id));
-  const oldItemIds = oldItemRows.map((r) => r.id);
-
   // Recreate stock movements: delete old, create new — one atomic batch.
   const stockStmts = await buildChallanStockStatements(
     d,
@@ -1266,13 +1275,6 @@ export async function updateChallan(
           eq(stockEntries.workspaceId, workspaceId),
         ),
       ),
-    ...(oldItemIds.length
-      ? [
-          d
-            .delete(challanItemSources)
-            .where(inArray(challanItemSources.challanItemId, oldItemIds)),
-        ]
-      : []),
     d.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
     ...built.items.map((i) => d.insert(challanItems).values(i)),
     ...stockStmts,

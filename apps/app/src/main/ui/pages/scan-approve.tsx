@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/ui/components/ui/card";
 import { Skeleton } from "@/ui/components/motion";
-import { EASE } from "@/ui/lib/motion";
+import { EASE_OUT } from "@/ui/lib/motion";
 
 type QrInfo = {
   status: "pending" | "approved" | "expired" | "not_found";
@@ -85,7 +85,7 @@ export function ScanApprovePage() {
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0.2 : 0.24, ease: EASE }}
+        transition={{ duration: reduceMotion ? 0.2 : 0.24, ease: EASE_OUT }}
         className="w-full max-w-sm"
       >
         <Card>

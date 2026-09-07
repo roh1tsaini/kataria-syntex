@@ -16,7 +16,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { DatePicker } from "@/ui/components/ui/date-picker";
@@ -103,7 +102,7 @@ export function ReportsPage() {
 
 function ReportGrid() {
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Insights"
         title="Reports"
@@ -137,7 +136,7 @@ function ReportGrid() {
           ))}
         </div>
       </Reveal>
-    </AppShell>
+    </>
   );
 }
 
@@ -250,7 +249,7 @@ function ReportView({ reportId }: { reportId: string }) {
     });
 
   return (
-    <AppShell>
+    <>
       <div className="flex items-start gap-2">
         <Button
           variant="ghost"
@@ -462,6 +461,6 @@ function ReportView({ reportId }: { reportId: string }) {
           </CardContent>
         </Card>
       )}
-    </AppShell>
+    </>
   );
 }

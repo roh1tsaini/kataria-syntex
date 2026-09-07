@@ -1,7 +1,7 @@
 import { type Context } from "hono";
 
 import { z } from "zod";
-import { setCookie, deleteCookie } from "hono/cookie";
+import { setCookie } from "hono/cookie";
 import { and, eq } from "drizzle-orm";
 import { type Db } from "../lib/db";
 import type { Env } from "../env";
@@ -174,7 +174,3 @@ export async function issueSession(c: AuthCtx, d: Db, userId: string) {
 }
 
 export type { AuthContext };
-
-export function deleteSessionCookie(c: AuthCtx) {
-  deleteCookie(c, SESSION_COOKIE, { path: "/" });
-}

@@ -22,6 +22,7 @@ export default function LinksPage() {
       <BusinessCard
         name={site.name}
         tagline={site.tagline}
+        city={site.city}
         meta={cardMeta}
         status={openStatus()}
         links={cardLinks}

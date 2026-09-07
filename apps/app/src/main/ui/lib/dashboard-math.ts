@@ -3,13 +3,14 @@
  * stays unit-testable and the page component stays readable.
  */
 import type { Challan } from "@/store/challans";
+import { localDateKey } from "./format";
 
 export type Period = "fy" | "30d" | "all";
 
 export const daysAgoISO = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return localDateKey(d);
 };
 
 export const fyPrevLabel = (label: string) => {

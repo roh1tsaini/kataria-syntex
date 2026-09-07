@@ -1,5 +1,5 @@
 import { yarnBackground } from "@/components/shade/woven";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 /**
  * A wound-yarn swatch — the texture plus the physical wrap: rounded

@@ -6,7 +6,6 @@ import { useAuth, type Device } from "@/store/auth";
 import { toastError, toastSuccess } from "@/store/toast";
 import { QrApproveDialog } from "@/ui/components/qr-approve-dialog";
 import { PageHeader } from "@/ui/components/page-header";
-import { AppShell } from "@/ui/components/app-shell";
 import { Button } from "@/ui/components/ui/button";
 import { Badge } from "@/ui/components/ui/badge";
 import { Card, CardContent } from "@/ui/components/ui/card";
@@ -128,7 +127,7 @@ export function DevicesPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Account"
         title="Devices"
@@ -181,6 +180,6 @@ export function DevicesPage() {
       </Card>
       <QrApproveDialog open={qrApproveOpen} onOpenChange={setQrApproveOpen} />
       {dialog}
-    </AppShell>
+    </>
   );
 }

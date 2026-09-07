@@ -63,6 +63,15 @@ bun run electron:package
 bun run android:build  # universal release APK
 ```
 
+Packaging notes (local-only helpers — CI inlines the same steps in
+`app-build.yml`, so keep both spellings in sync when the flow changes):
+
+- `electron:package` = `build` + `build:electron` + `electron-builder`.
+  `build:electron` is also run solo mid-pipeline to inject `APP_URL`.
+- `android:build` = `build` + `cap sync android` + `assembleRelease`.
+- `release/` (400MB+ unpacked binaries) is intentionally excluded from
+  `turbo.json` build outputs — shipped as CI artifacts, never cached.
+
 **Done** = typecheck + lint + format + build green from repo root
 AND the feature works when run. All three shells must stay compiling.
 
@@ -74,7 +83,7 @@ Latest stable majors; never downgrade to escape a break.
 | -------- | ---------------------------------------------------------------------------------- |
 | Frontend | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)           |
 | Styling  | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2             |
-| PWA      | vite-plugin-pwa (autoUpdate, Workbox) · workbox-window declared                    |
+| PWA      | vite-plugin-pwa (autoUpdate, Workbox) via virtual:pwa-register                     |
 | API      | Hono 4 · zod 4 at every boundary                                                   |
 | Data     | Drizzle ORM + drizzle-kit · Cloudflare D1                                          |
 | PDF      | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)       |
@@ -140,8 +149,9 @@ PDFs save/share via Capacitor plugins.
 
 Desktop shell notes: one instance per installation (second launch focuses
 the first), no menu bar in packaged Windows/Linux builds, pinch/ctrl-wheel
-zoom locked, packaged renderer served at `app://bundle/` with SPA deep-link
-fallback, and the document never scrolls — routed content scrolls in
+zoom locked, camera granted to app origins for QR scan/approve, packaged
+renderer served at `app://bundle/` with SPA deep-link fallback, and the
+document never scrolls — routed content scrolls in
 `.app-scroll` under the custom title bar so the window controls sit flush
 against the window edge (see design.md §2.7.1).
 

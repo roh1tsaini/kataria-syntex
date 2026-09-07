@@ -16,8 +16,6 @@
     "electron:dev": "bun electron/dev.ts",
     "build:electron": "bun electron/build.ts",
     "electron:package": "bun run build && bun run build:electron && bunx electron-builder --config electron-builder.yml",
-    "android:sync": "bun run build && cap sync android",
-    "android:dev": "bun run build && cap run android",
     "android:build": "bun run build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
@@ -47,7 +45,6 @@
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
     "sonner": "^2.0.8",
-    "workbox-window": "^7.4.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

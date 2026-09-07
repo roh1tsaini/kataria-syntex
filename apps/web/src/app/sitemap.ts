@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { products } from "@/content/products";
+import { products } from "@kataria-syntex/shared";
 import { site } from "@/content/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {

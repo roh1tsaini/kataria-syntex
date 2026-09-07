@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 /** The 1180px content band every page section sits in. */
 export function Section({

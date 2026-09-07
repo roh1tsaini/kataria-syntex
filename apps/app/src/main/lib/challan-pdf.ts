@@ -14,16 +14,15 @@ import {
   type SheetDetail,
 } from "../../shared/challan-html";
 import { bytesToBase64 } from "../../shared/base64";
+import { createCached } from "../../shared/cached";
 import interBoldUrl from "../../shared/fonts/Inter-Bold.ttf?url";
 import interRegularUrl from "../../shared/fonts/Inter-Regular.ttf?url";
 import { challanPdf } from "@/lib/api";
 import { isNative } from "@/lib/platform";
 
-let fontsCache: Promise<ChallanFonts> | null = null;
-
 /** Both Inter weights as base64 for the template's inline @font-face. */
-export function loadChallanFonts(): Promise<ChallanFonts> {
-  fontsCache ??= (async () => {
+export const loadChallanFonts: () => Promise<ChallanFonts> = createCached(
+  async () => {
     const toBase64 = async (url: string) => {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`font fetch failed: ${res.status}`);
@@ -34,12 +33,8 @@ export function loadChallanFonts(): Promise<ChallanFonts> {
       toBase64(interBoldUrl),
     ]);
     return { regular, bold };
-  })().catch((e) => {
-    fontsCache = null;
-    throw e;
-  });
-  return fontsCache;
-}
+  },
+);
 
 function safeFilename(challanNumber: string): string {
   return `challan-${challanNumber.replace(/[^\w.-]/g, "_")}.pdf`;

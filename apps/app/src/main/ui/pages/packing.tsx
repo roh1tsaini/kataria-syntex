@@ -9,7 +9,6 @@ import {
   Trash2,
   Pencil,
   Search,
-  Lock,
   Package,
   X,
 } from "lucide-react";
@@ -17,7 +16,6 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { usePermission, useAuth } from "@/store/auth";
 import { api } from "@/lib/api";
 import { useMasters } from "@/store/masters";
-import { AppShell } from "@/ui/components/app-shell";
 import { PageHeader } from "@/ui/components/page-header";
 import { EASE_OUT } from "@/ui/lib/motion";
 import { Button } from "@/ui/components/ui/button";
@@ -57,7 +55,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/components/ui/select";
-import { cn } from "@/ui/lib/cn";
 import { round3Str } from "@kataria-syntex/shared";
 
 type PackingEntry = {
@@ -66,8 +63,7 @@ type PackingEntry = {
   entryNumber: string;
   date: string;
   createdBy: string;
-  items: Array<{ id: string; netWt: number; imported: boolean }>;
-  hasImported: boolean;
+  items: Array<{ id: string; netWt: number }>;
 };
 
 type Denier = { id: string; name: string };
@@ -205,7 +201,7 @@ export function PackingPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Dispatch"
         title="Packing"
@@ -388,24 +384,12 @@ export function PackingPage() {
                       return (
                         <tr
                           key={entry.id}
-                          className={cn(
-                            "border-b border-border/50 last:border-b-0 transition-colors hover:bg-muted/20",
-                            entry.hasImported && "opacity-75",
-                          )}
+                          className="border-b border-border/50 last:border-b-0 transition-colors hover:bg-muted/20"
                         >
                           <td className="py-2.5 pl-5 pr-3">
                             <span className="font-mono text-[13px] font-bold tabular-nums">
                               {entry.entryNumber}
                             </span>
-                            {entry.hasImported && (
-                              <Badge
-                                variant="outline"
-                                className="ml-1.5 gap-1 border-warning/30 bg-warning/10 text-warning"
-                              >
-                                <Lock className="size-3" aria-hidden />
-                                Locked
-                              </Badge>
-                            )}
                           </td>
                           <td className="py-2.5 pr-3 font-medium tabular-nums text-muted-foreground whitespace-nowrap">
                             {fmtDate(entry.date)}
@@ -417,7 +401,7 @@ export function PackingPage() {
                             {fmtWt(totalWt)}
                           </td>
                           <td className="py-2.5 pr-5 text-right">
-                            {!entry.hasImported && can("edit_packing") && (
+                            {can("edit_packing") && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -454,10 +438,7 @@ export function PackingPage() {
                     return (
                       <div
                         key={entry.id}
-                        className={cn(
-                          "rounded-lg border border-border bg-card p-4",
-                          entry.hasImported && "opacity-75",
-                        )}
+                        className="rounded-lg border border-border bg-card p-4"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -465,15 +446,6 @@ export function PackingPage() {
                               <span className="font-mono text-sm font-bold tabular-nums tracking-tight">
                                 {entry.entryNumber}
                               </span>
-                              {entry.hasImported && (
-                                <Badge
-                                  variant="outline"
-                                  className="gap-1 border-warning/30 bg-warning/10 text-warning"
-                                >
-                                  <Lock className="size-3" aria-hidden />
-                                  Locked
-                                </Badge>
-                              )}
                             </div>
                             <div className="mt-1 text-xs font-medium tabular-nums text-muted-foreground">
                               {fmtDate(entry.date)} · {entry.items.length}{" "}
@@ -487,7 +459,7 @@ export function PackingPage() {
                                 kg
                               </span>
                             </div>
-                            {!entry.hasImported && can("edit_packing") && (
+                            {can("edit_packing") && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -516,7 +488,7 @@ export function PackingPage() {
           )}
         </CardContent>
       </Card>
-    </AppShell>
+    </>
   );
 }
 
@@ -711,7 +683,7 @@ function PackingForm({
 
   if (loadingDetail) {
     return (
-      <AppShell>
+      <>
         <div className="flex items-center gap-3">
           <Skeleton className="size-10 rounded-lg" />
           <div>
@@ -721,14 +693,14 @@ function PackingForm({
         </div>
         <Skeleton className="mt-6 h-32 rounded-lg" />
         <Skeleton className="mt-6 h-64 rounded-lg" />
-      </AppShell>
+      </>
     );
   }
 
   const rows = type === "sale" ? saleRows : jobRows;
 
   return (
-    <AppShell>
+    <>
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -1364,6 +1336,6 @@ function PackingForm({
           </Button>
         </div>
       </form>
-    </AppShell>
+    </>
   );
 }

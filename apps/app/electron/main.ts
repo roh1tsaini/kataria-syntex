@@ -293,6 +293,34 @@ function createWindow(): void {
   win.on("maximize", () => win.webContents.send("kc:win:maximized", true));
   win.on("unmaximize", () => win.webContents.send("kc:win:maximized", false));
 
+  // Camera for QR-code scan/approve: Chromium asks the embedder, and with no
+  // handler the request is denied — grant `media` only to the app's own
+  // origins (packaged app://bundle, Vite dev server). Everything else stays
+  // denied, matching the no-handler default. Both handlers are needed for
+  // complete permission handling (query + request).
+  const mediaOrigins = DEV ? ["http://localhost:1420"] : ["app://bundle/"];
+  const allowsMedia = (url: unknown) =>
+    typeof url === "string" && mediaOrigins.some((o) => url.startsWith(o));
+  win.webContents.session.setPermissionRequestHandler(
+    (_webContents, permission, callback, details) => {
+      if (permission !== "media") {
+        callback(false);
+        return;
+      }
+      const requestingUrl = (details as { requestingUrl?: unknown } | null)
+        ?.requestingUrl;
+      callback(allowsMedia(requestingUrl));
+    },
+  );
+  win.webContents.session.setPermissionCheckHandler(
+    (_webContents, permission, requestingOrigin, details) => {
+      if (permission !== "media") return false;
+      const requestingUrl = (details as { requestingUrl?: unknown } | null)
+        ?.requestingUrl;
+      return allowsMedia(requestingUrl) || allowsMedia(requestingOrigin);
+    },
+  );
+
   // Touchpad pinch / ctrl-wheel must not zoom the UI like a webpage.
   win.webContents.setVisualZoomLevelLimits(1, 1);
 

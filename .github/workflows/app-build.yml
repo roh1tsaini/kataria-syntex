@@ -108,7 +108,7 @@ jobs:
       - name: Inject App origin into main-process API origin
         env:
           APP_URL: ${{ vars.APP_URL }}
-        run: bun electron/build.ts
+        run: bun run build:electron
         working-directory: apps/app
 
       - name: Rewrite CSP placeholder for the packaged renderer
@@ -180,6 +180,18 @@ jobs:
           APP_URL="https://${APP_URL#*://}"
           APP_URL="${APP_URL%/}"
           bun -e "const fs=require('fs');const f='apps/app/index.html';const s=fs.readFileSync(f,'utf8').replaceAll('https://CHANGE_ME_APP_ORIGIN', process.env.APP_URL);fs.writeFileSync(f,s)"
+
+      - name: Normalize API origin for the APK bundle
+        # The Android WebView is not same-origin with the backend, so the
+        # renderer bakes VITE_API_URL at build time. It must be an absolute
+        # https:// origin — a bare FQDN would build broken relative URLs.
+        shell: bash
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          APP_URL="https://${APP_URL#*://}"
+          APP_URL="${APP_URL%/}"
+          echo "VITE_API_URL=$APP_URL" >> "$GITHUB_ENV"
 
       - name: Build web bundle + sync Capacitor
         working-directory: apps/app

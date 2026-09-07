@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { testimonials } from "@/content/testimonials";
 import { SectionHead } from "@/components/section/SectionHead";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 const initials = (name: string) =>
   name

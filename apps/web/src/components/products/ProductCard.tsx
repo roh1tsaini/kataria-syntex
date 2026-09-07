@@ -1,9 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import type { YarnProduct } from "@/content/products";
-import { liftedCard } from "@/components/ui/lifted-card";
-import { cn } from "@/lib/utils";
+import type { YarnProduct } from "@kataria-syntex/shared";
+import { cn } from "@kataria-syntex/shared";
+
+/**
+ * Paper card that lifts on hover — kept next to its two call sites
+ * (here + ShadeStrip) instead of a one-export module.
+ */
+const liftedCard =
+  "card-sheen relative rounded-card border border-line bg-paper shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float";
 
 /**
  * The yarn card used by the home index and the products page — duotone

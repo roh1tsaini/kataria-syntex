@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { products, productCategories } from "@/content/products";
+import { products, productCategories } from "@kataria-syntex/shared";
 import { ProductIndex } from "@/components/products/ProductIndex";
 import { PageHead } from "@/components/section/PageHead";
 

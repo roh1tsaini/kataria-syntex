@@ -43,16 +43,11 @@ const rawBody = z.object({
 
 rawMaterialRoute.get("/", async (c) => {
   const workspaceId = c.get("member").workspaceId;
-  const supplierId = c.req.query("supplierId")?.trim();
-
-  const conditions = [eq(rawMaterialEntries.workspaceId, workspaceId)];
-  if (supplierId)
-    conditions.push(eq(rawMaterialEntries.supplierId, supplierId));
 
   const rows = await getDb(c.env.DB)
     .select()
     .from(rawMaterialEntries)
-    .where(and(...conditions))
+    .where(eq(rawMaterialEntries.workspaceId, workspaceId))
     .orderBy(desc(rawMaterialEntries.date), desc(rawMaterialEntries.createdAt));
 
   return c.json({ items: rows });

@@ -1,4 +1,4 @@
-interface CompanyInfo {
+export interface CompanyInfo {
   name: string;
   tagline: string;
   established: number;

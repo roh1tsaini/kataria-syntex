@@ -68,7 +68,6 @@ authPasswordRoute.post("/password/login", async (c) => {
     .where(
       and(
         eq(loginAttempts.phone, ident.value),
-        eq(loginAttempts.ok, false),
         gt(
           loginAttempts.createdAt,
           toIso(new Date(now.getTime() - PASSWORD_LOGIN_WINDOW_MS)),
@@ -109,9 +108,19 @@ authPasswordRoute.post("/password/login", async (c) => {
           id: generateId(),
           phone: ident.value,
           deviceKey,
-          ok: false,
           createdAt: nowIso,
         }),
+        // Same 24h bound as the success path — identifiers that never
+        // succeed must not accumulate rows forever. Piggybacks the insert's
+        // batch, so no extra round trip.
+        db
+          .delete(loginAttempts)
+          .where(
+            lt(
+              loginAttempts.createdAt,
+              toIso(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+            ),
+          ),
       ]));
   if (!ok || !user || !user.passwordHash)
     return apiError(c, "invalid_credentials", 401);

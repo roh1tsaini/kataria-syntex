@@ -2,12 +2,12 @@
 
 import { cloneElement, useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { products } from "@/content/products";
-import { inquirySchema, type InquiryInput } from "@/lib/validation/inquiry";
+import { products } from "@kataria-syntex/shared";
+import { inquirySchema, type InquiryInput } from "@kataria-syntex/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 type Status = "idle" | "submitting" | "success" | "error";
 

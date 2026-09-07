@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@kataria-syntex/shared";
 
 /** The rounded filter pill used by the product and shade-card filters. */
 export function FilterPill({

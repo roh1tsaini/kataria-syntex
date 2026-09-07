@@ -146,7 +146,6 @@ export const loginAttempts = sqliteTable(
     // Failures count per identifier+device pair: an attacker hammering one
     // device can't lock the real owner out of their account.
     deviceKey: text("device_key", { length: 80 }).notNull().default(""),
-    ok: integer("ok", { mode: "boolean" }).notNull(),
     createdAt: text("created_at").notNull(),
   },
   (t) => [index("idx_login_attempts_phone").on(t.phone)],
@@ -429,7 +428,6 @@ export const challans = sqliteTable(
       .notNull()
       .references(() => users.id),
     clientRef: text("client_ref", { length: 60 }),
-    originDevice: text("origin_device", { length: 120 }),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
@@ -654,27 +652,6 @@ export const packingItems = sqliteTable(
     createdAt: text("created_at").notNull(),
   },
   (t) => [index("idx_packing_items_entry").on(t.entryId)],
-);
-
-// ── Challan item sources (import linkage — one packing item feeds one challan item)
-
-export const challanItemSources = sqliteTable(
-  "challan_item_sources",
-  {
-    id: text("id", { length: 36 }).primaryKey(),
-    challanItemId: text("challan_item_id", { length: 36 })
-      .notNull()
-      .references(() => challanItems.id, { onDelete: "cascade" }),
-    packingItemId: text("packing_item_id", { length: 36 })
-      .notNull()
-      .references(() => packingItems.id, { onDelete: "cascade" }),
-    qtyUsed: real("qty_used").notNull(),
-    createdAt: text("created_at").notNull(),
-  },
-  (t) => [
-    uniqueIndex("uq_sources_packing_item").on(t.packingItemId),
-    index("idx_sources_challan_item").on(t.challanItemId),
-  ],
 );
 
 // ── Rate-limit counters (D1-backed sliding windows, see lib/rate-limit.ts) ─

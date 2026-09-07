@@ -4,11 +4,6 @@ import type { Transition, Variants } from "motion/react";
 export const EASE_OUT: readonly [number, number, number, number] = [
   0.16, 1, 0.3, 1,
 ] as const;
-/** Compat alias — one curve, one name going forward. */
-export const EASE = EASE_OUT;
-export const EASE_IN_OUT: readonly [number, number, number, number] = [
-  0.65, 0, 0.35, 1,
-] as const;
 export const EASE_DRAWER: readonly [number, number, number, number] = [
   0.32, 0.72, 0, 1,
 ] as const;
@@ -27,13 +22,6 @@ export const SPRING: Transition = {
   bounce: 0,
   duration: 0.38,
 };
-/** Momentum-only spring for flicked sheets. */
-export const DRAWER_SPRING: Transition = {
-  type: "spring",
-  bounce: 0.12,
-  duration: 0.36,
-};
-
 /** Parent that staggers its children on "show" (design.md §5.5: ~40ms
  * sibling stagger). Import — never re-derive at the call site. */
 export function staggerContainer(

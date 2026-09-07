@@ -178,9 +178,12 @@ Discord). The system bar never appears on any platform.
 - Desktop shell scroll model: `<html data-shell="desktop">` (set by the
   entry before first paint, together with `--titlebar-h: 2.25rem`) pins the
   document (`overflow: hidden`, `#root` a full-height flex column). The bar
-  is a fixed strip at the top; routed content scrolls inside `.app-scroll`
-  (`flex-1 overflow-y-auto` under the bar), so the window controls sit flush
-  against the window edge — the root scrollbar can never inset them.
+  is a sticky-pinned strip (`sticky top-0`) at the top; routed content scrolls
+  inside `.app-scroll` (`flex-1 overflow-y-auto` under the bar), so the window
+  controls sit flush against the window edge — the root scrollbar can never
+  inset them, and the bar never scrolls away. The shell resets the viewport
+  `scrollbar-gutter` to `auto` — `stable` would reserve a gutter even with
+  document scrolling disabled, insetting the bar from the window edge.
 - Height reservation: `--titlebar-h` (0px default; the entry sets 2.25rem on
   `document.documentElement` before first paint when `window.desktop`
   exists). Root containers use

@@ -2,7 +2,7 @@ import { Section } from "@/components/section/Section";
 import { ProductCard } from "@/components/products/ProductCard";
 import { SectionHead } from "@/components/section/SectionHead";
 import { Reveal } from "@/components/motion/Reveal";
-import { products } from "@/content/products";
+import { products } from "@kataria-syntex/shared";
 
 /**
  * Yarn index — the three material families as lifted paper cards on a

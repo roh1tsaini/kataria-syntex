@@ -15,7 +15,6 @@ import { Reveal } from "@/components/motion/Reveal";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { CardLink } from "@/content/links";
 import type { OpenStatus } from "@/lib/hours";
-import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 
 const ICONS: Record<CardLink["icon"], LucideIcon> = {
   globe: Globe,
@@ -29,6 +28,7 @@ const ICONS: Record<CardLink["icon"], LucideIcon> = {
 type BusinessCardProps = {
   name: string;
   tagline: string;
+  city: string;
   meta: readonly { term: string; value: string }[];
   status: OpenStatus;
   links: CardLink[];
@@ -50,6 +50,7 @@ type BusinessCardProps = {
 export function BusinessCard({
   name,
   tagline,
+  city,
   meta,
   status,
   links,
@@ -236,7 +237,7 @@ export function BusinessCard({
             <p className="mt-1.5 text-xs leading-relaxed text-sky">{tagline}</p>
 
             <div className="mt-auto border-t border-line-dark pt-2.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ice-soft/60">
-              Yarn sourcing · {COMPANY_DETAILS.location.split(",")[0]}
+              Yarn sourcing · {city}
             </div>
           </div>
         </div>

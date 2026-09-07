@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
 import { toIso } from "../lib/datetime";
@@ -94,7 +94,6 @@ function isUniqueRecipeConflict(err: unknown): boolean {
 /** Workspace-scoped list of recipes with color/denier names joined in. */
 recipesRoute.get("/", requirePermission("manage_masters"), async (c) => {
   const workspaceId = c.get("member").workspaceId;
-  const colorId = c.req.query("colorId")?.trim();
   const db = getDb(c.env.DB);
   const rows = await db
     .select({
@@ -110,23 +109,38 @@ recipesRoute.get("/", requirePermission("manage_masters"), async (c) => {
       processTimeSec: colorRecipes.processTimeSec,
       notes: colorRecipes.notes,
       version: colorRecipes.version,
-      ingredientCount:
-        sql<number>`(select count(*) from ${colorRecipeIngredients} where ${colorRecipeIngredients.recipeId} = ${colorRecipes.id})`.as(
-          "ingredient_count",
-        ),
       updatedAt: colorRecipes.updatedAt,
     })
     .from(colorRecipes)
     .innerJoin(colors, eq(colors.id, colorRecipes.colorId))
     .innerJoin(deniers, eq(deniers.id, colorRecipes.denierId))
-    .where(
-      and(
-        eq(colorRecipes.workspaceId, workspaceId),
-        colorId ? eq(colorRecipes.colorId, colorId) : undefined,
-      ),
-    )
+    .where(eq(colorRecipes.workspaceId, workspaceId))
     .orderBy(asc(colors.name), asc(deniers.name));
-  return c.json({ items: rows });
+  // One batched count for the page's ids instead of a correlated subquery
+  // per row (same `ingredient_count` shape the client expects).
+  const counts =
+    rows.length > 0
+      ? await db
+          .select({
+            recipeId: colorRecipeIngredients.recipeId,
+            count: sql<number>`count(*)`.mapWith(Number),
+          })
+          .from(colorRecipeIngredients)
+          .where(
+            inArray(
+              colorRecipeIngredients.recipeId,
+              rows.map((r) => r.id),
+            ),
+          )
+          .groupBy(colorRecipeIngredients.recipeId)
+      : [];
+  const countById = new Map(counts.map((r) => [r.recipeId, r.count]));
+  return c.json({
+    items: rows.map((r) => ({
+      ...r,
+      ingredientCount: countById.get(r.id) ?? 0,
+    })),
+  });
 });
 
 /** Single recipe by color+denier — the challan detail "View recipe" path.
@@ -148,9 +162,8 @@ recipesRoute.get("/lookup", async (c) => {
       ),
     )
     .limit(1);
-  const recipe = rows[0];
-  if (!recipe) return c.json({ recipe: null });
-  return c.json({ recipeId: recipe.id });
+  // Stable envelope — always { recipeId: string | null }.
+  return c.json({ recipeId: rows[0]?.id ?? null });
 });
 
 recipesRoute.post("/", requirePermission("manage_masters"), async (c) => {

@@ -4,7 +4,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { type Shade } from "@/content/shades";
+import { type Shade } from "@kataria-syntex/shared";
 import { Button } from "@/components/ui/button";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
 

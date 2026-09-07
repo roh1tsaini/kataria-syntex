@@ -14,7 +14,8 @@ import {
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import { apiError } from "../lib/api-error";
-import { returnedTotalsByChallan } from "../lib/document-pipeline";
+import { jobWorkBalances } from "../lib/document-pipeline";
+import { summarizeStockLedger } from "../lib/stock";
 import { round3 } from "@kataria-syntex/shared";
 
 export const reportsRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -44,13 +45,6 @@ function parseDateRange(c: {
   });
   return parsed.success ? parsed.data : null;
 }
-
-/** transaction-log ?source= — the movement sources stock.ts writes. */
-const stockSourceSchema = z
-  .string()
-  .trim()
-  .pipe(z.enum(["sales", "job_work_send", "job_work_return", "raw_entry"]))
-  .optional();
 
 // ── Dashboard: flow-stage cards ───────────────────────────────────────────────
 
@@ -141,49 +135,25 @@ reportsRoute.get(
     const range = parseDateRange(c);
     if (!range) return apiError(c, "invalid_request", 400);
     const { from, to } = range;
-    const jobWorkerId = c.req.query("jobWorkerId")?.trim();
+    const jobWorkerId = c.req.query("jobWorkerId")?.trim() || undefined;
 
-    // Get all outward challans
-    const chConditions = [
-      eq(challans.workspaceId, workspaceId),
-      eq(challans.type, "outward"),
-    ];
-    if (jobWorkerId) chConditions.push(eq(challans.jobWorkerId, jobWorkerId));
-    if (from) chConditions.push(gte(challans.date, from));
-    if (to) chConditions.push(lte(challans.date, to));
-
-    const chRows = await db
-      .select({
-        id: challans.id,
-        number: challans.challanNumber,
-        date: challans.date,
-        jobWorkerId: challans.jobWorkerId,
-        jobWorkerName: challans.jobWorkerName,
-        totalNetWt: challans.totalNetWt,
-      })
-      .from(challans)
-      .where(and(...chConditions))
-      .orderBy(asc(challans.date));
-
-    if (chRows.length === 0) return c.json({ items: [] });
-    const returnedMap = await returnedTotalsByChallan(
-      db,
-      chRows.map((ch) => ch.id),
-    );
-    const result = chRows.map((ch) => {
-      const returned = returnedMap.get(ch.id) ?? 0;
-      return {
-        challanId: ch.id,
-        challanNumber: ch.number,
-        date: ch.date,
-        jobWorkerName: ch.jobWorkerName,
-        sent: ch.totalNetWt,
-        returned,
-        balance: round3(ch.totalNetWt - returned),
-      };
+    const balances = await jobWorkBalances(db, workspaceId, {
+      jobWorkerId,
+      from,
+      to,
     });
 
-    return c.json({ items: result });
+    return c.json({
+      items: balances.map((b) => ({
+        challanId: b.challanId,
+        challanNumber: b.challanNumber,
+        date: b.date,
+        jobWorkerName: b.jobWorkerName,
+        sent: b.sent,
+        returned: b.returned,
+        balance: b.balance,
+      })),
+    });
   },
 );
 
@@ -234,31 +204,43 @@ reportsRoute.get(
     const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
 
-    const grouped = await db
-      .select({
-        stockType: stockEntries.stockType,
-        denierName: stockEntries.denierName,
-        colorName: stockEntries.colorName,
-        lotNo: stockEntries.lotNo,
-        total: sql<number>`sum(${stockEntries.netWt})`.mapWith(Number),
-      })
-      .from(stockEntries)
-      .where(eq(stockEntries.workspaceId, workspaceId))
-      .groupBy(
-        stockEntries.stockType,
-        stockEntries.denierName,
-        stockEntries.colorName,
-        stockEntries.lotNo,
-      )
-      .orderBy(asc(stockEntries.stockType), asc(stockEntries.denierName));
+    // One canonical ledger GROUP BY (see lib/stock.ts) — this endpoint keeps
+    // its own envelope ({total}, no ids) so the generic reports grid is
+    // unaffected. Re-aggregated by display keys to preserve the exact
+    // name-grouped values the old query returned.
+    const grouped = await summarizeStockLedger(db, workspaceId);
+    const byDisplay = new Map<
+      string,
+      {
+        stockType: string;
+        denierName: string;
+        colorName: string;
+        lotNo: string;
+        total: number;
+      }
+    >();
+    for (const r of grouped) {
+      const lotNo = r.lotNo || "Unlabelled";
+      const key = [r.stockType, r.denierName, r.colorName, lotNo].join(
+        String.fromCharCode(31),
+      );
+      const cur = byDisplay.get(key);
+      if (cur) cur.total = round3(cur.total + r.totalWt);
+      else
+        byDisplay.set(key, {
+          stockType: r.stockType,
+          denierName: r.denierName,
+          colorName: r.colorName,
+          lotNo,
+          total: r.totalWt,
+        });
+    }
 
-    const items = grouped.map((r) => ({
-      stockType: r.stockType,
-      denierName: r.denierName,
-      colorName: r.colorName,
-      lotNo: r.lotNo || "Unlabelled",
-      total: round3(r.total ?? 0),
-    }));
+    const items = [...byDisplay.values()].sort(
+      (a, b) =>
+        a.stockType.localeCompare(b.stockType) ||
+        a.denierName.localeCompare(b.denierName),
+    );
 
     return c.json({ items });
   },
@@ -346,23 +328,26 @@ reportsRoute.get(
     const range = parseDateRange(c);
     if (!range) return apiError(c, "invalid_request", 400);
     const { from, to } = range;
-    const parsedSource = stockSourceSchema.safeParse(c.req.query("source"));
-    if (!parsedSource.success) return apiError(c, "invalid_request", 400);
-    const source = parsedSource.data;
 
     const conditions = [eq(stockEntries.workspaceId, workspaceId)];
     if (from) conditions.push(gte(stockEntries.date, from));
     if (to) conditions.push(lte(stockEntries.date, to));
-    if (source) conditions.push(eq(stockEntries.source, source));
 
-    const rows = await db
-      .select()
-      .from(stockEntries)
-      .where(and(...conditions))
-      .orderBy(desc(stockEntries.date), desc(stockEntries.createdAt))
-      .limit(1000);
+    const [rows, totalRows] = await Promise.all([
+      db
+        .select()
+        .from(stockEntries)
+        .where(and(...conditions))
+        .orderBy(desc(stockEntries.date), desc(stockEntries.createdAt))
+        .limit(1000),
+      db
+        .select({ count: sql<number>`count(*)`.mapWith(Number) })
+        .from(stockEntries)
+        .where(and(...conditions)),
+    ]);
+    const total = totalRows[0]?.count ?? rows.length;
 
-    return c.json({ items: rows });
+    return c.json({ items: rows, total, truncated: total > rows.length });
   },
 );
 
