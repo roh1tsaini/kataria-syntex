@@ -97,8 +97,7 @@ Electron compile):
 
 **2026-09-07 pass**: dead packing→challan linkage dropped (+ migration);
 dead motion tokens; `EASE`→`EASE_OUT`; duplicate `/company` fetches; dead
-stock guards; `deleteSessionCookie`; `workbox-window` +
-`react-server-dom-webpack` removed; dead scripts deleted; `dead-files/`
+stock guards; `deleteSessionCookie`; dead scripts deleted; `dead-files/`
 removed; Capacitor output gitignored; offline totals → `challanTotals()`;
 badge simplification; web shim deletion; 8 dead query params; balance +
 stock endpoint consolidation (`jobWorkBalances`, `summarizeStockLedger`);
