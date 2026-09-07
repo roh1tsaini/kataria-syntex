@@ -7,7 +7,7 @@
  * - the Windows/Linux "restart to update" toast when electron-updater has
  *   staged the installer.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import { useUpdates, showUpdateBanner } from "@/store/updates";
@@ -15,6 +15,10 @@ import { detectHost } from "@/lib/platform";
 import { UpdateDialog } from "@/ui/components/update-dialog";
 import { Button } from "@/ui/components/ui/button";
 import { EASE_OUT } from "@/ui/lib/motion";
+
+// Electron's invisible drag strip covers the top of the window; subtract the
+// banner row from it so the Update button stays clickable.
+const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
 
 function UpdateReadyToast() {
   const status = useUpdates((s) => s.status);
@@ -66,7 +70,10 @@ function UpdateBanner() {
           transition={{ duration: reduceMotion ? 0 : 0.2, ease: EASE_OUT }}
           className="overflow-hidden border-b border-border bg-accent/10"
         >
-          <div className="flex min-h-11 items-center justify-between gap-3 px-4 sm:px-6">
+          <div
+            className="flex min-h-11 items-center justify-between gap-3 pl-4 pr-[calc(1rem+var(--wc-w))] sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))]"
+            style={noDragStyle}
+          >
             <p className="text-[13px] leading-tight text-accent-foreground">
               {downloading
                 ? `Downloading v${latestVersion}… ${percent !== null ? `${percent}%` : ""}`

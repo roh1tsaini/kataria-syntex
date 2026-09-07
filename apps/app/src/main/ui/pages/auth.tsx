@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth } from "@/store/auth";
+import { isPlainBrowser } from "@/lib/platform";
 import { friendlyError } from "@/ui/lib/errors";
 import { QrLoginPanel } from "@/ui/components/qr-login-panel";
 import { Button } from "@/ui/components/ui/button";
@@ -560,12 +561,14 @@ export function AuthPage() {
           {COMPANY_DETAILS.name} Biz App
         </div>
       </div>
-      <Link
-        to="/download"
-        className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
-      >
-        Get the app for desktop or Android
-      </Link>
+      {isPlainBrowser() && (
+        <Link
+          to="/download"
+          className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+        >
+          Get the app for desktop or Android
+        </Link>
+      )}
       <motion.div
         initial={{
           opacity: 0,

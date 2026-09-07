@@ -306,8 +306,8 @@
     isolation: isolate;
   }
   /* Electron desktop shell: the document itself never scrolls — the routed
-  view scrolls in .app-scroll, keeping the header and the floating window
-  controls flush against the window edge with no scrollbar/gutter inset. */
+  view scrolls in .app-scroll, keeping the floating window controls flush
+  against the window edge with no scrollbar/gutter inset. */
   [data-shell="desktop"] {
     height: 100%;
     overflow: hidden;
@@ -327,6 +327,25 @@
   }
   [data-shell="desktop"] .app-scroll {
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  /* Shell routes: the header is a fixed row of the window and the routed
+  content scrolls in .shell-scroll below it — the page scrollbar starts
+  under the header line, never beside the window controls. Chrome-less
+  routes (no shell) keep scrolling in .app-scroll above. */
+  [data-shell="desktop"] .app-shell-root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  [data-shell="desktop"] .app-shell-col {
+    flex: 1 1 0%;
+    min-height: 0;
+  }
+  [data-shell="desktop"] .shell-scroll {
+    flex: 1 1 0%;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
@@ -559,6 +578,13 @@
     display: block;
   }
   [data-shell="desktop"] .app-scroll {
+    overflow: visible;
+  }
+  [data-shell="desktop"] .app-shell-root {
+    height: auto;
+    display: block;
+  }
+  [data-shell="desktop"] .shell-scroll {
     overflow: visible;
   }
 }

@@ -1,21 +1,35 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { desktopWindow, type DesktopWindow } from "@/lib/platform";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { desktopWindow } from "@/lib/platform";
 import { cn } from "@/ui/lib/cn";
 
 /**
  * Electron window chrome, blended (design.md §2.7.1): there is no bar — the
- * app surface runs to every window edge. Two floating pieces, Electron-only
- * (web/PWA and Capacitor render nothing):
+ * app surface runs to every window edge. Three pieces, Electron-only (web/PWA
+ * and Capacitor render nothing):
  *
- * - An invisible drag strip across the top 3.5rem. On shell routes it sits
- *   beneath the header and sidebar (the header carries the drag regions);
- *   on chrome-less routes (auth, print, scan, 404) it is the drag surface.
- * - The window-control cluster pinned flush into the top-right corner
- *   (Windows/Linux; macOS keeps its native traffic lights instead). Its
- *   width is reserved by --wc-w so header content never slides beneath it.
+ * - TitleBar: an invisible drag strip across the top 3.5rem. On shell routes
+ *   it sits beneath the header and sidebar (the header carries the drag
+ *   regions; the sidebar is click-only via no-drag); on chrome-less routes
+ *   (auth, print, scan, 404) it is the drag surface.
+ * - WindowControls: pinned flush into the top-right corner (Windows/Linux;
+ *   macOS keeps its native traffic lights instead). Its width is reserved by
+ *   --wc-w so header content never slides beneath it.
+ *
+ * Electron resolves app-region rects geometrically in DOM order — z-index is
+ * ignored. WindowControls must therefore render AFTER the shell (it is
+ * mounted last in App) so its no-drag rect subtracts last, and every
+ * interactive surface sharing the top strip (sidebar, update banner) carries
+ * its own no-drag.
  */
 
 const dragStyle = { WebkitAppRegion: "drag" } as CSSProperties;
+const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
 
 function MinGlyph() {
   return (
@@ -104,52 +118,55 @@ function ControlButton({
   );
 }
 
+/** Invisible drag surface across the top; double-click toggles maximize
+ * natively via the HTCAPTION region. */
 export function TitleBar() {
-  const [win, setWin] = useState<DesktopWindow | null>(null);
+  const win = desktopWindow();
+  if (!win) return null;
+  return (
+    <div
+      className="fixed inset-x-0 top-0 z-20 h-14 print:hidden"
+      style={dragStyle}
+    />
+  );
+}
+
+/** Floating window controls (Windows/Linux), mounted last in App so its
+ * no-drag rect is the final subtraction from the drag region. */
+export function WindowControls() {
+  // Stable identity: the desktop bridge exists before the renderer loads, so
+  // a one-shot read is enough.
+  const win = useMemo(() => desktopWindow(), []);
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
-    const w = desktopWindow();
-    if (!w) return;
-    setWin(w);
-    void w
+    if (!win || win.platform === "darwin") return;
+    void win
       .isMaximized()
       .then(setMaximized)
       .catch(() => {});
-    return w.onMaximizedChange(setMaximized);
-  }, []);
+    return win.onMaximizedChange(setMaximized);
+  }, [win]);
 
-  if (!win) return null;
+  if (!win || win.platform === "darwin") return null;
 
   return (
-    <>
-      {/* Invisible drag surface across the top; double-click toggles
-          maximize natively via the HTCAPTION region. */}
-      <div
-        className="fixed inset-x-0 top-0 z-20 h-14 print:hidden"
-        style={dragStyle}
-      />
-
-      {win.platform !== "darwin" && (
-        <div className="fixed top-0 right-0 z-40 flex h-14 items-stretch print:hidden">
-          <ControlButton label="Minimize" onClick={() => void win.minimize()}>
-            <MinGlyph />
-          </ControlButton>
-          <ControlButton
-            label={maximized ? "Restore" : "Maximize"}
-            onClick={() => void win.toggleMaximize()}
-          >
-            {maximized ? <RestoreGlyph /> : <MaxGlyph />}
-          </ControlButton>
-          <ControlButton
-            label="Close"
-            destructive
-            onClick={() => void win.close()}
-          >
-            <CloseGlyph />
-          </ControlButton>
-        </div>
-      )}
-    </>
+    <div
+      className="fixed top-0 right-0 z-40 flex h-14 items-stretch print:hidden"
+      style={noDragStyle}
+    >
+      <ControlButton label="Minimize" onClick={() => void win.minimize()}>
+        <MinGlyph />
+      </ControlButton>
+      <ControlButton
+        label={maximized ? "Restore" : "Maximize"}
+        onClick={() => void win.toggleMaximize()}
+      >
+        {maximized ? <RestoreGlyph /> : <MaxGlyph />}
+      </ControlButton>
+      <ControlButton label="Close" destructive onClick={() => void win.close()}>
+        <CloseGlyph />
+      </ControlButton>
+    </div>
   );
 }

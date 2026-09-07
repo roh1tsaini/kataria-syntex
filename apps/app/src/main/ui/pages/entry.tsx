@@ -1,21 +1,22 @@
 /**
- * Entry screen — what a logged-out visitor sees at "/". Two paths: use the
- * app right here (web/PWA) or install it on this device first. Platform
- * detection only recommends; every option stays reachable.
+ * Entry screen — what a logged-out visitor sees at "/" in a plain browser.
+ * Two paths: use the app right here (web/PWA) or install it on this device.
+ * Platform detection only recommends; every option stays reachable.
  *
- * Native shells never render this (they're always "signed in" or heading to
- * /auth) — it exists for the browser URL someone just received.
+ * Installed contexts (Electron, Capacitor, standalone PWA) never render this
+ * — App.tsx sends them straight to /auth.
  */
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Download } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { detectPlatformLabel } from "@/lib/platform";
+import { detectPlatformLabel, isPlainBrowser } from "@/lib/platform";
 import { Button } from "@/ui/components/ui/button";
 import { EASE_OUT } from "@/ui/lib/motion";
 
 export function EntryPage() {
   const reduceMotion = useReducedMotion();
+  const showInstall = isPlainBrowser();
   const platform = detectPlatformLabel();
 
   return (
@@ -50,16 +51,20 @@ export function EntryPage() {
             <ArrowRight className="size-4" aria-hidden />
           </Link>
         </Button>
-        <Button asChild size="lg" variant="outline" className="min-h-12">
-          <Link to="/download">
-            <Download className="size-4" aria-hidden />
-            Install for {platform}
-          </Link>
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Chrome, Edge or Safari: use it right here. Install the app for daily
-          use on this device.
-        </p>
+        {showInstall && (
+          <>
+            <Button asChild size="lg" variant="outline" className="min-h-12">
+              <Link to="/download">
+                <Download className="size-4" aria-hidden />
+                Install for {platform}
+              </Link>
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              Chrome, Edge or Safari: use it right here. Install the app for
+              daily use on this device.
+            </p>
+          </>
+        )}
       </motion.div>
     </div>
   );

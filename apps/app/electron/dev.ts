@@ -54,7 +54,9 @@ const built = await Bun.build({
   target: "node",
   format: "cjs",
   external: ["electron"],
-  naming: "[dir]/[name].[ext]",
+  // .cjs, never .js — apps/app is "type": "module", so Electron would load
+  // .js bundles as ESM and crash on require.
+  naming: "[dir]/[name].cjs",
 });
 if (!built.success) {
   console.error("electron main/preload build failed");

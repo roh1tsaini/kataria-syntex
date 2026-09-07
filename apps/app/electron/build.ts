@@ -33,7 +33,9 @@ for (const entry of ["main", "preload"]) {
     ...common,
     entrypoints: [`./electron/${entry}.ts`],
     outdir: "dist-electron",
-    naming: "[dir]/[name].[ext]",
+    // .cjs, never .js — apps/app is "type": "module", so Electron would load
+    // .js bundles as ESM and crash on require.
+    naming: "[dir]/[name].cjs",
   });
   if (!result.success) {
     console.error(`electron/${entry}.ts build failed`);

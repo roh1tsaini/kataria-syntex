@@ -27,6 +27,18 @@ export function detectHost(): Host {
 
 export const isNative = () => detectHost() !== "web";
 
+/** True only in a plain browser tab — not Electron, not Capacitor, not an
+ * installed PWA running in standalone display mode. Gates the install/
+ * download surface: native shells and installed PWAs ARE the app. */
+export function isPlainBrowser(): boolean {
+  if (detectHost() !== "web") return false;
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    // iOS Safari, pre display-mode-query
+    (navigator as { standalone?: boolean }).standalone === true;
+  return !standalone;
+}
+
 /** Human-readable device label for the offline device identity. Reads the
  * user-agent directly (Android WebViews and Electron both announce themselves
  * there) so no other module sniffs the UA for platform decisions. */

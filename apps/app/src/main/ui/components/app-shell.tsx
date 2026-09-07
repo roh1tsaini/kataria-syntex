@@ -707,6 +707,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     }
   });
   const drawerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const isPacker = isPackerOnlyWorkspace(workspace);
   const can = useCanSee();
@@ -780,6 +781,8 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Desktop scroller lives below the header — reset it on navigation too.
+    scrollRef.current?.scrollTo({ top: 0 });
   }, [location.pathname]);
 
   // Focus the drawer when it opens.
@@ -828,7 +831,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
 
   return (
     <AppShellContext.Provider value={true}>
-      <div className="min-h-dvh w-full bg-background">
+      <div className="app-shell-root min-h-dvh w-full bg-background">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
@@ -841,9 +844,12 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
         <aside
           onMouseEnter={onRailEnter}
           onMouseLeave={onRailLeave}
+          style={noDragStyle}
           className={cn(
             // Full window height — the brand row is the top-left corner of
             // the window; --tl-inset clears the macOS traffic lights above it.
+            // no-drag subtracts the sidebar from TitleBar's drag strip
+            // (drag regions resolve in DOM order, z-index is ignored).
             "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card pt-[var(--tl-inset)] transition-[width] duration-200 ease-[var(--ease-drawer)] motion-reduce:transition-none md:flex",
             railOpen ? "w-60" : "w-14",
             railHot && "z-50 border-r-transparent shadow-overlay",
@@ -930,10 +936,13 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           </AnimatePresence>
         </aside>
 
-        {/* Content column sits next to the sidebar; no reflow animation. */}
+        {/* Content column sits next to the sidebar; no reflow animation.
+            Desktop: the header stays a fixed row and the routed content
+            scrolls in .shell-scroll below it, so the page scrollbar starts
+            under the header line — never beside the window controls. */}
         <div
           className={cn(
-            "flex min-h-dvh flex-col",
+            "app-shell-col flex min-h-dvh flex-col",
             railCollapsed ? "md:pl-14" : "md:pl-60",
           )}
         >
@@ -944,28 +953,30 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           <SyncBanner onOpen={() => setSyncOpen(true)} />
           <SyncDialog open={syncOpen} onOpenChange={setSyncOpen} />
 
-          <main id="main-content" className="min-w-0 flex-1" tabIndex={-1}>
-            <AnimatePresence mode="wait" initial={false}>
-              <PageTransition
-                key={location.pathname}
-                className="mx-auto w-full max-w-[75rem] px-4 pt-6 pb-28 sm:px-6 md:pb-8 xl:px-8"
-              >
-                <Suspense
-                  fallback={
-                    location.pathname === "/" &&
-                    isPackerOnlyWorkspace(workspace) ? (
-                      // Packer-only workspaces land on packing, not dashboard.
-                      <PackingSkeleton />
-                    ) : (
-                      <InnerPageLoader pathname={location.pathname} />
-                    )
-                  }
+          <div ref={scrollRef} className="shell-scroll">
+            <main id="main-content" className="min-w-0" tabIndex={-1}>
+              <AnimatePresence mode="wait" initial={false}>
+                <PageTransition
+                  key={location.pathname}
+                  className="mx-auto w-full max-w-[75rem] px-4 pt-6 pb-28 sm:px-6 md:pb-8 xl:px-8"
                 >
-                  {children ?? <Outlet />}
-                </Suspense>
-              </PageTransition>
-            </AnimatePresence>
-          </main>
+                  <Suspense
+                    fallback={
+                      location.pathname === "/" &&
+                      isPackerOnlyWorkspace(workspace) ? (
+                        // Packer-only workspaces land on packing, not dashboard.
+                        <PackingSkeleton />
+                      ) : (
+                        <InnerPageLoader pathname={location.pathname} />
+                      )
+                    }
+                  >
+                    {children ?? <Outlet />}
+                  </Suspense>
+                </PageTransition>
+              </AnimatePresence>
+            </main>
+          </div>
         </div>
 
         <MobileBottomNav

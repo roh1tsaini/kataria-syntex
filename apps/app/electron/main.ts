@@ -296,7 +296,7 @@ function createWindow(): void {
     // hide the system bar entirely — the renderer draws the chrome.
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
     webPreferences: {
-      preload: join(APP_ROOT, "dist-electron", "preload.js"),
+      preload: join(APP_ROOT, "dist-electron", "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,

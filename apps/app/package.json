@@ -1,10 +1,10 @@
 {
   "name": "@kataria-syntex/biz-app",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "minAppVersion": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "dev:server": "wrangler dev --port 3000",

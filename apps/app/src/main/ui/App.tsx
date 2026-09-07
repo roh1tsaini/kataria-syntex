@@ -1,13 +1,14 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { initUpdateChecks } from "@/store/updates";
+import { isNative, isPlainBrowser } from "@/lib/platform";
 import { ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
 import { Toaster } from "@/ui/components/toast";
 import { UpdateSurface } from "@/ui/components/update-surface";
 import { ErrorBoundary } from "@/ui/components/error-boundary";
-import { TitleBar } from "@/ui/components/title-bar";
+import { TitleBar, WindowControls } from "@/ui/components/title-bar";
 import {
   AuthSkeleton,
   PrintSkeleton,
@@ -105,11 +106,16 @@ function Home() {
   return <Dashboard />;
 }
 
-/** "/" when signed out — the two-path entry screen. Signed-in users get the
- * full shell (this route sits outside the layout's guest redirect). */
+/** "/" when signed out — the two-path entry screen (plain browser only).
+ * Installed contexts (Electron, Capacitor, standalone PWA) ARE the app: they
+ * skip the marketing screen and go straight to sign-in. Signed-in users get
+ * the full shell (this route sits outside the layout's guest redirect). */
 function EntryOrHome() {
   const status = useAuth((s) => s.status);
-  if (status === "guest") return <EntryPage />;
+  if (status === "guest") {
+    if (!isPlainBrowser()) return <Navigate to="/auth" replace />;
+    return <EntryPage />;
+  }
   return (
     <ProtectedRoute>
       <AppShell>
@@ -117,6 +123,14 @@ function EntryOrHome() {
       </AppShell>
     </ProtectedRoute>
   );
+}
+
+/** Native shells ARE the installed app — /download has nothing to offer
+ * them, so it sends them to sign-in instead. Browsers (and the web PWA
+ * flow) keep the page. */
+function DownloadOrAuth() {
+  if (isNative()) return <Navigate to="/auth" replace />;
+  return <DownloadPage />;
 }
 
 export function App() {
@@ -171,7 +185,7 @@ export function App() {
                 path="/download"
                 element={
                   <Suspense fallback={null}>
-                    <DownloadPage />
+                    <DownloadOrAuth />
                   </Suspense>
                 }
               />
@@ -353,6 +367,9 @@ export function App() {
             </Routes>
           </Suspense>
         </div>
+        {/* Mounted last: its no-drag rect is the final subtraction from the
+            drag region (app-region resolves in DOM order, z-index ignored). */}
+        <WindowControls />
       </ErrorBoundary>
       <Toaster />
     </>
