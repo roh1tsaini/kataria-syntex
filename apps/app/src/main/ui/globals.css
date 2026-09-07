@@ -417,6 +417,17 @@
     padding: 0.75rem;
   }
 
+  /* Press feedback (§5.6): transform answers instantly (100ms); colors keep
+     their 150ms hover pace. Shared by every tappable control. */
+  .btn-motion {
+    transition:
+      background-color 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      border-color 150ms var(--ease-out),
+      box-shadow 150ms var(--ease-out),
+      transform 100ms var(--ease-out);
+  }
+
   .field-control {
     border-radius: var(--radius-md);
     background-color: var(--card);

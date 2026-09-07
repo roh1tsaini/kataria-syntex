@@ -17,8 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/ui/components/ui/empty";
-import { Skeleton } from "@/ui/components/motion";
-import { Stagger, StaggerItem } from "@/ui/components/motion";
+import { Skeleton, Stagger, StaggerItem } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
 
 import { friendlyError } from "@/ui/lib/errors";
@@ -79,14 +78,7 @@ function DeviceRow({
           disabled={deleting}
           className="text-destructive"
         >
-          {deleting ? (
-            <Skeleton
-              className="h-4 w-10 rounded-full opacity-60"
-              aria-hidden
-            />
-          ) : (
-            <Trash2 className="size-4" aria-hidden />
-          )}
+          <Trash2 className="size-4" aria-hidden />
           Revoke
         </Button>
       )}

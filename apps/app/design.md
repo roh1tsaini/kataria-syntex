@@ -207,20 +207,47 @@ placeholders, fallbacks) — never the app name.
 
 ## 3. Component specs (ui/*)
 
-| Component                        | Contract                                                                                                                                                                                                                                                                                                                                                   |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button                           | Radii/heights from §2.2/§2.3. Press: `scale(0.97)` @100ms on `:active`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated.                                                                                       |
-| CircleButton / ButtonCapsule     | Shell-chrome icon actions (§2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)`. Adjacent pairs join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail). Never for navigation rows.                                                                                                                |
-| Input/Select/Textarea/DatePicker | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error. |
-| Card                             | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                   |
-| Dialog                           | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                   |
-| Dropdown/Popover                 | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                       |
-| Tabs                             | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                |
-| Badge                            | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                         |
-| Toast                            | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one line: title only, no restating description.                                                                                                                                                                                                                                            |
-| Empty states                     | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                        |
-| Skeletons                        | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned.                                                                                                                                                                                                                                                                         |
-| Tables                           | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                      |
+| Component                        | Contract                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Button                           | Radii/heights from §2.2/§2.3. Press: `scale(0.97)` @100ms on `:active` via `.btn-motion`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons. |
+| CircleButton / ButtonCapsule     | Shell-chrome icon actions (§2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent pairs join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail). Never for navigation rows.                                                                                                                                               |
+| Input/Select/Textarea/DatePicker | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                         |
+| Card                             | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                           |
+| Dialog                           | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                           |
+| Dropdown/Popover                 | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                                                                               |
+| Tabs                             | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                                                                        |
+| Badge                            | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                                                                                 |
+| Toast                            | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one line: title only, no restating description.                                                                                                                                                                                                                                                                                                    |
+| Empty states                     | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                |
+| Skeletons                        | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (§3.1).                                                                                                                                                                                                                                                                                 |
+| Tables                           | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                              |
+
+### 3.1 Loading skeletons — every screen gets its own shape
+
+A skeleton stands in for real content, so it must mirror that screen's
+layout — never one generic shape for all pages.
+
+- **Route-level (chunk load):** `src/main/ui/components/page-skeletons.tsx`
+  holds one skeleton per screen plus `routeSkeleton(pathname)`. The shell's
+  `InnerPageLoader` maps the current pathname to the matching skeleton and
+  renders it inside the existing page gutter (PageTransition padding applies —
+  skeletons never add their own page padding). Standalone routes outside the
+  shell (`/auth`, `/login/scan/:code`, `/:kind/:id/print`) wrap their own
+  `Suspense` with `AuthSkeleton` / `ScanApproveSkeleton` / `PrintSkeleton`.
+  Packer-only workspaces landing on `/` get `PackingSkeleton`, not the
+  dashboard shape.
+- **Page-level (data load):** pages keep their own shaped skeletons — tables
+  use `table-skeleton.tsx` `TableSkeleton` with the page's real column
+  widths, stat cards / charts / forms show bars in place of their real
+  blocks. Never a bare rectangle where structured content will appear.
+- **Building blocks:** `PageHeaderSkeleton` (eyebrow `h-3 w-20`, title
+  `h-8 w-56`, description `h-3 w-72`, actions `h-10 w-32 rounded-md`),
+  `filter-bar` with the real control heights (40px inputs), register card
+  (muted strip + desktop table + mobile card stack), stat/chart cards.
+- **Rules:** every skeleton is `aria-hidden`; `animate-pulse` only
+  (globals.css collapses it under `prefers-reduced-motion`); tokens only,
+  no raw colors; a new screen ships with its own skeleton entry in
+  `routeSkeleton` in the same change.
 
 ## 4. Layout
 
@@ -285,7 +312,10 @@ Rules:
    entrance = fade + 4–6px rise ≤240ms. No parallax, no looping animations,
    no hover scale >1, no emoji/confetti.
 6. **Press feedback is instant** (`:active` or pointer-down), 100ms, scale
-   0.97 on controls, background tint on list rows.
+   0.97 on controls, background tint on list rows. Implement with the shared
+   `.btn-motion` transition (globals.css): transform 100ms, colors 150ms —
+   never a single `duration-150` list where the press scale inherits the
+   hover pace.
 7. **Interruptibility:** anything a user can grab uses springs (motion/react);
    re-target from current value, carry velocity.
 8. **When in doubt, don't animate.** Motion earns its place by explaining
@@ -309,6 +339,8 @@ Rules:
 | Tokens (color/radius/shadow/ease)       | `src/main/ui/globals.css`                     |
 | Motion presets                          | `src/main/ui/lib/motion.ts`                   |
 | Reveal/Stagger/Skeleton/PageTransition  | `src/main/ui/components/motion.tsx`           |
+| Per-screen route skeletons (§3.1)       | `src/main/ui/components/page-skeletons.tsx`   |
+| Shared table skeleton                   | `src/main/ui/components/table-skeleton.tsx`   |
 | Primitives (shadcn-style)               | `src/main/ui/components/ui/*`                 |
 | Circular icon buttons & capsules (§2.7) | `src/main/ui/components/ui/circle-button.tsx` |
 | App frame (sidebar/tab bar/header)      | `src/main/ui/components/app-shell.tsx`        |

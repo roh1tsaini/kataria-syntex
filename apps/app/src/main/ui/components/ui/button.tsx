@@ -5,11 +5,10 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Skeleton } from "@/ui/components/motion";
 import { cn } from "@/ui/lib/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[background-color,color,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+  "btn-motion inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
     variants: {
       variant: {
@@ -44,7 +43,8 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   /** When true, renders as the child element (e.g. react-router Link). */
   asChild?: boolean;
-  /** Shows a skeleton pill and disables the button while truthy. */
+  /** Disables the button while an action runs; the label stays put and the
+   * disabled dim is the progress state (aria-busy). No content swap. */
   loading?: boolean;
 }
 
@@ -68,24 +68,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         ref={ref}
         type={type}
+        aria-busy={loading || undefined}
         className={cn(buttonVariants({ variant, size, className }))}
         disabled={disabled || loading}
         {...props}
       >
-        {asChild ? (
-          children
-        ) : (
-          <>
-            {loading && (
-              <Skeleton
-                className="h-4 w-14 rounded-full bg-primary-foreground/40"
-                data-icon="inline-start"
-                aria-hidden
-              />
-            )}
-            {children}
-          </>
-        )}
+        {children}
       </Comp>
     );
   },

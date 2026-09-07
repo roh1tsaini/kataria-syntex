@@ -37,7 +37,8 @@ import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { Button } from "@/ui/components/ui/button";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
-import { PageTransition, Skeleton } from "@/ui/components/motion";
+import { PageTransition } from "@/ui/components/motion";
+import { PackingSkeleton, routeSkeleton } from "@/ui/components/page-skeletons";
 import { AccentPicker } from "@/ui/components/accent-picker";
 import { SyncBanner, SyncDialog } from "@/ui/components/sync-dialog";
 import { useTheme } from "@/ui/hooks/use-theme";
@@ -664,21 +665,10 @@ function HeaderBar({
 
 export const AppShellContext = createContext<boolean>(false);
 
-function InnerPageLoader() {
-  return (
-    <div className="w-full space-y-6">
-      <div>
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="mt-2 h-8 w-56" />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-lg" />
-        ))}
-      </div>
-      <Skeleton className="h-64 w-full rounded-lg" />
-    </div>
-  );
+function InnerPageLoader({ pathname }: { pathname: string }) {
+  // One skeleton per screen, shaped like the content it stands in for
+  // (design.md §3.1).
+  return routeSkeleton(pathname);
 }
 
 export function AppShell({ children }: { children?: ReactNode }) {
@@ -946,7 +936,17 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                 key={location.pathname}
                 className="mx-auto w-full max-w-[75rem] px-4 pt-6 pb-28 sm:px-6 md:pb-8 xl:px-8"
               >
-                <Suspense fallback={<InnerPageLoader />}>
+                <Suspense
+                  fallback={
+                    location.pathname === "/" &&
+                    isPackerOnlyWorkspace(workspace) ? (
+                      // Packer-only workspaces land on packing, not dashboard.
+                      <PackingSkeleton />
+                    ) : (
+                      <InnerPageLoader pathname={location.pathname} />
+                    )
+                  }
+                >
                   {children ?? <Outlet />}
                 </Suspense>
               </PageTransition>

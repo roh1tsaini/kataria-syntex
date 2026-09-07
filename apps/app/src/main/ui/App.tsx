@@ -4,9 +4,13 @@ import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
 import { Toaster } from "@/ui/components/toast";
-import { Skeleton } from "@/ui/components/motion";
 import { ErrorBoundary } from "@/ui/components/error-boundary";
 import { TitleBar } from "@/ui/components/title-bar";
+import {
+  AuthSkeleton,
+  PrintSkeleton,
+  ScanApproveSkeleton,
+} from "@/ui/components/page-skeletons";
 import { NotFoundPage } from "@/ui/pages/not-found";
 
 const AuthPage = lazy(() =>
@@ -85,20 +89,6 @@ const ReportsPage = lazy(() =>
   import("@/ui/pages/reports").then((m) => ({ default: m.ReportsPage })),
 );
 
-function RouteLoader() {
-  return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <Skeleton className="h-3 w-24" />
-      <Skeleton className="mt-3 h-8 w-56" />
-      <div className="mt-6 grid gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 w-full" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function Home() {
   const ws = useAuth((s) => s.workspace);
   if (isPackerOnlyWorkspace(ws)) {
@@ -129,15 +119,35 @@ export function App() {
       <ErrorBoundary>
         <TitleBar />
         <div ref={scrollRef} className="app-scroll">
-          <Suspense fallback={<RouteLoader />}>
+          {/* Shell routes never reach this boundary — AppShell's inner
+              Suspense (page-skeletons.tsx routeSkeleton) sits closer to the
+              lazy page and shows a page-shaped fallback inside the chrome.
+              Only standalone routes below carry their own fallbacks. */}
+          <Suspense fallback={null}>
             <Routes>
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/login/scan/:code" element={<ScanApprovePage />} />
+              <Route
+                path="/auth"
+                element={
+                  <Suspense fallback={<AuthSkeleton />}>
+                    <AuthPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/login/scan/:code"
+                element={
+                  <Suspense fallback={<ScanApproveSkeleton />}>
+                    <ScanApprovePage />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/challans/:id/print"
                 element={
                   <ProtectedRoute>
-                    <ChallanPrintPage />
+                    <Suspense fallback={<PrintSkeleton />}>
+                      <ChallanPrintPage />
+                    </Suspense>
                   </ProtectedRoute>
                 }
               />
@@ -145,7 +155,9 @@ export function App() {
                 path="/outward/:id/print"
                 element={
                   <ProtectedRoute>
-                    <OutwardChallanPrintPage />
+                    <Suspense fallback={<PrintSkeleton />}>
+                      <OutwardChallanPrintPage />
+                    </Suspense>
                   </ProtectedRoute>
                 }
               />

@@ -6,7 +6,7 @@ import { cn } from "@/ui/lib/cn";
 /* design.md §2.7 — a lone small icon button is a circle; adjacent ones join
    inside a ButtonCapsule. Shell chrome only; nav rows stay rounded-md. */
 const circleButtonVariants = cva(
-  "grid shrink-0 place-items-center rounded-full border border-border/60 text-muted-foreground outline-none transition-[background-color,color,border-color,transform] duration-150 ease-[var(--ease-out)] [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:scale-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "btn-motion grid shrink-0 place-items-center rounded-full border border-border/60 text-muted-foreground outline-none [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:scale-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       size: {
