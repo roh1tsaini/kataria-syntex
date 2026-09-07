@@ -162,3 +162,65 @@ export async function api<T>(
   }
   return classify<T>(res.status, resBody);
 }
+
+function base64ToBlob(base64: string, type: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+
+/**
+ * Binary-download variant of the fetch transport — same auth and error-code
+ * rules as `api()`, but the body is raw bytes (used for PDFs).
+ */
+async function apiBlob(path: string): Promise<Blob> {
+  const resolvedToken = await readNativeToken();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api${path}`, {
+      credentials: isNative() ? "omit" : "include",
+      headers: {
+        ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
+        ...deviceHeaders(),
+      },
+    });
+  } catch {
+    throw networkError();
+  }
+  if (!res.ok) {
+    let code = res.status === 429 ? "rate_limited" : "pdf_render_failed";
+    try {
+      const body = (await res.json()) as { error?: unknown };
+      if (typeof body.error === "string") code = body.error;
+    } catch {
+      // non-JSON error body — keep the status-derived code
+    }
+    throw new ApiError(res.status, code);
+  }
+  return res.blob();
+}
+
+/**
+ * Challan PDF for every host — the one place that branches on where it runs.
+ * Electron renders the caller's HTML with its own Chromium over the IPC
+ * bridge (fully offline); web/PWA and Capacitor fetch the server-rendered
+ * copy (Browser Run). `localHtml` is only awaited on the Electron path.
+ */
+export async function challanPdf(
+  challanId: string,
+  localHtml: () => Promise<string>,
+): Promise<{ blob: Blob; via: "local" | "server" }> {
+  if (detectHost() === "electron" && window.desktop) {
+    let res: { status: number; base64: string | null };
+    try {
+      res = await window.desktop.renderPdf(await localHtml());
+    } catch {
+      throw networkError();
+    }
+    if (res.status !== 200 || !res.base64)
+      throw new ApiError(res.status || 500, "pdf_render_failed");
+    return { blob: base64ToBlob(res.base64, "application/pdf"), via: "local" };
+  }
+  return { blob: await apiBlob(`/challans/${challanId}/pdf`), via: "server" };
+}

@@ -1,42 +1,79 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { ArrowLeft, Printer, Save } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { useAuth } from "@/store/auth";
 import { useChallans } from "@/store/challans";
-import { ChallanDocument } from "@/ui/components/challan-document";
 
 import { printPage } from "@/lib/platform";
+import { loadChallanFonts } from "@/lib/challan-pdf";
+import {
+  SHEET_H_MM,
+  SHEET_W_MM,
+  buildChallanSheets,
+} from "../../../shared/challan-html";
 
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/motion";
 
 import { type ChallanKind } from "./challans-shared";
 
-export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
-  const { id } = useParams();
+/** The print view renders the SAME sheets the PDF pipelines consume. */
+function useChallanSheets(
+  id: string | undefined,
+  type: ChallanKind["type"],
+): { markup: string | null; failed: boolean } {
   const { detail, load, clearDetail } = useChallans();
   const company = useAuth((s) => s.company);
-  const printed = useRef(false);
-  const [loadError, setLoadError] = useState(false);
+  const [markup, setMarkup] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    setLoadError(false);
-    void load(id).catch(() => setLoadError(true));
+    setFailed(false);
+    void load(id).catch(() => setFailed(true));
   }, [id, load]);
 
   useEffect(() => clearDetail, [clearDetail]);
 
   useEffect(() => {
-    if (detail && !printed.current) {
+    if (!detail) return;
+    let alive = true;
+    void (async () => {
+      const fonts = await loadChallanFonts();
+      const { css, body } = buildChallanSheets({
+        detail,
+        company,
+        type,
+        fonts,
+      });
+      if (alive) setMarkup(`<style>${css}</style>${body}`);
+    })().catch(() => {
+      if (alive) setFailed(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [detail, company, type]);
+
+  return { markup, failed };
+}
+
+export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
+  const { id } = useParams();
+  const { detail } = useChallans();
+  const { markup, failed } = useChallanSheets(id, kind.type);
+  const printed = useRef(false);
+
+  useEffect(() => {
+    if (markup && !printed.current) {
       printed.current = true;
       const t = setTimeout(() => void printPage(kind.singular), 350);
       return () => clearTimeout(t);
     }
-  }, [detail, kind.singular]);
+  }, [markup, kind.singular]);
 
-  if (loadError) {
+  if (failed) {
     return (
       <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
         Couldn't load the challan. Check your connection.
@@ -51,7 +88,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
     );
   }
 
-  if (!detail) {
+  if (!detail || !markup) {
     return (
       <div className="flex min-h-[calc(100dvh-var(--titlebar-h))] flex-col items-center gap-3 bg-muted p-4">
         <span className="sr-only">Loading challan</span>
@@ -66,9 +103,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
 
   return (
     <div className="min-h-[calc(100dvh-var(--titlebar-h))] bg-muted p-4 print:bg-white print:p-0">
-      <style>{`@page { size: 210mm 148mm; margin: 0; }
-.challan-sheet { page-break-after: always; }
-.challan-sheet:last-child { page-break-after: auto; }`}</style>
+      <style>{`@page { size:${SHEET_W_MM}mm ${SHEET_H_MM}mm; margin:0; }`}</style>
       <div className="mb-4 flex items-center justify-between print:hidden">
         <Link
           to={`${kind.listPath}/${challan.id}`}
@@ -83,8 +118,8 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
         </Button>
       </div>
 
-      <div className="flex flex-col items-center gap-6 print:gap-0">
-        <ChallanDocument detail={detail} company={company} type={kind.type} />
+      <div className="flex flex-col items-center gap-6 print:gap-0 overflow-x-auto">
+        <div dangerouslySetInnerHTML={{ __html: markup }} />
       </div>
     </div>
   );

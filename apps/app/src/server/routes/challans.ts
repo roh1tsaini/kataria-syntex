@@ -26,8 +26,17 @@ import {
 } from "../lib/document-pipeline";
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
-import { renderSheetPdf } from "../../shared/pdf-driver";
+import {
+  buildChallanHtml,
+  type ChallanFonts,
+  type ChallanType,
+} from "../../shared/challan-html";
 import { loadInterFonts } from "../lib/inter-fonts";
+import {
+  PdfRenderError,
+  isPdfConfigured,
+  renderHtmlPdf,
+} from "../lib/browser-pdf";
 import { apiError } from "../lib/api-error";
 
 export const challansRoute = new Hono<PermsEnv & { Bindings: Env }>();
@@ -285,7 +294,19 @@ challansRoute.get("/:id/pdf", async (c) => {
   const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
 
-  // pdf-lib rendering is CPU/memory heavy — cap per user, fail-open on D1.
+  const [detail, companyRows] = await Promise.all([
+    loadChallanDetail(db, workspaceId, c.req.param("id")),
+    db.select().from(companies).where(eq(companies.workspaceId, workspaceId)),
+  ]);
+  if (!detail) return apiError(c, "not_found", 404);
+  const company = companyRows[0] ?? null;
+
+  // Doomed requests must be free: only once the challan exists and the
+  // renderer is configured does a call start costing the user's budget.
+  if (!isPdfConfigured(c.env)) return apiError(c, "pdf_not_configured", 500);
+
+  // Browser Run renders on real Chromium — cap requests per user, fail-open
+  // on D1, so the free browser-time budget stretches across the day.
   if (
     !(await consumeBudget(
       db,
@@ -296,35 +317,43 @@ challansRoute.get("/:id/pdf", async (c) => {
   )
     return apiError(c, "rate_limited", 429);
 
-  const [detail, companyRows] = await Promise.all([
-    loadChallanDetail(db, workspaceId, c.req.param("id")),
-    db.select().from(companies).where(eq(companies.workspaceId, workspaceId)),
-  ]);
-  if (!detail) return apiError(c, "not_found", 404);
-  const company = companyRows[0] ?? null;
+  let fonts: ChallanFonts;
+  try {
+    fonts = await loadInterFonts(c.env.ASSETS, c.req.url);
+  } catch {
+    // Missing/corrupt font assets — a render failure, not a server bug.
+    return apiError(c, "pdf_render_failed", 502);
+  }
 
-  const fonts = await loadInterFonts(c.env.ASSETS, c.req.url);
-  const pdfBytes = await renderSheetPdf(
-    fonts.regular,
-    fonts.bold,
-    {
+  const html = buildChallanHtml({
+    detail: {
       challan: detail.row,
       items: detail.items.map(toItemDto),
       customer: detail.customer,
       jobWorker: detail.jobWorker,
     },
     company,
-    detail.row.type as "sales" | "outward",
-  );
-
-  // challanNumber is device-issued user input — strip anything a header
-  // value can't hold before it reaches Content-Disposition.
-  const safeNumber = detail.row.challanNumber.replace(/[^A-Za-z0-9._-]/g, "_");
-  return new Response(pdfBytes as unknown as BodyInit, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="challan-${safeNumber}.pdf"`,
-    },
+    type: detail.row.type as ChallanType,
+    fonts,
   });
+
+  try {
+    const pdfBytes = await renderHtmlPdf(c.env, html);
+    // challanNumber is device-issued user input — strip anything a header
+    // value can't hold before it reaches Content-Disposition.
+    const safeNumber = detail.row.challanNumber.replace(
+      /[^A-Za-z0-9._-]/g,
+      "_",
+    );
+    return new Response(pdfBytes as unknown as BodyInit, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="challan-${safeNumber}.pdf"`,
+      },
+    });
+  } catch (err) {
+    if (err instanceof PdfRenderError) return apiError(c, err.code, err.status);
+    throw err;
+  }
 });

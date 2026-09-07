@@ -63,6 +63,9 @@ const API_CODES = [
   "recipe_exists",
   "recipe_version_missing",
   "recipe_version_conflict",
+  // pdf
+  "pdf_not_configured",
+  "pdf_render_failed",
   // qr login
   "qr_code_invalid",
   "qr_code_expired",

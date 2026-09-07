@@ -96,16 +96,26 @@ one legibility exception.
 Hierarchy is weight+size+color. No italic, no underlines except links,
 no text-transform on body copy.
 
-### 2.4.1 Print & PDF (Inter, bundled, one geometry)
+### 2.4.1 Print & PDF (Inter, bundled, one template)
 
-- Every print surface — server PDF, offline PDF, browser print replica —
-  renders in Inter Regular/Bold (OFL) bundled from `src/shared/fonts/`.
-  No CDN, no system-font fallback, anywhere.
-- One geometry source of truth: `src/shared/pdf-template.ts`. Both PDF
-  renderers and the CSS replica consume the same constants; they must stay
-  visually identical.
+- Every print surface — server PDF, desktop PDF, on-screen print view —
+  renders in Inter Regular/Bold (OFL) bundled from `src/shared/fonts/`,
+  inlined as base64 `@font-face`. No CDN, no system-font fallback, anywhere.
+- One source of truth: `src/shared/challan-html.ts` emits the sheet markup;
+  all three surfaces render exactly that HTML. They must stay visually
+  identical.
+- The challan sheet is A5 landscape (210×148 mm): centered masthead
+  (doc title · company name/address/contact · ORIGINAL/DUPLICATE checkboxes),
+  bordered party band with a challan-no/date cell, black table header over 12
+  ruled rows, totals zone (GSTIN/PAN/remarks left, totals right), terms +
+  signature footer. Fixed-height zones — dynamic text wraps or ellipsizes,
+  never pushes later zones off the sheet.
 - Grayscale-safe palette (black ink, gray labels, hairline rules) — challans
   print on mono printers; color carries no meaning.
+- Restyles are staged as finished directions in `design-compare/` (see its
+  README): ten challan-sheet (A–J), ten carton-sticker (S-A–S-J) and ten
+  sales-report (R1–R10) directions — pending owner picks; the live templates
+  don't change until then.
 
 ### 2.5 Color & surfaces
 

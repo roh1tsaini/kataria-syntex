@@ -23,6 +23,7 @@ import {
   shell,
 } from "electron";
 import { join, sep } from "node:path";
+import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { readFile, writeFile, unlink, stat } from "node:fs/promises";
 
@@ -188,6 +189,7 @@ function registerIpc(): void {
   );
   ipcMain.handle("kc:api", handleApi);
   ipcMain.handle("kc:download", handleDownload);
+  ipcMain.handle("kc:render-pdf", handleRenderPdf);
   // Custom title bar (frameless shell): the renderer draws its own controls;
   // macOS keeps native traffic lights and never calls these.
   ipcMain.handle("kc:win:minimize", () => mainWindow?.minimize());
@@ -226,6 +228,45 @@ async function handleDownload(_event: unknown, raw: unknown) {
     return { status: 0, base64: null };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * Renders a self-contained HTML document to PDF with the shell's own Chromium
+ * (webContents.printToPDF) — fully offline, no server round-trip. The
+ * document is dropped into a temp file, printed, and deleted immediately.
+ */
+async function handleRenderPdf(_event: unknown, html: unknown) {
+  if (
+    typeof html !== "string" ||
+    !html.startsWith("<!DOCTYPE html>") ||
+    html.length > 10_000_000
+  )
+    return { status: 0, base64: null };
+  const file = join(app.getPath("temp"), `kc-challan-${randomUUID()}.html`);
+  const win = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      javascript: false,
+    },
+  });
+  try {
+    await writeFile(file, html, "utf8");
+    await win.loadFile(file);
+    const buf = await win.webContents.printToPDF({
+      printBackground: true,
+      preferCSSPageSize: true,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    });
+    return { status: 200, base64: buf.toString("base64") };
+  } catch {
+    return { status: 0, base64: null };
+  } finally {
+    win.destroy();
+    await unlink(file).catch(() => {});
   }
 }
 

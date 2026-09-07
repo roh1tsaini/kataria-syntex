@@ -77,7 +77,7 @@ Latest stable majors; never downgrade to escape a break.
 | PWA      | vite-plugin-pwa (autoUpdate, Workbox) · workbox-window declared                    |
 | API      | Hono 4 · zod 4 at every boundary                                                   |
 | Data     | Drizzle ORM + drizzle-kit · Cloudflare D1                                          |
-| PDF      | pdf-lib + fontkit · Inter TTFs bundled (no CDN)                                    |
+| PDF      | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)       |
 | Desktop  | Electron 43 · electron-builder 26                                                  |
 | Android  | Capacitor 8 (filesystem, share, printer, secure-storage)                           |
 | QR       | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp |
@@ -100,11 +100,11 @@ apps/app/
 │   │   ├── lib/platform.ts      # host detection + native token storage
 │   │   ├── lib/api.ts           # one API client for all hosts
 │   │   ├── lib/offline/         # caches + outbox + sync engine
-│   │   ├── lib/offline-pdf.ts   # on-device PDF fallback
+│   │   ├── lib/challan-pdf.ts   # challan PDF fonts + save/share (transport in api.ts)
 │   │   ├── store/               # zustand: auth, challans, masters, recipes…
 │   │   └── ui/                  # App.tsx routes, pages/, components/, globals.css
-│   └── shared/                  # pdf-template + pdf-driver + Inter TTFs
-├── electron/                    # main.ts (keychain, net bridge), preload, build
+│   └── shared/                  # challan-html template + Inter TTFs
+├── electron/                    # main.ts (keychain, net bridge, printToPDF), preload, build
 ├── drizzle/                     # migrations (timestamped folders)
 ├── design.md                    # design system — read before any UI change
 └── wrangler.jsonc               # Worker + assets + D1 config
@@ -135,7 +135,8 @@ Build targets (fixed by owner):
 
 Native builds bake the API origin (`APP_URL` / `VITE_API_URL`) at build time.
 Android WebView can't `window.print()` → native Printer plugin;
-Electron downloads via `kc:download`; PDFs save/share via Capacitor plugins.
+Electron renders challan PDFs locally via `kc:render-pdf` (printToPDF);
+PDFs save/share via Capacitor plugins.
 
 Desktop shell notes: one instance per installation (second launch focuses
 the first), no menu bar in packaged Windows/Linux builds, pinch/ctrl-wheel
@@ -333,19 +334,32 @@ localStorage (`offline.*.v1` keys) — same code on all three shells.
   one account's queue can never sync under another's session.
 - Network classifier: only true network failures (incl. 502/504, captive
   portals) flip offline; HTTP errors stay online.
-- Offline PDF: pdf-lib with the SAME shared template + bundled Inter →
-  byte-identical to server output. Server-first download strategy.
+- Challan PDFs: Electron renders locally with its own Chromium (works
+  offline); web/PWA and Android fetch the server-rendered copy. Both paths
+  render the SAME HTML template with inlined Inter → visually identical.
 
 ## 12 · PDFs
 
-- One template: `src/shared/pdf-template.ts` — server and offline render
-  byte-identical vector PDFs (pdf-lib).
-- Header = company row (name, GSTIN, PAN, address, phones).
-- Fonts: Inter Regular/Bold TTFs bundled; server serves them from the
-  `ASSETS` binding (Vite plugin copies to `dist/fonts`); no CDN, no
-  system-font fallback.
-- Filenames sanitized. Print: fonts awaited first (`document.fonts.ready`),
-  then Capacitor Printer or `window.print()`; Electron saves via `kc:download`.
+- One template: `src/shared/challan-html.ts` — an A5-landscape HTML document
+  (masthead, party band, 12-row items table per sheet, totals, terms +
+  signatures). Every surface renders exactly this markup.
+- Two render paths: server → Cloudflare Browser Run `/pdf` (real Chromium;
+  needs `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` secrets) for
+  web/PWA/Android; Electron → `kc:render-pdf` IPC → `printToPDF` with the
+  shell's own Chromium (fully offline). Same engine family + same inlined
+  fonts → visually identical output.
+- Fonts: Inter Regular/Bold TTFs bundled, inlined as base64 `@font-face`;
+  server reads them from the `ASSETS` binding (Vite plugin copies to
+  `dist/fonts`); no CDN, no system-font fallback.
+- Errors: `pdf_not_configured` / `pdf_render_failed` / `rate_limited`
+  (per-user budget: 120 renders/hour, counted only after the challan exists
+  and the renderer is configured). No fallback renderer.
+- Filenames sanitized. Print route: fonts awaited first
+  (`document.fonts.ready`), then Capacitor Printer or `window.print()`.
+- Restyles pending in `design-compare/`: ten challan-sheet directions (A–J),
+  ten carton-sticker directions (S-A–S-J), and ten sales-report formats
+  (R1–R10, each in both A4 orientations). Its README has status + the pick
+  workflow; live templates unchanged.
 
 ## 13 · App UI
 
@@ -424,7 +438,7 @@ copy, or commit them. Secrets enter only as env read at use site.
 | Workers           | 100k requests/day · 10 ms CPU/invocation                                                             |
 | D1                | 500 MB storage · 5M row reads + 100k row writes/day · Time Travel 7 days                             |
 | `db.batch()`      | one atomic transaction — no interactive BEGIN                                                        |
-| Browser Rendering | unused (pdf-lib instead)                                                                             |
+| Browser Rendering | Browser Run `/pdf`: 10 browser-min/day free, 1 req/10 s — per-user 120/h budget guards it            |
 | Pingram           | PAID per SMS/email — the only cost line, owner-approved; hard OTP ceilings above exist because of it |
 
 **Policy (owner-mandated)**: free forever ($0) · trusted durable providers ·

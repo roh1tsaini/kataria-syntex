@@ -161,13 +161,10 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
     if (!id || !detail) return;
     setDownloading(true);
     try {
-      const { downloadChallanPdf } = await import("@/lib/offline-pdf");
+      const { downloadChallanPdf } = await import("@/lib/challan-pdf");
       const res = await downloadChallanPdf(id, detail, company, kind.type);
-      if (!res.viaServer)
-        toastSuccess(
-          "PDF made on this device",
-          "Server unreachable — generated locally.",
-        );
+      if (res.via === "local")
+        toastSuccess("PDF made on this device", "Rendered locally.");
     } catch (err) {
       toastError(
         "Could not download PDF",

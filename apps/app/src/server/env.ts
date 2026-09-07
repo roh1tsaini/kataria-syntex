@@ -13,6 +13,9 @@ export type Env = {
   APP_ENV?: string;
   PINGRAM_API_KEY?: string;
   OTP_DAILY_BUDGET?: string;
+  /** Browser Run renderer: account id + API token (Browser Rendering "Edit"). */
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
   /** "1" = trust the RIGHTMOST X-Forwarded-For entry (one known proxy). */
   TRUST_PROXY?: string;
 };
