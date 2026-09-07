@@ -22,7 +22,10 @@ function kolkataMinutes(now: Date): { dayIndex: number; minutes: number } {
   let minutes = 0;
   for (const part of parts) {
     if (part.type === "weekday")
-      dayIndex = Math.max(0, DAY_SHORT.indexOf(part.value as (typeof DAY_SHORT)[number]));
+      dayIndex = Math.max(
+        0,
+        DAY_SHORT.indexOf(part.value as (typeof DAY_SHORT)[number]),
+      );
     if (part.type === "hour") hours = Number(part.value) % 24;
     if (part.type === "minute") minutes = Number(part.value);
   }
@@ -57,8 +60,12 @@ export function openStatus(now: Date = new Date()): OpenStatus {
   for (let offset = 1; offset <= 7; offset += 1) {
     const next = site.schedule[(dayIndex + offset) % 7];
     if (!next) continue;
-    const dayLabel = offset === 1 ? "tomorrow" : DAY_SHORT[(dayIndex + offset) % 7];
-    return { open: false, label: `Closed · opens ${dayLabel} ${toLabel(next.open)}` };
+    const dayLabel =
+      offset === 1 ? "tomorrow" : DAY_SHORT[(dayIndex + offset) % 7];
+    return {
+      open: false,
+      label: `Closed · opens ${dayLabel} ${toLabel(next.open)}`,
+    };
   }
 
   return { open: false, label: "Closed" };

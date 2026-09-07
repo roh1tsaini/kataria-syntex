@@ -60,10 +60,15 @@ type ChallansState = {
   detail: ChallanDetail | null;
   loading: boolean;
   error: string | null;
+  summaryCache: Record<string, { sales: Challan[]; outward: Challan[] }>;
   refresh: (filter?: ChallanListFilter) => Promise<void>;
-  summary: (fy?: string) => Promise<{ sales: Challan[]; outward: Challan[] }>;
+  summary: (
+    fy?: string,
+    workspaceId?: string,
+  ) => Promise<{ sales: Challan[]; outward: Challan[] }>;
   load: (id: string) => Promise<ChallanDetail>;
   clearDetail: () => void;
+  clearSummaryCache: () => void;
   create: (input: ChallanInput) => Promise<Challan>;
   update: (id: string, input: ChallanInput) => Promise<Challan>;
   remove: (id: string) => Promise<void>;
@@ -125,6 +130,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
     challans: [],
     total: 0,
     detail: null,
+    summaryCache: {},
     loading: false,
     error: null,
 
@@ -208,17 +214,20 @@ export const useChallans = create<ChallansState>()((set, get) => {
 
     clearDetail: () => set({ detail: null }),
 
-    summary: async (fy) => {
+    summary: async (fy, workspaceId) => {
       const fyParam = fy ? `&fy=${encodeURIComponent(fy)}` : "";
+      const cacheKey = `${workspaceId ?? ""}:${fy ?? ""}`;
       try {
         const [salesRes, outwardRes] = await Promise.all([
           api<{ items: Challan[] }>(`/challans?type=sales${fyParam}`),
           api<{ items: Challan[] }>(`/challans?type=outward${fyParam}`),
         ]);
-        return {
+        const res = {
           sales: mergePending(salesRes.items, { type: "sales", fy }),
           outward: mergePending(outwardRes.items, { type: "outward", fy }),
         };
+        set((s) => ({ summaryCache: { ...s.summaryCache, [cacheKey]: res } }));
+        return res;
       } catch (err) {
         if (err instanceof ApiError && err.isNetworkError) {
           const local = pendingProjections({ fy });
@@ -230,6 +239,8 @@ export const useChallans = create<ChallansState>()((set, get) => {
         throw err;
       }
     },
+
+    clearSummaryCache: () => set({ summaryCache: {} }),
 
     create: async (input) => {
       // Idempotency key: if the request dies after the server committed, the

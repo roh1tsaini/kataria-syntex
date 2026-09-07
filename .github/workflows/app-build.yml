@@ -111,16 +111,6 @@ jobs:
         run: bun run build:electron
         working-directory: apps/app
 
-      - name: Rewrite CSP placeholder for the packaged renderer
-        # Bash syntax — the windows-latest runner defaults to PowerShell.
-        shell: bash
-        env:
-          APP_URL: ${{ vars.APP_URL }}
-        run: |
-          APP_URL="https://${APP_URL#*://}"
-          APP_URL="${APP_URL%/}"
-          bun -e "const fs=require('fs');const f='apps/app/index.html';const s=fs.readFileSync(f,'utf8').replaceAll('https://CHANGE_ME_APP_ORIGIN', process.env.APP_URL);fs.writeFileSync(f,s)"
-
       - name: Build renderer + main/preload + package
         working-directory: apps/app
         env:
@@ -172,14 +162,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
-
-      - name: Rewrite CSP placeholder for the APK WebView
-        env:
-          APP_URL: ${{ vars.APP_URL }}
-        run: |
-          APP_URL="https://${APP_URL#*://}"
-          APP_URL="${APP_URL%/}"
-          bun -e "const fs=require('fs');const f='apps/app/index.html';const s=fs.readFileSync(f,'utf8').replaceAll('https://CHANGE_ME_APP_ORIGIN', process.env.APP_URL);fs.writeFileSync(f,s)"
 
       - name: Normalize API origin for the APK bundle
         # The Android WebView is not same-origin with the backend, so the

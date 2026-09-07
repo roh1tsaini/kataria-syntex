@@ -51,6 +51,19 @@ function parseDateRange(c: {
 reportsRoute.get("/dashboard", requirePermission("view_reports"), async (c) => {
   const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
+  const range = parseDateRange(c);
+  if (!range) return apiError(c, "invalid_request", 400);
+  const { from, to } = range;
+
+  const challanConditions = [eq(challans.workspaceId, workspaceId)];
+  if (from) challanConditions.push(gte(challans.date, from));
+  if (to) challanConditions.push(lte(challans.date, to));
+  const returnConditions = [eq(jobWorkReturns.workspaceId, workspaceId)];
+  if (from) returnConditions.push(gte(jobWorkReturns.date, from));
+  if (to) returnConditions.push(lte(jobWorkReturns.date, to));
+  const stockConditions = [eq(stockEntries.workspaceId, workspaceId)];
+  if (from) stockConditions.push(gte(stockEntries.date, from));
+  if (to) stockConditions.push(lte(stockEntries.date, to));
 
   // Three grouped sums cover all five cards: challan totals by kind,
   // returned items, stock by ledger.
@@ -63,7 +76,7 @@ reportsRoute.get("/dashboard", requirePermission("view_reports"), async (c) => {
         ),
       })
       .from(challans)
-      .where(eq(challans.workspaceId, workspaceId))
+      .where(and(...challanConditions))
       .groupBy(challans.type),
     db
       .select({
@@ -77,7 +90,7 @@ reportsRoute.get("/dashboard", requirePermission("view_reports"), async (c) => {
         jobWorkReturns,
         eq(jobWorkReturnItems.returnId, jobWorkReturns.id),
       )
-      .where(eq(jobWorkReturns.workspaceId, workspaceId)),
+      .where(and(...returnConditions)),
     db
       .select({
         stockType: stockEntries.stockType,
@@ -86,7 +99,7 @@ reportsRoute.get("/dashboard", requirePermission("view_reports"), async (c) => {
         ),
       })
       .from(stockEntries)
-      .where(eq(stockEntries.workspaceId, workspaceId))
+      .where(and(...stockConditions))
       .groupBy(stockEntries.stockType),
   ]);
 
@@ -165,6 +178,16 @@ reportsRoute.get(
   async (c) => {
     const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
+    const { from, to } = range;
+
+    const conditions = [
+      eq(jobWorkReturns.workspaceId, workspaceId),
+      eq(jobWorkReturnItems.overReceipt, true),
+    ];
+    if (from) conditions.push(gte(jobWorkReturns.date, from));
+    if (to) conditions.push(lte(jobWorkReturns.date, to));
 
     const rows = await db
       .select({
@@ -183,12 +206,7 @@ reportsRoute.get(
         jobWorkReturns,
         eq(jobWorkReturnItems.returnId, jobWorkReturns.id),
       )
-      .where(
-        and(
-          eq(jobWorkReturns.workspaceId, workspaceId),
-          eq(jobWorkReturnItems.overReceipt, true),
-        ),
-      )
+      .where(and(...conditions))
       .orderBy(desc(jobWorkReturnItems.createdAt));
 
     return c.json({ items: rows });
@@ -203,12 +221,22 @@ reportsRoute.get(
   async (c) => {
     const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
 
     // One canonical ledger GROUP BY (see lib/stock.ts) — this endpoint keeps
     // its own envelope ({total}, no ids) so the generic reports grid is
     // unaffected. Re-aggregated by display keys to preserve the exact
     // name-grouped values the old query returned.
-    const grouped = await summarizeStockLedger(db, workspaceId);
+    // With from/to the rows aggregate the period's movements instead of the
+    // lifetime position — the grid always appends the pickers, so a range
+    // must filter, never silently pass.
+    const grouped = await summarizeStockLedger(
+      db,
+      workspaceId,
+      undefined,
+      range,
+    );
     const byDisplay = new Map<
       string,
       {
@@ -359,6 +387,22 @@ reportsRoute.get(
   async (c) => {
     const workspaceId = c.get("member").workspaceId;
     const db = getDb(c.env.DB);
+    const range = parseDateRange(c);
+    if (!range) return apiError(c, "invalid_request", 400);
+    const { from, to } = range;
+
+    // Date bounds live in the JOIN condition (not WHERE) so parties with no
+    // challans in range still report a zero row instead of vanishing.
+    const salesJoin = [eq(challans.type, "sales")];
+    const outwardJoin = [eq(challans.type, "outward")];
+    if (from) {
+      salesJoin.push(gte(challans.date, from));
+      outwardJoin.push(gte(challans.date, from));
+    }
+    if (to) {
+      salesJoin.push(lte(challans.date, to));
+      outwardJoin.push(lte(challans.date, to));
+    }
 
     // Customers: total sold
     const customerRows = await db
@@ -376,7 +420,7 @@ reportsRoute.get(
       .from(customers)
       .leftJoin(
         challans,
-        and(eq(challans.customerId, customers.id), eq(challans.type, "sales")),
+        and(eq(challans.customerId, customers.id), ...salesJoin),
       )
       .where(eq(customers.workspaceId, workspaceId))
       .groupBy(customers.id)
@@ -397,10 +441,7 @@ reportsRoute.get(
       .from(jobWorkers)
       .leftJoin(
         challans,
-        and(
-          eq(challans.jobWorkerId, jobWorkers.id),
-          eq(challans.type, "outward"),
-        ),
+        and(eq(challans.jobWorkerId, jobWorkers.id), ...outwardJoin),
       )
       .where(eq(jobWorkers.workspaceId, workspaceId))
       .groupBy(jobWorkers.id)
@@ -425,6 +466,8 @@ reportsRoute.get(
                   jwRows.map((jw) => jw.id),
                 ),
                 eq(jobWorkReturns.workspaceId, workspaceId),
+                ...(from ? [gte(jobWorkReturns.date, from)] : []),
+                ...(to ? [lte(jobWorkReturns.date, to)] : []),
               ),
             )
             .groupBy(jobWorkReturns.jobWorkerId)

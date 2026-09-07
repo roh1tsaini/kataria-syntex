@@ -13,9 +13,9 @@
     <script src="/theme-init.js"></script>
     <!--
       CSP for the SPA. connect-src allows the deployed backend origin (the
-      CHANGE_ME_APP_ORIGIN placeholder is injected by CI) + the Vite HMR
-      websockets in dev. style-src 'unsafe-inline' is required by Tailwind
-      v4's injected styles.
+      CHANGE_ME_APP_ORIGIN placeholder is injected at build time by the
+      kataria-app-origin Vite plugin) + the Vite HMR websockets in dev.
+      style-src 'unsafe-inline' is required by Tailwind v4's injected styles.
     -->
     <meta
       http-equiv="Content-Security-Policy"

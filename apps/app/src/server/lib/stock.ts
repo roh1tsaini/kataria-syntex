@@ -1,6 +1,6 @@
 import type { Queryable } from "./db";
 import { colors, stockEntries } from "../db/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { generateId } from "./token";
 import { round3 } from "@kataria-syntex/shared";
 
@@ -159,9 +159,12 @@ export async function summarizeStockLedger(
   d: Queryable,
   workspaceId: string,
   stockType?: "raw" | "dyed",
+  range?: { from?: string; to?: string },
 ): Promise<StockLedgerRow[]> {
   const conditions = [eq(stockEntries.workspaceId, workspaceId)];
   if (stockType) conditions.push(eq(stockEntries.stockType, stockType));
+  if (range?.from) conditions.push(gte(stockEntries.date, range.from));
+  if (range?.to) conditions.push(lte(stockEntries.date, range.to));
   const grouped = await d
     .select({
       stockType: stockEntries.stockType,

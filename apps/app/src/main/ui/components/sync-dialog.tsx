@@ -19,7 +19,7 @@ import {
 } from "@/ui/components/ui/empty";
 import { useSync } from "@/lib/offline/sync";
 import { listPending, type PendingChallan } from "@/lib/offline/core";
-import { resubmitWithNumber, retryErrored } from "@/lib/offline/sync";
+import { resubmitWithNumber, retryErrored } from "@/lib/offline/conflict";
 import { toastSuccess } from "@/store/toast";
 import { friendlyError } from "@/ui/lib/errors";
 import { ApiError } from "@/lib/api";

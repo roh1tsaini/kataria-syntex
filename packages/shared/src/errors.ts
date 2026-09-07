@@ -23,7 +23,6 @@ const API_CODES = [
   "invite_invalid",
   "workspace_name_required",
   "no_workspace",
-  "company_not_found",
   // otp
   "otp_expired",
   "otp_attempts_exhausted",
@@ -55,10 +54,7 @@ const API_CODES = [
   "type_change_not_allowed",
   "fy_change_not_allowed",
   "fy_mismatch",
-  "financial_year_missing",
-  "entry_locked",
   "in_use",
-  "stock_consumed",
   // recipes
   "recipe_exists",
   "recipe_version_missing",

@@ -63,7 +63,11 @@ import {
   EmptyTitle,
 } from "@/ui/components/ui/empty";
 import { Skeleton } from "@/ui/components/motion";
-import { useConfirm } from "@/ui/components/confirm-dialog";
+import {
+  useConfirm,
+  type ConfirmOptions,
+} from "@/ui/components/confirm-dialog";
+import { useDialogDiscard } from "@/ui/hooks/use-dirty-guard";
 import {
   Select,
   SelectContent,
@@ -111,17 +115,25 @@ function MasterFormDialog<I extends { id: string }, In>({
   open,
   editing,
   onOpenChange,
+  confirm,
 }: {
   config: TabConfig<I, In>;
   open: boolean;
   editing: I | null;
   onOpenChange: (open: boolean) => void;
+  confirm: (options: ConfirmOptions) => Promise<boolean>;
 }) {
-  const [draft, setDraft] = useState<Record<string, string>>(() =>
+  // Remounted per open (parent keys by item + open state), so the initial
+  // draft is stable for the dialog's lifetime — dirty is a shape compare.
+  const [initial] = useState<Record<string, string>>(() =>
     config.draftFromItem(editing),
   );
+  const [draft, setDraft] = useState<Record<string, string>>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const requestDiscard = useDialogDiscard(dirty, busy, confirm);
+  const requestClose = () => requestDiscard(() => onOpenChange(false));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +163,12 @@ function MasterFormDialog<I extends { id: string }, In>({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) requestClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -216,7 +233,7 @@ function MasterFormDialog<I extends { id: string }, In>({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={requestClose}
               disabled={busy}
             >
               Cancel
@@ -434,6 +451,7 @@ function MasterTab<I extends { id: string; name: string }, In>({
         config={config}
         open={dialogOpen}
         editing={editing}
+        confirm={confirm}
         onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) setEditing(null);

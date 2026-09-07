@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FlaskConical,
   Palette,
@@ -65,7 +65,11 @@ import {
   SelectValue,
 } from "@/ui/components/ui/select";
 import { Skeleton } from "@/ui/components/motion";
-import { useConfirm } from "@/ui/components/confirm-dialog";
+import {
+  useConfirm,
+  type ConfirmOptions,
+} from "@/ui/components/confirm-dialog";
+import { useDialogDiscard } from "@/ui/hooks/use-dirty-guard";
 import { cn } from "@/ui/lib/cn";
 
 const UNIT_PRESETS = ["g", "mg", "kg", "mL", "L", "%"] as const;
@@ -86,26 +90,42 @@ function draftFromUnit(unit: string): { unit: string; custom: boolean } {
     : { unit, custom: true };
 }
 
+const stripIngredientKeys = (rows: IngredientDraft[]) =>
+  rows.map((r) => ({
+    name: r.name,
+    quantity: r.quantity,
+    unit: r.unit,
+    custom: r.custom,
+  }));
+
 // ── Color add/edit dialog ───────────────────────────────────────────────────
 
 function ColorFormDialog({
   open,
   editing,
   onOpenChange,
+  confirm,
 }: {
   open: boolean;
   editing: Color | null;
   onOpenChange: (open: boolean) => void;
+  confirm: (options: ConfirmOptions) => Promise<boolean>;
 }) {
   const createColor = useMasters((s) => s.createColor);
   const updateColor = useMasters((s) => s.updateColor);
-  const [draft, setDraft] = useState(() => ({
+  // Remounted per open (parent keys by item + open state), so the initial
+  // draft is stable for the dialog's lifetime — dirty is a shape compare.
+  const [initial] = useState(() => ({
     name: editing?.name ?? "",
     code: editing?.code ?? "",
     stockType: editing?.stockType ?? "dyed",
   }));
+  const [draft, setDraft] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const requestDiscard = useDialogDiscard(dirty, busy, confirm);
+  const requestClose = () => requestDiscard(() => onOpenChange(false));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +155,12 @@ function ColorFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) requestClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{editing ? "Edit color" : "Add color"}</DialogTitle>
@@ -199,7 +224,7 @@ function ColorFormDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={requestClose}
               disabled={busy}
             >
               Cancel
@@ -222,12 +247,14 @@ function RecipeEditorDialog({
   color,
   editing,
   deniers,
+  confirm,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   color: Color;
   editing: RecipeListItem | null;
   deniers: Denier[];
+  confirm: (options: ConfirmOptions) => Promise<boolean>;
 }) {
   const createRecipe = useRecipes((s) => s.createRecipe);
   const updateRecipe = useRecipes((s) => s.updateRecipe);
@@ -246,6 +273,38 @@ function RecipeEditorDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Snapshot of the loaded (or blank) form — remounted per open, so the ref
+  // only ever holds this session's baseline. Null until the load settles.
+  type RecipeBaseline = {
+    denierId: string;
+    ingredients: Array<{
+      name: string;
+      quantity: string;
+      unit: string;
+      custom: boolean;
+    }>;
+    temp: string;
+    hrs: string;
+    min: string;
+    sec: string;
+    notes: string;
+  };
+  const baselineRef = useRef<RecipeBaseline | null>(null);
+  const current: RecipeBaseline = {
+    denierId,
+    ingredients: stripIngredientKeys(ingredients),
+    temp,
+    hrs,
+    min,
+    sec,
+    notes,
+  };
+  const dirty =
+    baselineRef.current !== null &&
+    JSON.stringify(current) !== JSON.stringify(baselineRef.current);
+  const requestDiscard = useDialogDiscard(dirty, busy || loading, confirm);
+  const requestClose = () => requestDiscard(() => onOpenChange(false));
+
   // Editing loads the current recipe; adding starts from a blank row.
   useEffect(() => {
     if (!open) return;
@@ -255,23 +314,41 @@ function RecipeEditorDialog({
       setLoading(true);
       fetchRecipe(editing.id)
         .then((detail) => {
-          setIngredients(
-            detail.ingredients.map((i) => ({
-              key: newKey(),
-              name: i.name,
-              quantity: String(i.quantity),
-              ...draftFromUnit(i.unit),
-            })),
-          );
-          setTemp(editing.processTempC?.toString() ?? "");
-          setHrs(editing.processTimeHrs?.toString() ?? "");
-          setMin(editing.processTimeMin?.toString() ?? "");
-          setSec(editing.processTimeSec?.toString() ?? "");
-          setNotes(editing.notes ?? "");
+          const loaded = detail.ingredients.map((i) => ({
+            key: newKey(),
+            name: i.name,
+            quantity: String(i.quantity),
+            ...draftFromUnit(i.unit),
+          }));
+          const snap: RecipeBaseline = {
+            denierId: editing.denierId,
+            ingredients: stripIngredientKeys(loaded),
+            temp: editing.processTempC?.toString() ?? "",
+            hrs: editing.processTimeHrs?.toString() ?? "",
+            min: editing.processTimeMin?.toString() ?? "",
+            sec: editing.processTimeSec?.toString() ?? "",
+            notes: editing.notes ?? "",
+          };
+          setIngredients(loaded);
+          setTemp(snap.temp);
+          setHrs(snap.hrs);
+          setMin(snap.min);
+          setSec(snap.sec);
+          setNotes(snap.notes);
+          baselineRef.current = snap;
         })
         .catch((err) => setError(friendlyError(err)))
         .finally(() => setLoading(false));
     } else {
+      const blank: RecipeBaseline = {
+        denierId: "",
+        ingredients: [{ name: "", quantity: "", unit: "g", custom: false }],
+        temp: "",
+        hrs: "",
+        min: "",
+        sec: "",
+        notes: "",
+      };
       setDenierId("");
       setIngredients([
         { key: newKey(), name: "", quantity: "", unit: "g", custom: false },
@@ -281,6 +358,7 @@ function RecipeEditorDialog({
       setMin("");
       setSec("");
       setNotes("");
+      baselineRef.current = blank;
     }
   }, [open, editing, fetchRecipe]);
 
@@ -358,7 +436,12 @@ function RecipeEditorDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) requestClose();
+      }}
+    >
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
@@ -556,7 +639,7 @@ function RecipeEditorDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={requestClose}
                 disabled={busy}
               >
                 Cancel
@@ -948,6 +1031,7 @@ export function ColorsPage() {
         key={`${editingColor?.id ?? "new"}-${colorDialogOpen}`}
         open={colorDialogOpen}
         editing={editingColor}
+        confirm={confirm}
         onOpenChange={setColorDialogOpen}
       />
       {selectedColor && (
@@ -958,6 +1042,7 @@ export function ColorsPage() {
           color={selectedColor}
           editing={editingRecipe}
           deniers={deniers}
+          confirm={confirm}
         />
       )}
       <RecipeDetailDialog

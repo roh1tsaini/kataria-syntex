@@ -420,19 +420,16 @@ function FlowCards() {
   );
 }
 
-// Keyed by workspace id so one account's summary never leaks into another's.
-let cachedSummary: Record<string, { sales: Challan[]; outward: Challan[] }> =
-  {};
-
 export function Dashboard() {
   const user = useAuth((s) => s.user);
   const workspace = useAuth((s) => s.workspace);
   const company = useAuth((s) => s.company);
   const currentFy = useAuth((s) => s.currentFy);
   const summary = useChallans((s) => s.summary);
+  const summaryCache = useChallans((s) => s.summaryCache);
 
-  const cacheKey = workspace?.id ?? "";
-  const cached = cachedSummary[cacheKey];
+  const cacheKey = `${workspace?.id ?? ""}:${currentFy?.label ?? ""}`;
+  const cached = summaryCache[cacheKey];
 
   const [sales, setSales] = useState<Challan[]>(() => cached?.sales ?? []);
   const [outward, setOutward] = useState<Challan[]>(
@@ -447,15 +444,18 @@ export function Dashboard() {
       return;
     }
     let cancelled = false;
-    if (!cachedSummary[cacheKey]) {
+    const instant = useChallans.getState().summaryCache[cacheKey];
+    if (instant) {
+      setSales(instant.sales);
+      setOutward(instant.outward);
+    } else {
       setLoading(true);
     }
     // Scope the fetch to the current financial year — without it the server
     // returns every challan ever created and the dashboard filters in JS.
-    summary(currentFy.label)
+    summary(currentFy.label, workspace?.id)
       .then((res) => {
         if (cancelled) return;
-        cachedSummary[cacheKey] = res;
         setSales(res.sales);
         setOutward(res.outward);
       })

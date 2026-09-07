@@ -33,6 +33,22 @@ function interFonts(): Plugin {
   };
 }
 
+// Injects the backend origin into the CSP at build time. Native shells
+// (Electron app://bundle, Capacitor WebView) are not same-origin, so the
+// built HTML allowlists APP_URL / VITE_API_URL. Local builds with neither
+// set drop the placeholder and stay same-origin only.
+function appOrigin(): Plugin {
+  return {
+    name: "kataria-app-origin",
+    transformIndexHtml(html) {
+      const raw = process.env.APP_URL ?? process.env.VITE_API_URL ?? "";
+      if (!raw) return html.replace(" https://CHANGE_ME_APP_ORIGIN", "");
+      const origin = `https://${raw.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+      return html.replaceAll("https://CHANGE_ME_APP_ORIGIN", origin);
+    },
+  };
+}
+
 // Web/PWA build — served same-origin by the Hono server in production.
 // Capacitor/Android reuses this bundle via `cap sync`; Electron packages the
 // same renderer output (see electron/build.ts for main/preload).
@@ -41,6 +57,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
   plugins: [
+    appOrigin(),
     interFonts(),
     react(),
     tailwindcss(),

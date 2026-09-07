@@ -63,7 +63,7 @@ const REPORTS: {
     id: "stock-summary",
     label: "Stock Summary",
     icon: ClipboardList,
-    description: "Current stock by denier × colour × lot",
+    description: "Stock by denier × colour × lot",
   },
   {
     id: "sales-register",

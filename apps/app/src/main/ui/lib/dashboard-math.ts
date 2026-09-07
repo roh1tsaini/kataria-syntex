@@ -4,6 +4,9 @@
  */
 import type { Challan } from "@/store/challans";
 import { localDateKey } from "./format";
+import { fyPrevLabel } from "@kataria-syntex/shared";
+
+export { fyPrevLabel };
 
 export type Period = "fy" | "30d" | "all";
 
@@ -11,11 +14,6 @@ export const daysAgoISO = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return localDateKey(d);
-};
-
-export const fyPrevLabel = (label: string) => {
-  const [a, b] = label.split("-").map(Number);
-  return `${a - 1}-${b - 1}`;
 };
 
 export function aggregate(list: Challan[]) {

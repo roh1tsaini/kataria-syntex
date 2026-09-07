@@ -5,13 +5,16 @@ import { ApiError } from "@/lib/api";
 type ClientCode =
   "network_error" | "pending_sync_edit" | "http_500" | "http_502";
 
-/**
- * `satisfies Record<ApiCode | ClientCode, string>` makes drift a build error:
- * every server code has a message and every message maps to a live code.
- */
-const MESSAGES = {
+const CLIENT_MESSAGES = {
   network_error:
     "Could not reach the server. Check your connection and try again.",
+  pending_sync_edit:
+    "This challan is still waiting to sync. Edit it after it reaches the server.",
+  http_500: "Something went wrong on our side. Try again in a moment.",
+  http_502: "The server is temporarily unavailable. Try again in a moment.",
+} satisfies Record<ClientCode, string>;
+
+const SERVER_MESSAGES = {
   invalid_request: "Check the form fields and try again.",
   invalid_identifier: "Enter a valid phone number or email address.",
   unknown_identifier: "No account exists for that yet.",
@@ -19,7 +22,6 @@ const MESSAGES = {
   forbidden: "You don't have permission to do this.",
   unauthorized: "Your session expired. Log in again.",
   no_workspace: "You're not part of a workspace yet.",
-  company_not_found: "Set up your company first.",
   invalid_permissions: "Your access changed. Re-open this page.",
   phone_already_registered: "This phone/email is already part of a workspace.",
   already_pending: "That person is already waiting to join a workspace.",
@@ -57,8 +59,6 @@ const MESSAGES = {
     "The date can't move a challan into a different financial year.",
   fy_mismatch:
     "This date now falls in a different financial year — re-open and re-save.",
-  pending_sync_edit:
-    "This challan is still waiting to sync. Edit it after it reaches the server.",
   invalid_denier: "Choose a valid denier for every row.",
   invalid_color: "Choose a valid colour for every row.",
   invalid_customer: "Choose a valid customer.",
@@ -73,11 +73,7 @@ const MESSAGES = {
   challan_job_worker_mismatch:
     "This challan belongs to a different job worker.",
   challan_not_outward: "Returns need a job-work challan.",
-  entry_locked: "This entry is already used by a challan.",
   in_use: "This entry is still referenced. Remove those uses first.",
-  stock_consumed: "This entry's stock was already consumed.",
-  financial_year_missing:
-    "The financial year couldn't be created. Try saving again.",
   // recipes
   recipe_exists: "This colour already has a recipe for that denier.",
   recipe_version_missing: "That version no longer exists.",
@@ -96,9 +92,18 @@ const MESSAGES = {
     "Too many QR codes requested from this network. Wait a moment and try again.",
   internal_server_error:
     "Something went wrong on our side. Try again in a moment.",
-  http_500: "Something went wrong on our side. Try again in a moment.",
-  http_502: "The server is temporarily unavailable. Try again in a moment.",
-} satisfies Record<ApiCode | ClientCode, string>;
+} satisfies Record<ApiCode, string>;
+
+/**
+ * Drift check: every server code has a message and every message maps to a
+ * live code — adding a code on either side without the other fails
+ * typecheck. Codes with no server emitter are deleted here and in ApiCode,
+ * never kept just in case.
+ */
+const MESSAGES = { ...CLIENT_MESSAGES, ...SERVER_MESSAGES } satisfies Record<
+  ApiCode | ClientCode,
+  string
+>;
 
 export function friendlyError(
   err: unknown,

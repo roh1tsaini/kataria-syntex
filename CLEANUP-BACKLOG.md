@@ -1,18 +1,18 @@
-# Cleanup backlog — do later (owner)
+# Cleanup backlog — remaining work
 
-Created 2026-09-07 after an assisted cleanup pass (see git history ~Sep 7:
-dead-feature removal, dep/script pruning, endpoint consolidation, UI dedup).
-Everything below was triaged but deliberately left. Each item lists the
-files, the risk, and what "done" requires. Work top-down by priority.
+Triaged from the 2026-09-07 assisted cleanup pass. Items below are
+deliberately not done yet; each lists the files, the risk, and what "done"
+requires. Completed items are listed at the bottom — do not redo.
 
 ## Priority 1 — do when touching the area
 
 ### 1. Shared editor-shell for packing / raw-material / returns
+
 - Files: `apps/app/src/main/ui/pages/packing.tsx` (~1.3k lines),
   `raw-material.tsx` (~1k), `returns.tsx` (~1k).
 - Why: all three repeat `useMastersLoad` + `useDirtyGuard` +
   `countLabel`/`TableSkeleton` + identical Details/Items `CardHeader` blocks
-  + parallel create/update POST/PUT pairs.
+  - parallel create/update POST/PUT pairs.
 - Risk: HIGH — the three riskiest pages. Extract chrome only (headers,
   skeletons, dirty guard, masters-load, save plumbing), never fields.
 - Done when: new `components/editor-shell.tsx` (or `useEditorForm`) consumed
@@ -21,28 +21,10 @@ files, the risk, and what "done" requires. Work top-down by priority.
   `components/packing-import-dialog.tsx`; `challans-editor.tsx` already on
   `useMastersLoad` — use both as the pattern.
 
-### 2. Dashboard `cachedSummary` → challans store
-- File: `apps/app/src/main/ui/pages/dashboard.tsx:425` (module-level mutable
-  cache keyed by workspace id).
-- Why: survives logout/account-switch within a session (stale-workspace
-  numbers) and bypasses the challans store.
-- Risk: MED — must preserve instant-cached first paint.
-- Done when: cache lives in `useChallans` (e.g. `summaryCache`) or is
-  cleared in `logout()`; dashboard still paints instantly on remount.
-
-### 3. `index.html` origin injection at Vite-time
-- Files: `apps/app/index.html` (`https://CHANGE_ME_APP_ORIGIN`),
-  `.github/workflows/app-build.yml` (CSP sed-rewrite + inline `bun -e`
-  rewrite), `apps/app/electron/main.ts` (`app://bundle` handling).
-- Why: CI mutates a tracked source file on the runner; placeholder leaks
-  into WebViews if a sync happens before injection.
-- Risk: MED — replacement must preserve the exact `connect-src` contract.
-- Done when: `__APP_ORIGIN__` define or `transformIndexHtml` plugin injects
-  at build time; CI rewrite steps deleted; packaged + local builds verified.
-
 ## Priority 2 — structural, needs test cover first
 
-### 4. Split `document-pipeline.ts` (1,287 lines)
+### 4. Split `document-pipeline.ts` (1,288 lines)
+
 - File: `apps/app/src/server/lib/document-pipeline.ts`.
 - Shape: `pipeline/{challans,returns,raw,packing,common}.ts`; move, don't
   rewrite; keep every export name stable (`createChallan`,
@@ -53,7 +35,8 @@ files, the risk, and what "done" requires. Work top-down by priority.
 - Done when: `tsc -p tsconfig.server.json`, full challan/return/raw/packing
   create+update smoke (offline conflict path included).
 
-### 5. Split `challan-html.ts` (444 lines) + golden-file test
+### 5. Split `challan-html.ts` (443 lines) + golden-file test
+
 - File: `apps/app/src/shared/challan-html.ts` (types + pagination + CSS
   string + builders, shared by server PDF, desktop PDF, print page).
 - First: snapshot-test `buildChallanHtml` output as a golden file, THEN
@@ -61,38 +44,11 @@ files, the risk, and what "done" requires. Work top-down by priority.
 - Done when: golden test green before and after; all three PDF/print
   pipelines smoke-tested.
 
-### 6. Split offline `sync.ts` (266 lines)
-- File: `apps/app/src/main/lib/offline/sync.ts` (zustand + probe + deliver
-  + 3-pass loop + hook).
-- Shape: extract `sync-state.ts`, `deliver.ts`, `conflict.ts`; leave
-  `sync.ts` as orchestrator. Needs an integration test on the
-  conflict → resubmit → settled path first (queue loss / double-sync risk).
+### 6a. Offline sync integration test (follow-up to the 2026-09-08 split)
 
-### 7. `errors.ts` client/server split + prune
-- File: `apps/app/src/main/ui/lib/errors.ts` (`MESSAGES`, `satisfies`
-  drift-check — keep the check).
-- Split `CLIENT_MESSAGES` (`network_error`, `pending_sync_edit`,
-  `http_500/502`) from server codes. Prune legacy-looking codes ONLY with
-  server-emission proof (old deployments may still emit them).
-
-### 8. Dirty-guard coverage for dialog editors
-- Hook covers tab-close for full-page editors; dialog editors
-  (masters/colors/members) have no guard, with no comment explaining why.
-- Decide: document intended coverage in the hook comment, or add a
-  "discard changes?" confirm to dialogs (needs a router-blocker, not just
-  more call sites — `beforeunload` doesn't cover in-app navigation).
-
-## Priority 3 — small polish
-
-### 9. Report date filters: honor or reject
-- `over-receipts` / `stock-summary` / `party-summary` / `/reports/dashboard`
-  silently ignore the `from`/`to` the reports grid always appends. Either
-  honor them or reject them — not silent ignore.
-
-### 10. `fyPrevLabel` relocation
-- `apps/app/src/main/ui/lib/dashboard-math.ts` holds `fyPrevLabel` next to
-  `packages/shared/src/fy.ts` (`fyForDate`/`fyLabelForDateString`). Move it
-  next to shared `fy.ts` when next touching either file.
+- The sync split (see done list) moved code verbatim without the integration
+  test this file originally required. Still open: a test on the
+  conflict → resubmit → settled path (queue loss / double-sync risk).
 
 ## Explicitly deferred (recommendation: never, unless forced)
 
@@ -115,18 +71,41 @@ files, the risk, and what "done" requires. Work top-down by priority.
 - **Big-file splits** (`colors.tsx`, `dashboard.tsx`, `app-shell.tsx`):
   subcomponents only if they keep growing, never moves for their own sake.
 
-## Already done (2026-09-07 pass — do not redo)
+## Already done — do not redo
 
-Dead packing→challan linkage dropped (+ migration); dead motion tokens;
-`EASE`→`EASE_OUT`; duplicate `/company` fetches; dead stock guards;
-`deleteSessionCookie`; `workbox-window` + `react-server-dom-webpack`
-removed; dead scripts deleted; `dead-files/` removed; Capacitor output
-gitignored; offline totals → `challanTotals()`; badge simplification; web
-shim deletion; 8 dead query params; balance + stock endpoint consolidation
-(`jobWorkBalances`, `summarizeStockLedger`); recipe count batching; shared
-font-loader core (`shared/cached.ts`); transaction-log pagination fields;
-loginAttempts pruning; lookup envelope; web literals batch; 14-page
-AppShell→fragment strip; challan-editor `useMastersLoad` + dialog extract;
-date-key unification; hours.ts simplification (109/109 behavior-proven);
-CompanyInfo export; numbering `@internal` docs; dead column drops (+
-migration); CI electron invocation; APP.md/DECISIONS.md consistency.
+**2026-09-08 pass** (all gates green: typecheck, lint, format, build,
+Electron compile):
+
+- Dashboard summary cache → `useChallans.summaryCache`, keyed
+  `workspaceId:FY`, cleared in `logout()`; instant first paint preserved.
+- CSP origin injection at Vite time (`appOrigin()` `transformIndexHtml`
+  plugin; `APP_URL` desktop / `VITE_API_URL` Android / same-origin local);
+  both CI `bun -e` rewrite steps deleted.
+- Offline `sync.ts` split into `sync-state.ts` + `deliver.ts` +
+  `conflict.ts`; `sync.ts` stays the orchestrator (move-verbatim, consumers
+  import from the new modules). Integration test still open (item 6a).
+- `errors.ts` split into `CLIENT_MESSAGES` + `SERVER_MESSAGES`, drift-check
+  kept; pruned `company_not_found`, `entry_locked`, `stock_consumed`,
+  `financial_year_missing` (zero server references).
+- Dialog editors guarded: `useDialogDiscard` in `use-dirty-guard.ts` wired
+  into masters + colors (add/edit/recipe) with a "Discard changes?" confirm;
+  hook comment documents tab-close-only coverage.
+- Report date filters honored: `over-receipts`, `party-summary`,
+  `/reports/dashboard` filter by `from`/`to`; `stock-summary` with a range
+  aggregates the period's movements (lifetime position when unset).
+- `fyPrevLabel` moved to `packages/shared/src/fy.ts`.
+
+**2026-09-07 pass**: dead packing→challan linkage dropped (+ migration);
+dead motion tokens; `EASE`→`EASE_OUT`; duplicate `/company` fetches; dead
+stock guards; `deleteSessionCookie`; `workbox-window` +
+`react-server-dom-webpack` removed; dead scripts deleted; `dead-files/`
+removed; Capacitor output gitignored; offline totals → `challanTotals()`;
+badge simplification; web shim deletion; 8 dead query params; balance +
+stock endpoint consolidation (`jobWorkBalances`, `summarizeStockLedger`);
+recipe count batching; shared font-loader core (`shared/cached.ts`);
+transaction-log pagination fields; loginAttempts pruning; lookup envelope;
+web literals batch; 14-page AppShell→fragment strip; challan-editor
+`useMastersLoad` + dialog extract; date-key unification; hours.ts
+simplification (109/109 behavior-proven); CompanyInfo export; numbering
+`@internal` docs; dead column drops (+ migration); CI electron invocation;
+APP.md/DECISIONS.md consistency.

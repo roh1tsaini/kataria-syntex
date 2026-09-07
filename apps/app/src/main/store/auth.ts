@@ -345,6 +345,8 @@ export const useAuth = create<AuthState>()((set, get) => ({
       clearAccountCache();
       const { recountPending } = await import("@/lib/offline/sync");
       recountPending();
+      const { useChallans } = await import("@/store/challans");
+      useChallans.getState().clearSummaryCache();
       set({
         status: "guest",
         user: null,
