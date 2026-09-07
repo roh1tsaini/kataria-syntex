@@ -286,6 +286,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
       - name: Read app version
         id: app_version
         run: echo "version=$(jq -r .version apps/app/package.json)" >> "$GITHUB_OUTPUT"
