@@ -100,19 +100,10 @@ jobs:
         with:
           bun-version-file: package.json
 
-      - name: Cache Electron + builder downloads
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/electron
-            ~/.cache/electron-builder
-            ~/Library/Caches/electron
-            ~/Library/Caches/electron-builder
-            ~/AppData/Local/electron/Cache
-            ~/AppData/Local/electron-builder/Cache
-          key: electron-${{ matrix.name }}-${{ hashFiles('bun.lock') }}
-          restore-keys: electron-${{ matrix.name }}-
-
+      # No actions/cache anywhere in this workflow: private-repo cache+artifact
+      # storage shares a 500MB quota, and electron/gradle caches blew through it
+      # (each lockfile change minted a fresh 130-200MB entry). Downloads from
+      # CDNs cost a couple of minutes per job instead.
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -220,15 +211,6 @@ jobs:
           keyAlias=$KEYSTORE_ALIAS
           keyPassword=$KEYSTORE_PASSWORD
           EOF
-
-      - name: Cache Gradle
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-ks-biz-app-${{ hashFiles('apps/android/app.config.ts', 'apps/android/package.json', 'bun.lock') }}
-          restore-keys: gradle-ks-biz-app-
 
       - name: Build signed release APK
         working-directory: apps/android/android
