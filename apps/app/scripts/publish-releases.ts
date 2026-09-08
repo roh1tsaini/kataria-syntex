@@ -45,7 +45,11 @@ async function api(
   body?: BodyInit,
   headers?: Record<string, string>,
 ): Promise<Response> {
-  return fetch(`${API}/${path}`, {
+  // Query-only paths (list objects) must not get a "/" separator —
+  // GET /objects/?x is parsed by the API as an object fetch with an
+  // empty key and 404s with code 10007.
+  const url = path.startsWith("?") ? `${API}${path}` : `${API}/${path}`;
+  return fetch(url, {
     method,
     headers: { Authorization: `Bearer ${TOKEN}`, ...headers },
     body,
@@ -277,7 +281,7 @@ console.log(`v${VERSION} published (latest-only retention applied)`);
 function readMinVersion(): string {
   try {
     const pkg = JSON.parse(
-      readFileSync(join(process.cwd(), "apps/app/package.json"), "utf8"),
+      readFileSync(join(process.cwd(), "package.json"), "utf8"),
     ) as { minAppVersion?: unknown; version?: unknown };
     return typeof pkg.minAppVersion === "string"
       ? pkg.minAppVersion
