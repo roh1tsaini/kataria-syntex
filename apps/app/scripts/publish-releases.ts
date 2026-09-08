@@ -185,9 +185,27 @@ if (missing.length) {
   process.exit(1);
 }
 
-// 1) Upload versioned artifacts (immutable cache) + blockmaps + ymls.
+// 1) Upload versioned artifacts (immutable cache) + blockmaps + updater ymls.
 const ARTIFACT_CACHE = "public, max-age=31536000, immutable";
-const uploads: Array<[string, string, string, string]> = [];
+const uploads: Array<[string, string | Buffer, string, string]> = [];
+
+/** R2 keys strip spaces — electron-updater must request the dashed name. */
+function dashName(file: string): string {
+  return basename(file).replaceAll(" ", "-");
+}
+
+/** electron-builder writes the artifact's original filename (with spaces)
+ * into latest*.yml, but the objects are stored dash-named. The updater
+ * resolves the yml's `url`/`path` against its own feed URL, so the yml must
+ * name the object exactly as stored. */
+function rewriteYml(file: string, artifact: string): Buffer {
+  const text = readFileSync(file, "utf8").replaceAll(
+    basename(artifact),
+    dashName(artifact),
+  );
+  return Buffer.from(text, "utf8");
+}
+
 if (winSetup)
   uploads.push([
     keyFor(winSetup, "desktop/win"),
@@ -202,10 +220,10 @@ if (winBlockmap)
     CONTENT_TYPES[".blockmap"]!,
     ARTIFACT_CACHE,
   ]);
-if (winYml)
+if (winYml && winSetup)
   uploads.push([
     keyFor(winYml, "desktop/win"),
-    winYml,
+    rewriteYml(winYml, winSetup),
     CONTENT_TYPES[".yml"]!,
     "public, max-age=60",
   ]);
@@ -216,10 +234,10 @@ if (linuxImage)
     CONTENT_TYPES[".AppImage"]!,
     ARTIFACT_CACHE,
   ]);
-if (linuxYml)
+if (linuxYml && linuxImage)
   uploads.push([
     keyFor(linuxYml, "desktop/linux"),
-    linuxYml,
+    rewriteYml(linuxYml, linuxImage),
     CONTENT_TYPES[".yml"]!,
     "public, max-age=60",
   ]);
@@ -245,20 +263,30 @@ if (apk)
     ARTIFACT_CACHE,
   ]);
 
-for (const [key, file, type, cache] of uploads) {
-  await putObject(key, readFileSync(file), type, cache);
+for (const [key, body, type, cache] of uploads) {
+  await putObject(
+    key,
+    typeof body === "string" ? readFileSync(body) : body,
+    type,
+    cache,
+  );
 }
 
 // 2) The unified manifest — Android + macOS Electron + /download page read it.
+// Paths are the public /releases/* URLs every client resolves directly.
 const manifest = {
   version: VERSION,
   minVersion: readMinVersion(),
   releasedAt: new Date().toISOString(),
-  android: apk ? { apk: `/${keyFor(apk, "android")}` } : {},
+  android: apk ? { apk: `/releases/${keyFor(apk, "android")}` } : {},
   desktop: {
-    ...(winSetup ? { win: `/${keyFor(winSetup, "desktop/win")}` } : {}),
-    ...(macDmg ? { mac: `/${keyFor(macDmg, "desktop/mac")}` } : {}),
-    ...(linuxImage ? { linux: `/${keyFor(linuxImage, "desktop/linux")}` } : {}),
+    ...(winSetup
+      ? { win: `/releases/${keyFor(winSetup, "desktop/win")}` }
+      : {}),
+    ...(macDmg ? { mac: `/releases/${keyFor(macDmg, "desktop/mac")}` } : {}),
+    ...(linuxImage
+      ? { linux: `/releases/${keyFor(linuxImage, "desktop/linux")}` }
+      : {}),
   },
 };
 await putObject(
