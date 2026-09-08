@@ -6,9 +6,10 @@ import {
   type Member,
   type Permission,
   ALL_PERMISSIONS,
-} from "@/store/auth";
-import { friendlyError } from "@/ui/lib/errors";
-import { toastError, toastSuccess } from "@/store/toast";
+  friendlyError,
+  toastError,
+  toastSuccess,
+} from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";

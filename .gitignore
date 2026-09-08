@@ -46,16 +46,11 @@ Thumbs.db
 # Reference business documents (customer challans/invoices) — never commit
 apps/app/Docs Template/
 
-# Capacitor build output (the android/ source project IS committed)
+# apps/app build outputs
 apps/app/out/
 apps/app/release/
 apps/app/build/
 apps/app/dist-electron/
-# Regenerated verbatim by `cap sync android` from dist/
-apps/app/android/app/src/main/assets/public/
-
-# Android signing secrets (written by the CI signing script, used locally)
-apps/app/android/keystore.properties
 
 # Scratch / tool output (audit screenshots, throwaway profiles)
 apps/app/tmp/

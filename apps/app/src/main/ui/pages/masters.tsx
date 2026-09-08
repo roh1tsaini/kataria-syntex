@@ -11,8 +11,8 @@ import {
   Truck,
   type LucideIcon,
 } from "lucide-react";
-import { usePermission } from "@/store/auth";
 import {
+  usePermission,
   useMasters,
   type Customer,
   type CustomerInput,
@@ -22,9 +22,10 @@ import {
   type JobWorkerInput,
   type Supplier,
   type SupplierInput,
-} from "@/store/masters";
-import { friendlyError } from "@/ui/lib/errors";
-import { toastError, toastSuccess } from "@/store/toast";
+  friendlyError,
+  toastError,
+  toastSuccess,
+} from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";

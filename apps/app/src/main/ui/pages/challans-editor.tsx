@@ -11,13 +11,15 @@ import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
 import { useMastersLoad } from "@/ui/hooks/use-masters-load";
 
 import { Download, Plus, Save, X } from "lucide-react";
-import { useAuth } from "@/store/auth";
-import { useChallans, type Challan, type ChallanInput } from "@/store/challans";
-
-import { useMasters } from "@/store/masters";
-import { friendlyError } from "@/ui/lib/errors";
-import { api } from "@/lib/api";
-
+import {
+  useAuth,
+  useChallans,
+  type Challan,
+  type ChallanInput,
+  useMasters,
+  friendlyError,
+  api,
+} from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import {

@@ -20,16 +20,16 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useAuth } from "@/store/auth";
 import {
+  useAuth,
+  registerDataCache,
   useChallans,
   type Challan,
   type RecentChallan,
-} from "@/store/challans";
-import { api } from "@/lib/api";
-import { toastError } from "@/store/toast";
-import { friendlyError } from "@/ui/lib/errors";
-
+  api,
+  toastError,
+  friendlyError,
+} from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
@@ -316,7 +316,11 @@ function StatCard({
 type FlowCard = { label: string; value: number; unit: string; link: string };
 
 // Keyed by workspace id so one account's cards never leak into another's.
+// Registered so account resets (logout/401) wipe it — see lib/data-caches.
 let cachedFlowCards: Record<string, FlowCard[]> = {};
+registerDataCache(() => {
+  cachedFlowCards = {};
+});
 
 function FlowCards() {
   const wsId = useAuth((s) => s.workspace?.id);

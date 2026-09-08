@@ -17,12 +17,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/ui/components/ui/empty";
-import { useSync } from "@/lib/offline/sync";
-import { listPending, type PendingChallan } from "@/lib/offline/core";
-import { resubmitWithNumber, retryErrored } from "@/lib/offline/conflict";
-import { toastSuccess } from "@/store/toast";
-import { friendlyError } from "@/ui/lib/errors";
-import { ApiError } from "@/lib/api";
+import {
+  useSync,
+  listPending,
+  type PendingChallan,
+  resubmitWithNumber,
+  retryErrored,
+  toastSuccess,
+  friendlyError,
+  ApiError,
+} from "@kataria-syntex/app-core";
 import { EASE_OUT } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
 

@@ -1,6 +1,10 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
+import {
+  useAuth,
+  isPackerOnlyWorkspace,
+  hydrateMastersCache,
+} from "@kataria-syntex/app-core";
 import { initUpdateChecks } from "@/store/updates";
 import { isNative, isPlainBrowser } from "@/lib/platform";
 import { ProtectedRoute } from "@/ui/components/protected-route";
@@ -107,7 +111,7 @@ function Home() {
 }
 
 /** "/" when signed out — the two-path entry screen (plain browser only).
- * Installed contexts (Electron, Capacitor, standalone PWA) ARE the app: they
+ * Installed contexts (Electron, standalone PWA) ARE the app: they
  * skip the marketing screen and go straight to sign-in. Signed-in users get
  * the full shell (this route sits outside the layout's guest redirect). */
 function EntryOrHome() {
@@ -139,9 +143,12 @@ export function App() {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    // Boots masters pickers from the offline cache; safe before bootstrap
+    // resolves — the live fetch overwrites whatever the cache holds.
+    hydrateMastersCache();
     void bootstrap();
-    // Update pollers (native) + Electron status events — idempotent, and the
-    // web host is a no-op there.
+    // Update wiring for every host: web registers the service worker (prompt
+    // mode) + hourly probe; native pollers and Electron events start here.
     initUpdateChecks();
   }, [bootstrap]);
 

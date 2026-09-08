@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 
 import { Globe, Monitor, Smartphone, Trash2 } from "lucide-react";
-import { useAuth, type Device } from "@/store/auth";
-
-import { toastError, toastSuccess } from "@/store/toast";
 import { QrApproveDialog } from "@/ui/components/qr-approve-dialog";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -19,9 +16,13 @@ import {
 } from "@/ui/components/ui/empty";
 import { Skeleton, Stagger, StaggerItem } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
-
-import { friendlyError } from "@/ui/lib/errors";
-
+import {
+  useAuth,
+  type Device,
+  toastError,
+  toastSuccess,
+  friendlyError,
+} from "@kataria-syntex/app-core";
 function platformIcon(platform: string) {
   if (platform === "android")
     return <Smartphone className="size-4" aria-hidden />;

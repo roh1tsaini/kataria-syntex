@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
-import { useRecipes, type RecipeDetail } from "@/store/recipes";
-import type { RecipeVersionPayload } from "@/store/recipes";
-import { friendlyError } from "@/ui/lib/errors";
-import { toastError, toastSuccess } from "@/store/toast";
+import {
+  useRecipes,
+  type RecipeDetail,
+  type RecipeVersionPayload,
+  friendlyError,
+  toastError,
+  toastSuccess,
+} from "@kataria-syntex/app-core";
 import { fmtDate } from "@/ui/lib/format";
 import { Button } from "@/ui/components/ui/button";
 import { Badge } from "@/ui/components/ui/badge";

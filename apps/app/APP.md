@@ -19,8 +19,10 @@ Internal app for Kataria Syntex (yarn dyeing + trading):
 sales challans, job-work challans + returns, raw material purchase,
 packing, stock ledger, reports, color recipes.
 
-One SPA bundle. Three shells: web/PWA, Electron desktop, Capacitor Android.
-Backend = Hono on Cloudflare Workers + D1 (SQLite).
+One SPA bundle for web/PWA and Electron desktop. The Android app is a
+separate React Native workspace (`apps/android` — see its APP.md). All
+shells share the business core (`packages/app-core`): API client, stores,
+offline engine. Backend = Hono on Cloudflare Workers + D1 (SQLite).
 
 ```
 purchase → job-work OUT (dyeing) → return → packing → sales challan
@@ -35,12 +37,14 @@ grey rolls    grey cones             dyed      packed    invoice
 
 Bun workspaces + Turborepo. Bun is the only package manager (`bun@1.3.14`).
 
-| Path                | Role                                             |
-| ------------------- | ------------------------------------------------ |
-| `apps/app`          | Business app (this doc)                          |
-| `apps/web`          | Public website — Next.js + Vinext on Workers     |
-| `packages/shared`   | Domain types, permissions, errors, numbering, FY |
-| `packages/tsconfig` | Shared TS presets                                |
+| Path                | Role                                               |
+| ------------------- | -------------------------------------------------- |
+| `apps/app`          | Business app — web/PWA + Electron (this doc)       |
+| `apps/android`      | Android app — React Native + Expo (its own APP.md) |
+| `apps/web`          | Public website — Next.js + Vinext on Workers       |
+| `packages/app-core` | Shared business core — API client, stores, offline |
+| `packages/shared`   | Domain types, permissions, errors, numbering, FY   |
+| `packages/tsconfig` | Shared TS presets                                  |
 
 ### Commands
 
@@ -60,7 +64,6 @@ bun run db:generate    # drizzle-kit generate (new migration)
 bun run db:migrate:local
 bun run icons          # regenerate PWA/app icons (sharp)
 bun run electron:package
-bun run android:build  # universal release APK
 ```
 
 Packaging notes (local-only helpers — CI inlines the same steps in
@@ -68,29 +71,31 @@ Packaging notes (local-only helpers — CI inlines the same steps in
 
 - `electron:package` = `build` + `build:electron` + `electron-builder`.
   `build:electron` is also run solo mid-pipeline to inject `APP_URL`.
-- `android:build` = `build` + `cap sync android` + `assembleRelease`.
 - `release/` (400MB+ unpacked binaries) is intentionally excluded from
   `turbo.json` build outputs — shipped as CI artifacts, never cached.
 
 **Done** = typecheck + lint + format + build green from repo root
-AND the feature works when run. All three shells must stay compiling.
+AND the feature works when run. Web/PWA and Electron compile as one
+renderer bundle; `apps/android` typechecks and Metro-bundles against the
+same `packages/app-core`.
 
 ## 3 · Tech stack
 
 Latest stable majors; never downgrade to escape a break.
 
-| Layer    | Tech                                                                               |
-| -------- | ---------------------------------------------------------------------------------- |
-| Frontend | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)           |
-| Styling  | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2             |
-| PWA      | vite-plugin-pwa (autoUpdate, Workbox) via virtual:pwa-register                     |
-| API      | Hono 4 · zod 4 at every boundary                                                   |
-| Data     | Drizzle ORM + drizzle-kit · Cloudflare D1                                          |
-| PDF      | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)       |
-| Desktop  | Electron 43 · electron-builder 26                                                  |
-| Android  | Capacitor 8 (filesystem, share, printer, secure-storage)                           |
-| QR       | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp |
-| CI       | GitHub Actions (`ci.yml`, `cf-deploy.yml`, `app-build.yml`)                        |
+| Layer       | Tech                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Frontend    | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)                                                 |
+| Styling     | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2                                                   |
+| PWA         | vite-plugin-pwa (prompt mode, Workbox) — update banner in update-surface.tsx                                             |
+| API         | Hono 4 · zod 4 at every boundary                                                                                         |
+| Data        | Drizzle ORM + drizzle-kit · Cloudflare D1                                                                                |
+| PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                             |
+| Desktop     | Electron 43 · electron-builder 26                                                                                        |
+| Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline engine (web + Electron here, Android in `apps/android`) |
+| Android     | separate workspace `apps/android` — React Native 0.86 · Expo SDK 57 · expo-router · NativeWind 4.2                       |
+| QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                       |
+| CI          | GitHub Actions (`ci.yml`, `cf-deploy.yml`, `app-build.yml`)                                                              |
 
 ## 4 · Source map
 
@@ -105,18 +110,25 @@ apps/app/
 │   │   ├── auth/                # session, otp, qr-login, perms, members
 │   │   ├── routes/              # thin: parse → lib module → JSON
 │   │   └── lib/                 # document-pipeline, stock, password, pingram…
-│   ├── main/                    # SPA (web + electron + capacitor share it)
-│   │   ├── lib/platform.ts      # host detection + native token storage
-│   │   ├── lib/api.ts           # one API client for all hosts
-│   │   ├── lib/offline/         # caches + outbox + sync engine
-│   │   ├── lib/challan-pdf.ts   # challan PDF fonts + save/share (transport in api.ts)
-│   │   ├── store/               # zustand: auth, challans, masters, recipes…
+│   ├── main/                    # SPA (web + electron share it)
+│   │   ├── lib/platform.ts      # host detection + configureWebCore (app-core seam)
+│   │   ├── lib/challan-pdf.ts   # challan PDF fonts + save/print
+│   │   ├── store/updates.ts     # update banner / blocking dialog state
 │   │   └── ui/                  # App.tsx routes, pages/, components/, globals.css
 │   └── shared/                  # challan-html template + Inter TTFs
 ├── electron/                    # main.ts (keychain, net bridge, printToPDF), preload, build
 ├── drizzle/                     # migrations (timestamped folders)
 ├── design.md                    # design system — read before any UI change
 └── wrangler.jsonc               # Worker + assets + D1 config
+
+packages/app-core/               # shared business core (all shells)
+├── src/adapter.ts               # PlatformAdapter seam — configureCore()
+├── src/api.ts                   # api(), ApiError, apiBlob, deviceHeaders
+├── src/store/                   # zustand: auth, challans, masters, recipes
+├── src/offline/                 # caches + outbox + sync engine
+├── src/errors.ts                # friendlyError
+├── src/toast.ts                 # configureToasts sink
+└── src/data-caches.ts           # registerDataCache / invalidateDataCaches
 ```
 
 Request path:
@@ -125,27 +137,31 @@ SPA → same-origin `/api/*` (Vite proxy in dev) → Worker → Hono
 
 ## 5 · Platforms
 
-Platform differences live ONLY in `src/main/lib/platform.ts` and
-`lib/api.ts`. Never branch on platform elsewhere.
+Platform differences live in each shell's `PlatformAdapter`
+(`packages/app-core/src/adapter.ts` — the seam where the business core
+meets its host: API base, token storage, sync KV, network events, optional
+Electron transport). This app configures it via `configureWebCore()` in
+`src/main/lib/platform.ts` (wired in `main.tsx`); Android configures it via
+`configureAndroidCore()` in `apps/android/src/lib/core-adapter.ts`. Never
+branch on platform elsewhere.
 
-| Shell    | Session storage                           |
-| -------- | ----------------------------------------- |
-| Web/PWA  | HttpOnly cookie                           |
-| Electron | OS keychain via safeStorage (`kc:*` IPC)  |
-| Android  | secure-storage plugin (no plaintext ever) |
+| Shell    | Session storage                              | API origin                                                            |
+| -------- | -------------------------------------------- | --------------------------------------------------------------------- |
+| Web/PWA  | HttpOnly cookie                              | same-origin `/api/*` (Vite proxy in dev)                              |
+| Electron | OS keychain via safeStorage (`kc:*` IPC)     | `APP_URL` injected by `build:electron` at build time                  |
+| Android  | expo-secure-store (hardware-backed keystore) | `EXTRA_API_BASE` baked by CI; dev `localhost:3000` over `adb reverse` |
 
 Build targets (fixed by owner):
 
-- Android — universal APK (`assembleRelease`)
+- Android — universal APK (`assembleRelease`, built by CI from `apps/android`)
 - Windows — NSIS x64
 - macOS — dmg arm64 (Apple Silicon only)
 - Linux — AppImage x64
 - **iOS skipped — never build or scaffold for it.**
 
-Native builds bake the API origin (`APP_URL` / `VITE_API_URL`) at build time.
-Android WebView can't `window.print()` → native Printer plugin;
 Electron renders challan PDFs locally via `kc:render-pdf` (printToPDF);
-PDFs save/share via Capacitor plugins.
+Android fetches the server-rendered PDF and shares/prints natively —
+see §12 and `apps/android/APP.md`.
 
 Desktop shell notes: one instance per installation (second launch focuses
 the first), no menu bar in packaged Windows/Linux builds, pinch/ctrl-wheel
@@ -235,13 +251,13 @@ Conventions:
 ## 8 · API
 
 Same-origin `/api/*` (Hono). Errors: `{ "error": "snake_case_code" }` —
-frontend maps codes → copy in ONE file (`ui/lib/errors.ts`).
-Stack traces never leave the server (detail only when `APP_ENV=development`).
+frontends map codes → copy in ONE file (`packages/app-core/src/errors.ts`,
+`friendlyError`). Stack traces never leave the server (detail only when
+`APP_ENV=development`).
 
 Middleware: query-stripped logger (tokens ride URLs) · secureHeaders ·
-CORS allow-list (`CORS_ORIGIN` env + `capacitor://localhost` + `https://localhost`,
-credentials on) · client IP from `CF-Connecting-IP` (or rightmost XFF when
-`TRUST_PROXY=1`).
+CORS allow-list (`CORS_ORIGIN` env, comma-separated — credentials on) ·
+client IP from `CF-Connecting-IP` (or rightmost XFF when `TRUST_PROXY=1`).
 
 | Route                                           | Gate                                                         |
 | ----------------------------------------------- | ------------------------------------------------------------ |
@@ -334,8 +350,10 @@ manage_members manage_settings
 
 ## 11 · Offline & sync
 
-Offline targets: challans (sales + outward) only. Everything persists in
-localStorage (`offline.*.v1` keys) — same code on all three shells.
+Offline targets: challans (sales + outward) only. The engine lives in
+`packages/app-core/src/offline/` and persists through the shell adapter's
+synchronous KV storage — localStorage on web/Electron (`offline.*.v1`
+keys), MMKV on Android. Same engine, same behavior everywhere.
 
 - Cached: masters (customers, job workers, suppliers, deniers, colors),
   company + numbering + per-FY counters, session profile, device identity.
@@ -372,8 +390,10 @@ localStorage (`offline.*.v1` keys) — same code on all three shells.
 - Errors: `pdf_not_configured` / `pdf_render_failed` / `rate_limited`
   (per-user budget: 120 renders/hour, counted only after the challan exists
   and the renderer is configured). No fallback renderer.
-- Filenames sanitized. Print route: fonts awaited first
-  (`document.fonts.ready`), then Capacitor Printer or `window.print()`.
+- Filenames sanitized. Print route (web): fonts awaited first
+  (`document.fonts.ready`), then `window.print()`. Android downloads the
+  server PDF and prints it through the Android print framework or the share
+  sheet (`apps/android/src/lib/pdf.ts`).
 - Restyles pending in `design-compare/`: ten challan-sheet directions (A–J),
   ten carton-sticker directions (S-A–S-J), and ten sales-report formats
   (R1–R10, each in both A4 orientations). Its README has status + the pick
@@ -429,18 +449,19 @@ this baseline needs an explicit owner question first.
 **Secrets & vars** — `.env*` / `.dev.vars` are owner-only. Never read, echo,
 copy, or commit them. Secrets enter only as env read at use site.
 
-| Binding / var       | What                                        |
-| ------------------- | ------------------------------------------- |
-| `DB`                | D1 binding                                  |
-| `ASSETS`            | Worker static assets (fonts for PDF render) |
-| `RELEASES`          | R2 release bucket (`/releases/*` serving)   |
-| `CORS_ORIGIN`       | comma-separated extra origins (website)     |
-| `APP_ENV`           | `development` → error detail in responses   |
-| `PINGRAM_API_KEY`   | OTP sender (secret)                         |
-| `OTP_DAILY_BUDGET`  | global daily OTP send ceiling (default 300) |
-| `TRUST_PROXY`       | `1` → trust rightmost XFF (behind a proxy)  |
-| `VITE_API_URL`      | native builds → deployed API origin         |
-| `VITE_PROXY_TARGET` | dev proxy target (default `localhost:3000`) |
+| Binding / var       | What                                         |
+| ------------------- | -------------------------------------------- |
+| `DB`                | D1 binding                                   |
+| `ASSETS`            | Worker static assets (fonts for PDF render)  |
+| `RELEASES`          | R2 release bucket (`/releases/*` serving)    |
+| `CORS_ORIGIN`       | comma-separated extra origins (website)      |
+| `APP_ENV`           | `development` → error detail in responses    |
+| `PINGRAM_API_KEY`   | OTP sender (secret)                          |
+| `OTP_DAILY_BUDGET`  | global daily OTP send ceiling (default 300)  |
+| `TRUST_PROXY`       | `1` → trust rightmost XFF (behind a proxy)   |
+| `VITE_API_URL`      | Electron build → deployed API origin         |
+| `EXTRA_API_BASE`    | Android APK build → deployed API origin (CI) |
+| `VITE_PROXY_TARGET` | dev proxy target (default `localhost:3000`)  |
 
 **Workflows**
 
@@ -450,8 +471,10 @@ copy, or commit them. Secrets enter only as env read at use site.
   ensure `ks-releases` bucket exists → `wrangler deploy`. Website deploys
   its own worker + inquiry DB.
 - `app-build.yml` — manual or main push: desktop (win-x64, mac-arm64,
-  linux-x64) + Android APK → GitHub Release (manual dispatch) → `publish-r2`
-  job uploads artifacts + rewrites `latest.json`/`latest*.yml` via
+  linux-x64) + Android APK (from `apps/android`: `expo prebuild -p android`
+  → `assembleRelease`; native project generated on the runner, not
+  committed) → GitHub Release (manual dispatch) → `publish-r2` job uploads
+  artifacts + rewrites `latest.json`/`latest*.yml` via
   `scripts/publish-releases.ts` and prunes everything older (latest-only).
   Push builds publish only when `package.json` `version` differs from the
   published manifest — bumping the version IS the release action. Requires
@@ -469,13 +492,13 @@ stay reachable so the update UI can explain itself. The manifest
 and per-platform paths; the /download page, Android poller and macOS check
 all read it.
 
-| Shell          | Update mechanism                                                                                                                                                       |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web/PWA        | Service worker (`vite-plugin-pwa` autoUpdate) — new deploy precaches, reload swaps in                                                                                  |
-| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — check at launch + every 4h, silent download, install on quit ("Restart now" action)                      |
-| Electron Mac   | Unsigned builds can't self-install — manifest poll + "Download new dmg" dialog (`openReleaseUrl` → OS browser)                                                         |
-| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                  |
-| Android        | Manifest poll → banner → APK streamed into `Cache/updates/` (progress) → system installer via `KsInstaller` plugin; first install asks once for "install unknown apps" |
+| Shell          | Update mechanism                                                                                                                                                                                                                                                 |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web/PWA        | Service worker (`vite-plugin-pwa` prompt mode) — new deploy precaches in the background, the update banner applies it on click; never an auto-reload. Hourly hidden SW check covers long-lived tabs                                                              |
+| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — check at launch + every 4h, silent download, install on quit ("Restart now" action)                                                                                                                |
+| Electron Mac   | Unsigned builds can't self-install — manifest poll + "Download new dmg" dialog (`openReleaseUrl` → OS browser)                                                                                                                                                   |
+| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                            |
+| Android        | Manifest poll (`apps/android/src/lib/updates.ts` — launch + every 4h) → banner → APK streamed via expo-file-system into app-private storage (progress) → system package installer (REQUEST_INSTALL_PACKAGES); first install asks once for "install unknown apps" |
 
 Settings → About carries the manual "Check for updates" row. Force updates
 render the blocking `update-dialog.tsx` (undismissable, host-appropriate
@@ -496,6 +519,37 @@ action). Breaking-change protocol lives in AGENTS.md §4.0.1: bump
 **Policy (owner-mandated)**: free forever ($0) · trusted durable providers ·
 zero lock-in (plain SQLite export, static bundles, env config) · minimal
 footprint · minimal maintenance.
+
+## 14.2 · Caching policy (mandatory, every layer)
+
+Four layers cache in apps/app. Each has one owner and one contract — never
+let a cache outlive the data it mirrors, and never add a new cache without
+stating its invalidation story here.
+
+| Layer                    | Owner / file                                         | Policy                                                                                                                                                                                                                                                                                             |
+| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP — static assets     | `public/_headers` (deployed into `dist/` by Vite)    | `index.html`, `sw.js`, icons, `theme-init.js`: `max-age=0, must-revalidate`. Hashed `/assets/*`: `max-age=31536000, immutable`.                                                                                                                                                                    |
+| HTTP — API + releases    | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                          |
+| Service worker (web/PWA) | `vite.config.ts` `VitePWA` workbox block             | Precache all JS/CSS chunks (offline is a feature — see §11). TTF/PNG runtime cache `app-runtime-v1`, CacheFirst, 16 entries / 30 days, versioned name so deploys start fresh.                                                                                                                      |
+| Client data              | app-core: zustand stores + `src/data-caches.ts`      | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), MMKV (Android). |
+
+Rules that keep this from regressing:
+
+1. **A cache needs an invalidation story or it doesn't ship.** Every new
+   cache states what clears it (TTL, version key, event) in the same change.
+2. **Unhashed content needs a short TTL or a revision.** Anything served
+   under a stable URL (`theme-init.js`, manifests) is either revalidated
+   every time or carries a revision in the SW manifest. Content-hashed files
+   are the only things allowed `immutable`.
+3. **The service worker never force-reloads a tab.** Updates apply through
+   `store/updates.ts` (banner, or the 426 blocking dialog). `registerType`
+   stays `"prompt"`; do not reintroduce `autoUpdate`.
+4. **API responses are never cached client-side or edge-side.** Offline
+   queuing (`packages/app-core/src/offline`) is the only freshness-storing
+   mechanism, and it replaces stale summary rows rather than mixing them.
+5. **Update installs wait for the SW.** The web reload happens only after
+   the waiting worker controls the page (`store/updates.ts`) — a blind
+   reload re-serves the old precached shell and can loop on a 426.
 
 ## 15 · Dev & test
 

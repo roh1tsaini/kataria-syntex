@@ -2,8 +2,8 @@
  * Update surface — mounted once in App alongside the Toaster. Renders:
  * - the blocking update dialog when the server (426) or the published
  *   minVersion floors this client;
- * - the Android/macOS "update ready" banner (dismissable-by-action strip
- *   under the title bar) for non-blocking availability;
+ * - the "update ready" banner strip under the title bar for non-blocking
+ *   availability (web service worker waiting, macOS dmg);
  * - the Windows/Linux "restart to update" toast when electron-updater has
  *   staged the installer.
  */
@@ -28,7 +28,7 @@ function UpdateReadyToast() {
   const toastedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    // Windows/Linux only: macOS + Android use the banner, web reloads.
+    // Windows/Linux only: macOS and web use the banner.
     if (
       detectHost() !== "electron" ||
       window.desktop?.platform === "darwin" ||
@@ -57,8 +57,17 @@ function UpdateBanner() {
   const installUpdate = useUpdates((s) => s.installUpdate);
   const status = useUpdates((s) => s.status);
   const percent = useUpdates((s) => s.percent);
+  const swWaiting = useUpdates((s) => s.swWaiting);
   const reduceMotion = useReducedMotion();
   const downloading = status === "downloading";
+
+  // Web copy vs native-artifact copy — one banner component, two flows.
+  const message =
+    detectHost() === "web"
+      ? latestVersion
+        ? `Version ${latestVersion} is ready — reload to apply.`
+        : "A new version is ready — reload to apply."
+      : `Version ${latestVersion} is available (installed v${__APP_VERSION__})`;
 
   return (
     <AnimatePresence>
@@ -75,18 +84,16 @@ function UpdateBanner() {
             style={noDragStyle}
           >
             <p className="text-[13px] leading-tight text-accent-foreground">
-              {downloading
-                ? `Downloading v${latestVersion}… ${percent !== null ? `${percent}%` : ""}`
-                : `Version ${latestVersion} is available (installed v${__APP_VERSION__})`}{" "}
+              {message}{" "}
             </p>
             <Button
               size="sm"
               className="h-8"
               onClick={() => void installUpdate()}
               disabled={downloading}
-              loading={downloading}
+              loading={downloading && !swWaiting}
             >
-              Update
+              {detectHost() === "web" ? "Reload to update" : "Update"}
             </Button>
           </div>
         </motion.div>

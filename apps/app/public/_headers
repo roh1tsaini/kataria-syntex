@@ -1,0 +1,19 @@
+# Cloudflare Workers static assets header rules. Applies to everything the
+# assets layer serves (including the single-page-application index.html
+# fallback); worker responses (/api/*, /releases/*) set their own headers in
+# code. Rules are cumulative — a later matching block must detach a header
+# before setting a new value ("! Cache-Control").
+#
+# The policy, matching how large SPA + API deployments ship:
+# - HTML and the service worker: never cached; always revalidated. This is
+#   what makes every deploy reach users on their next load.
+# - Vite content-hashed assets: immutable for a year. New content always
+#   ships under a new URL, so a long TTL is safe and free of staleness.
+#   /sw.js lives outside /assets/ so it keeps the revalidate default.
+
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable

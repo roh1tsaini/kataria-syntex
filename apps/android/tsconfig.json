@@ -1,0 +1,27 @@
+{
+  "extends": "@kataria-syntex/tsconfig/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    // dom is types-only: fetch/Blob/AbortController/URLSearchParams are
+    // runtime globals in RN too, and app-core sources typecheck against
+    // this config's libs.
+    "lib": ["dom", "esnext"],
+    "types": ["node", "nativewind/types", "bun"],
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "app",
+    "src",
+    "plugins",
+    "scripts",
+    "modules",
+    "*.ts",
+    "*.js",
+    "*.mjs",
+    "*.d.ts"
+  ],
+  "exclude": ["node_modules", "android", ".expo"]
+}

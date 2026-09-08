@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Search, Warehouse, Layers, AlertTriangle, X } from "lucide-react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/store/auth";
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -24,8 +22,12 @@ import {
 import { Skeleton } from "@/ui/components/motion";
 import { cn } from "@/ui/lib/cn";
 import { fmtWt } from "@/ui/lib/format";
-import { friendlyError } from "@/ui/lib/errors";
-
+import {
+  api,
+  useAuth,
+  registerDataCache,
+  friendlyError,
+} from "@kataria-syntex/app-core";
 type StockGroup = {
   denierId: string | null;
   denierName: string;
@@ -38,10 +40,14 @@ type StockGroup = {
 };
 
 // Keyed by workspace id so one account's stock never leaks into another's.
+// Registered so account resets (logout/401) wipe it — see lib/data-caches.
 const stockCache: Record<
   string,
   Record<"raw" | "dyed", StockGroup[] | null>
 > = {};
+registerDataCache(() => {
+  for (const key of Object.keys(stockCache)) delete stockCache[key];
+});
 
 export function StockPage() {
   const location = useLocation();

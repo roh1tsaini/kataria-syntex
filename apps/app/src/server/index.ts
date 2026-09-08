@@ -37,8 +37,6 @@ app.use(
     origin: (origin, c) => {
       if (!origin) return null;
       if (origin === "null") return null;
-      if (origin === "https://localhost" || origin === "capacitor://localhost")
-        return origin;
       const allowed = (c.env as Env).CORS_ORIGIN;
       if (!allowed) return null;
       return allowed
@@ -59,6 +57,15 @@ app.use(
     maxAge: 86_400,
   }),
 );
+
+// Every API response is fresh-by-contract: business data changes on every
+// write, responses are session-scoped, and 426 gate bodies must never be
+// cached by an intermediary. The assets layer (public/_headers) handles the
+// static side; this pins the dynamic side.
+app.use("/api/*", async (c, next) => {
+  await next();
+  c.header("Cache-Control", "no-store");
+});
 
 app.route("/api", healthRoute);
 // Force-update gate sits above every domain route — see lib/version-gate.ts.

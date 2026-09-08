@@ -1,5 +1,4 @@
-import type { ChallanType } from "@/store/challans";
-
+import { type ChallanType } from "@kataria-syntex/app-core";
 /**
  * Kind descriptors for the two challan routes — sales and outward — consumed
  * by the list, editor, detail and print modules.

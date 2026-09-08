@@ -13,9 +13,6 @@ import {
   Boxes,
   X,
 } from "lucide-react";
-import { usePermission, useAuth } from "@/store/auth";
-import { api } from "@/lib/api";
-import { useMasters } from "@/store/masters";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -44,8 +41,16 @@ import {
   EmptyTitle,
 } from "@/ui/components/ui/empty";
 import { Skeleton } from "@/ui/components/motion";
-import { toastSuccess, toastError } from "@/store/toast";
-import { friendlyError } from "@/ui/lib/errors";
+import {
+  registerDataCache,
+  usePermission,
+  useAuth,
+  api,
+  useMasters,
+  toastSuccess,
+  toastError,
+  friendlyError,
+} from "@kataria-syntex/app-core";
 import { fmtDate, fmtWt, todayLocal } from "@/ui/lib/format";
 import { round3Str } from "@kataria-syntex/shared";
 import {
@@ -105,7 +110,11 @@ const emptyRow = (): ItemRow => ({
 });
 
 // Keyed by workspace id so one account's entries never leak into another's.
+// Registered so account resets (logout/401) wipe it — see lib/data-caches.
 const rawCache: Record<string, RawEntry[] | null> = {};
+registerDataCache(() => {
+  for (const key of Object.keys(rawCache)) delete rawCache[key];
+});
 
 export function RawMaterialPage() {
   const [params] = useSearchParams();

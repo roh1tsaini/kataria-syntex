@@ -19,12 +19,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useAuth } from "@/store/auth";
-import { useChallans, type Challan } from "@/store/challans";
-
-import { friendlyError } from "@/ui/lib/errors";
-
-import { toastError, toastSuccess } from "@/store/toast";
+import {
+  useAuth,
+  useChallans,
+  type Challan,
+  friendlyError,
+  toastError,
+  toastSuccess,
+} from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";

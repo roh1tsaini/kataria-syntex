@@ -34,7 +34,6 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { useAuth, isPackerOnlyWorkspace } from "@/store/auth";
 import { Button } from "@/ui/components/ui/button";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
@@ -43,7 +42,12 @@ import { PackingSkeleton, routeSkeleton } from "@/ui/components/page-skeletons";
 import { AccentPicker } from "@/ui/components/accent-picker";
 import { SyncBanner, SyncDialog } from "@/ui/components/sync-dialog";
 import { useTheme } from "@/ui/hooks/use-theme";
-import { useOfflineSync, useSync } from "@/lib/offline/sync";
+import {
+  useAuth,
+  isPackerOnlyWorkspace,
+  useOfflineSync,
+  useSync,
+} from "@kataria-syntex/app-core";
 import {
   BOTTOM_ITEMS,
   isItemActive,

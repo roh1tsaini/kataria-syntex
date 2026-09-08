@@ -1,0 +1,221 @@
+/**
+ * One-time token bridge: converts apps/app's oklch palette (globals.css —
+ * the design-system source of truth) into the sRGB hex/rgba strings the RN
+ * theme consumes (src/theme/tokens.ts). RN styles cannot parse oklch() at
+ * runtime, so the values are baked at generation time.
+ *
+ * Run: bun scripts/convert-tokens.ts  → rewrites src/theme/tokens.ts
+ */
+
+const table: Record<string, string> = {
+  // neutrals — light
+  "light.background": "oklch(0.99 0 0)",
+  "light.foreground": "oklch(0.145 0 0)",
+  "light.card": "oklch(1 0 0)",
+  "light.cardForeground": "oklch(0.145 0 0)",
+  "light.secondary": "oklch(0.97 0 0)",
+  "light.secondaryForeground": "oklch(0.205 0 0)",
+  "light.muted": "oklch(0.97 0 0)",
+  "light.mutedForeground": "oklch(0.556 0 0)",
+  "light.destructive": "oklch(0.577 0.216 27)",
+  "light.destructiveForeground": "oklch(0.99 0 0)",
+  "light.success": "oklch(0.6 0.13 158)",
+  "light.warning": "oklch(0.68 0.14 70)",
+  "light.border": "oklch(0.922 0 0)",
+  "light.input": "oklch(0.922 0 0)",
+  // neutrals — dark
+  "dark.background": "oklch(0.145 0 0)",
+  "dark.foreground": "oklch(0.985 0 0)",
+  "dark.card": "oklch(0.205 0 0)",
+  "dark.cardForeground": "oklch(0.985 0 0)",
+  "dark.secondary": "oklch(0.269 0 0)",
+  "dark.secondaryForeground": "oklch(0.985 0 0)",
+  "dark.muted": "oklch(0.269 0 0)",
+  "dark.mutedForeground": "oklch(0.708 0 0)",
+  "dark.destructive": "oklch(0.704 0.191 22.2)",
+  "dark.destructiveForeground": "oklch(0.99 0 0)",
+  "dark.success": "oklch(0.72 0.14 158)",
+  "dark.warning": "oklch(0.79 0.14 75)",
+  "dark.border": "oklch(1 0 0 / 10%)",
+  "dark.input": "oklch(1 0 0 / 14%)",
+};
+
+const accents: Record<string, { light: string[]; dark: string[] }> = {
+  claude: {
+    light: [
+      "oklch(0.66 0.15 41)",
+      "oklch(0.995 0.003 41)",
+      "oklch(0.66 0.15 41 / 10%)",
+      "oklch(0.48 0.13 41)",
+    ],
+    dark: [
+      "oklch(0.76 0.12 45)",
+      "oklch(0.18 0.04 45)",
+      "oklch(0.76 0.12 45 / 15%)",
+      "oklch(0.86 0.08 45)",
+    ],
+  },
+  graphite: {
+    light: [
+      "oklch(0.22 0.005 260)",
+      "oklch(0.985 0 0)",
+      "oklch(0.22 0.005 260 / 7%)",
+      "oklch(0.32 0.008 260)",
+    ],
+    dark: [
+      "oklch(0.93 0 0)",
+      "oklch(0.16 0 0)",
+      "oklch(1 0 0 / 10%)",
+      "oklch(0.88 0 0)",
+    ],
+  },
+  iris: {
+    light: [
+      "oklch(0.54 0.2 295)",
+      "oklch(0.985 0.005 295)",
+      "oklch(0.54 0.2 295 / 10%)",
+      "oklch(0.42 0.18 295)",
+    ],
+    dark: [
+      "oklch(0.72 0.15 295)",
+      "oklch(0.16 0.04 295)",
+      "oklch(0.72 0.15 295 / 16%)",
+      "oklch(0.84 0.09 295)",
+    ],
+  },
+  ocean: {
+    light: [
+      "oklch(0.52 0.17 250)",
+      "oklch(0.985 0.005 250)",
+      "oklch(0.52 0.17 250 / 10%)",
+      "oklch(0.42 0.15 250)",
+    ],
+    dark: [
+      "oklch(0.72 0.13 250)",
+      "oklch(0.16 0.04 250)",
+      "oklch(0.72 0.13 250 / 16%)",
+      "oklch(0.84 0.08 250)",
+    ],
+  },
+  emerald: {
+    light: [
+      "oklch(0.53 0.13 163)",
+      "oklch(0.985 0.005 163)",
+      "oklch(0.53 0.13 163 / 10%)",
+      "oklch(0.42 0.12 163)",
+    ],
+    dark: [
+      "oklch(0.74 0.13 165)",
+      "oklch(0.16 0.04 165)",
+      "oklch(0.74 0.13 165 / 15%)",
+      "oklch(0.85 0.09 165)",
+    ],
+  },
+  amber: {
+    light: [
+      "oklch(0.7 0.15 70)",
+      "oklch(0.22 0.06 70)",
+      "oklch(0.7 0.15 70 / 13%)",
+      "oklch(0.46 0.11 70)",
+    ],
+    dark: [
+      "oklch(0.79 0.14 75)",
+      "oklch(0.2 0.05 70)",
+      "oklch(0.79 0.14 75 / 16%)",
+      "oklch(0.87 0.09 75)",
+    ],
+  },
+};
+
+/** oklch(L C H / alpha%) → sRGB hex or rgba() when alpha < 1. */
+function toSrgb(spec: string): string {
+  const m = spec.match(
+    /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)%)?\s*\)$/,
+  );
+  if (!m) throw new Error(`unparseable: ${spec}`);
+  const L = Number(m[1]);
+  const C = Number(m[2]);
+  const H = Number(m[3]);
+  const alpha = m[4] ? Number(m[4]) / 100 : 1;
+
+  const rad = (H * Math.PI) / 180;
+  const a = C * Math.cos(rad);
+  const b = C * Math.sin(rad);
+  const lp = L + 0.3963377774 * a + 0.2158037573 * b;
+  const mp = L - 0.1055613458 * a - 0.0638541728 * b;
+  const sp = L - 0.0894841775 * a - 1.291485548 * b;
+  const l = lp ** 3;
+  const mm = mp ** 3;
+  const s = sp ** 3;
+  const lin = [
+    4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s,
+  ];
+  const enc = lin.map((c) => {
+    const clamped = Math.min(1, Math.max(0, c));
+    const v =
+      clamped <= 0.0031308
+        ? 12.92 * clamped
+        : 1.055 * clamped ** (1 / 2.4) - 0.055;
+    return Math.round(v * 255);
+  });
+  const hex = `#${enc.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+  if (alpha >= 1) return hex;
+  return `rgba(${enc[0]}, ${enc[1]}, ${enc[2]}, ${alpha})`;
+}
+
+const lines: string[] = [
+  "/**",
+  " * Generated by scripts/convert-tokens.ts from apps/app globals.css",
+  " * (the design-system source of truth). sRGB-converted for RN runtime.",
+  " * Regenerate after any palette change — never hand-edit values.",
+  " */",
+  "",
+  "export type AccentName =",
+  '  | "claude"',
+  '  | "graphite"',
+  '  | "iris"',
+  '  | "ocean"',
+  '  | "emerald"',
+  '  | "amber";',
+  "",
+  "export const ACCENTS: AccentName[] = [",
+  ...Object.keys(accents).map((k) => `  "${k}",`),
+  "];",
+  "",
+  "/** Strong/accent-foreground/soft-tint/accent-ink per accent per scheme. */",
+  "export const ACCENT_TOKENS: Record<",
+  "  AccentName,",
+  '  Record<"light" | "dark", { strong: string; fg: string; soft: string; ink: string }>',
+  "> = {",
+];
+for (const [name, schemes] of Object.entries(accents)) {
+  lines.push(`  ${name}: {`);
+  for (const scheme of ["light", "dark"] as const) {
+    const [strong, fg, soft, ink] = schemes[scheme].map(toSrgb);
+    lines.push(
+      `    ${scheme}: { strong: "${strong}", fg: "${fg}", soft: "${soft}", ink: "${ink}" },`,
+    );
+  }
+  lines.push("  },");
+}
+lines.push("};", "");
+lines.push(
+  'export const TOKENS: Record<"light" | "dark", Record<string, string>> = {',
+);
+for (const scheme of ["light", "dark"] as const) {
+  lines.push(`  ${scheme}: {`);
+  for (const [key, value] of Object.entries(table)) {
+    if (!key.startsWith(`${scheme}.`)) continue;
+    lines.push(`    "${key.slice(scheme.length + 1)}": "${toSrgb(value)}",`);
+  }
+  lines.push("  },");
+}
+lines.push("};", "");
+
+await Bun.write(
+  new URL("../src/theme/tokens.ts", import.meta.url),
+  lines.join("\n"),
+);
+console.log("wrote src/theme/tokens.ts");

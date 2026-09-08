@@ -5,8 +5,7 @@
  * compatibility, so a client below the floor has nothing useful to do.
  *
  * The action follows the host: web reloads (the SW has already precached
- * the new build), Electron quit-and-installs (or re-downloads on macOS),
- * Android walks the APK install.
+ * the new build), Electron quit-and-installs (or re-downloads on macOS).
  */
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";
@@ -30,18 +29,10 @@ function actionCopy(): { title: string; description: string; cta: string } {
       cta: "Restart and update",
     };
   }
-  if (host === "capacitor") {
-    return {
-      title: "Update required",
-      description:
-        "This version can no longer reach the server. Install the latest app version to continue.",
-      cta: "Update app",
-    };
-  }
   return {
-    title: "Refresh to update",
+    title: "Update required",
     description:
-      "A required update has been downloaded. Reload the page to continue.",
+      "A required update is ready to install. Reload the page to continue.",
     cta: "Reload now",
   };
 }

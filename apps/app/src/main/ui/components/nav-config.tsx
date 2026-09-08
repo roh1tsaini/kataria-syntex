@@ -20,9 +20,7 @@ import {
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
-import { useAuth } from "@/store/auth";
-import type { Permission } from "@/store/auth";
-
+import { useAuth, type Permission } from "@kataria-syntex/app-core";
 export type SubNavItem = { to: string; label: string };
 export type NavItem = {
   to: string;

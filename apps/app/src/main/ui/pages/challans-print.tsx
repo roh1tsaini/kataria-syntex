@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ArrowLeft, Printer } from "lucide-react";
-import { useAuth } from "@/store/auth";
-import { useChallans } from "@/store/challans";
-
+import { useAuth, useChallans } from "@kataria-syntex/app-core";
 import { printPage } from "@/lib/platform";
 import { loadChallanFonts } from "@/lib/challan-pdf";
 import {

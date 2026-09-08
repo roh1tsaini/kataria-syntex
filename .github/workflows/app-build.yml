@@ -15,6 +15,7 @@ on:
     branches: [main]
     paths:
       - "apps/app/**"
+      - "apps/android/**"
       - "packages/**"
       - ".github/workflows/**"
       - "package.json"
@@ -23,6 +24,7 @@ on:
     branches: [main]
     paths:
       - "apps/app/**"
+      - "apps/android/**"
       - "packages/**"
 
 concurrency:
@@ -167,23 +169,22 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Normalize API origin for the APK bundle
-        # The Android WebView is not same-origin with the backend, so the
-        # renderer bakes VITE_API_URL at build time. It must be an absolute
-        # https:// origin — a bare FQDN would build broken relative URLs.
+      - name: Normalize API origin for the app bundle
+        # The RN app is not same-origin with the backend, so it bakes the
+        # absolute https:// origin at build time (EXTRA_API_BASE →
+        # app.config.ts extra.apiBaseUrl → expo-constants). A bare FQDN
+        # would build broken relative URLs.
         shell: bash
         env:
           APP_URL: ${{ vars.APP_URL }}
         run: |
           APP_URL="https://${APP_URL#*://}"
           APP_URL="${APP_URL%/}"
-          echo "VITE_API_URL=$APP_URL" >> "$GITHUB_ENV"
+          echo "EXTRA_API_BASE=$APP_URL" >> "$GITHUB_ENV"
 
-      - name: Build web bundle + sync Capacitor
-        working-directory: apps/app
-        run: |
-          bun run build
-          bunx cap sync android
+      - name: Generate native project (Expo prebuild)
+        working-directory: apps/android
+        run: bunx expo prebuild -p android --no-install
 
       - name: Decode signing keystore from secrets
         shell: bash
@@ -197,7 +198,7 @@ jobs:
           echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.p12"
 
       - name: Write keystore.properties
-        working-directory: apps/app
+        working-directory: apps/android
         shell: bash
         env:
           KEYSTORE_FILE: ${{ runner.temp }}/keystore.p12
@@ -221,18 +222,18 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-ks-biz-app-${{ hashFiles('apps/app/android/**/*.gradle*', 'apps/app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          key: gradle-ks-biz-app-${{ hashFiles('apps/android/app.config.ts', 'apps/android/package.json', 'bun.lock') }}
           restore-keys: gradle-ks-biz-app-
 
       - name: Build signed release APK
-        working-directory: apps/app/android
+        working-directory: apps/android/android
         run: ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
           name: ks-biz-app-android
-          path: apps/app/android/app/build/outputs/apk/release/*.apk
+          path: apps/android/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
   release:

@@ -2,7 +2,7 @@
  * Pure aggregation math for the dashboard — no React, no store access, so it
  * stays unit-testable and the page component stays readable.
  */
-import type { Challan } from "@/store/challans";
+import { type Challan } from "@kataria-syntex/app-core";
 import { localDateKey } from "./format";
 import { fyPrevLabel } from "@kataria-syntex/shared";
 

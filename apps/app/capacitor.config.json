@@ -1,8 +1,0 @@
-{
-  "appId": "com.katariasyntex.bizapp",
-  "appName": "Kataria Syntex Biz App",
-  "webDir": "dist",
-  "android": {
-    "allowMixedContent": false
-  }
-}

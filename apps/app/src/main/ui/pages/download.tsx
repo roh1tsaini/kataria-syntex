@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Download } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { API_BASE } from "@/lib/api";
+import { apiOrigin } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import {
@@ -31,7 +31,7 @@ type ReleaseInfo = {
   paths: Partial<Record<PlatformKey, string>>;
 };
 
-const MANIFEST_URL = `${API_BASE}/releases/app/android/latest.json`;
+const MANIFEST_URL = `${apiOrigin()}/releases/app/android/latest.json`;
 
 async function fetchRelease(): Promise<ReleaseInfo | null> {
   try {
@@ -186,7 +186,7 @@ export function DownloadPage() {
 
   const url = (p: PlatformKey): string | null => {
     const path = release?.paths[p];
-    return path ? `${API_BASE}${path}` : null;
+    return path ? `${apiOrigin()}${path}` : null;
   };
 
   return (

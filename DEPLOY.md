@@ -12,9 +12,10 @@ Cloudflare — free tier only.
 | Databases    | Cloudflare **D1** (SQLite)         | `ks-biz-app-db`, `ks-web-db`     |
 | CI/CD        | GitHub Actions                     | auto-deploys on push to `main`   |
 
-Native shells (Electron desktop, Capacitor Android) build from the same
-renderer via `.github/workflows/app-build.yml` (manual dispatch or
-`apps/app/**` changes).
+Native shells build via `.github/workflows/app-build.yml` (manual dispatch
+or pushes touching `apps/app/**` / `apps/android/**`): Electron desktop from
+the `apps/app` renderer, and the React Native Android app (`apps/android`)
+as its own Metro bundle.
 
 ## First-time setup (once)
 
@@ -33,16 +34,17 @@ injects their ids on the runner** — no manual dashboard steps, no ids to paste
 ### 2. Set the app origin
 
 Add a repository **variable** `APP_URL` = the app worker FQDN
-(`https://app.katariasyntex.workers.dev`). Native builds and the APK CSP
-injection read it.
+(`https://app.katariasyntex.workers.dev`). Native builds read it: the
+Electron build injects it into the packaged bundle; the Android APK bakes
+it as `EXTRA_API_BASE`.
 
 ### 3. Deploy
 
 Push to `main`. On every push:
 
 1. `app-build.yml` — typecheck on every change; full native builds (3 desktop
-   targets + APK) on pushes to `main` touching `apps/app`, or on manual
-   dispatch.
+   targets + APK) on pushes to `main` touching `apps/app` or `apps/android`,
+   or on manual dispatch.
 2. `cf-deploy.yml` — website: build → ensure D1 → migrate → deploy Worker;
    app: build SPA → ensure D1 → migrate → deploy Worker.
 
@@ -65,7 +67,9 @@ commit it).
 
 The release APK must be signed, and every future update must carry the same
 signature — create the keystore once and never lose it. A lost key means the
-app must be uninstalled and reinstalled on every device.
+app must be uninstalled and reinstalled on every device. Existing installs
+keep updating over the top as long as the signature never changes
+(`com.katariasyntex.bizapp`).
 
 ```bash
 # keytool ships with the JDK
@@ -82,7 +86,11 @@ Add three repository secrets (Settings → Secrets and variables → Actions):
 | `ANDROID_KEY_ALIAS`    | the alias chosen above (e.g. `kataria`)      |
 | `ANDROID_KEY_PASSWORD` | the keystore password                        |
 
-Keep the original `.p12` and its password somewhere durable outside GitHub.
+The APK job decodes the keystore on the runner, writes
+`apps/android/android/keystore.properties`, and the config plugin
+`apps/android/plugins/with-signing.ts` wires that file into the release
+build — `assembleRelease` then outputs a signed APK. Keep the original
+`.p12` and its password somewhere durable outside GitHub.
 
 ## Day-to-day maintenance
 
@@ -110,11 +118,15 @@ Keep exports somewhere durable (GitHub private repo, Google Drive).
 The app version lives only in `apps/app/package.json`. Everything reads it:
 
 - **Electron** — installers are stamped with it by electron-builder.
-- **Android** — `build.gradle` parses the same file: `versionName` = the
-  version, `versionCode` = `major*10000 + minor*100 + patch` (0.3.0 → 300).
-  Every bump raises the code — Android rejects updates that don't.
+- **Android** — `apps/android/app.config.ts` reads the same file:
+  `versionName` = the version, `versionCode` =
+  `major*10000 + minor*100 + patch` (0.6.0 → 600). Every bump raises the
+  code — Android rejects updates that don't.
 - **App UI** — Settings → About shows it (injected at build time).
 - **Releases** — the `v<version>` GitHub Release tag is read from the file.
+
+One bump releases everywhere: desktop installers and the Android APK ride
+the same version.
 
 ### Releases (desktop/Android)
 
@@ -127,7 +139,9 @@ Bump `apps/app/package.json`, push, then Repo → Actions → **Build KS Biz App
   whose tag already exists fails the run — bump first.
 
 Android signing uses the secrets from first-time setup step 5 — the APK job
-fails fast when they are absent.
+fails fast when they are absent. The APK job runs `bunx expo prebuild -p
+android --no-install` (generates the native project — it is not committed)
+before gradle; the signing config comes from the config plugin.
 
 ### Monitoring
 
@@ -159,5 +173,6 @@ only), `bun run electron:dev`.
 bun run typecheck && bun run lint && bun run format:check && bun run build
 ```
 
-All three app shells (web/PWA, Electron, Capacitor) must still compile against
-the same renderer bundle.
+Web/PWA and Electron compile against one renderer bundle (`apps/app`); the
+Android app typechecks and Metro-bundles separately
+(`bunx tsc --noEmit` + `bunx expo export -p android` inside `apps/android`).

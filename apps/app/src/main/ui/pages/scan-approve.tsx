@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/store/auth";
-import { friendlyError } from "@/ui/lib/errors";
+import { api, useAuth, friendlyError } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
 import {
   Card,

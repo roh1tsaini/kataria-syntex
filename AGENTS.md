@@ -24,30 +24,38 @@ workspace "while you're in there".
 
 ## 2. Repo map
 
-| Path                | What                                                                        | Stack                                                                                                                            |
-| ------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/app`          | Internal business app (challans, job work, stock, packing, reports)         | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron desktop + Capacitor Android |
-| `apps/web`          | Public showcase website                                                     | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                                                  |
-| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`) | TypeScript                                                                                                                       |
-| `packages/tsconfig` | Shared TS config presets                                                    | —                                                                                                                                |
+| Path                | What                                                                                                             | Stack                                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `apps/app`          | Internal business app — web/PWA + Electron desktop (challans, job work, stock, packing, reports)                 | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
+| `apps/android`      | Internal business app — Android (same features as apps/app)                                                      | React Native 0.87 + Expo SDK 57 + expo-router + NativeWind 4 + Zustand · shares `packages/app-core`  |
+| `apps/web`          | Public showcase website                                                                                          | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                      |
+| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                      | TypeScript                                                                                           |
+| `packages/app-core` | Shared business core for both apps: API client, zustand stores, offline/sync engine (`@kataria-syntex/app-core`) | TypeScript + React                                                                                   |
+| `packages/tsconfig` | Shared TS config presets                                                                                         | —                                                                                                    |
 
-## 2.1 Platforms (apps/app — all three maintained)
+## 2.1 Platforms
 
-| Platform | Shell     | Session storage                   |
-| -------- | --------- | --------------------------------- |
-| Web/PWA  | Browser   | HttpOnly cookie                   |
-| Desktop  | Electron  | OS keychain via IPC + safeStorage |
-| Mobile   | Capacitor | secure-storage plugin             |
+| Platform | Shell                                | Session storage                   |
+| -------- | ------------------------------------ | --------------------------------- |
+| Web/PWA  | Browser                              | HttpOnly cookie                   |
+| Desktop  | Electron (`apps/app`)                | OS keychain via IPC + safeStorage |
+| Mobile   | React Native + Expo (`apps/android`) | expo-secure-store (keystore)      |
 
 Build targets (fixed by owner): Android universal APK,
 Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
 **iOS is skipped completely — never build or scaffold for it.**
 
-- Platform differences live ONLY in `src/main/lib/platform.ts` and
-  `src/main/lib/api.ts`. Never branch on platform elsewhere.
+- `packages/app-core` holds the shared business core (API client, zustand
+  stores, offline/sync engine, error copy). Both apps configure it at boot
+  through its `PlatformAdapter` seam (web/Electron:
+  `apps/app/src/main/lib/platform.ts`; Android:
+  `apps/android/src/lib/core-adapter.ts`). Platform differences live ONLY in
+  those two adapter files. Never branch on platform elsewhere.
 - A change is "done" for apps/app only when web/PWA still works; desktop
-  (Electron) and mobile (Capacitor) must stay compiling against the same
-  renderer bundle. Breaking one shell to fix another is not a fix.
+  (Electron) must stay compiling against the same renderer bundle. Business
+  logic changes must build in BOTH apps (`apps/app` + `apps/android`) —
+  they share `packages/app-core`. Breaking one shell to fix another is not
+  a fix.
 
 ## 2.2 Design language (mandatory for every screen, both apps)
 
@@ -95,6 +103,12 @@ bun run format:check
 bun run dev:server   # Hono API (workerd, wrangler dev)
 bun run dev          # Vite frontend on :1420
 bun run electron:dev # Electron shell over the Vite dev server
+
+# inside apps/android (Android app — React Native + Expo)
+bun run start        # Metro dev server (needs `adb reverse tcp:3000 tcp:3000`
+                     # for the local API, or set EXTRA_API_BASE)
+bun run android      # compile + install a dev build on a connected device
+bun run prebuild     # regenerate android/ from app.config.ts (CI does this)
 ```
 
 ## 4. Hard rules
@@ -229,6 +243,20 @@ truth.
 - Accessibility is not optional: labelled inputs, 44px targets, visible
   focus, `aria-invalid` on errors, reduced-motion respected.
 
+**Caching (mandatory, both apps)**
+
+- Every cache states its invalidation story in the same change — TTL,
+  version key, or explicit wipe event. A cache with no story doesn't ship.
+- HTTP: content-hashed URLs may be `immutable`; everything else (HTML, SW
+  scripts, manifests) is revalidated (`max-age=0, must-revalidate`) or
+  short-TTL. API responses are always `no-store`. apps/app's concrete
+  policy lives in `apps/app/APP.md` §14.2.
+- Client caches (module-level, store, SW runtime) are keyed by account/
+  workspace and wiped on logout/401/account switch (`lib/data-caches.ts` in
+  apps/app). Stale-while-revalidate UIs must still refetch on mount.
+- The service worker never force-reloads a tab and never caches `/api/*`;
+  updates apply through the update banner / blocking dialog only.
+
 **Style**
 
 - Plain English names; kebab-case files, PascalCase types/components.
@@ -240,5 +268,6 @@ truth.
 
 - `bun run typecheck && bun run lint && bun run format:check && bun run
 build` all green from repo root, AND the feature verified by actually
-  running it. All three app shells (web/PWA, Electron, Capacitor) must still
-  compile against the same renderer bundle.
+  running it. The web renderer (web/PWA + Electron) must still compile as
+  one bundle, and the Android app (apps/android) must still typecheck and
+  Metro-bundle (`bunx expo export -p android`) — CI builds the signed APK.

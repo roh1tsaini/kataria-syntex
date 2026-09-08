@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { StyledQrCode } from "@/ui/components/styled-qr";
-import { useAuth, type QrLoginCode } from "@/store/auth";
-import { friendlyError } from "@/ui/lib/errors";
+import {
+  useAuth,
+  type QrLoginCode,
+  friendlyError,
+} from "@kataria-syntex/app-core";
 import { useCountdown } from "@/ui/hooks/use-countdown";
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/motion";

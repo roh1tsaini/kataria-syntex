@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/store/auth";
 import {
   ArrowLeft,
   Factory,
@@ -15,7 +14,6 @@ import {
   SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
-import { api } from "@/lib/api";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { DatePicker } from "@/ui/components/ui/date-picker";
@@ -39,8 +37,12 @@ import {
 import { Reveal, Skeleton } from "@/ui/components/motion";
 import { cn } from "@/ui/lib/cn";
 import { fmtBoxes, fmtWt } from "@/ui/lib/format";
-import { friendlyError } from "@/ui/lib/errors";
-
+import {
+  useAuth,
+  registerDataCache,
+  api,
+  friendlyError,
+} from "@kataria-syntex/app-core";
 const REPORTS: {
   id: string;
   label: string;
@@ -141,8 +143,12 @@ function ReportGrid() {
 }
 
 // Keyed by "workspaceId:reportId[?query]" so one account's rows never leak
-// into another's.
+// into another's. Registered so account resets (logout/401) wipe it — see
+// lib/data-caches.
 const reportCache: Record<string, { items: Record<string, unknown>[] }> = {};
+registerDataCache(() => {
+  for (const key of Object.keys(reportCache)) delete reportCache[key];
+});
 
 const STORAGE_KEY = "reports.hiddenCols";
 

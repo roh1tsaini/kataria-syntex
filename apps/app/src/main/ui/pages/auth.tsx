@@ -3,9 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { useAuth } from "@/store/auth";
 import { isPlainBrowser } from "@/lib/platform";
-import { friendlyError } from "@/ui/lib/errors";
+import { useAuth, friendlyError } from "@kataria-syntex/app-core";
 import { QrLoginPanel } from "@/ui/components/qr-login-panel";
 import { Button } from "@/ui/components/ui/button";
 import {

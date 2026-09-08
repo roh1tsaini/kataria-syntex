@@ -1,12 +1,24 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { registerSW } from "virtual:pwa-register";
+import { configureToasts } from "@kataria-syntex/app-core";
+import { toast } from "sonner";
 import { App } from "@/ui/App";
 import { initTheme } from "@/ui/hooks/use-theme";
+import { configureWebCore } from "@/lib/platform";
 import "@/ui/globals.css";
 
 initTheme();
+
+// Shell boot: adapter (host/token/storage/network seam) + toast sink before
+// the first render, so no store or API call can run unconfigured.
+configureWebCore(__APP_VERSION__);
+configureToasts({
+  success: (title, description) =>
+    toast.success(title, { description, duration: 3800 }),
+  error: (title, description) =>
+    toast.error(title, { description, duration: 6500 }),
+});
 
 // The entry document is always the "/" route: any shell that hands it a
 // literal /index.html path would land the router on the 404 route.
@@ -32,9 +44,9 @@ if (window.desktop) {
   }
 }
 
-// PWA service worker (web/Android builds; the app:// scheme in Electron has
-// no service-worker privilege, so registration is never attempted there).
-if (!window.desktop) registerSW({ immediate: true });
+// PWA service worker registration lives in store/updates.ts (initUpdateChecks
+// — it owns the prompt-mode update flow). The app:// scheme in Electron has
+// no service-worker privilege, so nothing registers there.
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");

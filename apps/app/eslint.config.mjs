@@ -8,15 +8,13 @@ import globals from "globals";
 // `bun run typecheck`.
 const eslintConfig = [
   {
-    // Build outputs and generated native projects are never linted — the
-    // Capacitor android/ contains a copy of the bundled renderer (dist).
+    // Build outputs are never linted.
     ignores: [
       "dist/",
       "dist-electron/",
       "out/",
       "release/",
       "node_modules/",
-      "android/",
       "build/",
       ".wrangler/",
       "tmp/",

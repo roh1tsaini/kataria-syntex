@@ -1,24 +1,30 @@
 /**
- * Update store — the renderer's single view of "is a newer version out?"
- * across all three hosts.
+ * Update store — the web and desktop shells' single view of "is a newer
+ * version out?". ONE state shape and ONE surface set (banner for
+ * non-blocking, blocking dialog for the 426 floor) for every host.
  *
- * - Web/PWA: the service worker IS the updater (vite-plugin-pwa autoUpdate).
- *   A new deploy precaches in the background; this store only surfaces the
- *   426 update_required dialog ("refresh to update").
+ * - Web/PWA: the service worker is the updater, in "prompt" mode. A new
+ *   deploy installs (precaches) in the background; the SW never activates
+ *   itself and the tab never auto-reloads. The banner shows "ready to
+ *   update"; installUpdate() sends skip-waiting, then reloads once the
+ *   waiting worker controls the page. A hidden update check runs hourly so
+ *   long-lived tabs find deploys.
  * - Electron Windows/Linux: status is pushed over the kc:update:* IPC bridge
  *   (electron/updater.ts) — silent background download, "restart to update".
- * - Electron macOS + Android (Capacitor): polls latest.json from the
- *   Worker's /releases bucket on launch + every 4h; the banner drives the
- *   dmg download / in-app APK install.
+ * - Electron macOS: polls latest.json from the Worker's /releases bucket on
+ *   launch + every 4h; the banner drives the dmg download. (The Android app
+ *   runs its own manifest poller — apps/android.)
  *
  * Force updates (server 426 / published minVersion) set `requiredMinVersion`,
  * which the blocking dialog in ui/components/update-dialog.tsx renders
- * undismissably.
+ * undismissably. On web that action awaits SW activation before reloading —
+ * see applyWebUpdate().
  */
 import { create } from "zustand";
 import { compareSemver } from "@kataria-syntex/shared";
+import { apiOrigin, setUpdateRequiredHandler } from "@kataria-syntex/app-core";
+import { registerSW } from "virtual:pwa-register";
 import { detectHost } from "@/lib/platform";
-import { API_BASE, setUpdateRequiredHandler } from "@/lib/api";
 
 export type UpdateState = {
   /** Latest version published to /releases, when known. */
@@ -31,8 +37,13 @@ export type UpdateState = {
   percent: number | null;
   /** True while a manual (Settings) check is in flight. */
   checking: boolean;
-  /** Host-specific artifact URL from the manifest (Android APK / macOS dmg). */
+  /** Host-specific artifact URL from the manifest (macOS dmg). */
   downloadUrl: string | null;
+  /**
+   * Web/PWA only — truthy once a new service worker is WAITING (new build
+   * fully precached, not yet controlling). Set by onNeedRefresh.
+   */
+  swWaiting: boolean;
   checkNow: () => Promise<"up-to-date" | "available" | "error">;
   installUpdate: () => Promise<void>;
   markRequired: (minVersion: string) => void;
@@ -40,19 +51,21 @@ export type UpdateState = {
 
 /** Where latest.json lives (same origin; native shells bake the absolute origin). */
 function releasesManifestUrl(): string {
-  return `${API_BASE}/releases/app/android/latest.json`;
+  return `${apiOrigin()}/releases/app/android/latest.json`;
 }
 
 type LatestManifest = {
   version: string;
   minVersion?: string;
-  android?: { apk?: string };
   desktop?: { win?: string; mac?: string; linux?: string };
 };
 
 async function fetchManifest(): Promise<LatestManifest | null> {
   try {
     const res = await fetch(releasesManifestUrl(), {
+      // Manifests are served with max-age=60 for native updaters; the browser
+      // HTTP cache would delay a new release by up to that window — bypass it.
+      cache: "no-store",
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return null;
@@ -68,30 +81,99 @@ async function fetchManifest(): Promise<LatestManifest | null> {
 
 /** macOS Electron reports as desktop but updates via manifest + dmg. */
 function usesManifestFlow(): boolean {
-  const host = detectHost();
-  if (host === "capacitor") return true;
-  if (host === "electron") return window.desktop?.platform === "darwin";
-  return false;
+  return detectHost() === "electron" && window.desktop?.platform === "darwin";
 }
 
 /** The manifest artifact this host installs. */
 function artifactFor(manifest: LatestManifest): string | null {
-  const host = detectHost();
-  if (host === "capacitor") {
-    const apk = manifest.android?.apk;
-    return typeof apk === "string" && apk.startsWith("/releases/") ? apk : null;
-  }
-  if (host === "electron") {
-    const mac = manifest.desktop?.mac;
-    return typeof mac === "string" && mac.startsWith("/releases/")
-      ? `${API_BASE}${mac}`
-      : null;
-  }
-  return null;
+  const mac = manifest.desktop?.mac;
+  return typeof mac === "string" && mac.startsWith("/releases/")
+    ? `${apiOrigin()}${mac}`
+    : null;
 }
 
-/** Poll cadence for native hosts — launch + every 4h, matching desktop. */
+/** Poll cadence for the manifest host — launch + every 4h. */
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
+
+/** Hidden service-worker update probe for long-lived tabs. */
+const SW_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+
+/**
+ * Web/PWA install flow. prompt-mode registration; `updateSW()` messages the
+ * waiting worker to skipWaiting, then this side reloads ONLY after the
+ * "controlling" event (the waiting worker is active) — a reload before that
+ * would just re-serve the old precached shell and never converge on a 426.
+ */
+let updateSwFn: ((reloadPage?: boolean) => Promise<void>) | null = null;
+let swWaitingResolve: (() => void) | null = null;
+
+function registerServiceWorker(): void {
+  if ("serviceWorker" in navigator) {
+    updateSwFn = registerSW({
+      immediate: true,
+      onNeedRefresh: () => {
+        useUpdates.setState({ swWaiting: true, status: "ready" });
+        // The SW events carry no version number — read the published
+        // manifest so the banner can show one (also re-arms the 426 floor).
+        void useUpdates.getState().checkNow();
+        if (swWaitingResolve) {
+          swWaitingResolve();
+          swWaitingResolve = null;
+        }
+      },
+    });
+  }
+}
+
+/** Resolves once a waiting worker exists (immediately if one is already
+ * there, else after probing the registration with a bounded timeout). */
+function waitForWaitingWorker(timeoutMs = 10_000): Promise<void> {
+  return new Promise((resolve) => {
+    if (useUpdates.getState().swWaiting) {
+      resolve();
+      return;
+    }
+    swWaitingResolve = resolve;
+    // A 426 can land before the browser's own update check has fetched the
+    // new sw.js — force a check so the waiting worker materializes instead
+    // of us timing out into a plain reload.
+    void navigator.serviceWorker
+      ?.getRegistration()
+      .then((reg) => {
+        void reg?.update().catch(() => {});
+      })
+      .catch(() => {});
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += 500;
+      if (useUpdates.getState().swWaiting || elapsed >= timeoutMs) {
+        clearInterval(timer);
+        if (swWaitingResolve === resolve) swWaitingResolve = null;
+        resolve();
+      }
+    }, 500);
+  });
+}
+
+/**
+ * Web/PWA install flow. registerType "prompt": the waiting worker never
+ * activates itself, and the registered plugin callback reloads the page ONLY
+ * after the new worker takes control (the `controlling` event) — so this
+ * side must never race it with its own reload.
+ */
+async function applyWebUpdate(): Promise<void> {
+  if (!updateSwFn) {
+    // Registration failed / unsupported — a plain reload still re-fetches
+    // the fresh shell (index.html is no-cache) and re-arms the 426 gate.
+    window.location.reload();
+    return;
+  }
+  await waitForWaitingWorker();
+  await updateSwFn();
+  // Reload happens via the plugin's controlling listener. If no waiting
+  // worker materialized within the timeout, force the handover ourselves.
+  if (!useUpdates.getState().swWaiting) window.location.reload();
+}
 
 // Wire the api client's 426 classifier to the blocking-dialog state. Module
 // scope: the handler exists before the first bootstrap request can 426.
@@ -106,6 +188,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   percent: null,
   checking: false,
   downloadUrl: null,
+  swWaiting: false,
 
   checkNow: async () => {
     set({ checking: true });
@@ -118,7 +201,9 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         }
         return res?.kind === "error" ? "error" : "up-to-date";
       }
-      // Web + Android + macOS Electron read the same published manifest.
+      // Web and macOS Electron read the same published manifest. (Web
+      // additionally learns about deploys via the SW waiting event — this
+      // manifest read is the version number shown in the banner.)
       const manifest = await fetchManifest();
       if (!manifest) return "error";
       if (manifest.minVersion) get().markRequired(manifest.minVersion);
@@ -130,6 +215,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         set({ status: "ready" });
         return "available";
       }
+      // A waiting worker (deploy mid-install) is surfaced by onNeedRefresh.
       return "up-to-date";
     } finally {
       set({ checking: false });
@@ -137,8 +223,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   installUpdate: async () => {
-    const host = detectHost();
-    if (host === "electron") {
+    if (detectHost() === "electron") {
       if (usesManifestFlow()) {
         // macOS: hand the published dmg to the OS browser.
         const url = get().downloadUrl;
@@ -148,17 +233,9 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       await window.desktop?.restartToUpdate();
       return;
     }
-    if (host === "capacitor") {
-      if (!get().downloadUrl) return;
-      set({ status: "downloading", percent: 0 });
-      const ok = await import("@/lib/installer").then((m) =>
-        m.downloadAndInstallApk((percent) => set({ percent })),
-      );
-      set(ok ? { status: "ready" } : { status: "error", percent: null });
-      return;
-    }
-    // Web: the SW already precached the new build — a reload swaps it in.
-    window.location.reload();
+    // Web/PWA: skip-waiting → wait for the new worker to control the page →
+    // reload. Safe from the banner AND from the 426 dialog.
+    await applyWebUpdate();
   },
 
   markRequired: (minVersion) => {
@@ -170,12 +247,24 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 }));
 
-/** Launch-time wiring: native pollers + Electron status events. */
+/** Launch-time wiring: SW registration (web), the macOS poller, IPC events.
+ * StrictMode mounts App twice in dev — wire exactly once. */
+let updateChecksWired = false;
+
 export function initUpdateChecks(): void {
+  if (updateChecksWired) return;
+  updateChecksWired = true;
   const host = detectHost();
   if (host === "web") {
-    // Web never self-blocks on a manifest — the API's 426 is the only
-    // force-update signal, and the SW handles ordinary updates.
+    registerServiceWorker();
+    // Long-lived tabs: prompt-mode SWs are checked by the browser on
+    // navigation only, so a standalone PWA window left open for days would
+    // never see a deploy. The hourly probe covers that.
+    setInterval(() => {
+      void navigator.serviceWorker?.getRegistrations().then((regs) => {
+        for (const reg of regs) void reg.update();
+      });
+    }, SW_CHECK_INTERVAL_MS);
     return;
   }
   void useUpdates.getState().checkNow();
@@ -197,9 +286,11 @@ export function initUpdateChecks(): void {
 
 /** True where the banner (not the blocking dialog) is the update surface. */
 export function showUpdateBanner(): boolean {
-  return (
-    usesManifestFlow() &&
-    useUpdates.getState().status === "ready" &&
-    !useUpdates.getState().requiredMinVersion
-  );
+  const s = useUpdates.getState();
+  if (detectHost() === "web") {
+    // Web banner: a waiting service worker (new build precached, ready to
+    // apply). The blocking dialog covers the 426 floor separately.
+    return s.swWaiting && !s.requiredMinVersion;
+  }
+  return usesManifestFlow() && s.status === "ready" && !s.requiredMinVersion;
 }

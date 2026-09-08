@@ -3,7 +3,7 @@
  * Two paths: use the app right here (web/PWA) or install it on this device.
  * Platform detection only recommends; every option stays reachable.
  *
- * Installed contexts (Electron, Capacitor, standalone PWA) never render this
+ * Installed contexts (Electron, standalone PWA) never render this
  * — App.tsx sends them straight to /auth.
  */
 import { Link } from "react-router-dom";

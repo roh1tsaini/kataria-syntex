@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { Camera, CameraOff, CheckCircle2 } from "lucide-react";
-import { friendlyError } from "@/ui/lib/errors";
+import { friendlyError } from "@kataria-syntex/app-core";
 import { useCameraScanner } from "@/ui/hooks/use-camera-scanner";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";

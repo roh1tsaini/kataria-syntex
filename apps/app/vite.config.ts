@@ -5,9 +5,8 @@ import { VitePWA } from "vite-plugin-pwa";
 import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Single source of truth for the app version across all three shells
-// (web/PWA, Electron, Android — build.gradle parses this same file). Baked
-// into the renderer as __APP_VERSION__.
+// Single source of truth for the app version across both shells (web/PWA,
+// Electron). Baked into the renderer as __APP_VERSION__.
 const APP_VERSION = (
   JSON.parse(
     readFileSync(resolve(import.meta.dirname, "package.json"), "utf8"),
@@ -33,10 +32,10 @@ function interFonts(): Plugin {
   };
 }
 
-// Injects the backend origin into the CSP at build time. Native shells
-// (Electron app://bundle, Capacitor WebView) are not same-origin, so the
-// built HTML allowlists APP_URL / VITE_API_URL. Local builds with neither
-// set drop the placeholder and stay same-origin only.
+// Injects the backend origin into the CSP at build time. Installed shells
+// (Electron app://bundle, standalone PWA) may not be same-origin with the
+// API, so the built HTML allowlists APP_URL / VITE_API_URL. Local builds
+// with neither set drop the placeholder and stay same-origin only.
 function appOrigin(): Plugin {
   return {
     name: "kataria-app-origin",
@@ -50,8 +49,8 @@ function appOrigin(): Plugin {
 }
 
 // Web/PWA build — served same-origin by the Hono server in production.
-// Capacitor/Android reuses this bundle via `cap sync`; Electron packages the
-// same renderer output (see electron/build.ts for main/preload).
+// Electron packages the same renderer output (see electron/build.ts for
+// main/preload).
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
@@ -62,8 +61,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "theme-init.js"],
+      // Updates are user-applied: a new deploy installs in the background and
+      // the update banner (update-surface.tsx) applies it on click. The
+      // service worker never force-reloads a tab mid-edit.
+      registerType: "prompt",
       manifest: {
         name: "Kataria Syntex Biz App",
         short_name: "KS Biz App",
@@ -100,19 +101,30 @@ export default defineConfig({
         // answer installer/APK downloads with cached index.html (users get
         // an .htm file instead of the app).
         navigateFallbackDenylist: [/^\/api\//, /^\/releases\//],
-        // Precache only the shell the offline story needs. The Inter TTFs
-        // (~1.6 MB, fetched only when rendering a challan PDF) and the PWA
-        // icons load on demand — hashed + immutable, so CacheFirst keeps
-        // them offline after first use without re-shipping them to every
-        // client on every release.
+        // Precache every JS/CSS chunk: the app is offline-capable by design
+        // (lib/offline queues challans against cached masters/session), so
+        // every route chunk must load with no network. This is the standard
+        // workbox shape for offline SPAs — do NOT narrow it to "the shell";
+        // lazy routes would 404 offline. TTFs are the one deliberate
+        // exception (runtime cache below); the plugin auto-adds the four
+        // small manifest icons.
         globPatterns: ["**/*.{js,css,html,svg,woff2}"],
         runtimeCaching: [
           {
+            // Inter TTFs (~1.6 MB, fetched only when rendering a challan
+            // PDF) cache on first use instead of riding every release's
+            // precache diff. Content-hashed URLs + versioned cache name: a
+            // new app version starts fresh and cleanupOutdatedCaches
+            // removes the old one.
             urlPattern: /\.ttf$/,
             handler: "CacheFirst",
             options: {
-              cacheName: "ttf-fonts",
-              expiration: { maxEntries: 8, purgeOnQuotaError: true },
+              cacheName: "app-runtime-v1",
+              expiration: {
+                maxEntries: 8,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+                purgeOnQuotaError: true,
+              },
               cacheableResponse: { statuses: [200] },
             },
           },

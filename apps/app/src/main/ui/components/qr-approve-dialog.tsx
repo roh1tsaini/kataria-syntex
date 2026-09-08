@@ -1,5 +1,5 @@
 import { CodeEntryForm } from "@/ui/components/code-entry-form";
-import { useAuth } from "@/store/auth";
+import { useAuth } from "@kataria-syntex/app-core";
 import {
   Dialog,
   DialogContent,
