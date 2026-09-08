@@ -55,7 +55,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "drizzle-kit": "^1.0.0-rc.4",
-    "electron": "^43.0.0",
+    "electron": "43.6.0",
     "electron-builder": "^26.0.0",
     "eslint": "~9.38.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
