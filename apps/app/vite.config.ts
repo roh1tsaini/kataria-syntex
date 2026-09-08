@@ -100,7 +100,23 @@ export default defineConfig({
         // answer installer/APK downloads with cached index.html (users get
         // an .htm file instead of the app).
         navigateFallbackDenylist: [/^\/api\//, /^\/releases\//],
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2,ttf}"],
+        // Precache only the shell the offline story needs. The Inter TTFs
+        // (~1.6 MB, fetched only when rendering a challan PDF) and the PWA
+        // icons load on demand — hashed + immutable, so CacheFirst keeps
+        // them offline after first use without re-shipping them to every
+        // client on every release.
+        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /\.ttf$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "ttf-fonts",
+              expiration: { maxEntries: 8, purgeOnQuotaError: true },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+        ],
       },
     }),
   ],
