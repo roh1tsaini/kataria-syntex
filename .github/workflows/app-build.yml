@@ -34,7 +34,12 @@ concurrency:
 permissions:
   contents: write
 
+# Artifacts only hand off installers to the release/publish jobs — the real
+# distribution is R2 + GitHub Releases. Short retention keeps the account's
+# artifact storage quota free (each run uploads ~400MB of installers).
 env:
+  ACTIONS_ARTIFACT_RETENTION_DAYS: 3
+
   # API origin for native builds — set the APP_URL repo variable (the App
   # FQDN, no trailing slash) after the first deploy.
   VITE_API_URL: ${{ vars.APP_URL }}
