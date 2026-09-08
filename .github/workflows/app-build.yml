@@ -308,7 +308,7 @@ jobs:
       - name: Inspect downloaded files
         run: ls -laR dist
 
-      - name: Upload to R2 + rewrite manifests (latest-only retention)
+      - name: Upload to R2 + verify release (latest-only retention)
         working-directory: apps/app
         env:
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -316,6 +316,7 @@ jobs:
           R2_BUCKET: ks-releases
           VERSION: ${{ steps.app_version.outputs.version }}
           DIST_DIR: ${{ github.workspace }}/dist
+          RELEASES_ORIGIN: ${{ vars.APP_URL }}
           # Push builds: skip silently when this version is already live.
           ONLY_IF_VERSION_CHANGED: ${{ github.event_name == 'push' && '1' || '0' }}
         run: bun scripts/publish-releases.ts

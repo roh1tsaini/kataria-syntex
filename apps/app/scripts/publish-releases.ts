@@ -1,17 +1,25 @@
 /**
  * CI release publisher — uploads built artifacts to the ks-releases R2
- * bucket via the Cloudflare REST API and rewrites the update manifests.
+ * bucket via the Cloudflare REST API, writes the update manifests, and
+ * verifies every published URL resolves before declaring success.
  *
  * Runs in .github/workflows/app-build.yml after the desktop/Android builds.
  * Latest-only retention: a new release replaces every previous object under
  * app/ (the 10 GB free tier stays empty; caches stay valid because artifact
  * filenames are versioned and only the manifests keep stable URLs).
  *
+ * Artifact naming contract: electron-builder.yml's artifactName patterns
+ * produce dash-named files; the same name is the R2 key and the filename
+ * referenced inside latest*.yml. No renaming happens anywhere — builder
+ * output, stored object and updater manifest all agree by construction.
+ *
  * Env:
  *   CF_ACCOUNT_ID, CF_API_TOKEN  — R2 edit token (Workers R2 Storage Edit)
  *   R2_BUCKET                    — bucket name (ks-releases)
  *   VERSION                      — app version being published
  *   DIST_DIR                     — directory with downloaded artifacts
+ *   RELEASES_ORIGIN              — public origin serving /releases/* (smoke
+ *                                  check target); defaults to the app Worker.
  *
  * Layout written (URL path = object key, served at /releases/<key>):
  *   app/desktop/win/<setup>.exe[.blockmap] + latest.yml
@@ -28,6 +36,9 @@ const TOKEN = process.env.CF_API_TOKEN ?? "";
 const BUCKET = process.env.R2_BUCKET ?? "ks-releases";
 const VERSION = process.env.VERSION ?? "";
 const DIST = process.env.DIST_DIR ?? "dist";
+const RELEASES_ORIGIN = `https://${(
+  process.env.RELEASES_ORIGIN ?? "app.katariasyntex.workers.dev"
+).replace(/^https?:\/\//, "")}`.replace(/\/$/, "");
 const PREFIX = "app";
 
 if (!ACCOUNT || !TOKEN || !VERSION) {
@@ -37,70 +48,77 @@ if (!ACCOUNT || !TOKEN || !VERSION) {
   process.exit(1);
 }
 
-const API = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/r2/buckets/${BUCKET}/objects`;
+function fail(message: string): never {
+  console.error(message);
+  process.exit(1);
+}
 
-async function api(
-  method: "GET" | "PUT" | "DELETE",
-  path: string,
-  body?: BodyInit,
-  headers?: Record<string, string>,
-): Promise<Response> {
-  // Query-only paths (list objects) must not get a "/" separator —
-  // GET /objects/?x is parsed by the API as an object fetch with an
-  // empty key and 404s with code 10007.
-  const url = path.startsWith("?") ? `${API}${path}` : `${API}/${path}`;
-  return fetch(url, {
-    method,
-    headers: { Authorization: `Bearer ${TOKEN}`, ...headers },
-    body,
-  });
+const OBJECTS_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/r2/buckets/${BUCKET}/objects`;
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  return { Authorization: `Bearer ${TOKEN}`, ...extra };
 }
 
 async function putObject(
   key: string,
-  data: Buffer | string,
+  data: Buffer,
   contentType: string,
   cacheControl: string,
 ): Promise<void> {
-  const encoded = encodeURIComponent(key);
-  const res = await api("PUT", encoded, data, {
-    "Content-Type": contentType,
-    "Cache-Control": cacheControl,
+  const res = await fetch(`${OBJECTS_URL}/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    headers: authHeaders({
+      "Content-Type": contentType,
+      "Cache-Control": cacheControl,
+    }),
+    body: new Uint8Array(data),
   });
-  if (!res.ok) {
-    console.error(`R2 PUT ${key} failed: ${res.status} ${await res.text()}`);
-    process.exit(1);
-  }
+  if (!res.ok) fail(`R2 PUT ${key} failed: ${res.status} ${await res.text()}`);
   console.log(`uploaded ${key}`);
 }
 
-/** Lists keys currently under the app/ prefix. */
+/** Lists keys currently under the app/ prefix (all pages). */
 async function listKeys(): Promise<string[]> {
-  const res = await api("GET", `?prefix=${encodeURIComponent(`${PREFIX}/`)}`);
-  if (!res.ok) {
-    console.error(`R2 list failed: ${res.status} ${await res.text()}`);
-    process.exit(1);
-  }
-  const body: unknown = await res.json();
   const keys: string[] = [];
-  if (body !== null && typeof body === "object") {
-    const list = (body as { result?: unknown }).result;
-    if (Array.isArray(list)) {
-      for (const item of list) {
+  let cursor: string | undefined;
+  do {
+    const url = new URL(OBJECTS_URL);
+    url.searchParams.set("prefix", `${PREFIX}/`);
+    if (cursor) url.searchParams.set("cursor", cursor);
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) fail(`R2 list failed: ${res.status} ${await res.text()}`);
+    const body: unknown = await res.json();
+    if (body === null || typeof body !== "object")
+      fail("R2 list returned an unexpected body.");
+    const root = body as {
+      result?: unknown;
+      result_info?: { cursor?: unknown };
+    };
+    if (Array.isArray(root.result)) {
+      for (const item of root.result) {
         const k = (item as { key?: unknown }).key;
         if (typeof k === "string") keys.push(k);
       }
     }
-  }
+    const info = root.result_info;
+    cursor =
+      info &&
+      typeof info === "object" &&
+      typeof info.cursor === "string" &&
+      (info as { is_truncated?: unknown }).is_truncated === true
+        ? info.cursor
+        : undefined;
+  } while (cursor);
   return keys;
 }
 
 async function deleteObject(key: string): Promise<void> {
-  const res = await api("DELETE", encodeURIComponent(key));
-  if (!res.ok && res.status !== 404) {
-    console.error(`R2 delete ${key} failed: ${res.status}`);
-    process.exit(1);
-  }
+  const res = await fetch(`${OBJECTS_URL}/${encodeURIComponent(key)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok && res.status !== 404)
+    fail(`R2 delete ${key} failed: ${res.status}`);
   console.log(`pruned ${key}`);
 }
 
@@ -130,11 +148,26 @@ function contentTypeFor(name: string): string {
   return "application/octet-stream";
 }
 
-// Artifact filenames carry the version (electron-builder NSIS output is
-// "Kataria Syntex Biz App Setup <version>.exe"; AppImage/dmg/APK vary).
-// Remote keys strip spaces for clean URLs.
+/** R2 key for a built artifact: app/<folder>/<builder filename>. The builder
+ * already emits dash-named files (electron-builder.yml artifactName), so the
+ * key needs no transformation — the same name appears in latest*.yml. */
 function keyFor(file: string, folder: string): string {
-  return `${PREFIX}/${folder}/${basename(file).replaceAll(" ", "-")}`;
+  return `${PREFIX}/${folder}/${basename(file)}`;
+}
+
+/** Public URL an artifact will download from. */
+function releaseUrl(key: string): string {
+  return `${RELEASES_ORIGIN}/releases/${key}`;
+}
+
+function readMinVersion(): string {
+  const pkgPath = join(process.cwd(), "package.json");
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
+    minAppVersion?: unknown;
+  };
+  if (typeof pkg.minAppVersion !== "string")
+    fail(`${pkgPath} is missing a string "minAppVersion".`);
+  return pkg.minAppVersion;
 }
 
 const files = walk(DIST);
@@ -147,12 +180,12 @@ const macDmg = files.find((f) => basename(f).endsWith(".dmg"));
 const macBlockmap = files.find((f) => basename(f).endsWith(".dmg.blockmap"));
 const apk = files.find((f) => basename(f).endsWith(".apk"));
 
-// Push builds only publish when the version actually changed (Q8: bumping
+// Push builds only publish when the version actually changed (bumping
 // package.json is the release action). Manual dispatch always publishes.
 if (process.env.ONLY_IF_VERSION_CHANGED === "1") {
-  const current = await api(
-    "GET",
-    encodeURIComponent(`${PREFIX}/android/latest.json`),
+  const current = await fetch(
+    `${OBJECTS_URL}/${encodeURIComponent(`${PREFIX}/android/latest.json`)}`,
+    { headers: authHeaders() },
   );
   if (current.ok) {
     const body: unknown = await current.json();
@@ -179,96 +212,44 @@ const missing = [
   ["android apk", apk],
 ].filter(([, v]) => !v);
 if (missing.length) {
-  console.error(
-    `Missing artifacts in ${DIST}: ${missing.map(([n]) => n).join(", ")}`,
-  );
-  process.exit(1);
+  fail(`Missing artifacts in ${DIST}: ${missing.map(([n]) => n).join(", ")}`);
 }
 
 // 1) Upload versioned artifacts (immutable cache) + blockmaps + updater ymls.
 const ARTIFACT_CACHE = "public, max-age=31536000, immutable";
-const uploads: Array<[string, string | Buffer, string, string]> = [];
-
-/** R2 keys strip spaces — electron-updater must request the dashed name. */
-function dashName(file: string): string {
-  return basename(file).replaceAll(" ", "-");
-}
-
-/** electron-builder writes the artifact's original filename (with spaces)
- * into latest*.yml, but the objects are stored dash-named. The updater
- * resolves the yml's `url`/`path` against its own feed URL, so the yml must
- * name the object exactly as stored. */
-function rewriteYml(file: string, artifact: string): Buffer {
-  const text = readFileSync(file, "utf8").replaceAll(
-    basename(artifact),
-    dashName(artifact),
-  );
-  return Buffer.from(text, "utf8");
-}
-
+const uploads: Array<{ key: string; file: string }> = [];
 if (winSetup)
-  uploads.push([
-    keyFor(winSetup, "desktop/win"),
-    winSetup,
-    CONTENT_TYPES[".exe"]!,
-    ARTIFACT_CACHE,
-  ]);
+  uploads.push({ key: keyFor(winSetup, "desktop/win"), file: winSetup });
 if (winBlockmap)
-  uploads.push([
-    keyFor(winBlockmap, "desktop/win"),
-    winBlockmap,
-    CONTENT_TYPES[".blockmap"]!,
-    ARTIFACT_CACHE,
-  ]);
-if (winYml && winSetup)
-  uploads.push([
-    keyFor(winYml, "desktop/win"),
-    rewriteYml(winYml, winSetup),
-    CONTENT_TYPES[".yml"]!,
-    "public, max-age=60",
-  ]);
+  uploads.push({
+    key: keyFor(winBlockmap, "desktop/win"),
+    file: winBlockmap,
+  });
+if (winYml) uploads.push({ key: keyFor(winYml, "desktop/win"), file: winYml });
 if (linuxImage)
-  uploads.push([
-    keyFor(linuxImage, "desktop/linux"),
-    linuxImage,
-    CONTENT_TYPES[".AppImage"]!,
-    ARTIFACT_CACHE,
-  ]);
-if (linuxYml && linuxImage)
-  uploads.push([
-    keyFor(linuxYml, "desktop/linux"),
-    rewriteYml(linuxYml, linuxImage),
-    CONTENT_TYPES[".yml"]!,
-    "public, max-age=60",
-  ]);
-if (macDmg)
-  uploads.push([
-    keyFor(macDmg, "desktop/mac"),
-    macDmg,
-    CONTENT_TYPES[".dmg"]!,
-    ARTIFACT_CACHE,
-  ]);
+  uploads.push({
+    key: keyFor(linuxImage, "desktop/linux"),
+    file: linuxImage,
+  });
+if (linuxYml)
+  uploads.push({
+    key: keyFor(linuxYml, "desktop/linux"),
+    file: linuxYml,
+  });
+if (macDmg) uploads.push({ key: keyFor(macDmg, "desktop/mac"), file: macDmg });
 if (macBlockmap)
-  uploads.push([
-    keyFor(macBlockmap, "desktop/mac"),
-    macBlockmap,
-    CONTENT_TYPES[".blockmap"]!,
-    ARTIFACT_CACHE,
-  ]);
-if (apk)
-  uploads.push([
-    keyFor(apk, "android"),
-    apk,
-    CONTENT_TYPES[".apk"]!,
-    ARTIFACT_CACHE,
-  ]);
+  uploads.push({
+    key: keyFor(macBlockmap, "desktop/mac"),
+    file: macBlockmap,
+  });
+if (apk) uploads.push({ key: keyFor(apk, "android"), file: apk });
 
-for (const [key, body, type, cache] of uploads) {
+for (const { key, file } of uploads) {
   await putObject(
     key,
-    typeof body === "string" ? readFileSync(body) : body,
-    type,
-    cache,
+    readFileSync(file),
+    contentTypeFor(basename(key)),
+    basename(key).endsWith(".yml") ? "public, max-age=60" : ARTIFACT_CACHE,
   );
 }
 
@@ -291,30 +272,53 @@ const manifest = {
 };
 await putObject(
   `${PREFIX}/android/latest.json`,
-  JSON.stringify(manifest, null, 2),
+  Buffer.from(JSON.stringify(manifest, null, 2), "utf8"),
   "application/json",
   "public, max-age=60",
 );
 
 // 3) Latest-only retention: delete everything under app/ that this release
 // did not just upload.
-const keep = new Set<string>(uploads.map(([key]) => key));
+const keep = new Set<string>(uploads.map(({ key }) => key));
 keep.add(`${PREFIX}/android/latest.json`);
 for (const key of await listKeys()) {
   if (!keep.has(key)) await deleteObject(key);
 }
 
-console.log(`v${VERSION} published (latest-only retention applied)`);
-
-function readMinVersion(): string {
-  try {
-    const pkg = JSON.parse(
-      readFileSync(join(process.cwd(), "package.json"), "utf8"),
-    ) as { minAppVersion?: unknown; version?: unknown };
-    return typeof pkg.minAppVersion === "string"
-      ? pkg.minAppVersion
-      : (pkg.version ?? VERSION);
-  } catch {
-    return VERSION;
+// 4) Smoke check — every public URL this release advertises must resolve on
+// the live origin, and the updater ymls must reference the stored filenames.
+// A release that fails here is broken for real clients; exit non-zero.
+const publicUrls = [
+  ...uploads
+    .filter(({ key }) => !key.endsWith(".blockmap"))
+    .map(({ key }) => releaseUrl(key)),
+  releaseUrl(`${PREFIX}/android/latest.json`),
+];
+let smokeFailed = false;
+for (const url of publicUrls) {
+  const res = await fetch(url, { method: "HEAD" });
+  if (res.ok) {
+    console.log(`ok ${url}`);
+  } else {
+    smokeFailed = true;
+    console.error(`SMOKE FAIL ${res.status} ${url}`);
   }
 }
+for (const [yml, artifact] of [
+  [winYml, winSetup],
+  [linuxYml, linuxImage],
+] as const) {
+  if (!yml || !artifact) continue;
+  const text = readFileSync(yml, "utf8");
+  if (!text.includes(basename(artifact))) {
+    smokeFailed = true;
+    console.error(
+      `SMOKE FAIL ${basename(yml)} does not reference ${basename(artifact)} — updater would 404.`,
+    );
+  }
+}
+if (smokeFailed) fail("Release smoke check failed — see errors above.");
+
+console.log(
+  `v${VERSION} published and verified (latest-only retention applied)`,
+);

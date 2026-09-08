@@ -6,5 +6,5 @@
     },
     "types": ["bun"]
   },
-  "include": ["src/main", "src/shared", "vite.config.ts"]
+  "include": ["src/main", "src/shared", "scripts", "vite.config.ts"]
 }

@@ -36,6 +36,9 @@ win:
   target:
     - target: nsis
       arch: [x64]
+  # Dash-named artifacts: what the builder writes is what gets stored in R2
+  # and referenced by latest.yml — no renaming anywhere in the pipeline.
+  artifactName: Kataria-Syntex-Biz-App-Setup-${version}.${ext}
   icon: resources/icon.png
 
 nsis:
@@ -46,6 +49,8 @@ mac:
   target:
     - target: dmg
       arch: [arm64]
+  # Same dash-named pattern as win/linux — one naming scheme everywhere.
+  artifactName: Kataria-Syntex-Biz-App-${version}-${arch}.${ext}
   category: public.app-category.business
   icon: resources/icon.png
   # QR-code scan/approve uses the camera — macOS blocks capture without a
@@ -57,5 +62,6 @@ linux:
   target:
     - target: AppImage
       arch: [x64]
+  artifactName: Kataria-Syntex-Biz-App-${version}.${ext}
   category: Office
   icon: resources/icon.png
