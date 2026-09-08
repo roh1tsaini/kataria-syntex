@@ -96,7 +96,10 @@ export default defineConfig({
       workbox: {
         // API calls are never cached — offline queuing is handled in-app
         // (lib/offline) against explicit user intent, not a stale SW cache.
-        navigateFallbackDenylist: [/^\/api\//],
+        // /releases/* must bypass the SPA fallback too: the fallback would
+        // answer installer/APK downloads with cached index.html (users get
+        // an .htm file instead of the app).
+        navigateFallbackDenylist: [/^\/api\//, /^\/releases\//],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2,ttf}"],
       },
     }),

@@ -1,6 +1,6 @@
 {
   "name": "@kataria-syntex/biz-app",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "minAppVersion": "0.0.0",
   "private": true,
   "type": "module",
