@@ -2,9 +2,7 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/ui/lib/cn";
-import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
-import { Textarea } from "@/ui/components/ui/textarea";
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -74,54 +72,6 @@ function InputGroupAddon({
   );
 }
 
-const inputGroupButtonVariants = cva(
-  "flex items-center gap-2 text-sm shadow-none touch-44",
-  {
-    variants: {
-      size: {
-        xs: "h-6 gap-1 rounded-sm px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
-        sm: "h-8 gap-1.5 rounded-md px-2.5 has-[>svg]:px-2.5",
-        "icon-xs": "size-6 rounded-sm p-0 has-[>svg]:p-0",
-        "icon-sm": "size-8 p-0 has-[>svg]:p-0",
-      },
-    },
-    defaultVariants: {
-      size: "xs",
-    },
-  },
-);
-
-function InputGroupButton({
-  className,
-  type = "button",
-  variant = "ghost",
-  size = "xs",
-  ...props
-}: Omit<React.ComponentProps<typeof Button>, "size"> &
-  VariantProps<typeof inputGroupButtonVariants>) {
-  return (
-    <Button
-      type={type}
-      data-size={size}
-      variant={variant}
-      className={cn(inputGroupButtonVariants({ size }), className)}
-      {...props}
-    />
-  );
-}
-
-function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
-  return (
-    <span
-      className={cn(
-        "text-muted-foreground flex items-center gap-2 text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 function InputGroupInput({
   className,
   ...props
@@ -138,27 +88,4 @@ function InputGroupInput({
   );
 }
 
-function InputGroupTextarea({
-  className,
-  ...props
-}: React.ComponentProps<"textarea">) {
-  return (
-    <Textarea
-      data-slot="input-group-control"
-      className={cn(
-        "flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-export {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupText,
-  InputGroupInput,
-  InputGroupTextarea,
-};
+export { InputGroup, InputGroupAddon, InputGroupInput };

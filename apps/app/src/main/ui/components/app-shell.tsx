@@ -679,7 +679,7 @@ function HeaderBar({
   );
 }
 
-export const AppShellContext = createContext<boolean>(false);
+const AppShellContext = createContext<boolean>(false);
 
 function InnerPageLoader({ pathname }: { pathname: string }) {
   // One skeleton per screen, shaped like the content it stands in for

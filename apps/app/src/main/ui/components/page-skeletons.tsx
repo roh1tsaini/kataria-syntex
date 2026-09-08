@@ -43,7 +43,7 @@ function CardStrip({ className }: { className?: string }) {
 }
 
 /** PageHeader shape: eyebrow + clamp title + description left, action right. */
-export function PageHeaderSkeleton({
+function PageHeaderSkeleton({
   desc = true,
   actions = true,
   actionsCount = 1,
@@ -171,7 +171,7 @@ function StatCardSkeleton() {
 
 /* Page skeletons ----------------------------------------------------------- */
 
-export function DashboardSkeleton() {
+function DashboardSkeleton() {
   return (
     <>
       <PageHeaderSkeleton desc={false} actionsCount={2} />
@@ -241,7 +241,7 @@ const CHALLAN_COLS: SkeletonCol[] = [
   { skeleton: "ml-auto size-8 rounded-md", td: "py-2.5" },
 ];
 
-export function ChallansListSkeleton() {
+function ChallansListSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -257,7 +257,7 @@ const RETURNS_COLS: SkeletonCol[] = [
   { skeleton: "ml-auto size-8 rounded-md" },
 ];
 
-export function ReturnsSkeleton() {
+function ReturnsSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -273,7 +273,7 @@ const RAW_MATERIAL_COLS: SkeletonCol[] = [
   { skeleton: "ml-auto size-8 rounded-md" },
 ];
 
-export function RawMaterialSkeleton() {
+function RawMaterialSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -289,7 +289,7 @@ const STOCK_COLS: SkeletonCol[] = [
   { skeleton: "ml-auto h-4 w-20" },
 ];
 
-export function StockSkeleton() {
+function StockSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -315,7 +315,7 @@ export function PackingSkeleton() {
   );
 }
 
-export function ChallanDetailSkeleton() {
+function ChallanDetailSkeleton() {
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -344,7 +344,7 @@ export function ChallanDetailSkeleton() {
   );
 }
 
-export function ChallanEditorSkeleton() {
+function ChallanEditorSkeleton() {
   return (
     <>
       <PageHeaderSkeleton desc={false} actionsCount={2} />
@@ -405,7 +405,7 @@ const REPORT_COLS: SkeletonCol[] = [
   { skeleton: "ml-auto h-4 w-14" },
 ];
 
-export function ReportsGridSkeleton() {
+function ReportsGridSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -427,7 +427,7 @@ export function ReportsGridSkeleton() {
   );
 }
 
-export function ReportViewSkeleton() {
+function ReportViewSkeleton() {
   return (
     <>
       <PageHeaderSkeleton desc={false} />
@@ -474,7 +474,7 @@ export function ReportViewSkeleton() {
   );
 }
 
-export function MastersSkeleton() {
+function MastersSkeleton() {
   return (
     <>
       <PageHeaderSkeleton desc={false} />
@@ -508,7 +508,7 @@ export function MastersSkeleton() {
   );
 }
 
-export function ColorsSkeleton() {
+function ColorsSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -541,7 +541,7 @@ export function ColorsSkeleton() {
   );
 }
 
-export function SettingsSkeleton() {
+function SettingsSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -562,7 +562,7 @@ export function SettingsSkeleton() {
   );
 }
 
-export function DevicesSkeleton() {
+function DevicesSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />
@@ -585,7 +585,7 @@ export function DevicesSkeleton() {
   );
 }
 
-export function MembersSkeleton() {
+function MembersSkeleton() {
   return (
     <>
       <PageHeaderSkeleton />

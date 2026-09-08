@@ -22,9 +22,6 @@ import {
 import { deliver } from "./deliver";
 import { probeServer, recountPending, setOnline, useSync } from "./sync-state";
 
-export { probeServer, recountPending, setOnline, useSync } from "./sync-state";
-export { deliver, type DeliverResult } from "./deliver";
-
 /** Pushes every actionable pending challan (conflicts/errors need a human).
  * Concurrent callers share one run. */
 export function syncPending(): Promise<void> {

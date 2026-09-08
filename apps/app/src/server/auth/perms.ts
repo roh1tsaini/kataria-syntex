@@ -17,7 +17,7 @@ import { apiError } from "../lib/api-error";
  *   route.post("/", requireMember, requirePermission("create_challan"), handler);
  */
 
-export type MemberContext = {
+type MemberContext = {
   workspaceId: string;
   isPrimaryAdmin: boolean;
   permissions: Set<Permission>;

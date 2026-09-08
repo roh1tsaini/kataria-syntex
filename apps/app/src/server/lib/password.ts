@@ -45,7 +45,7 @@ export async function hashPassword(password: string): Promise<string> {
   return `pbkdf2$sha256$${ITERATIONS}$${toBase64(salt)}$${toBase64(hash)}`;
 }
 
-export async function verifyPassword(
+async function verifyPassword(
   password: string,
   stored: string,
 ): Promise<boolean> {

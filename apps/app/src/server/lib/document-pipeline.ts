@@ -112,7 +112,7 @@ async function allocatedChallanNumber(
 
 // ── Raw material ───────────────────────────────────────────────────────────
 
-export type RawItemInput = {
+type RawItemInput = {
   denierId: string;
   colorId: string;
   netWt: number;
@@ -336,7 +336,7 @@ export async function updateRawMaterial(
 
 // ── Packing ────────────────────────────────────────────────────────────────
 
-export type PackingItemInput = {
+type PackingItemInput = {
   denierId: string;
   colorId: string;
   tareWt?: number | null;
@@ -495,7 +495,7 @@ export async function updatePacking(
 
 // ── Returns ────────────────────────────────────────────────────────────────
 
-export type ReturnItemInput = {
+type ReturnItemInput = {
   challanId: string;
   denierId: string;
   colorId: string;
@@ -596,7 +596,7 @@ type ReturnItemRow = ReturnType<typeof buildReturnItems>[number];
 /** Grouped returned net weight per challan (2 round-trips become 1).
  * `excludeReturnId` drops one return's items (edit path — its old items still
  * exist until the batch commits). */
-export async function returnedTotalsByChallan(
+async function returnedTotalsByChallan(
   d: Queryable,
   challanIds: string[],
   excludeReturnId?: string,
@@ -683,7 +683,7 @@ export async function jobWorkBalances(
  * regardless of N. `excludeReturnId` drops one return's items (edit path —
  * its old items still exist until the batch commits).
  */
-export async function getChallanBalances(
+async function getChallanBalances(
   d: Queryable,
   challanIds: string[],
   excludeReturnId?: string,

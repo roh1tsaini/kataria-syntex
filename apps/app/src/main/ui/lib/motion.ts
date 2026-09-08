@@ -9,7 +9,7 @@ export const EASE_DRAWER: readonly [number, number, number, number] = [
 ] as const;
 
 /** Durations in seconds — 120 press / 140 fast / 200 base / 400 max. */
-export const DURATIONS = {
+const DURATIONS = {
   press: 0.12,
   fast: 0.14,
   base: 0.2,

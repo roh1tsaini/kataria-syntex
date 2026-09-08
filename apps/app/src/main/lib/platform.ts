@@ -44,7 +44,7 @@ export function isPlainBrowser(): boolean {
 /** Human-readable device label for the offline device identity. Reads the
  * user-agent directly so no other module sniffs the UA for platform
  * decisions. */
-export function deviceLabel(): string {
+function deviceLabel(): string {
   const ua = navigator.userAgent;
   return /android/i.test(ua)
     ? "Android"
@@ -154,13 +154,11 @@ export function configureWebCore(appVersion: string): void {
 
 // ── Electron window chrome (used by title-bar.tsx) ──────────────────────────
 
-export type DesktopPlatform = "darwin" | "win32" | "linux";
-
 /** Window-control surface behind the custom title bar. Null on web/PWA —
  * there is no window chrome. Everything touching window.desktop window IPC
  * lives here so no UI file branches on platform. */
 export type DesktopWindow = {
-  platform: DesktopPlatform;
+  platform: "darwin" | "win32" | "linux";
   minimize: () => Promise<void>;
   toggleMaximize: () => Promise<boolean>;
   close: () => Promise<void>;

@@ -57,22 +57,21 @@ export type SheetDetail = {
 
 export type ChallanType = "sales" | "outward";
 
-export const ROWS_PER_PAGE = 12;
+const ROWS_PER_PAGE = 12;
 export const SHEET_W_MM = 210;
 export const SHEET_H_MM = 148;
 
-export const fmtWt3 = (n: number) =>
-  Number.isFinite(n) ? n.toFixed(3) : "0.000";
-export const fmtInt = (n: number) =>
+const fmtWt3 = (n: number) => (Number.isFinite(n) ? n.toFixed(3) : "0.000");
+const fmtInt = (n: number) =>
   Number.isFinite(n) ? Math.round(n).toLocaleString("en-IN") : "0";
 
-export const fmtDate = (iso: string) => {
+const fmtDate = (iso: string) => {
   const [y, m, d] = iso.split("-");
   if (!y || !m || !d) return iso;
   return `${d}-${m}-${y}`;
 };
 
-export function paginateItems(items: SheetItem[]): SheetItem[][] {
+function paginateItems(items: SheetItem[]): SheetItem[][] {
   const pages: SheetItem[][] = [];
   for (let i = 0; i < items.length; i += ROWS_PER_PAGE)
     pages.push(items.slice(i, i + ROWS_PER_PAGE));
@@ -80,7 +79,7 @@ export function paginateItems(items: SheetItem[]): SheetItem[][] {
 }
 
 /** Document title line(s) for the masthead's left block. */
-export const titleLines = (type: ChallanType): string[] =>
+const titleLines = (type: ChallanType): string[] =>
   type === "outward" ? ["JOBWORK", "DELIVERY CHALLAN"] : ["DELIVERY CHALLAN"];
 
 // ── Escaping / small builders ────────────────────────────────────────────────

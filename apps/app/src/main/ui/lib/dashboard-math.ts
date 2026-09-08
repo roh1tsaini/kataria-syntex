@@ -6,8 +6,6 @@ import { type Challan } from "@kataria-syntex/app-core";
 import { localDateKey } from "./format";
 import { fyPrevLabel } from "@kataria-syntex/shared";
 
-export { fyPrevLabel };
-
 export type Period = "fy" | "30d" | "all";
 
 export const daysAgoISO = (n: number) => {

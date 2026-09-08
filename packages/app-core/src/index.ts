@@ -11,10 +11,8 @@
 export {
   configureCore,
   core,
-  coreConfigured,
   type Host,
   type CoreStorage,
-  type DesktopTransport,
   type PlatformAdapter,
 } from "./adapter";
 
@@ -29,13 +27,8 @@ export {
 } from "./api";
 
 export { friendlyError } from "./errors";
-export {
-  configureToasts,
-  toastSuccess,
-  toastError,
-  type ToastSink,
-} from "./toast";
-export { registerDataCache, invalidateDataCaches } from "./data-caches";
+export { configureToasts, toastSuccess, toastError } from "./toast";
+export { registerDataCache } from "./data-caches";
 
 // Stores
 export {
@@ -44,26 +37,18 @@ export {
   isPackerOnlyWorkspace,
   ALL_PERMISSIONS,
   type Permission,
-  type User,
-  type Workspace,
   type Numbering,
   type NumberingType,
-  type Company,
-  type FinancialYearInfo,
   type Member,
-  type PendingMember,
   type Device,
-  type LookupResult,
   type QrLoginCode,
 } from "./store/auth";
 
 export {
   useChallans,
   type Challan,
-  type ChallanDetail,
   type ChallanInput,
   type ChallanItem,
-  type ChallanListFilter,
   type ChallanType,
   type RecentChallan,
 } from "./store/challans";
@@ -93,33 +78,13 @@ export {
 
 // Offline engine
 export {
-  deviceIdentity,
   randomId,
-  cacheMasters,
-  readMasters,
-  type MastersCache,
-  cacheCompany,
-  readCompany,
   nextSeq,
-  bumpCounter,
-  cacheSession,
-  readSession,
-  clearSessionCache,
-  clearAccountCache,
+  readCompany,
   listPending,
-  addPending,
-  updatePending,
-  removePending,
   type PendingChallan,
 } from "./offline/core";
 
-export { createOfflineChallan } from "./offline/create";
-export { deliver, type DeliverResult } from "./offline/deliver";
-export { useOfflineSync, syncPending, syncUntilSettled } from "./offline/sync";
-export {
-  probeServer,
-  recountPending,
-  setOnline,
-  useSync,
-} from "./offline/sync-state";
+export { useOfflineSync } from "./offline/sync";
+export { useSync } from "./offline/sync-state";
 export { resubmitWithNumber, retryErrored } from "./offline/conflict";

@@ -20,7 +20,6 @@ import {
   createSessionForUser,
   SESSION_TTL_MS,
   type AuthVariables,
-  type AuthContext,
 } from "../auth/session";
 
 export type AuthEnv = { Bindings: Env; Variables: AuthVariables };
@@ -172,5 +171,3 @@ export async function issueSession(c: AuthCtx, d: Db, userId: string) {
   setSessionCookie(c, token);
   return { token, deviceId };
 }
-
-export type { AuthContext };
