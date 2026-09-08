@@ -18,9 +18,13 @@
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "check:updates": "bun outdated",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.0",
     "prettier": "^3.9.6",
     "turbo": "^2.10.12",
     "typescript": "^7.0.2"

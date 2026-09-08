@@ -98,6 +98,10 @@ bun run build      # production build — required gate
 bun run typecheck  # required gate
 bun run lint       # required gate
 bun run format:check
+bun run check:updates  # registry drift review — run before every commit
+
+# Git hooks (husky): pre-commit runs lint-staged + typecheck,
+# pre-push runs lint + build. Never commit with --no-verify.
 
 # inside apps/app
 bun run dev:server   # Hono API (workerd, wrangler dev)
@@ -129,6 +133,11 @@ bun run prebuild     # regenerate android/ from app.config.ts (CI does this)
    something dies: delete the code, delete its comments, update every doc
    that mentions it — all in the same change. History lives in git and
    `dead-files/`, nowhere else.
+9. **Latest deps, verified before commit.** `bun run check:updates` before
+   every commit; safe lines float via `^`/`~` and the lock refreshes with
+   `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
+   (builder hoisting), react-native (Expo SDK pairing), nitro (mmkv proven
+   pair), drizzle v1 RC (ahead of stable), expo `~` (SDK pins).
 
 ## 4.0.1 Updates & versioning (owner-mandated, apps/app)
 
