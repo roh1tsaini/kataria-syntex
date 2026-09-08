@@ -1,0 +1,5 @@
+# Hoisted node_modules layout (npm-style flat) — REQUIRED for Nitro Modules:
+# react-native-mmkv's C++ build includes react-native-nitro-modules headers
+# by relative path, which only resolves when nitro is hoisted to the root
+# node_modules. Bun's default isolated layout (.bun/ store) breaks it.
+install.linker = "hoisted"
