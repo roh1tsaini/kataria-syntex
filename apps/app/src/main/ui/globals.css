@@ -112,86 +112,19 @@
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* ── Accents ────────────────────────────────────────────────────────────── */
+/* ── Accent — one neutral monochrome, no picker ─────────────────────────── */
 
-:root,
-:root[data-accent="claude"] {
-  --a-strong: oklch(0.66 0.15 41);
-  --a-fg: oklch(0.995 0.003 41);
-  --a-soft: oklch(0.66 0.15 41 / 10%);
-  --a-ink: oklch(0.48 0.13 41);
-}
-.dark,
-.dark[data-accent="claude"] {
-  --a-strong: oklch(0.76 0.12 45);
-  --a-fg: oklch(0.18 0.04 45);
-  --a-soft: oklch(0.76 0.12 45 / 15%);
-  --a-ink: oklch(0.86 0.08 45);
-}
-
-:root[data-accent="graphite"] {
+:root {
   --a-strong: oklch(0.22 0.005 260);
   --a-fg: oklch(0.985 0 0);
   --a-soft: oklch(0.22 0.005 260 / 7%);
   --a-ink: oklch(0.32 0.008 260);
 }
-.dark[data-accent="graphite"] {
+.dark {
   --a-strong: oklch(0.93 0 0);
   --a-fg: oklch(0.16 0 0);
   --a-soft: oklch(1 0 0 / 10%);
   --a-ink: oklch(0.88 0 0);
-}
-
-:root[data-accent="iris"] {
-  --a-strong: oklch(0.54 0.2 295);
-  --a-fg: oklch(0.985 0.005 295);
-  --a-soft: oklch(0.54 0.2 295 / 10%);
-  --a-ink: oklch(0.42 0.18 295);
-}
-.dark[data-accent="iris"] {
-  --a-strong: oklch(0.72 0.15 295);
-  --a-fg: oklch(0.16 0.04 295);
-  --a-soft: oklch(0.72 0.15 295 / 16%);
-  --a-ink: oklch(0.84 0.09 295);
-}
-
-:root[data-accent="ocean"] {
-  --a-strong: oklch(0.52 0.17 250);
-  --a-fg: oklch(0.985 0.005 250);
-  --a-soft: oklch(0.52 0.17 250 / 10%);
-  --a-ink: oklch(0.42 0.15 250);
-}
-.dark[data-accent="ocean"] {
-  --a-strong: oklch(0.72 0.13 250);
-  --a-fg: oklch(0.16 0.04 250);
-  --a-soft: oklch(0.72 0.13 250 / 16%);
-  --a-ink: oklch(0.84 0.08 250);
-}
-
-:root[data-accent="emerald"] {
-  --a-strong: oklch(0.53 0.13 163);
-  --a-fg: oklch(0.985 0.005 163);
-  --a-soft: oklch(0.53 0.13 163 / 10%);
-  --a-ink: oklch(0.42 0.12 163);
-}
-.dark[data-accent="emerald"] {
-  --a-strong: oklch(0.74 0.13 165);
-  --a-fg: oklch(0.16 0.04 165);
-  --a-soft: oklch(0.74 0.13 165 / 15%);
-  --a-ink: oklch(0.85 0.09 165);
-}
-
-:root[data-accent="amber"] {
-  --a-strong: oklch(0.7 0.15 70);
-  --a-fg: oklch(0.22 0.06 70);
-  --a-soft: oklch(0.7 0.15 70 / 13%);
-  --a-ink: oklch(0.46 0.11 70);
-}
-.dark[data-accent="amber"] {
-  --a-strong: oklch(0.79 0.14 75);
-  --a-fg: oklch(0.2 0.05 70);
-  --a-soft: oklch(0.79 0.14 75 / 16%);
-  --a-ink: oklch(0.87 0.09 75);
 }
 
 /* ── Neutral base — Vercel zinc ─────────────────────────────────────── */

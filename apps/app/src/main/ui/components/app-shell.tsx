@@ -39,7 +39,6 @@ import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
 import { PageTransition } from "@/ui/components/motion";
 import { PackingSkeleton, routeSkeleton } from "@/ui/components/page-skeletons";
-import { AccentPicker } from "@/ui/components/accent-picker";
 import { SyncBanner, SyncDialog } from "@/ui/components/sync-dialog";
 import { useTheme } from "@/ui/hooks/use-theme";
 import {
@@ -448,17 +447,14 @@ function MobileDrawerContent({
               {roleBadge(workspace?.isPrimaryAdmin)}
             </div>
           </div>
-          <ButtonCapsule>
-            <AccentPicker size="touch" />
-            <CircleButton
-              size="touch"
-              onClick={onClose}
-              aria-label="Close navigation"
-              title="Close navigation"
-            >
-              <X aria-hidden />
-            </CircleButton>
-          </ButtonCapsule>
+          <CircleButton
+            size="touch"
+            onClick={onClose}
+            aria-label="Close navigation"
+            title="Close navigation"
+          >
+            <X aria-hidden />
+          </CircleButton>
         </div>
 
         <div className="mt-4 flex min-h-11 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-xs">
@@ -658,9 +654,6 @@ function HeaderBar({
         className="ml-auto flex min-w-0 items-center gap-1.5"
         style={noDragStyle}
       >
-        <div className="hidden sm:flex items-center">
-          <AccentPicker />
-        </div>
         <span className="hidden items-center gap-1 rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground xl:inline-flex">
           <CalendarDays className="size-3.5" aria-hidden />
           FY {currentFy?.label ?? "—"}

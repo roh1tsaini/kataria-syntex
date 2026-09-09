@@ -1,7 +1,12 @@
-import { type ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { cn } from "@/ui/lib/cn";
-import { EASE_OUT, staggerContainer, staggerItem } from "@/ui/lib/motion";
+import {
+  EASE_OUT,
+  SPRING,
+  staggerContainer,
+  staggerItem,
+} from "@/ui/lib/motion";
 
 /** Single element entrance container. */
 export function Reveal({
@@ -113,7 +118,53 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-/** Stat display with tabular numbers. */
+/**
+ * Shared 0–9 cells — one constant, never re-created or reconciled.
+ */
+const ROLL_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
+  <span key={d} className="h-[1em] shrink-0 leading-[1em]">
+    {d}
+  </span>
+));
+
+/**
+ * One rolling digit: a 0–9 strip that slides to the target digit.
+ * em-sized so it inherits whatever stat size surrounds it. Mounts at zero
+ * so first appearance counts up instead of snapping in. Transform-only +
+ * memoized so the frame loop stays at the device refresh rate (60/90/120Hz,
+ * no cap — rAF is vsync-synced).
+ */
+const RollingDigit = memo(function RollingDigit({
+  digit,
+  pos,
+}: {
+  digit: number;
+  pos: number;
+}) {
+  return (
+    <span
+      aria-hidden
+      className="inline-block h-[1em] w-[1ch] overflow-hidden text-center align-top"
+    >
+      <motion.span
+        className="flex flex-col"
+        style={{ willChange: "transform" }}
+        initial={{ y: "0em" }}
+        animate={{ y: `${-digit}em` }}
+        transition={{ ...SPRING, delay: Math.min(pos * 0.03, 0.12) }}
+      >
+        {ROLL_CELLS}
+      </motion.span>
+    </span>
+  );
+});
+
+/**
+ * Stat display with rolling digits. The formatted string is split per
+ * character: digits roll, separators/symbols (commas, decimals, ₹) stay
+ * fixed. Digits key from the units side so a value change rolls the same
+ * column instead of remounting it. Display only — never inside inputs.
+ */
 export function CountUp({
   target,
   format,
@@ -123,9 +174,41 @@ export function CountUp({
   format?: (value: number) => string;
   className?: string;
 }) {
+  const reduceMotion = useReducedMotion();
+  const text = format
+    ? format(target)
+    : Math.round(target).toLocaleString("en-IN");
+  if (reduceMotion) {
+    return <span className={cn("tabular-nums", className)}>{text}</span>;
+  }
+  const chars = [...text];
+  // Digit position from the right (units = 0) — stable across regroupings.
+  const posFromRight: number[] = [];
+  let seen = 0;
+  for (let i = chars.length - 1; i >= 0; i--) {
+    posFromRight[i] = /\d/.test(chars[i]) ? seen++ : -1;
+  }
   return (
-    <span className={cn("tabular-nums", className)}>
-      {format ? format(target) : Math.round(target).toLocaleString("en-IN")}
+    <span
+      className={cn("tabular-nums", className)}
+      role="status"
+      aria-label={text}
+    >
+      <span aria-hidden>
+        {chars.map((ch, i) =>
+          /\d/.test(ch) ? (
+            <RollingDigit
+              key={`d${posFromRight[i]}`}
+              digit={Number(ch)}
+              pos={posFromRight[i]}
+            />
+          ) : (
+            <span key={`s${i}-${ch}`} className="inline-block">
+              {ch === " " ? " " : ch}
+            </span>
+          ),
+        )}
+      </span>
     </span>
   );
 }

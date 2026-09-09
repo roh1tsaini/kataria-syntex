@@ -124,10 +124,27 @@ no text-transform on body copy.
   sales-report (R1–R10) directions — pending owner picks; the live templates
   don't change until then.
 
+### 2.4.2 Indian numbers & dates
+
+- Numbers render in the Indian system (`en-IN`): lakh/crore grouping
+  (`12,34,567`), up to 3 fraction digits for weights. Single home:
+  `ui/lib/format.ts` (`fmtBoxes`, `fmtWt`, `fmtDate`, `localDateKey`).
+- Dates render `DD Mon YYYY` (`03 Sep 2026`), parsed timezone-safe:
+  date-only strings build from parts, entry keys use device-local days,
+  never UTC.
+- Dashboard stat cards animate value changes with rolling digits (`CountUp`
+  in `ui/components/motion.tsx`): each digit rides a 0–9 strip, separators
+  and symbols stay fixed; first appearance counts up from zero, columns
+  stagger 30ms from the units side (tail capped at 120ms). Transform-only,
+  memoized strips, `will-change` hint — the frame loop follows the device
+  refresh rate with no cap. Display only — never inside inputs. Static text
+  under `prefers-reduced-motion`.
+
 ### 2.5 Color & surfaces
 
 - Semantic tokens only (`bg-card`, `text-muted-foreground`, …) — never raw
-  oklch in components. Accents flow through `--a-*` (picker in Settings).
+  oklch in components. One neutral monochrome accent flows through `--a-*`
+  — no picker, no hue anywhere.
 - Surface hierarchy: `background` (window) < `card` (content) < `popover`
   (floating). Light mode: slightly recessed window, white cards. Dark:
   elevated cards on near-black. Never invert the hierarchy.
@@ -162,7 +179,7 @@ controls, and actions that sit together share one grouped background.
   (sidebar items, rail items, tab bar) keep `rounded-md` — circles are for
   actions, not navigation.
 - Applies on desktop AND mobile, everywhere in the shell (sidebar toggle,
-  drawer close, footer theme/logout, header accent).
+  drawer close, footer theme/logout, header).
 - Primitive: `ui/circle-button.tsx` — `CircleButton`, `ButtonCapsule`.
 - Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
   with a `size-5` icon. One treatment everywhere.
@@ -296,7 +313,7 @@ layout — never one generic shape for all pages.
   `EASE_DRAWER`, exits 20% faster, no scrim (nothing remains visible to tap).
   Closed by X, Escape or navigation. Layout top→bottom: brand title
   (`text-2xl`, 700, −0.022em, "KS Biz App") with workspace + role line, a
-  capsule of touch circles (accent picker, close) top-right, an FY + sync
+  touch close circle top-right, an FY + sync
   status strip (hairline border, `bg-card`, tap opens sync), the roomy nav
   list, and a pinned footer: identity (avatar 36px + name + workspace) left,
   one primary action (`New challan`, accent) right. Nav rows in the sheet use

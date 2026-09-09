@@ -1,7 +1,7 @@
 /*
- * Applies the persisted theme mode + accent before first paint so dark-mode
+ * Applies the persisted theme mode before first paint so dark-mode
  * users never see a light flash. Loaded synchronously from index.html; the
- * React store (ui/hooks/use-theme.ts) re-reads the same keys on boot.
+ * React store (ui/hooks/use-theme.ts) re-reads the same key on boot.
  */
 (function () {
   try {
@@ -15,9 +15,5 @@
     var root = document.documentElement;
     root.classList.toggle("dark", dark);
     root.style.colorScheme = dark ? "dark" : "light";
-    try {
-      var accent = localStorage.getItem("kataria-challan-accent");
-      if (accent) root.dataset.accent = accent;
-    } catch (e) {}
   } catch (e) {}
 })();

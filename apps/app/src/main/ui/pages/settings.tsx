@@ -18,7 +18,6 @@ import { Label } from "@/ui/components/ui/label";
 import { Card } from "@/ui/components/ui/card";
 import { Badge } from "@/ui/components/ui/badge";
 import { Skeleton } from "@/ui/components/motion";
-import { AccentPicker } from "@/ui/components/accent-picker";
 
 const TYPE_LABELS: Record<keyof Numbering, string> = {
   sales: "Sales challan",
@@ -430,20 +429,6 @@ export function SettingsPage() {
                 </span>
               </div>
             ))}
-          </Card>
-        </Section>
-
-        <Section
-          title="Appearance"
-          description="Choose the accent colour used across the app on this device."
-        >
-          <Card>
-            <SettingsRow
-              label="Accent colour"
-              hint="Buttons, links and highlights."
-            >
-              <AccentPicker />
-            </SettingsRow>
           </Card>
         </Section>
 
