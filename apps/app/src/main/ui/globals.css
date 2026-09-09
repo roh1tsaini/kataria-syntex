@@ -476,6 +476,93 @@
       transparent
     );
   }
+
+  /* Pre-auth ambient wash — entry (/) + download (/download) only. Soft
+    blue ink-wash blobs drifting on the window base, Codex-inspired. This
+    is the one place blue hue is allowed (§2.5): everywhere else stays
+    monochrome. Transform + opacity keyframes only; the global
+    prefers-reduced-motion collapse turns the drift into a still wash. */
+  .entry-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+  }
+  .entry-wash {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .entry-wash > i {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    will-change: transform;
+  }
+  .entry-wash > .w1 {
+    width: 60vmax;
+    height: 60vmax;
+    left: -14%;
+    top: -18%;
+    background: oklch(0.72 0.13 272 / 60%);
+    animation: entry-drift-1 28s var(--ease-out) infinite alternate;
+  }
+  .entry-wash > .w2 {
+    width: 52vmax;
+    height: 52vmax;
+    right: -14%;
+    top: 6%;
+    background: oklch(0.8 0.09 295 / 55%);
+    animation: entry-drift-2 34s var(--ease-out) infinite alternate;
+  }
+  .entry-wash > .w3 {
+    width: 48vmax;
+    height: 48vmax;
+    left: 24%;
+    bottom: -30%;
+    background: oklch(0.68 0.15 262 / 50%);
+    animation: entry-drift-3 31s var(--ease-out) infinite alternate;
+  }
+  .dark .entry-wash > .w1 {
+    background: oklch(0.42 0.13 272 / 55%);
+  }
+  .dark .entry-wash > .w2 {
+    background: oklch(0.48 0.1 295 / 45%);
+  }
+  .dark .entry-wash > .w3 {
+    background: oklch(0.38 0.14 262 / 50%);
+  }
+  @keyframes entry-drift-1 {
+    from {
+      transform: translate3d(-4%, -2%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(6%, 5%, 0) scale(1.08);
+    }
+  }
+  @keyframes entry-drift-2 {
+    from {
+      transform: translate3d(3%, -3%, 0) scale(1.05);
+    }
+    to {
+      transform: translate3d(-5%, 6%, 0) scale(0.97);
+    }
+  }
+  @keyframes entry-drift-3 {
+    from {
+      transform: translate3d(0, 2%, 0) scale(0.96);
+    }
+    to {
+      transform: translate3d(4%, -5%, 0) scale(1.06);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .entry-wash > i {
+      filter: none;
+      opacity: 0.35;
+    }
+  }
 }
 
 @layer utilities {

@@ -14,6 +14,7 @@ import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { apiOrigin } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
+import { EntryWash } from "@/ui/components/entry-wash";
 import {
   AndroidGlyph,
   AppleGlyph,
@@ -190,7 +191,8 @@ export function DownloadPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center bg-background px-4 py-10 sm:px-6">
+    <div className="entry-stage flex min-h-dvh flex-col items-center bg-background px-4 py-10 sm:px-6">
+      <EntryWash />
       <div className="flex w-full max-w-md flex-col items-center gap-6 sm:max-w-lg">
         <div className="flex items-center gap-3">
           <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
