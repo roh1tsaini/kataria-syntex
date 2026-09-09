@@ -136,6 +136,11 @@ export default defineConfig({
     alias: {
       "@": resolve(import.meta.dirname, "src/main"),
     },
+    // Bun can physically nest react under apps/app even when versions match,
+    // which splits react (nested) from react-dom (hoisted) into two instances
+    // — hooks then crash with "Cannot read properties of null (reading
+    // 'useRef')". Pin every react import to one copy.
+    dedupe: ["react", "react-dom"],
   },
   clearScreen: false,
   server: {

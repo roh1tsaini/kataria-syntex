@@ -126,7 +126,7 @@ function PlatformCard({
     >
       <Card
         className={cn(
-          "overflow-hidden transition-colors",
+          "glass-card shadow-soft overflow-hidden transition-colors",
           recommended && "border-accent/40",
         )}
       >
