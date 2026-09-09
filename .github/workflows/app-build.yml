@@ -130,7 +130,7 @@ jobs:
           if-no-files-found: error
 
   android:
-    name: "Android universal APK (all devices)"
+    name: "Android APK (ARM phones)"
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.targets != 'desktop' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90

@@ -52,6 +52,7 @@ export default {
         },
       ],
       "./plugins/with-signing.ts",
+      "./plugins/with-arm-only.ts",
     ],
     extra: {
       apiBaseUrl: process.env.EXTRA_API_BASE ?? "",
