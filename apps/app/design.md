@@ -146,9 +146,9 @@ no text-transform on body copy.
   oklch in components. One neutral monochrome accent flows through `--a-*`
   — no picker, no hue anywhere. One exception: the pre-auth ambient wash
   (`entry-wash.tsx`, entry + download only) uses soft blue oklch blobs on
-  the window base — light: lavender-blue at ~50–60% alpha; dark: deep blue
-  at ~45–55%. Tokens live in `globals.css` (`.entry-wash`); components
-  never declare their own blues.
+  the window base — light: saturated blue edges melting into a pale glowing
+  center; dark: deep blue mesh on near-black indigo. Tokens live in
+  `globals.css` (`.entry-wash`); components never declare their own blues.
 - Surface hierarchy: `background` (window) < `card` (content) < `popover`
   (floating). Light mode: slightly recessed window, white cards. Dark:
   elevated cards on near-black. Never invert the hierarchy.

@@ -478,10 +478,11 @@
   }
 
   /* Pre-auth ambient wash — entry (/) + download (/download) only. Soft
-    blue ink-wash blobs drifting on the window base, Codex-inspired. This
-    is the one place blue hue is allowed (§2.5): everywhere else stays
-    monochrome. Transform + opacity keyframes only; the global
-    prefers-reduced-motion collapse turns the drift into a still wash. */
+    blue mesh, Codex-inspired: saturated blue edges melting into a pale
+    glowing center, with large billows drifting slowly. This is the one
+    place blue hue is allowed (§2.5): everywhere else stays monochrome.
+    Transform-only keyframes; the global prefers-reduced-motion collapse
+    turns the drift into a still wash. */
   .entry-stage {
     position: relative;
     isolation: isolate;
@@ -493,68 +494,175 @@
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
+    background:
+      radial-gradient(
+        120% 90% at 50% 0%,
+        oklch(0.92 0.04 292) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        75% 65% at 0% 42%,
+        oklch(0.6 0.19 270) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        70% 60% at 100% 28%,
+        oklch(0.64 0.17 290) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        85% 75% at 8% 100%,
+        oklch(0.44 0.17 270) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        75% 65% at 92% 100%,
+        oklch(0.52 0.13 300) 0%,
+        transparent 70%
+      ),
+      oklch(0.86 0.05 286);
   }
   .entry-wash > i {
     position: absolute;
     border-radius: 9999px;
-    filter: blur(90px);
+    filter: blur(70px);
     will-change: transform;
   }
   .entry-wash > .w1 {
-    width: 60vmax;
-    height: 60vmax;
-    left: -14%;
-    top: -18%;
-    background: oklch(0.72 0.13 272 / 60%);
-    animation: entry-drift-1 28s var(--ease-out) infinite alternate;
+    width: 90vmax;
+    height: 90vmax;
+    left: -28%;
+    top: -30%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.62 0.2 272 / 85%),
+      transparent 72%
+    );
+    animation: entry-drift-1 26s var(--ease-out) infinite alternate;
   }
   .entry-wash > .w2 {
-    width: 52vmax;
-    height: 52vmax;
-    right: -14%;
-    top: 6%;
-    background: oklch(0.8 0.09 295 / 55%);
-    animation: entry-drift-2 34s var(--ease-out) infinite alternate;
+    width: 80vmax;
+    height: 80vmax;
+    right: -24%;
+    top: -12%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.66 0.18 292 / 80%),
+      transparent 72%
+    );
+    animation: entry-drift-2 32s var(--ease-out) infinite alternate;
   }
   .entry-wash > .w3 {
-    width: 48vmax;
-    height: 48vmax;
-    left: 24%;
-    bottom: -30%;
-    background: oklch(0.68 0.15 262 / 50%);
-    animation: entry-drift-3 31s var(--ease-out) infinite alternate;
+    width: 70vmax;
+    height: 70vmax;
+    left: 16%;
+    top: 22%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.97 0.015 290 / 90%),
+      transparent 70%
+    );
+    animation: entry-drift-3 29s var(--ease-out) infinite alternate;
+  }
+  .entry-wash > .w4 {
+    width: 85vmax;
+    height: 85vmax;
+    left: -20%;
+    bottom: -42%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.5 0.19 268 / 80%),
+      transparent 72%
+    );
+    animation: entry-drift-4 35s var(--ease-out) infinite alternate;
+  }
+  .dark .entry-wash {
+    background:
+      radial-gradient(
+        120% 90% at 50% 0%,
+        oklch(0.32 0.08 290) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        75% 65% at 0% 42%,
+        oklch(0.4 0.17 270) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        70% 60% at 100% 28%,
+        oklch(0.44 0.15 290) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        85% 75% at 8% 100%,
+        oklch(0.3 0.15 270) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        75% 65% at 92% 100%,
+        oklch(0.34 0.12 300) 0%,
+        transparent 70%
+      ),
+      oklch(0.2 0.03 280);
   }
   .dark .entry-wash > .w1 {
-    background: oklch(0.42 0.13 272 / 55%);
+    background: radial-gradient(
+      closest-side,
+      oklch(0.46 0.18 272 / 80%),
+      transparent 72%
+    );
   }
   .dark .entry-wash > .w2 {
-    background: oklch(0.48 0.1 295 / 45%);
+    background: radial-gradient(
+      closest-side,
+      oklch(0.5 0.16 292 / 75%),
+      transparent 72%
+    );
   }
   .dark .entry-wash > .w3 {
-    background: oklch(0.38 0.14 262 / 50%);
+    background: radial-gradient(
+      closest-side,
+      oklch(0.6 0.06 290 / 55%),
+      transparent 70%
+    );
+  }
+  .dark .entry-wash > .w4 {
+    background: radial-gradient(
+      closest-side,
+      oklch(0.36 0.17 268 / 80%),
+      transparent 72%
+    );
   }
   @keyframes entry-drift-1 {
     from {
-      transform: translate3d(-4%, -2%, 0) scale(1);
+      transform: translate3d(-5%, -3%, 0) scale(1);
     }
     to {
-      transform: translate3d(6%, 5%, 0) scale(1.08);
+      transform: translate3d(7%, 6%, 0) scale(1.1);
     }
   }
   @keyframes entry-drift-2 {
     from {
-      transform: translate3d(3%, -3%, 0) scale(1.05);
+      transform: translate3d(4%, -3%, 0) scale(1.06);
     }
     to {
-      transform: translate3d(-5%, 6%, 0) scale(0.97);
+      transform: translate3d(-6%, 6%, 0) scale(0.95);
     }
   }
   @keyframes entry-drift-3 {
     from {
-      transform: translate3d(0, 2%, 0) scale(0.96);
+      transform: translate3d(0, 3%, 0) scale(0.94);
     }
     to {
-      transform: translate3d(4%, -5%, 0) scale(1.06);
+      transform: translate3d(5%, -4%, 0) scale(1.08);
+    }
+  }
+  @keyframes entry-drift-4 {
+    from {
+      transform: translate3d(4%, 2%, 0) scale(1.04);
+    }
+    to {
+      transform: translate3d(-5%, -4%, 0) scale(0.96);
     }
   }
   @media (prefers-reduced-transparency: reduce) {
