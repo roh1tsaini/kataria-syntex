@@ -67,7 +67,7 @@ bun run electron:package
 ```
 
 Packaging notes (local-only helpers — CI inlines the same steps in
-`app-build.yml`, so keep both spellings in sync when the flow changes):
+`pipeline.yml`, so keep both spellings in sync when the flow changes):
 
 - `electron:package` = `build` + `build:electron` + `electron-builder`.
   `build:electron` is also run solo mid-pipeline to inject `APP_URL`.
@@ -95,7 +95,7 @@ Latest stable majors; never downgrade to escape a break.
 | Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline engine (web + Electron here, Android in `apps/android`) |
 | Android     | separate workspace `apps/android` — React Native 0.86 · Expo SDK 57 · expo-router · NativeWind 4.2                       |
 | QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                       |
-| CI          | GitHub Actions (`ci.yml`, `cf-deploy.yml`, `app-build.yml`)                                                              |
+| CI          | GitHub Actions (`pipeline.yml`: gate → deploy + desktop + android → R2)                                                  |
 
 ## 4 · Source map
 
@@ -465,21 +465,22 @@ copy, or commit them. Secrets enter only as env read at use site.
 
 **Workflows**
 
-- `ci.yml` — typecheck + lint + format + build on every push/PR.
-- `cf-deploy.yml` — main push only: build SPA → ensure D1 exists (auto-
-  provision, inject real id into `wrangler.jsonc`) → apply migrations →
-  ensure `ks-releases` bucket exists → `wrangler deploy`. Website deploys
-  its own worker + inquiry DB.
-- `app-build.yml` — manual or main push: desktop (win-x64, mac-arm64,
-  linux-x64) + Android APK (from `apps/android`: `expo prebuild -p android`
-  → `assembleRelease`; native project generated on the runner, not
-  committed) → GitHub Release (manual dispatch) → `publish-r2` job uploads
-  artifacts + rewrites `latest.json`/`latest*.yml` via
+- `pipeline.yml` — one workflow for everything, on every push/PR to main
+  (and manual dispatch): `gate` (typecheck + lint + format + build) first;
+  then `deploy` (app: build SPA → ensure D1 exists (auto-provision, inject
+  real id into `wrangler.jsonc`) → apply migrations → ensure `ks-releases`
+  bucket exists → `wrangler deploy`; website: same for its worker + inquiry
+  DB), `desktop` (win-x64, mac-arm64, linux-x64) and `android` APK (from
+  `apps/android`: `expo prebuild -p android` → `assembleRelease`; native
+  project generated on the runner, not committed) in parallel; then
+  `publish-r2` uploads artifacts + rewrites `latest.json`/`latest*.yml` via
   `scripts/publish-releases.ts` and prunes everything older (latest-only).
   Push builds publish only when `package.json` `version` differs from the
-  published manifest — bumping the version IS the release action. Requires
-  `APP_URL` repo variable; `CLOUDFLARE_API_TOKEN` needs **Workers R2
-  Storage Edit**.
+  published manifest — bumping the version IS the release action. Manual
+  dispatch can scope `targets` to `desktop` or `android` and additionally
+  creates the GitHub Release record (`release` job, dispatch-only).
+  Requires `APP_URL` repo variable; `CLOUDFLARE_API_TOKEN` needs **Workers
+  R2 Storage Edit**.
 
 ## 14.1 · Updates & versioning
 

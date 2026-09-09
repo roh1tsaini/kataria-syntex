@@ -73,7 +73,7 @@ Latest stable majors; never downgrade to escape a break.
 | Camera    | expo-camera — QR login + device approval scanning                           |
 | Files/PDF | expo-file-system (APK + PDF downloads) · expo-sharing · expo-print          |
 | Updates   | manifest poll + APK self-install (§7)                                       |
-| CI        | GitHub Actions (`app-build.yml` — android job)                              |
+| CI        | GitHub Actions (`pipeline.yml` — android job)                               |
 
 ## 4 · Source map
 
@@ -220,7 +220,7 @@ it.** It is produced by `bunx expo prebuild -p android` from
   release buildType so `assembleRelease` signs the APK. Local builds
   without the file keep Expo's debug signing.
 - Regenerate after any config/plugin change: `bun run prebuild`.
-- CI (`app-build.yml` android job): Bun install → `expo prebuild -p android
+- CI (`pipeline.yml` android job): Bun install → `expo prebuild -p android
 --no-install` on the runner → decode keystore → write
   `keystore.properties` → `gradle assembleRelease` → artifact
   `ks-biz-app-android` → release + `publish-r2` jobs (unchanged paths).

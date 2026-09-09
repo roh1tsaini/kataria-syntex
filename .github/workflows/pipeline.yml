@@ -1,4 +1,8 @@
-name: "Build KS Biz App"
+name: Pipeline
+
+# One workflow for everything: quality gate → (deploy | desktop | android)
+# in parallel → publish to R2. Runs on GitHub-hosted runners; the repo is
+# public, so runner minutes are free regardless of OS.
 
 on:
   workflow_dispatch:
@@ -13,30 +17,19 @@ on:
         default: all
   push:
     branches: [main]
-    paths:
-      - "apps/app/**"
-      - "apps/android/**"
-      - "packages/**"
-      - ".github/workflows/**"
-      - "package.json"
-      - "turbo.json"
   pull_request:
     branches: [main]
-    paths:
-      - "apps/app/**"
-      - "apps/android/**"
-      - "packages/**"
 
 concurrency:
-  group: app-build-${{ github.ref }}
+  group: pipeline-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: write
 
-# Artifacts only hand off installers to the release/publish jobs — the real
-# distribution is R2 + GitHub Releases. Short retention keeps the account's
-# artifact storage quota free (each run uploads ~400MB of installers).
+# Artifacts only hand off installers between jobs — the real distribution is
+# R2 + GitHub Releases. Short retention keeps the account's artifact storage
+# quota free (each run uploads ~400MB of installers).
 env:
   ACTIONS_ARTIFACT_RETENTION_DAYS: 3
 
@@ -45,11 +38,12 @@ env:
   VITE_API_URL: ${{ vars.APP_URL }}
 
 jobs:
-  typecheck:
-    name: "Typecheck"
+  gate:
+    name: "Gate: typecheck, lint, format, build"
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -58,12 +52,141 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Typecheck all workspaces
+      - name: Typecheck
         run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Build
+        run: bun run build
+
+  deploy:
+    name: "Deploy to Cloudflare"
+    # Deploys to the single production workers — no PR previews.
+    if: github.event_name == 'push'
+    needs: gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # ---- Business app (SPA + Hono API in one worker) ----
+
+      - name: Build app SPA
+        run: bun run --cwd apps/app build
+
+      # Auto-provisions the DB and injects its real id into wrangler.jsonc on
+      # the runner, so a fresh Cloudflare account needs no manual dashboard
+      # step.
+      - name: Ensure app D1 database exists
+        working-directory: apps/app
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "ks-biz-app-db") | .uuid' | head -1)
+          if [ -z "$DB_ID" ]; then
+            DB_ID=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" --data '{"name":"ks-biz-app-db"}' "$API" | jq -r '.result.uuid // empty')
+          fi
+          if [ -z "$DB_ID" ]; then echo "Failed to resolve ks-biz-app-db database id" >&2; exit 1; fi
+          sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
+
+      - name: Apply app D1 migrations
+        working-directory: apps/app
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler d1 migrations apply ks-biz-app-db --remote
+
+      # Auto-provisions the R2 release bucket (installers + update manifests,
+      # served at /releases/*). The API token needs "Workers R2 Storage Edit"
+      # — a token without it fails here with Cloudflare's 403, loudly.
+      - name: Ensure R2 release bucket exists
+        working-directory: apps/app
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          EXISTS=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result.buckets[]? | select(.name == "ks-releases") | .name' | head -1)
+          if [ -z "$EXISTS" ]; then
+            CREATED=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+              --data '{"name":"ks-releases"}' "$API" | jq -r '.success')
+            if [ "$CREATED" != "true" ]; then echo "Failed to create ks-releases bucket (check token R2 permissions)" >&2; exit 1; fi
+          fi
+
+      - name: Deploy app worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          packageManager: bun
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/app
+          command: deploy
+
+      # ---- Website (Vinext worker + inquiry DB) ----
+
+      - name: Install website dependencies
+        run: bun install --frozen-lockfile
+        working-directory: apps/web
+
+      # D1 steps run before the build: vinext bakes a resolved copy of
+      # wrangler.jsonc into dist/server at build time, so the real database id
+      # must already be injected when the build happens.
+      - name: Ensure website D1 database exists (inquiry DB)
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "ks-web-db") | .uuid' | head -1)
+          if [ -z "$DB_ID" ]; then
+            DB_ID=$(curl -fsS -X POST -H "$AUTH" -H "Content-Type: application/json" --data '{"name":"ks-web-db"}' "$API" | jq -r '.result.uuid // empty')
+          fi
+          if [ -z "$DB_ID" ]; then echo "Failed to resolve ks-web-db database id" >&2; exit 1; fi
+          sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
+
+      - name: Apply website D1 migrations (inquiry DB)
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler d1 migrations apply ks-web-db --remote
+
+      - name: Build Vinext worker
+        working-directory: apps/web
+        run: bun run build
+
+      - name: Deploy website worker
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx vinext-cloudflare deploy --skip-build
 
   desktop:
     name: "Desktop (${{ matrix.name }})"
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.targets != 'android' }}
+    needs: gate
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 60
     strategy:
@@ -132,6 +255,7 @@ jobs:
   android:
     name: "Android APK (ARM phones)"
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.targets != 'desktop' }}
+    needs: gate
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -225,6 +349,9 @@ jobs:
 
   release:
     name: "Publish GitHub Release"
+    # Manual dispatch only — GitHub Releases are an internal record; R2 is the
+    # distribution channel. Requires both build jobs to have succeeded or been
+    # skipped by the targets choice.
     if: ${{ github.event_name == 'workflow_dispatch' && !cancelled() && (needs.desktop.result == 'success' || needs.desktop.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') }}
     needs: [desktop, android]
     runs-on: ubuntu-24.04

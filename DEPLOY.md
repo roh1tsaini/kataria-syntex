@@ -12,10 +12,10 @@ Cloudflare — free tier only.
 | Databases    | Cloudflare **D1** (SQLite)         | `ks-biz-app-db`, `ks-web-db`     |
 | CI/CD        | GitHub Actions                     | auto-deploys on push to `main`   |
 
-Native shells build via `.github/workflows/app-build.yml` (manual dispatch
-or pushes touching `apps/app/**` / `apps/android/**`): Electron desktop from
-the `apps/app` renderer, and the React Native Android app (`apps/android`)
-as its own Metro bundle.
+Native shells build in the single `.github/workflows/pipeline.yml`: the
+`gate` job (typecheck, lint, format, build) runs first, then `deploy`,
+`desktop`, and `android` run in parallel, then `publish-r2` uploads the
+installers to the R2 release bucket.
 
 ## First-time setup (once)
 
@@ -28,8 +28,9 @@ Add two secrets (repo → Settings → Secrets and variables → Actions):
 | `CLOUDFLARE_API_TOKEN`  | Token with **D1 Edit + Workers Edit**            |
 | `CLOUDFLARE_ACCOUNT_ID` | Your account id (Cloudflare dashboard → Workers) |
 
-The deploy workflow (`cf-deploy.yml`) **auto-provisions both D1 databases and
-injects their ids on the runner** — no manual dashboard steps, no ids to paste.
+The deploy job (`deploy` in `pipeline.yml`) **auto-provisions both D1
+databases and injects their ids on the runner** — no manual dashboard steps,
+no ids to paste.
 
 ### 2. Set the app origin
 
@@ -40,13 +41,20 @@ it as `EXTRA_API_BASE`.
 
 ### 3. Deploy
 
-Push to `main`. On every push:
+Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
-1. `app-build.yml` — typecheck on every change; full native builds (3 desktop
-   targets + APK) on pushes to `main` touching `apps/app` or `apps/android`,
-   or on manual dispatch.
-2. `cf-deploy.yml` — website: build → ensure D1 → migrate → deploy Worker;
-   app: build SPA → ensure D1 → migrate → deploy Worker.
+1. `gate` — typecheck + lint + format + build. Blocks everything below.
+2. `deploy` — website: build → ensure D1 → migrate → deploy Worker;
+   app: build SPA → ensure D1 → migrate → ensure `ks-releases` bucket →
+   deploy Worker.
+3. `desktop` + `android` — installers (win-x64, mac-arm64, linux-x64) and
+   APK, in parallel with the deploys.
+4. `publish-r2` — uploads installers + rewrites the version manifest when
+   the version changed.
+
+Manual dispatch (Actions → Pipeline) can rebuild only `desktop` or only
+`android` via the `targets` choice, and also creates the GitHub Release
+record.
 
 After the first app deploy, set `APP_URL` (step 2) so native builds can reach
 the API.
@@ -130,7 +138,7 @@ the same version.
 
 ### Releases (desktop/Android)
 
-Bump `apps/app/package.json`, push, then Repo → Actions → **Build KS Biz App**
+Bump `apps/app/package.json`, push, then Repo → Actions → **Pipeline**
 → Run workflow:
 
 - `targets: all | desktop | android` — desktop-only skips the 90-min APK job.

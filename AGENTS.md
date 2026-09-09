@@ -189,7 +189,7 @@ Every part of this project must be:
 Hosting baseline: **Cloudflare free tier** (Workers + D1, free
 Cloudflare hostnames). No VM, no Docker, no deSEC. Anything added on top of
 that baseline requires an explicit owner question first. D1 provisioning is
-automated in `.github/workflows/cf-deploy.yml`.
+automated in `.github/workflows/pipeline.yml`.
 
 ## 5. apps/app working agreement (owner-mandated, always applies)
 

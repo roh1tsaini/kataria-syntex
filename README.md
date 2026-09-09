@@ -60,4 +60,4 @@ bun run typecheck
 - **Web/PWA + API** — Cloudflare free tier (Workers + D1, `wrangler dev`)
 - **Desktop** — Electron (Windows x64, macOS arm64, Linux x64)
 - **Android** — React Native (Expo) universal APK, built in CI
-  (`.github/workflows/app-build.yml`)
+  (`.github/workflows/pipeline.yml`)
