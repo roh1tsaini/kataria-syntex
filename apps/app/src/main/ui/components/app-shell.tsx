@@ -215,7 +215,7 @@ function NavList({
                   {hasSubs && (
                     <div
                       className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-150 ease-[var(--ease-out)]",
+                        "grid transition-[grid-template-rows,opacity] duration-[380ms] ease-[var(--ease-morph)]",
                         isExpanded
                           ? "mt-0.5 grid-rows-[1fr] opacity-100"
                           : "grid-rows-[0fr] opacity-0",

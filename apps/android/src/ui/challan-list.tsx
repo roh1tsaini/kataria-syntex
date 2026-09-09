@@ -27,6 +27,13 @@ import {
 import { usePalette } from "@/theme";
 import { Badge, Button, EmptyState, Skeleton } from "@/ui/kit";
 import { fmtBoxes, fmtWt } from "@/lib/format";
+import { MORPH, useReduceMotion } from "@/lib/motion";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 export type ChallanKind = {
   type: ChallanType;
@@ -100,100 +107,116 @@ function ListRow({ item }: { item: Challan }) {
   const p = usePalette();
   const router = useRouter();
   const kind = item.type;
+  // Row entrance: fade + 14px rise on the morph spring (§5.6). Rows added
+  // by sync or draft saves grow the list smoothly; existing rows are not
+  // re-animated (FlatList reuses them).
+  const entering = useSharedValue(0);
+  const reduce = useReduceMotion();
+  useEffect(() => {
+    entering.value = reduce
+      ? withTiming(1, { duration: 1 })
+      : withSpring(1, MORPH);
+  }, [entering, reduce]);
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity: entering.value,
+    transform: [{ translateY: (1 - entering.value) * 14 }],
+  }));
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() =>
-        router.push({
-          pathname: "/challan-detail",
-          params: { id: item.id, kind },
-        })
-      }
-      className="rounded-xl border"
-      style={({ pressed }) => ({
-        backgroundColor: p.card,
-        borderColor: p.border,
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      <View className="p-4">
-        <View className="flex-row flex-wrap items-center gap-1.5">
-          <Text
-            className="text-sm font-bold tracking-tight"
-            style={{ color: p.primary, fontFamily: "monospace" }}
-          >
-            {item.challanNumber}
-          </Text>
-          <Badge label={item.fyLabel} />
-          <SyncFlag challan={item} />
-        </View>
-        <View className="mt-1 flex-row items-center gap-1.5">
-          <Feather name="calendar" size={12} color={p.mutedForeground} />
-          <Text
-            className="text-xs font-medium"
-            style={{ color: p.mutedForeground }}
-          >
-            {item.date}
-          </Text>
-          <View
-            className="h-1 w-1 rounded-full"
-            style={{ backgroundColor: p.border }}
-          />
-          <Text
-            className="flex-1 text-xs font-semibold"
-            style={{ color: p.foreground }}
-            numberOfLines={1}
-          >
-            {item.type === "sales" ? item.customerName : item.jobWorkerName}
-          </Text>
-        </View>
-        {item.type === "sales" && item.customerGstin ? (
-          <Text
-            className="mt-1 text-[11px]"
-            style={{ color: p.mutedForeground }}
-            numberOfLines={1}
-          >
-            GSTIN {item.customerGstin}
-          </Text>
-        ) : null}
-        <View className="mt-3 flex-row gap-2">
-          <View
-            className="flex-1 rounded-md px-3 py-2"
-            style={{ backgroundColor: p.muted }}
-          >
+    <Animated.View style={enterStyle}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() =>
+          router.push({
+            pathname: "/challan-detail",
+            params: { id: item.id, kind },
+          })
+        }
+        className="rounded-xl border"
+        style={({ pressed }) => ({
+          backgroundColor: p.card,
+          borderColor: p.border,
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <View className="p-4">
+          <View className="flex-row flex-wrap items-center gap-1.5">
             <Text
-              className="text-[10px] font-semibold uppercase tracking-wider"
+              className="text-sm font-bold tracking-tight"
+              style={{ color: p.primary, fontFamily: "monospace" }}
+            >
+              {item.challanNumber}
+            </Text>
+            <Badge label={item.fyLabel} />
+            <SyncFlag challan={item} />
+          </View>
+          <View className="mt-1 flex-row items-center gap-1.5">
+            <Feather name="calendar" size={12} color={p.mutedForeground} />
+            <Text
+              className="text-xs font-medium"
               style={{ color: p.mutedForeground }}
             >
-              {item.type === "sales" ? "Boxes" : "Sacks"}
+              {item.date}
             </Text>
+            <View
+              className="h-1 w-1 rounded-full"
+              style={{ backgroundColor: p.border }}
+            />
             <Text
-              className="mt-0.5 text-sm font-bold"
+              className="flex-1 text-xs font-semibold"
               style={{ color: p.foreground }}
+              numberOfLines={1}
             >
-              {fmtBoxes(item.totalBoxes)}
+              {item.type === "sales" ? item.customerName : item.jobWorkerName}
             </Text>
           </View>
-          <View
-            className="flex-1 rounded-md px-3 py-2"
-            style={{ backgroundColor: p.muted }}
-          >
+          {item.type === "sales" && item.customerGstin ? (
             <Text
-              className="text-[10px] font-semibold uppercase tracking-wider"
+              className="mt-1 text-[11px]"
               style={{ color: p.mutedForeground }}
+              numberOfLines={1}
             >
-              Net wt
+              GSTIN {item.customerGstin}
             </Text>
-            <Text
-              className="mt-0.5 text-sm font-bold"
-              style={{ color: p.primary }}
+          ) : null}
+          <View className="mt-3 flex-row gap-2">
+            <View
+              className="flex-1 rounded-md px-3 py-2"
+              style={{ backgroundColor: p.muted }}
             >
-              {fmtWt(item.totalNetWt)} kg
-            </Text>
+              <Text
+                className="text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: p.mutedForeground }}
+              >
+                {item.type === "sales" ? "Boxes" : "Sacks"}
+              </Text>
+              <Text
+                className="mt-0.5 text-sm font-bold"
+                style={{ color: p.foreground }}
+              >
+                {fmtBoxes(item.totalBoxes)}
+              </Text>
+            </View>
+            <View
+              className="flex-1 rounded-md px-3 py-2"
+              style={{ backgroundColor: p.muted }}
+            >
+              <Text
+                className="text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: p.mutedForeground }}
+              >
+                Net wt
+              </Text>
+              <Text
+                className="mt-0.5 text-sm font-bold"
+                style={{ color: p.primary }}
+              >
+                {fmtWt(item.totalNetWt)} kg
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 

@@ -58,6 +58,7 @@ export function Select({
               backgroundColor: selected ? p.primary : "transparent",
               borderColor: selected ? p.primary : p.border,
               opacity: pressed ? 0.8 : 1,
+              transform: pressed ? [{ scale: 0.97 }] : [{ scale: 1 }],
             })}
           >
             <Text
@@ -116,6 +117,7 @@ export function IconButton({
       className="h-11 w-11 items-center justify-center rounded-lg"
       style={({ pressed }) => ({
         opacity: pressed || disabled ? 0.6 : 1,
+        transform: pressed && !disabled ? [{ scale: 0.97 }] : [{ scale: 1 }],
       })}
     >
       <Feather

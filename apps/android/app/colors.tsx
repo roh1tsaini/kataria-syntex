@@ -12,13 +12,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import {
   FlatList,
-  Modal,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { MorphSheet } from "@/ui/morph-sheet";
 import {
   friendlyError,
   toastError,
@@ -138,34 +138,17 @@ function ColorFormModal({
   };
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={() => requestDiscard(dirty, busy, onClose)}
+    <MorphSheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) requestDiscard(dirty, busy, onClose);
+      }}
+      title={editing ? "Edit color" : "Add color"}
     >
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <View className="min-w-0 flex-1">
-            <Text
-              className="text-[17px] font-semibold"
-              style={{ color: p.foreground }}
-            >
-              {editing ? "Edit color" : "Add color"}
-            </Text>
-            <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-              Colors are shared with every picker in the app.
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => requestDiscard(dirty, busy, onClose)}
-            className="min-h-[44px] justify-center px-3"
-          >
-            <Text className="text-[15px]" style={{ color: p.primary }}>
-              Close
-            </Text>
-          </Pressable>
-        </View>
+      <View>
+        <Text className="px-4 text-[13px]" style={{ color: p.mutedForeground }}>
+          Colors are shared with every picker in the app.
+        </Text>
         <ScrollView contentContainerClassName="gap-4 p-4 pb-8">
           <Field label="Name">
             <Input
@@ -220,7 +203,7 @@ function ColorFormModal({
           </View>
         </ScrollView>
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 
@@ -424,39 +407,21 @@ function RecipeEditorModal({
   );
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={() => requestDiscard(dirty, busy || loading, onClose)}
+    <MorphSheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) requestDiscard(dirty, busy || loading, onClose);
+      }}
+      title={
+        editing ? `Edit recipe — ${color.name}` : `New recipe — ${color.name}`
+      }
     >
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <View className="min-w-0 flex-1">
-            <Text
-              className="text-[17px] font-semibold"
-              style={{ color: p.foreground }}
-              numberOfLines={1}
-            >
-              {editing
-                ? `Edit recipe — ${color.name}`
-                : `New recipe — ${color.name}`}
-            </Text>
-            <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-              {editing
-                ? "Saving keeps the last 5 versions; the newest becomes current."
-                : "One recipe per color and denier."}
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => requestDiscard(dirty, busy || loading, onClose)}
-            className="min-h-[44px] justify-center px-3"
-          >
-            <Text className="text-[15px]" style={{ color: p.primary }}>
-              Close
-            </Text>
-          </Pressable>
-        </View>
+      <View>
+        <Text className="px-4 text-[13px]" style={{ color: p.mutedForeground }}>
+          {editing
+            ? "Saving keeps the last 5 versions; the newest becomes current."
+            : "One recipe per color and denier."}
+        </Text>
         {loading ? (
           <View className="gap-3 p-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -661,7 +626,7 @@ function RecipeEditorModal({
           </ScrollView>
         )}
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 
@@ -693,30 +658,15 @@ function VersionViewModal({
   }, [open, recipeId, version, fetchVersion]);
 
   return (
-    <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <View className="min-w-0 flex-1">
-            <Text
-              className="text-[17px] font-semibold"
-              style={{ color: p.foreground }}
-            >
-              Version {version ?? "—"}
-            </Text>
-            <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-              Read-only snapshot; restore it from the recipe details.
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onClose}
-            className="min-h-[44px] justify-center px-3"
-          >
-            <Text className="text-[15px]" style={{ color: p.primary }}>
-              Close
-            </Text>
-          </Pressable>
-        </View>
+    <MorphSheet
+      open={open}
+      onOpenChange={(v) => !v && onClose()}
+      title={`Version ${version ?? "—"}`}
+    >
+      <View>
+        <Text className="px-4 text-[13px]" style={{ color: p.mutedForeground }}>
+          Read-only snapshot; restore it from the recipe details.
+        </Text>
         {error ? (
           <Text className="p-4 text-[12px]" style={{ color: p.destructive }}>
             {error}
@@ -728,7 +678,10 @@ function VersionViewModal({
             ))}
           </View>
         ) : (
-          <ScrollView contentContainerClassName="gap-4 p-4">
+          <ScrollView
+            contentContainerClassName="gap-4 p-4"
+            style={{ maxHeight: 420 }}
+          >
             <View className="gap-1.5">
               {payload.ingredients.map((i, idx) => (
                 <View
@@ -764,7 +717,7 @@ function VersionViewModal({
           </ScrollView>
         )}
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 
@@ -814,33 +767,18 @@ function RecipeDetailModal({
 
   return (
     <>
-      <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-        <View className="flex-1" style={{ backgroundColor: p.background }}>
-          <View className="flex-row items-center justify-between px-4 pt-4">
-            <View className="min-w-0 flex-1">
-              <Text
-                className="text-[17px] font-semibold"
-                style={{ color: p.foreground }}
-              >
-                Recipe details
-              </Text>
-              <Text
-                className="text-[13px]"
-                style={{ color: p.mutedForeground }}
-              >
-                Current version plus the last 5 saves.
-              </Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onClose}
-              className="min-h-[44px] justify-center px-3"
-            >
-              <Text className="text-[15px]" style={{ color: p.primary }}>
-                Close
-              </Text>
-            </Pressable>
-          </View>
+      <MorphSheet
+        open={open}
+        onOpenChange={(v) => !v && onClose()}
+        title="Recipe details"
+      >
+        <View>
+          <Text
+            className="px-4 text-[13px]"
+            style={{ color: p.mutedForeground }}
+          >
+            Current version plus the last 5 saves.
+          </Text>
           {error ? (
             <Text className="p-4 text-[12px]" style={{ color: p.destructive }}>
               {error}
@@ -852,7 +790,10 @@ function RecipeDetailModal({
               ))}
             </View>
           ) : (
-            <ScrollView contentContainerClassName="gap-5 p-4">
+            <ScrollView
+              contentContainerClassName="gap-5 p-4"
+              style={{ maxHeight: 480 }}
+            >
               <View className="gap-1.5">
                 {detail.ingredients.map((i) => (
                   <View
@@ -941,7 +882,7 @@ function RecipeDetailModal({
             </ScrollView>
           )}
         </View>
-      </Modal>
+      </MorphSheet>
       <VersionViewModal
         open={versionView != null}
         onClose={() => setVersionView(null)}

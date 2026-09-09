@@ -1,12 +1,32 @@
 "use client";
 
 import { FilterPill } from "@/components/ui/filter-pill";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { type Shade } from "@kataria-syntex/shared";
 import { Button } from "@/components/ui/button";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
+import { useFlip } from "@/lib/use-flip";
+
+/** One card page's swatch grid — flip ref lives here so the hook stays
+ * outside the loop. */
+function FlipGrid({
+  children,
+  className,
+  deps,
+}: {
+  children: ReactNode;
+  className?: string;
+  deps: readonly unknown[];
+}) {
+  const ref = useFlip<HTMLDivElement>(deps);
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
 
 /**
  * Interactive shade card — shades grouped into card pages the way the
@@ -43,6 +63,11 @@ export function ShadeExplorer({
         .filter((group) => group.shades.length > 0),
     [pages, visible],
   );
+
+  // Filter/search changes glide: surviving swatches flip to their new
+  // grid slot, entering swatches rise in (§4.2). Each page grid flips
+  // its own swatches.
+  const flipDeps = [activePage, query] as const;
 
   return (
     <div className="mt-10 md:mt-12">
@@ -104,10 +129,14 @@ export function ShadeExplorer({
                 {pageShades.length} SHADES
               </p>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-x-2 gap-y-3 xs:grid-cols-6 sm:grid-cols-8 md:grid-cols-10 xl:grid-cols-12">
+            <FlipGrid
+              className="mt-4 grid grid-cols-4 gap-x-2 gap-y-3 xs:grid-cols-6 sm:grid-cols-8 md:grid-cols-10 xl:grid-cols-12"
+              deps={[...flipDeps, pageShades]}
+            >
               {pageShades.map((shade) => (
                 <span
                   key={`${shade.page}-${shade.code}`}
+                  data-flip-id={`${shade.page}-${shade.code}`}
                   className="group block rounded-chip transition-transform duration-300 ease-[var(--ease-out)] hover:-translate-y-0.5"
                 >
                   <YarnSwatch
@@ -121,7 +150,7 @@ export function ShadeExplorer({
                   </span>
                 </span>
               ))}
-            </div>
+            </FlipGrid>
           </section>
         ))}
       </div>

@@ -91,7 +91,7 @@ export function Testimonials() {
                 key={testimonial.name}
                 aria-hidden={index !== active}
                 className={cn(
-                  "absolute inset-0 flex flex-col justify-center transition-[opacity,translate] duration-500 ease-[var(--ease-out)]",
+                  "absolute inset-0 flex flex-col justify-center transition-[opacity,translate] duration-[var(--dur-cinema)] ease-[var(--ease-cinema)]",
                   index === active
                     ? "translate-y-0 opacity-100"
                     : "translate-y-3 opacity-0",

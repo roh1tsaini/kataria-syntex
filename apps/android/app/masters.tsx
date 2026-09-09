@@ -8,16 +8,10 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { MorphSheet } from "@/ui/morph-sheet";
 import {
   friendlyError,
   toastError,
@@ -118,29 +112,14 @@ function MasterFormModal<I extends { id: string; name: string }, In>({
   };
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={() => requestDiscard(dirty, busy, onClose)}
+    <MorphSheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) requestDiscard(dirty, busy, onClose);
+      }}
+      title={editing ? `Edit ${config.singular}` : `Add ${config.singular}`}
     >
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <Text
-            className="min-w-0 flex-1 text-[17px] font-semibold"
-            style={{ color: p.foreground }}
-          >
-            {editing ? `Edit ${config.singular}` : `Add ${config.singular}`}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => requestDiscard(dirty, busy, onClose)}
-            className="min-h-[44px] justify-center px-3"
-          >
-            <Text className="text-[15px]" style={{ color: p.primary }}>
-              Close
-            </Text>
-          </Pressable>
-        </View>
+      <View>
         <Text className="px-4 text-[13px]" style={{ color: p.mutedForeground }}>
           {editing
             ? "Update the details and save."
@@ -183,7 +162,7 @@ function MasterFormModal<I extends { id: string; name: string }, In>({
           </View>
         </ScrollView>
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 

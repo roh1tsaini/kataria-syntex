@@ -7,15 +7,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { MorphSheet } from "@/ui/morph-sheet";
 import {
   registerDataCache,
   useAuth,
@@ -104,86 +98,51 @@ function OptionSheet({
 }) {
   const p = usePalette();
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+    <MorphSheet
+      open={visible}
+      onOpenChange={(v) => !v && onClose()}
+      title={title}
     >
-      <Pressable
-        accessibilityRole="button"
-        className="flex-1 justify-end"
-        style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-        onPress={onClose}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        style={{ maxHeight: 420 }}
       >
-        <Pressable
-          className="rounded-t-2xl border-t"
-          style={{
-            backgroundColor: p.card,
-            borderColor: p.border,
-            maxHeight: "70%",
-          }}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View
-            className="flex-row items-center justify-between border-b px-4 py-3"
-            style={{ borderColor: p.border }}
+        {options.length === 0 ? (
+          <Text
+            className="px-4 py-6 text-center text-[13px]"
+            style={{ color: p.mutedForeground }}
           >
-            <Text
-              className="text-[15px] font-semibold"
-              style={{ color: p.foreground }}
-            >
-              {title}
-            </Text>
+            Nothing to choose from yet
+          </Text>
+        ) : (
+          options.map((o) => (
             <Pressable
+              key={o.id}
               accessibilityRole="button"
-              onPress={onClose}
-              className="min-h-[44px] justify-center px-3"
+              onPress={() => {
+                onSelect(o.id);
+                onClose();
+              }}
+              className="min-h-[44px] flex-row items-center justify-between border-b px-4 py-3"
+              style={({ pressed }) => ({
+                borderColor: p.border,
+                opacity: pressed ? 0.7 : 1,
+              })}
             >
               <Text
-                className="text-[15px] font-semibold"
-                style={{ color: p.primary }}
+                className="flex-1 text-[15px]"
+                style={{ color: p.foreground }}
               >
-                Done
+                {o.label}
               </Text>
+              {value === o.id ? (
+                <Feather name="check" size={18} color={p.primary} />
+              ) : null}
             </Pressable>
-          </View>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            {options.length === 0 ? (
-              <Text
-                className="px-4 py-6 text-center text-[13px]"
-                style={{ color: p.mutedForeground }}
-              >
-                Nothing to choose from yet
-              </Text>
-            ) : (
-              options.map((o) => (
-                <Pressable
-                  key={o.id}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    onSelect(o.id);
-                    onClose();
-                  }}
-                  className="min-h-[44px] flex-row items-center justify-between border-b px-4 py-3"
-                  style={({ pressed }) => ({
-                    borderColor: p.border,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Text className="text-[15px]" style={{ color: p.foreground }}>
-                    {o.label}
-                  </Text>
-                  {value === o.id ? (
-                    <Feather name="check" size={18} color={p.primary} />
-                  ) : null}
-                </Pressable>
-              ))
-            )}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          ))
+        )}
+      </ScrollView>
+    </MorphSheet>
   );
 }
 
@@ -1428,184 +1387,152 @@ export function PackingImportDialog({
   };
 
   return (
-    <Modal
-      visible={open}
-      transparent
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
+    <MorphSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Import from Packing"
     >
-      <Pressable
-        accessibilityRole="button"
-        className="flex-1 justify-end"
-        style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-        onPress={() => onOpenChange(false)}
-      >
-        <Pressable
-          className="rounded-t-2xl border-t"
-          style={{
-            backgroundColor: p.background,
-            borderColor: p.border,
-            maxHeight: "85%",
-          }}
-          onPress={(e) => e.stopPropagation()}
+      <View>
+        <Text
+          className="mt-0.5 px-4 text-[13px]"
+          style={{ color: p.mutedForeground }}
         >
-          <View
-            className="border-b px-4 pb-3 pt-4"
-            style={{ borderColor: p.border }}
-          >
+          Select packed items to add as challan rows.
+        </Text>
+
+        <ScrollView style={{ maxHeight: 420 }}>
+          {loading ? (
+            <View className="gap-3 p-4">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </View>
+          ) : loadError ? (
+            <View className="items-center gap-2 py-8">
+              <Text className="text-[13px]" style={{ color: p.destructive }}>
+                Couldn&apos;t load packing entries.
+              </Text>
+              <Button
+                label="Retry"
+                variant="secondary"
+                onPress={() => setReloadNonce((n) => n + 1)}
+              />
+            </View>
+          ) : entries.length === 0 ? (
             <Text
-              className="text-[17px] font-semibold"
-              style={{ color: p.foreground }}
-            >
-              Import from Packing
-            </Text>
-            <Text
-              className="mt-0.5 text-[13px]"
+              className="py-8 text-center text-[13px]"
               style={{ color: p.mutedForeground }}
             >
-              Select packed items to add as challan rows.
+              No packing entries available for import
             </Text>
-          </View>
-
-          <ScrollView style={{ maxHeight: 420 }}>
-            {loading ? (
-              <View className="gap-3 p-4">
-                {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </View>
-            ) : loadError ? (
-              <View className="items-center gap-2 py-8">
-                <Text className="text-[13px]" style={{ color: p.destructive }}>
-                  Couldn&apos;t load packing entries.
-                </Text>
-                <Button
-                  label="Retry"
-                  variant="secondary"
-                  onPress={() => setReloadNonce((n) => n + 1)}
-                />
-              </View>
-            ) : entries.length === 0 ? (
-              <Text
-                className="py-8 text-center text-[13px]"
-                style={{ color: p.mutedForeground }}
-              >
-                No packing entries available for import
-              </Text>
-            ) : (
-              <View className="gap-4 p-4">
-                {entries.map((entry) => (
+          ) : (
+            <View className="gap-4 p-4">
+              {entries.map((entry) => (
+                <View
+                  key={entry.id}
+                  className="overflow-hidden rounded-lg border"
+                  style={{ borderColor: p.border }}
+                >
                   <View
-                    key={entry.id}
-                    className="overflow-hidden rounded-lg border"
-                    style={{ borderColor: p.border }}
+                    className="flex-row items-center gap-2 border-b px-3 py-2"
+                    style={{
+                      borderColor: `${p.border}66`,
+                      backgroundColor: p.muted,
+                    }}
                   >
-                    <View
-                      className="flex-row items-center gap-2 border-b px-3 py-2"
-                      style={{
-                        borderColor: `${p.border}66`,
-                        backgroundColor: p.muted,
-                      }}
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{ color: p.foreground }}
                     >
-                      <Text
-                        className="text-xs font-semibold"
-                        style={{ color: p.foreground }}
+                      {entry.entryNumber}
+                    </Text>
+                    <Text
+                      className="text-xs"
+                      style={{ color: p.mutedForeground }}
+                    >
+                      {entry.date}
+                    </Text>
+                  </View>
+                  {entry.items.map((item) => (
+                    <Pressable
+                      key={item.id}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected.has(item.id) }}
+                      onPress={() => toggle(item.id)}
+                      className="flex-row items-center gap-3 border-b px-3 py-3"
+                      style={({ pressed }) => ({
+                        borderColor: `${p.border}40`,
+                        opacity: pressed ? 0.8 : 1,
+                      })}
+                    >
+                      <View
+                        className="h-[22px] w-[22px] items-center justify-center rounded border"
+                        style={{
+                          borderColor: selected.has(item.id)
+                            ? p.primary
+                            : p.input,
+                          backgroundColor: selected.has(item.id)
+                            ? p.primary
+                            : "transparent",
+                        }}
                       >
-                        {entry.entryNumber}
-                      </Text>
-                      <Text
-                        className="text-xs"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        {entry.date}
-                      </Text>
-                    </View>
-                    {entry.items.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: selected.has(item.id) }}
-                        onPress={() => toggle(item.id)}
-                        className="flex-row items-center gap-3 border-b px-3 py-3"
-                        style={({ pressed }) => ({
-                          borderColor: `${p.border}40`,
-                          opacity: pressed ? 0.8 : 1,
-                        })}
-                      >
-                        <View
-                          className="h-[22px] w-[22px] items-center justify-center rounded border"
-                          style={{
-                            borderColor: selected.has(item.id)
-                              ? p.primary
-                              : p.input,
-                            backgroundColor: selected.has(item.id)
-                              ? p.primary
-                              : "transparent",
-                          }}
-                        >
-                          {selected.has(item.id) ? (
-                            <Feather
-                              name="check"
-                              size={14}
-                              color={p.primaryForeground}
-                            />
-                          ) : null}
-                        </View>
-                        <View className="min-w-0 flex-1">
-                          <View className="flex-row items-center gap-2">
-                            <Text
-                              className="text-[15px] font-medium"
-                              style={{ color: p.foreground }}
-                            >
-                              {item.denierName}
-                            </Text>
-                            <Text
-                              className="text-[15px]"
-                              style={{ color: p.mutedForeground }}
-                            >
-                              {item.colorName}
-                            </Text>
-                          </View>
+                        {selected.has(item.id) ? (
+                          <Feather
+                            name="check"
+                            size={14}
+                            color={p.primaryForeground}
+                          />
+                        ) : null}
+                      </View>
+                      <View className="min-w-0 flex-1">
+                        <View className="flex-row items-center gap-2">
                           <Text
-                            className="text-xs"
+                            className="text-[15px] font-medium"
+                            style={{ color: p.foreground }}
+                          >
+                            {item.denierName}
+                          </Text>
+                          <Text
+                            className="text-[15px]"
                             style={{ color: p.mutedForeground }}
                           >
-                            {item.netWt.toFixed(3)} kg
-                            {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
-                            {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
+                            {item.colorName}
                           </Text>
                         </View>
-                      </Pressable>
-                    ))}
-                  </View>
-                ))}
-              </View>
-            )}
-          </ScrollView>
+                        <Text
+                          className="text-xs"
+                          style={{ color: p.mutedForeground }}
+                        >
+                          {item.netWt.toFixed(3)} kg
+                          {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
+                          {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
 
-          <View
-            className="flex-row justify-end gap-2 border-t p-4"
-            style={{ borderColor: p.border }}
-          >
-            <View className="flex-1">
-              <Button
-                label="Cancel"
-                variant="secondary"
-                onPress={() => onOpenChange(false)}
-              />
-            </View>
-            <View className="flex-1">
-              <Button
-                label={
-                  selected.size > 0 ? `Import (${selected.size})` : "Import"
-                }
-                onPress={importSelected}
-                disabled={selected.size === 0}
-              />
-            </View>
+        <View className="flex-row justify-end gap-2 p-4">
+          <View className="flex-1">
+            <Button
+              label="Cancel"
+              variant="secondary"
+              onPress={() => onOpenChange(false)}
+            />
           </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          <View className="flex-1">
+            <Button
+              label={selected.size > 0 ? `Import (${selected.size})` : "Import"}
+              onPress={importSelected}
+              disabled={selected.size === 0}
+            />
+          </View>
+        </View>
+      </View>
+    </MorphSheet>
   );
 }

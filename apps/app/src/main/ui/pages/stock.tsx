@@ -20,6 +20,7 @@ import {
   EmptyTitle,
 } from "@/ui/components/ui/empty";
 import { Skeleton } from "@/ui/components/motion";
+import { MorphGroup, MorphPanel } from "@/ui/components/morph";
 import { cn } from "@/ui/lib/cn";
 import { fmtWt } from "@/ui/lib/format";
 import {
@@ -334,62 +335,71 @@ export function StockPage() {
                 </table>
               </div>
 
-              {/* Mobile cards — <640px */}
+              {/* Mobile cards — <640px. Collapsed: item + net weight. Tap
+                  morphs open for lot + movement detail (§5.6). */}
               <div className="sm:hidden p-3">
-                <div className="space-y-3">
-                  {filtered.map((item, idx) => (
-                    <div
-                      key={`${item.denierId ?? "x"}-${item.colorId ?? "x"}-${item.lotNo}-${idx}`}
-                      className="rounded-lg border border-border bg-card p-4"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-sm font-semibold">
-                              {item.denierName}
-                            </span>
-                            {item.colorCode && (
-                              <span
-                                className="inline-block size-3 shrink-0 rounded-full border border-border"
-                                style={{ backgroundColor: item.colorCode }}
-                                aria-hidden
-                              />
-                            )}
-                            <span className="text-sm text-muted-foreground">
-                              {item.colorName}
-                            </span>
-                          </div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            {lotChip(item)}
-                            <span className="text-xs text-muted-foreground">
-                              {item.movements}{" "}
-                              {item.movements === 1 ? "movement" : "movements"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <div
-                            className={cn(
-                              "text-sm font-bold tabular-nums",
-                              item.totalWt < 0 && "text-destructive",
-                            )}
-                          >
-                            {fmtWt(item.totalWt)}{" "}
-                            <span className="text-xs font-medium text-muted-foreground">
-                              kg
-                            </span>
-                          </div>
-                          {item.totalWt < 0 && (
-                            <div className="mt-0.5 flex items-center justify-end gap-1 text-xs text-destructive">
-                              <AlertTriangle className="size-3" aria-hidden />
-                              Negative
+                <MorphGroup className="space-y-3">
+                  {filtered.map((item, idx) => {
+                    const key = `${item.denierId ?? "x"}-${item.colorId ?? "x"}-${item.lotNo}-${idx}`;
+                    return (
+                      <MorphPanel
+                        key={key}
+                        id={key}
+                        summary={
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-sm font-semibold">
+                                  {item.denierName}
+                                </span>
+                                {item.colorCode && (
+                                  <span
+                                    className="inline-block size-3 shrink-0 rounded-full border border-border"
+                                    style={{ backgroundColor: item.colorCode }}
+                                    aria-hidden
+                                  />
+                                )}
+                                <span className="text-sm text-muted-foreground">
+                                  {item.colorName}
+                                </span>
+                              </div>
                             </div>
-                          )}
+                            <div className="shrink-0 text-right">
+                              <div
+                                className={cn(
+                                  "text-sm font-bold tabular-nums",
+                                  item.totalWt < 0 && "text-destructive",
+                                )}
+                              >
+                                {fmtWt(item.totalWt)}{" "}
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  kg
+                                </span>
+                              </div>
+                              {item.totalWt < 0 && (
+                                <div className="mt-0.5 flex items-center justify-end gap-1 text-xs text-destructive">
+                                  <AlertTriangle
+                                    className="size-3"
+                                    aria-hidden
+                                  />
+                                  Negative
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        }
+                      >
+                        <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+                          {lotChip(item)}
+                          <span className="text-xs text-muted-foreground">
+                            {item.movements}{" "}
+                            {item.movements === 1 ? "movement" : "movements"}
+                          </span>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </MorphPanel>
+                    );
+                  })}
+                </MorphGroup>
               </div>
             </>
           )}

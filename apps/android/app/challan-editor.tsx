@@ -26,6 +26,7 @@ import {
   View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { MorphSheet } from "@/ui/morph-sheet";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   useAuth,
@@ -150,8 +151,8 @@ function PickerSheet({
     : options;
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <MorphSheet open={visible} onOpenChange={(v) => !v && onClose()}>
+      <View style={{ backgroundColor: p.background }}>
         <View className="flex-row items-center justify-between px-4 pt-4">
           <Text
             className="flex-1 text-[17px] font-semibold"
@@ -196,7 +197,8 @@ function PickerSheet({
           </Text>
         ) : (
           <FlatList
-            className="mt-1 flex-1 px-4"
+            className="mt-1 px-4"
+            style={{ maxHeight: 420 }}
             keyboardShouldPersistTaps="handled"
             data={filtered}
             keyExtractor={(o) => o.id}
@@ -245,7 +247,7 @@ function PickerSheet({
           />
         )}
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 
@@ -429,29 +431,13 @@ function PackingImportSheet({
   };
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
+    <MorphSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Import from Packing"
     >
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
-        <View className="px-4 pt-4">
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="flex-1 text-[17px] font-semibold"
-              style={{ color: p.foreground }}
-            >
-              Import from Packing
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              onPress={() => onOpenChange(false)}
-              className="min-h-[44px] min-w-[44px] items-center justify-center"
-            >
-              <Feather name="x" size={20} color={p.mutedForeground} />
-            </Pressable>
-          </View>
+      <View style={{ backgroundColor: p.background }}>
+        <View className="px-4 pt-3">
           <Text
             className="mt-1 text-[13px]"
             style={{ color: p.mutedForeground }}
@@ -460,7 +446,10 @@ function PackingImportSheet({
           </Text>
         </View>
 
-        <ScrollView className="flex-1" contentContainerClassName="px-4 py-4">
+        <ScrollView
+          style={{ maxHeight: 480 }}
+          contentContainerClassName="px-4 py-4"
+        >
           {loading ? (
             <View className="gap-3">
               {[0, 1, 2].map((i) => (
@@ -583,10 +572,7 @@ function PackingImportSheet({
           )}
         </ScrollView>
 
-        <View
-          className="flex-row justify-end gap-2 border-t px-4 py-3"
-          style={{ borderColor: p.border }}
-        >
+        <View className="flex-row justify-end gap-2 px-4 pb-4 pt-3">
           <Button
             label="Cancel"
             variant="secondary"
@@ -599,7 +585,7 @@ function PackingImportSheet({
           />
         </View>
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 

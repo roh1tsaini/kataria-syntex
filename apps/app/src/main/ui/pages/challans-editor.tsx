@@ -49,7 +49,7 @@ import {
   PackingImportDialog,
   type PackingItem,
 } from "@/ui/components/packing-import-dialog";
-import { EASE_OUT } from "@/ui/lib/motion";
+import { MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 import { fmtBoxes, fmtWt, todayLocal } from "@/ui/lib/format";
 import { type ChallanKind } from "./challans-shared";
 
@@ -596,13 +596,9 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                           scale: 0.98,
                           transition: reduceMotion
                             ? { duration: 0 }
-                            : { duration: 0.15, ease: EASE_OUT },
+                            : MORPH_EXIT,
                         }}
-                        transition={
-                          reduceMotion
-                            ? { duration: 0 }
-                            : { duration: 0.18, ease: EASE_OUT }
-                        }
+                        transition={reduceMotion ? { duration: 0 } : MORPH}
                       >
                         {/* Mobile / Tablet card (<lg) */}
                         <div className="lg:hidden rounded-lg border border-border bg-card p-4">

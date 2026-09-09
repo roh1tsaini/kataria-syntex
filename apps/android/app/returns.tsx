@@ -7,15 +7,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { MorphSheet } from "@/ui/morph-sheet";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   registerDataCache,
@@ -120,86 +114,51 @@ function OptionSheet({
 }) {
   const p = usePalette();
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+    <MorphSheet
+      open={visible}
+      onOpenChange={(v) => !v && onClose()}
+      title={title}
     >
-      <Pressable
-        accessibilityRole="button"
-        className="flex-1 justify-end"
-        style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-        onPress={onClose}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        style={{ maxHeight: 420 }}
       >
-        <Pressable
-          className="rounded-t-2xl border-t"
-          style={{
-            backgroundColor: p.card,
-            borderColor: p.border,
-            maxHeight: "70%",
-          }}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View
-            className="flex-row items-center justify-between border-b px-4 py-3"
-            style={{ borderColor: p.border }}
+        {options.length === 0 ? (
+          <Text
+            className="px-4 py-6 text-center text-[13px]"
+            style={{ color: p.mutedForeground }}
           >
-            <Text
-              className="text-[15px] font-semibold"
-              style={{ color: p.foreground }}
-            >
-              {title}
-            </Text>
+            Nothing to choose from yet
+          </Text>
+        ) : (
+          options.map((o) => (
             <Pressable
+              key={o.id}
               accessibilityRole="button"
-              onPress={onClose}
-              className="min-h-[44px] justify-center px-3"
+              onPress={() => {
+                onSelect(o.id);
+                onClose();
+              }}
+              className="min-h-[44px] flex-row items-center justify-between border-b px-4 py-3"
+              style={({ pressed }) => ({
+                borderColor: p.border,
+                opacity: pressed ? 0.7 : 1,
+              })}
             >
               <Text
-                className="text-[15px] font-semibold"
-                style={{ color: p.primary }}
+                className="flex-1 text-[15px]"
+                style={{ color: p.foreground }}
               >
-                Done
+                {o.label}
               </Text>
+              {value === o.id ? (
+                <Feather name="check" size={18} color={p.primary} />
+              ) : null}
             </Pressable>
-          </View>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            {options.length === 0 ? (
-              <Text
-                className="px-4 py-6 text-center text-[13px]"
-                style={{ color: p.mutedForeground }}
-              >
-                Nothing to choose from yet
-              </Text>
-            ) : (
-              options.map((o) => (
-                <Pressable
-                  key={o.id}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    onSelect(o.id);
-                    onClose();
-                  }}
-                  className="min-h-[44px] flex-row items-center justify-between border-b px-4 py-3"
-                  style={({ pressed }) => ({
-                    borderColor: p.border,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Text className="text-[15px]" style={{ color: p.foreground }}>
-                    {o.label}
-                  </Text>
-                  {value === o.id ? (
-                    <Feather name="check" size={18} color={p.primary} />
-                  ) : null}
-                </Pressable>
-              ))
-            )}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          ))
+        )}
+      </ScrollView>
+    </MorphSheet>
   );
 }
 

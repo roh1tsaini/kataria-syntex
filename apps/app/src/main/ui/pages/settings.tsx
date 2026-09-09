@@ -18,6 +18,7 @@ import { Label } from "@/ui/components/ui/label";
 import { Card } from "@/ui/components/ui/card";
 import { Badge } from "@/ui/components/ui/badge";
 import { Skeleton } from "@/ui/components/motion";
+import { MorphGroup, MorphPanel } from "@/ui/components/morph";
 
 const TYPE_LABELS: Record<keyof Numbering, string> = {
   sales: "Sales challan",
@@ -100,18 +101,24 @@ function NumberingGroup({
 }) {
   const preview = `${value.prefix}${"1".padStart(value.minDigits, "0")}${value.suffix}`;
   return (
-    <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold">{TYPE_LABELS[type]}</div>
-          <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {TYPE_HINTS[type]}
+    <MorphPanel
+      id={type}
+      className="shrink-0"
+      summary={
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">{TYPE_LABELS[type]}</div>
+            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+              {TYPE_HINTS[type]}
+            </div>
           </div>
+          <span className="shrink-0 rounded-sm bg-muted px-2.5 py-1 font-mono text-[13px] font-semibold text-primary">
+            {preview}
+          </span>
         </div>
-        <span className="shrink-0 rounded-sm bg-muted px-2.5 py-1 font-mono text-[13px] font-semibold text-primary">
-          {preview}
-        </span>
-      </div>
+      }
+      contentClassName="p-0"
+    >
       <div className="border-t border-border">
         <SettingsRow htmlFor={`${type}-prefix`} label="Prefix">
           <Input
@@ -156,7 +163,7 @@ function NumberingGroup({
           />
         </SettingsRow>
       </div>
-    </Card>
+    </MorphPanel>
   );
 }
 
@@ -342,7 +349,7 @@ export function SettingsPage() {
           description="One format for all years — each financial year restarts the sequence at 1 automatically."
         >
           {numbering ? (
-            <div className="flex flex-col gap-3">
+            <MorphGroup className="flex flex-col gap-3">
               <NumberingGroup
                 type="sales"
                 value={numbering.sales}
@@ -385,7 +392,7 @@ export function SettingsPage() {
                   Save numbering
                 </Button>
               )}
-            </div>
+            </MorphGroup>
           ) : (
             <div className="flex flex-col gap-3" aria-hidden>
               <Skeleton className="h-44 rounded-lg" />

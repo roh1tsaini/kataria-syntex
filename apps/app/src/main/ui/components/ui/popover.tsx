@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/ui/lib/cn";
-import { EASE_OUT } from "@/ui/lib/motion";
+import { MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 
 type PopoverContextType = {
   open: boolean;
@@ -224,9 +224,9 @@ export const PopoverContent = React.forwardRef<
             opacity: 0,
             scale: 0.97,
             x: alignX,
-            transition: { duration: reduceMotion ? 0 : 0.12, ease: EASE_OUT },
+            transition: reduceMotion ? { duration: 0 } : MORPH_EXIT,
           }}
-          transition={{ duration: reduceMotion ? 0 : 0.15, ease: EASE_OUT }}
+          transition={reduceMotion ? { duration: 0 } : MORPH}
           style={{
             position: "fixed",
             top: coords ? `${coords.top}px` : "0px",

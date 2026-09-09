@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import {
   useSync,
   listPending,
@@ -19,6 +19,7 @@ import {
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { Button, Input, EmptyState } from "@/ui/kit";
+import { MorphSheet } from "@/ui/morph-sheet";
 
 export function SyncBanner({ onOpen }: { onOpen: () => void }) {
   const { online, syncing, pendingCount, conflictCount, errorCount } =
@@ -211,38 +212,18 @@ export function SyncSheet({
   const conflicts = pending.filter((p0) => p0.status === "conflict");
   const errors = pending.filter((p0) => p0.status === "error");
   const p = usePalette();
+  const { height: winH } = useWindowDimensions();
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
-    >
-      <View className="flex-1 p-4" style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between">
-          <Text
-            className="text-[17px] font-semibold"
-            style={{ color: p.foreground }}
-          >
-            Sync status
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => onOpenChange(false)}
-            className="min-h-[44px] justify-center px-3"
-          >
-            <Text className="text-[15px]" style={{ color: p.primary }}>
-              Close
-            </Text>
-          </Pressable>
-        </View>
+    <MorphSheet open={open} onOpenChange={onOpenChange} title="Sync status">
+      <View className="px-4 pb-4">
         <Text className="mt-1 text-[13px]" style={{ color: p.mutedForeground }}>
           {online
             ? "Connected — queued challans send automatically."
             : "Offline — challans made on this device send automatically once the server is back."}
         </Text>
 
-        <View className="mt-4 flex-1 gap-4">
+        <View className="mt-4 gap-4" style={{ maxHeight: winH * 0.68 }}>
           {pending.length === 0 && (
             <EmptyState
               title="Nothing queued"
@@ -314,6 +295,6 @@ export function SyncSheet({
           )}
         </View>
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }

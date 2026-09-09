@@ -140,9 +140,76 @@
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+  /* Cinematic feel (design.md §4): 600ms with a soft settle — the same
+     spring the app compare page shipped as "Cinema", sampled once. */
+  --ease-cinema: linear(
+    0,
+    0.0046,
+    0.0175,
+    0.037,
+    0.0621,
+    0.0915,
+    0.1242,
+    0.1595,
+    0.1966,
+    0.2348,
+    0.2737,
+    0.3128,
+    0.3517,
+    0.39,
+    0.4276,
+    0.4641,
+    0.4995,
+    0.5337,
+    0.5664,
+    0.5977,
+    0.6275,
+    0.6558,
+    0.6826,
+    0.7078,
+    0.7315,
+    0.7538,
+    0.7747,
+    0.7941,
+    0.8123,
+    0.8291,
+    0.8448,
+    0.8593,
+    0.8726,
+    0.885,
+    0.8963,
+    0.9068,
+    0.9163,
+    0.9251,
+    0.9331,
+    0.9404,
+    0.947,
+    0.9531,
+    0.9585,
+    0.9635,
+    0.9679,
+    0.972,
+    0.9756,
+    0.9788,
+    0.9817,
+    0.9843,
+    0.9866,
+    0.9887,
+    0.9905,
+    0.9921,
+    0.9935,
+    0.9948,
+    0.9959,
+    0.9968,
+    0.9976,
+    0.9983,
+    0.999,
+    1
+  );
+  --dur-cinema: 600ms;
 
-  --animate-accordion-down: accordion-down 200ms var(--ease-out);
-  --animate-accordion-up: accordion-up 200ms var(--ease-out);
+  --animate-accordion-down: accordion-down var(--dur-cinema) var(--ease-cinema);
+  --animate-accordion-up: accordion-up var(--dur-cinema) var(--ease-cinema);
 
   --breakpoint-xs: 30rem;
 }
@@ -323,7 +390,7 @@
   }
 }
 .ks-enter {
-  animation: ks-enter 760ms var(--ease-out) both;
+  animation: ks-enter 760ms var(--ease-cinema) both;
 }
 
 /*
@@ -335,8 +402,8 @@
   opacity: 1;
   translate: 0 0;
   transition:
-    opacity 520ms var(--ease-out),
-    translate 520ms var(--ease-out);
+    opacity var(--dur-cinema) var(--ease-cinema),
+    translate var(--dur-cinema) var(--ease-cinema);
 }
 html.js .ks-reveal[data-shown="false"] {
   opacity: 0;

@@ -22,6 +22,15 @@ export const SPRING: Transition = {
   bounce: 0,
   duration: 0.38,
 };
+
+/** Morph entrances (pill ⇄ card, shared-element) reuse SPRING. */
+export const MORPH: Transition = SPRING;
+/** Morph exits — same path, ~20% faster (design.md §5.6). */
+export const MORPH_EXIT: Transition = {
+  type: "spring",
+  bounce: 0,
+  duration: 0.3,
+};
 /** Parent that staggers its children on "show" (design.md §5.5: ~40ms
  * sibling stagger). Import — never re-derive at the call site. */
 export function staggerContainer(

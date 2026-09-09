@@ -6,16 +6,10 @@
  */
 
 import { useEffect, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { MorphSheet } from "@/ui/morph-sheet";
 import { Feather } from "@expo/vector-icons";
 import {
   useAuth,
@@ -182,29 +176,12 @@ function ApproveDeviceSheet({
   const canSubmit = code.replace(/[^A-Z0-9]/g, "").length >= 4;
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
+    <MorphSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Approve a device"
     >
-      <View className="flex-1" style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <Text
-            className="text-[17px] font-semibold"
-            style={{ color: p.foreground }}
-          >
-            Approve a device
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => onOpenChange(false)}
-            className="min-h-[44px] justify-center px-3"
-          >
-            <Text className="text-[15px]" style={{ color: p.primary }}>
-              Close
-            </Text>
-          </Pressable>
-        </View>
+      <View>
         <Text
           className="px-4 pt-1 text-[13px]"
           style={{ color: p.mutedForeground }}
@@ -213,7 +190,6 @@ function ApproveDeviceSheet({
         </Text>
 
         <ScrollView
-          className="flex-1"
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="gap-4 p-4"
         >
@@ -329,7 +305,7 @@ function ApproveDeviceSheet({
           )}
         </ScrollView>
       </View>
-    </Modal>
+    </MorphSheet>
   );
 }
 

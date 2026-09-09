@@ -226,13 +226,15 @@ hardcoded in components.
 
 ## 4. Motion grammar
 
-Presets live with `src/components/motion/*` (Reveal) — import
-them, never re-derive. Eases: `--ease-out = cubic-bezier(0.22,1,0.36,1)`,
-`--ease-spring = cubic-bezier(0.34,1.45,0.5,1)` for small arrow/checkbox
-kicks.
+Presets live with `src/components/motion/*` (Reveal) and the motion tokens
+in `globals.css` — import/reference them, never re-derive. Eases:
+`--ease-out = cubic-bezier(0.22,1,0.36,1)`, `--ease-spring =
+cubic-bezier(0.34,1.45,0.5,1)` for small arrow/checkbox kicks, and the
+cinematic pair `--ease-cinema` (600ms spring curve, sampled
+`linear()`) + `--dur-cinema` for morphs and scroll entrances.
 
-1. Enter = fade + 14px rise, 520ms `--ease-out`; siblings stagger
-   60–80ms, max 5.
+1. Enter = fade + 14px rise on `--ease-cinema` at `--dur-cinema`; siblings
+   stagger 60–80ms, max 5.
 2. Scroll reveals fire once, only above the fold edge; content is fully
    visible without JS.
 3. **Load-in:** above-the-fold hero content enters once on page load with
@@ -246,6 +248,24 @@ kicks.
 6. No parallax, no looping backgrounds, no hover scale >1.04, no spinners —
    skeletons for async content.
 7. `prefers-reduced-motion`: everything collapses to opacity ≤200ms.
+
+### 4.2 Morph — pill ⇄ card
+
+One surface grows from its collapsed row into the raised card and back on
+the cinematic curve — the same element at both sizes, never a
+close-then-open swap.
+
+- FAQ accordion (`ui/accordion.tsx`): a closed item is a quiet row; open,
+  it lifts into a card (radius chip→card, line border, white fill,
+  shadow-xs). Surface, height keyframes and the rotating plus all ride
+  `--ease-cinema` at `--dur-cinema`.
+- Filterable grids (product index, shade explorer) glide via
+  `src/lib/use-flip.ts` — survivors translate from their previous slot,
+  entering items fade+rise 14px. No exit ghosts; transform/opacity only;
+  no-JS and reduced motion never animate.
+- Modal (mobile nav) slides and fades on the same curve.
+- Small feedback (form success/error, hovers, arrows) keeps `--ease-out`
+  — not everything is cinematic, only size and presence changes.
 
 ### 4.1 Scrolling rules
 

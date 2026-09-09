@@ -348,6 +348,8 @@ Presets live in `src/main/ui/lib/motion.ts` — import them, never re-derive.
 | `EASE_IN_OUT`   | `cubic-bezier(0.65,0,0.35,1)`                     | symmetric repositions                 |
 | `EASE_DRAWER`   | `cubic-bezier(0.32,0.72,0,1)`                     | sheets/drawers                        |
 | `SPRING`        | spring, bounce 0, 0.38s                           | default for anything touchable        |
+| `MORPH`         | alias of `SPRING`                                 | morph entrances (§5.6)                |
+| `MORPH_EXIT`    | spring, bounce 0, 0.3s                            | morph exits — ~20% faster (§5.6)      |
 | `DRAWER_SPRING` | spring, bounce 0.12, 0.36s                        | ONLY momentum-driven (flicked sheets) |
 | Durations       | 120 press / 140 fast / 200 base / ≤400ms anything | —                                     |
 
@@ -379,6 +381,28 @@ Rules:
 9. `prefers-reduced-motion`: everything collapses to ≤200ms opacity cross-fades
    (handled centrally in globals.css + `useReducedMotion()` in components).
 
+### 5.6 Morph — pill ⇄ card
+
+One surface grows from its collapsed row into the expanded card and back —
+the same element at both sizes, never a close-then-open swap.
+
+- Kit: `MorphPanel` + `MorphGroup` (`src/main/ui/components/morph.tsx`).
+  One panel per group is open at a time; the summary row stays mounted as
+  the header and remains the collapse control (inputs inside the body can
+  never fight the toggle).
+- Timing: `MORPH` in, `MORPH_EXIT` out. Body content fades in as the
+  surface lands, fades out immediately on exit.
+- Size changes run through motion's measured height/layout
+  (transform-corrected) — never a raw CSS width/height tween. CSS-only
+  surfaces use the `grid-template-rows` collapse with `--ease-morph`
+  (the SPRING curve, sampled once in globals.css).
+- Radius steps one rung up while open (card 12px → floating 16px), set via
+  `style` so motion corrects it during the morph.
+- Dialogs (§3) morph open from 0.96 scale and bottom sheets slide the full
+  path — both on the same MORPH/MORPH_EXIT pair.
+- Floating menus (select, dropdown) keep §3's fast timing; the morph
+  grammar is for surfaces that change size in place.
+
 ## 6. Accessibility floor (non-negotiable)
 
 - 44×44px touch targets on coarse pointers; dense 32/40px sizes stay on
@@ -394,6 +418,7 @@ Rules:
 | --------------------------------------- | --------------------------------------------------- |
 | Tokens (color/radius/shadow/ease)       | `src/main/ui/globals.css`                           |
 | Motion presets                          | `src/main/ui/lib/motion.ts`                         |
+| Morph kit (pill ⇄ card, §5.6)           | `src/main/ui/components/morph.tsx`                  |
 | Reveal/Stagger/Skeleton/PageTransition  | `src/main/ui/components/motion.tsx`                 |
 | Per-screen route skeletons (§3.1)       | `src/main/ui/components/page-skeletons.tsx`         |
 | Shared table skeleton                   | `src/main/ui/components/table-skeleton.tsx`         |

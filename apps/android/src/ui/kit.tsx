@@ -18,6 +18,13 @@ import {
 import { cn } from "@/lib/cn";
 import { usePalette } from "@/theme";
 
+/**
+ * Press feedback shared by every tappable control: scale 0.97 @ ~100ms
+ * (design.md §5 rule 6) plus the caller's opacity dip. Instant on press,
+ * springs back on release — never a delayed or jumpy transform.
+ */
+export const PRESS_SCALE = { transform: [{ scale: 0.97 }] };
+
 // ── Card ────────────────────────────────────────────────────────────────────
 
 export function Card({
@@ -72,7 +79,8 @@ export function Button({
         className,
       )}
       style={({ pressed }) => ({
-        opacity: pressed ? 0.8 : inert ? 0.5 : 1,
+        opacity: pressed ? 0.9 : inert ? 0.5 : 1,
+        transform: pressed && !inert ? [{ scale: 0.97 }] : [{ scale: 1 }],
         backgroundColor:
           variant === "primary"
             ? p.primary
@@ -200,7 +208,10 @@ export function Row({
       onPress={onPress}
       disabled={!onPress}
       className="min-h-[44px] flex-row items-center justify-between gap-3 px-4 py-3"
-      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.7 : 1,
+        transform: pressed ? [{ scale: 0.97 }] : [{ scale: 1 }],
+      })}
     >
       <View className="flex-1">
         <Text

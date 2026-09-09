@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { PageHeader } from "@/ui/components/page-header";
-import { EASE_OUT } from "@/ui/lib/motion";
+import { MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { DatePicker } from "@/ui/components/ui/date-picker";
@@ -838,13 +838,9 @@ function PackingForm({
                           scale: 0.98,
                           transition: reduceMotion
                             ? { duration: 0 }
-                            : { duration: 0.15, ease: EASE_OUT },
+                            : MORPH_EXIT,
                         }}
-                        transition={
-                          reduceMotion
-                            ? { duration: 0 }
-                            : { duration: 0.18, ease: EASE_OUT }
-                        }
+                        transition={reduceMotion ? { duration: 0 } : MORPH}
                       >
                         <div className="rounded-lg border border-border bg-card p-4">
                           <div className="flex items-center justify-between">
@@ -1073,13 +1069,9 @@ function PackingForm({
                           scale: 0.98,
                           transition: reduceMotion
                             ? { duration: 0 }
-                            : { duration: 0.15, ease: EASE_OUT },
+                            : MORPH_EXIT,
                         }}
-                        transition={
-                          reduceMotion
-                            ? { duration: 0 }
-                            : { duration: 0.18, ease: EASE_OUT }
-                        }
+                        transition={reduceMotion ? { duration: 0 } : MORPH}
                       >
                         <div className="rounded-lg border border-border bg-card p-4">
                           <div className="flex items-center justify-between">

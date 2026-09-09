@@ -6,10 +6,12 @@ import { ProductCard } from "@/components/products/ProductCard";
 import { useState } from "react";
 import type { YarnProduct } from "@kataria-syntex/shared";
 import { Section } from "@/components/section/Section";
+import { useFlip } from "@/lib/use-flip";
 
 /**
  * Filterable yarn ledger — the shared product card on a filterable grid.
- * Filter pills are 44px touch targets; the active one is royal.
+ * Filter pills are 44px touch targets; the active one is royal. Grid
+ * reflows glide on the cinematic curve (useFlip).
  */
 export function ProductIndex({
   products,
@@ -23,6 +25,7 @@ export function ProductIndex({
     category === "All"
       ? products
       : products.filter((product) => product.category === category);
+  const gridRef = useFlip<HTMLDivElement>([category]);
 
   return (
     <Section className="pb-16 md:pb-21">
@@ -42,13 +45,18 @@ export function ProductIndex({
         ))}
       </div>
 
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      <div
+        ref={gridRef}
+        className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+      >
         {visible.map((product, index) => (
-          <ProductCard
+          <div
             key={product.slug}
-            product={product}
-            priority={index < 3}
-          />
+            data-flip-id={product.slug}
+            className="h-full"
+          >
+            <ProductCard product={product} priority={index < 3} />
+          </div>
         ))}
       </div>
     </Section>
