@@ -27,7 +27,7 @@ workspace "while you're in there".
 | Path                | What                                                                                                             | Stack                                                                                                |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `apps/app`          | Internal business app — web/PWA + Electron desktop (challans, job work, stock, packing, reports)                 | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
-| `apps/android`      | Internal business app — Android (same features as apps/app)                                                      | React Native 0.87 + Expo SDK 57 + expo-router + NativeWind 4 + Zustand · shares `packages/app-core`  |
+| `apps/android`      | Internal business app — Android (same features as apps/app)                                                      | React Native 0.86 + Expo SDK 57 + expo-router + NativeWind 4 + Zustand · shares `packages/app-core`  |
 | `apps/web`          | Public showcase website                                                                                          | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                      |
 | `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                      | TypeScript                                                                                           |
 | `packages/app-core` | Shared business core for both apps: API client, zustand stores, offline/sync engine (`@kataria-syntex/app-core`) | TypeScript + React                                                                                   |
@@ -82,12 +82,6 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   admin demo. If a screen looks dated next to macOS System Settings, Linear
   or Luma, it's not done.
 
-- `dead-files/` — archive for dead docs/specs/files. Reference only. Don't
-  edit, don't resurrect content unless explicitly asked. Contents:
-  `dead-files/FIXES.md`, `dead-files/apps/app/SPEC.md`,
-  `dead-files/apps/app/BUILD.md`, `dead-files/apps/app/CLOUDFLARE.md`,
-  `dead-files/apps/app/app-flow.canvas`.
-
 ## 3. Commands
 
 ```bash
@@ -125,14 +119,14 @@ bun run prebuild     # regenerate android/ from app.config.ts (CI does this)
 4. Always latest stable majors (Node, Bun, React, Next.js, Vite, TS). If an
    upgrade breaks something, fix it properly — never downgrade to escape.
 5. Docs/code conflict → ask the owner. Owner's word wins, then update both.
-6. Dead code gets deleted. Dead files go to `dead-files/`. Nothing lingers.
+6. Dead code and dead files get deleted outright. Nothing lingers.
 7. **Use web for latest info — always verify pricing/limits/docs via `webfetch`/`websearch` before claiming free/paid status; GCP/docs change (e.g. external IP pricing 2024-02-01). Never rely on training cutoff.**
 8. **Current state only.** Every file — code and docs alike — describes what
    IS, never what was. No "previously", "no longer", "legacy", "old",
    "was moved" narration; no change history; no stale references. When
    something dies: delete the code, delete its comments, update every doc
-   that mentions it — all in the same change. History lives in git and
-   `dead-files/`, nowhere else.
+   that mentions it — all in the same change. History lives in git, nowhere
+   else.
 9. **Latest deps, verified before commit.** `bun run check:updates` before
    every commit; safe lines float via `^`/`~` and the lock refreshes with
    `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
@@ -193,9 +187,8 @@ automated in `.github/workflows/pipeline.yml`.
 
 ## 5. apps/app working agreement (owner-mandated, always applies)
 
-SPEC.md/BUILD.md are **archived** in `dead-files/apps/app/`
-(frozen — don't edit, don't tick). The code and the owner's word are the
-truth.
+SPEC.md/BUILD.md are **deleted** (readable from git history only). The
+code and the owner's word are the truth.
 
 - **The owner's spoken word is the single source of truth.** If a rule
   isn't written anywhere: ask the owner, then code it.

@@ -18,16 +18,12 @@ build/
 *.pem
 *.key
 
-# Local data (inquiry JSONL fallback)
-.data/
-
-# Staged deploy bundle produced by the deploy-api workflow's build script
-.deploy/
 
 # Turbo & tool caches
 .turbo/
 .cache/
 coverage/
+.expo/
 
 # Logs
 *.log

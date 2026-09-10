@@ -6,7 +6,7 @@
  * scanned with another device).
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth, friendlyError } from "@kataria-syntex/app-core";
@@ -88,10 +88,10 @@ function OtpStep({
   const router = useRouter();
   const p = usePalette();
 
-  useState(() => {
+  useEffect(() => {
     const t = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
     return () => clearInterval(t);
-  });
+  }, []);
 
   const masked = identifier.includes("@")
     ? identifier

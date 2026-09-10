@@ -8,10 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { AccessibilityInfo } from "react-native";
-import type {
-  WithSpringConfig,
-  WithTimingConfig,
-} from "react-native-reanimated";
+import type { WithSpringConfig } from "react-native-reanimated";
 
 /** Default spring for anything that moves: ~0.38s, no bounce. */
 export const SPRING: WithSpringConfig = {
@@ -27,10 +24,6 @@ export const MORPH_EXIT: WithSpringConfig = {
   stiffness: 180,
   damping: 27,
 };
-
-/** Opacity fades (backdrops). */
-export const FADE_IN: WithTimingConfig = { duration: 200 };
-export const FADE_OUT: WithTimingConfig = { duration: 150 };
 
 /** OS-level reduce motion — mirrors `useReducedMotion()` on the web app. */
 export function useReduceMotion(): boolean {

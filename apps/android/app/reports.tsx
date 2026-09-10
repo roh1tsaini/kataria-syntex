@@ -16,7 +16,6 @@ import {
   View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { createMMKV } from "react-native-mmkv";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   api,
@@ -28,6 +27,7 @@ import {
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { Badge, Button, EmptyState, Skeleton } from "@/ui/kit";
+import { uiStorage } from "@/lib/core-adapter";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 
 const REPORTS: {
@@ -87,15 +87,14 @@ registerDataCache(() => {
   for (const key of Object.keys(reportCache)) delete reportCache[key];
 });
 
-// Column visibility persists across sessions (web used localStorage; here
-// MMKV). Invalidation story: entries whose column no longer exists in a
-// report are pruned on load, mirroring web's cleanup pass.
-const storage = createMMKV({ id: "reports-ui" });
+// Column visibility persists across sessions (web uses localStorage; here
+// the adapter's uiStorage). Invalidation story: entries whose column no
+// longer exists in a report are pruned on load, mirroring web's cleanup.
 const STORAGE_KEY = "reports.hiddenCols";
 
 function readHiddenCols(): Record<string, boolean> {
   try {
-    const parsed: unknown = JSON.parse(storage.getString(STORAGE_KEY) ?? "{}");
+    const parsed: unknown = JSON.parse(uiStorage.get(STORAGE_KEY) ?? "{}");
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return Object.fromEntries(
         Object.entries(parsed as Record<string, unknown>).filter(
@@ -271,7 +270,7 @@ function ReportView({ reportId }: { reportId: string }) {
 
   useEffect(() => {
     try {
-      storage.set(STORAGE_KEY, JSON.stringify(hiddenCols));
+      uiStorage.set(STORAGE_KEY, JSON.stringify(hiddenCols));
     } catch {
       // Storage unavailable — the toggle just won't persist.
     }

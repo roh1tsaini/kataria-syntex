@@ -53,7 +53,6 @@ bun run typecheck
 - `apps/android/APP.md` — Android app reference (kept current with the code)
 - `apps/app/design.md` — app design system
 - `apps/web/design.md` — website design system
-- `dead-files/` — archive for dead docs/files; reference only, never edit
 
 ## Platforms
 

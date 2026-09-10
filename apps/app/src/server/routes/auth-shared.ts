@@ -70,11 +70,14 @@ export function buildDeviceMeta(c: AuthCtx): {
       : platform === "android"
         ? "Android app"
         : "Desktop app");
+  // These land verbatim in devices rows on unauthenticated endpoints —
+  // clamp them so a client can't store arbitrary-size strings (the devices
+  // schema caps label at 100; SQLite enforces nothing).
   return {
-    label,
+    label: label.slice(0, 100),
     platform:
       platform === "web" || platform === "android" ? platform : "desktop",
-    userAgent,
+    userAgent: userAgent?.slice(0, 500),
   };
 }
 

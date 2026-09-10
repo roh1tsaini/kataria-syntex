@@ -23,10 +23,10 @@ installers to the R2 release bucket.
 
 Add two secrets (repo → Settings → Secrets and variables → Actions):
 
-| Secret                  | Value                                            |
-| ----------------------- | ------------------------------------------------ |
-| `CLOUDFLARE_API_TOKEN`  | Token with **D1 Edit + Workers Edit**            |
-| `CLOUDFLARE_ACCOUNT_ID` | Your account id (Cloudflare dashboard → Workers) |
+| Secret                  | Value                                                           |
+| ----------------------- | --------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Token with **D1 Edit + Workers Edit + Workers R2 Storage Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | Your account id (Cloudflare dashboard → Workers)                |
 
 The deploy job (`deploy` in `pipeline.yml`) **auto-provisions both D1
 databases and injects their ids on the runner** — no manual dashboard steps,
@@ -44,9 +44,10 @@ it as `EXTRA_API_BASE`.
 Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
 1. `gate` — typecheck + lint + format + build. Blocks everything below.
-2. `deploy` — website: build → ensure D1 → migrate → deploy Worker;
-   app: build SPA → ensure D1 → migrate → ensure `ks-releases` bucket →
-   deploy Worker.
+2. `deploy` — app: build SPA → ensure D1 → migrate → ensure `ks-releases`
+   bucket → deploy Worker; website: ensure D1 → migrate → build → deploy
+   Worker (the build runs after the database id is injected — vinext bakes
+   it into the bundle).
 3. `desktop` + `android` — installers (win-x64, mac-arm64, linux-x64) and
    APK, in parallel with the deploys.
 4. `publish-r2` — uploads installers + rewrites the version manifest when
@@ -128,7 +129,7 @@ The app version lives only in `apps/app/package.json`. Everything reads it:
 - **Electron** — installers are stamped with it by electron-builder.
 - **Android** — `apps/android/app.config.ts` reads the same file:
   `versionName` = the version, `versionCode` =
-  `major*10000 + minor*100 + patch` (0.6.0 → 600). Every bump raises the
+  `major*10000 + minor*100 + patch` (0.8.0 → 800). Every bump raises the
   code — Android rejects updates that don't.
 - **App UI** — Settings → About shows it (injected at build time).
 - **Releases** — the `v<version>` GitHub Release tag is read from the file.
@@ -169,11 +170,12 @@ before gradle; the signing config comes from the config plugin.
 ```bash
 bun install
 bun run dev:web    # website on :3000 (vinext)
-bun run dev:app    # app: vite on :1420 + API on :3000 (pinned)
+bun run dev:app    # app frontend on :1420 (turbo dev --filter biz-app)
 ```
 
 `apps/app` extras: `bun run dev` (frontend only), `bun run dev:server` (API
-only), `bun run electron:dev`.
+on :3000 — the frontend expects it via `adb reverse` or dev proxy),
+`bun run electron:dev`.
 
 ## Required gates (every change)
 

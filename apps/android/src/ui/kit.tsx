@@ -18,13 +18,6 @@ import {
 import { cn } from "@/lib/cn";
 import { usePalette } from "@/theme";
 
-/**
- * Press feedback shared by every tappable control: scale 0.97 @ ~100ms
- * (design.md §5 rule 6) plus the caller's opacity dip. Instant on press,
- * springs back on release — never a delayed or jumpy transform.
- */
-export const PRESS_SCALE = { transform: [{ scale: 0.97 }] };
-
 // ── Card ────────────────────────────────────────────────────────────────────
 
 export function Card({
@@ -185,54 +178,6 @@ export function Badge({
         {label}
       </Text>
     </View>
-  );
-}
-
-// ── Row (list cell) ─────────────────────────────────────────────────────────
-
-export function Row({
-  title,
-  subtitle,
-  trailing,
-  onPress,
-}: {
-  title: string;
-  subtitle?: string;
-  trailing?: React.ReactNode;
-  onPress?: () => void;
-}) {
-  const p = usePalette();
-  return (
-    <Pressable
-      accessibilityRole={onPress ? "button" : undefined}
-      onPress={onPress}
-      disabled={!onPress}
-      className="min-h-[44px] flex-row items-center justify-between gap-3 px-4 py-3"
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.7 : 1,
-        transform: pressed ? [{ scale: 0.97 }] : [{ scale: 1 }],
-      })}
-    >
-      <View className="flex-1">
-        <Text
-          className="text-[15px] font-medium"
-          style={{ color: p.foreground }}
-          numberOfLines={1}
-        >
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text
-            className="mt-0.5 text-[13px]"
-            style={{ color: p.mutedForeground }}
-            numberOfLines={1}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
-      </View>
-      {trailing}
-    </Pressable>
   );
 }
 

@@ -8,11 +8,7 @@ dist-electron/
 .turbo/
 .wrangler/
 coverage/
-.data/
-.deploy/
 
-# Frozen archive — reference only, never reformatted
-dead-files/
 
 # Generated files
 *.tsbuildinfo
@@ -21,8 +17,6 @@ apps/web/cloudflare-env.d.ts
 apps/app/drizzle/
 apps/app/out/
 apps/app/release/
-apps/app/android/app/build/
-apps/app/android/app/src/main/assets/
 
 # Binaries & reference documents
 *.pdf
@@ -37,7 +31,4 @@ apps/app/Docs Template/
 
 # Screenshots (kept on disk, not part of the repo)
 apps/app/tmp/
-
-# Obsidian rewrites these on every session — prettier can't own them
-docs/.obsidian/
 

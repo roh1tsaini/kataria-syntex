@@ -51,7 +51,6 @@ export const challanBodySchema = z.object({
   offline: z
     .object({
       clientRef: z.string().min(8).max(60),
-      originDevice: z.string().trim().min(1).max(120).optional(),
       challanNumber: z.string().trim().min(1).max(50).optional(),
       seq: z.number().int().min(1).max(1_000_000).optional(),
       fyLabel: z.string().trim().min(1).max(10).optional(),

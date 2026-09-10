@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { RefreshCw, Save } from "lucide-react";
+import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { useUpdates } from "@/store/updates";
 import { fmtDate } from "@/ui/lib/format";
 import {
@@ -462,7 +463,7 @@ function UpdateRow() {
   const latestVersion = useUpdates((s) => s.latestVersion);
   const checking = useUpdates((s) => s.checking);
   const status = useUpdates((s) => s.status);
-  const percent = useUpdates((s) => s.percent);
+  const progress = useUpdates((s) => s.progress);
   const [result, setResult] = useState<string | null>(null);
 
   const updateAvailable = latestVersion !== null && status === "ready";
@@ -483,11 +484,15 @@ function UpdateRow() {
   return (
     <SettingsRow label="Updates" hint={result ?? undefined}>
       <div className="flex items-center gap-2">
-        {updateAvailable && (
+        {downloading && progress ? (
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {formatUpdateProgress(progress)}
+          </span>
+        ) : updateAvailable ? (
           <span className="text-xs tabular-nums text-muted-foreground">
             v{latestVersion} available
           </span>
-        )}
+        ) : null}
         {updateAvailable || downloading ? (
           <Button
             size="sm"
@@ -496,11 +501,7 @@ function UpdateRow() {
             disabled={downloading}
             loading={downloading}
           >
-            {downloading
-              ? percent !== null
-                ? `${percent}%`
-                : "Downloading…"
-              : "Update"}
+            {downloading ? "Downloading…" : "Update"}
           </Button>
         ) : (
           <Button

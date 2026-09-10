@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -187,7 +187,13 @@ function ReportView({ reportId }: { reportId: string }) {
     return {};
   });
 
+  // Monotonic request id: overlapping loads (debounced date edits, realtime
+  // events) resolve out of order, and a slow stale response must never
+  // clobber the newer one's rows.
+  const loadSeq = useRef(0);
+
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     const params = new URLSearchParams();
     if (from) params.set("from", from);
     if (to) params.set("to", to);
@@ -201,14 +207,16 @@ function ReportView({ reportId }: { reportId: string }) {
       const res = await api<{ items: Record<string, unknown>[] }>(
         `/reports/${reportId}${qs}`,
       );
+      if (seq !== loadSeq.current) return;
       reportCache[cacheKey] = res;
       setData(res);
     } catch (err) {
+      if (seq !== loadSeq.current) return;
       // Clear stale rows so a failure never reads as "no data".
       setData(null);
       setLoadError(friendlyError(err));
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, [baseKey, reportId, from, to]);
 
@@ -440,7 +448,7 @@ function ReportView({ reportId }: { reportId: string }) {
                 <tbody>
                   {rows.map((item, idx) => (
                     <tr
-                      key={(item.id as string | undefined) ?? idx}
+                      key={typeof item.id === "string" ? item.id : idx}
                       className="table-row border-b border-border/50 last:border-b-0"
                     >
                       {visibleColumns.map((key, i) => {

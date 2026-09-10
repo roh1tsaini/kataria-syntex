@@ -27,7 +27,7 @@ const plugin: ConfigPlugin = (config) => {
     src = src.replace(
       DEFS_MARKER,
       `// Release signing — CI writes android/keystore.properties from the
-// ANDROID_KEY_* secrets (see .github/workflows/app-build.yml).
+// ANDROID_KEY_* secrets (see .github/workflows/pipeline.yml).
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {

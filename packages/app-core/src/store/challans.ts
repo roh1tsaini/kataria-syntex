@@ -72,6 +72,10 @@ type ChallansState = {
   load: (id: string) => Promise<ChallanDetail>;
   clearDetail: () => void;
   clearSummaryCache: () => void;
+  /** Account teardown (logout/401): in-memory rows go with the storage
+   * wipes — the next account starts with an empty list, no detail, and no
+   * carried-over filter. */
+  reset: () => void;
   create: (input: ChallanInput) => Promise<Challan>;
   update: (id: string, input: ChallanInput) => Promise<Challan>;
   remove: (id: string) => Promise<void>;
@@ -250,6 +254,18 @@ export const useChallans = create<ChallansState>()((set, get) => {
     },
 
     clearSummaryCache: () => set({ summaryCache: {} }),
+
+    reset: () => {
+      lastFilter = undefined;
+      set({
+        challans: [],
+        total: 0,
+        detail: null,
+        summaryCache: {},
+        loading: false,
+        error: null,
+      });
+    },
 
     create: async (input) => {
       // Idempotency key: if the request dies after the server committed, the

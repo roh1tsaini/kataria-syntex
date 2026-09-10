@@ -101,7 +101,6 @@ export function createOfflineChallan(
 
   addPending({
     clientRef,
-    originDevice: device.label,
     status: "pending",
     createdAt: nowIso,
     input,

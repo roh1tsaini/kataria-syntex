@@ -234,12 +234,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Inject App origin into main-process API origin
-        env:
-          APP_URL: ${{ vars.APP_URL }}
-        run: bun run build:electron
-        working-directory: apps/app
-
+      # build:electron bakes APP_URL into the main process (KC_API_ORIGIN);
+      # the renderer build precedes it so electron-builder packages both.
       - name: Build renderer + main/preload + package
         working-directory: apps/app
         env:

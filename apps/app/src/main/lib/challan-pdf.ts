@@ -20,7 +20,7 @@ import { createCached } from "../../shared/cached";
 import interBoldUrl from "../../shared/fonts/Inter-Bold.ttf?url";
 import interRegularUrl from "../../shared/fonts/Inter-Regular.ttf?url";
 import { ApiError, apiBlob, base64ToBlob } from "@kataria-syntex/app-core";
-import { detectHost } from "@/lib/platform";
+import { desktopBridge } from "@/lib/platform";
 
 /** Both Inter weights as base64 for the template's inline @font-face. */
 export const loadChallanFonts: () => Promise<ChallanFonts> = createCached(
@@ -57,10 +57,11 @@ async function challanPdf(
   challanId: string,
   localHtml: () => Promise<string>,
 ): Promise<{ blob: Blob; via: "local" | "server" }> {
-  if (detectHost() === "electron" && window.desktop) {
+  const desktop = desktopBridge();
+  if (desktop) {
     let res: { status: number; base64: string | null };
     try {
-      res = await window.desktop.renderPdf(await localHtml());
+      res = await desktop.renderPdf(await localHtml());
     } catch {
       throw networkError();
     }

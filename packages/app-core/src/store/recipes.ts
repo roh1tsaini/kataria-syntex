@@ -79,6 +79,8 @@ type RecipesState = {
   fetchVersion: (id: string, version: number) => Promise<RecipeVersionPayload>;
   restoreRecipe: (id: string, version: number) => Promise<void>;
   lookupRecipe: (colorId: string, denierId: string) => Promise<string | null>;
+  /** Account teardown (logout/401) — see masters.reset. */
+  reset: () => void;
 };
 
 export const useRecipes = create<RecipesState>()((set) => ({
@@ -140,4 +142,6 @@ export const useRecipes = create<RecipesState>()((set) => ({
     );
     return res.recipeId;
   },
+
+  reset: () => set({ recipes: [], recipesLoading: false, recipesError: null }),
 }));

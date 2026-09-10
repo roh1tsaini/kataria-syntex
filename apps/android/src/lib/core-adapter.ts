@@ -35,6 +35,17 @@ function mmkvStorage(): CoreStorage {
   };
 }
 
+/** Device-level UI preferences (e.g. reports column visibility). Same
+ * instance as app-core's storage — these keys are deliberately NOT wiped on
+ * logout, matching the web app's localStorage preferences. Every MMKV touch
+ * outside this file goes through here; screens never create instances. */
+export const uiStorage = {
+  get: (key: string): string | null => mmkv.getString(key) ?? null,
+  set: (key: string, value: string) => {
+    mmkv.set(key, value);
+  },
+};
+
 export function deviceLabel(): string {
   return "Android";
 }

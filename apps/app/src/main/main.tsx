@@ -5,7 +5,7 @@ import { configureToasts } from "@kataria-syntex/app-core";
 import { toast } from "sonner";
 import { App } from "@/ui/App";
 import { initTheme } from "@/ui/hooks/use-theme";
-import { configureWebCore } from "@/lib/platform";
+import { configureWebCore, desktopBridge } from "@/lib/platform";
 import "@/ui/globals.css";
 
 initTheme();
@@ -34,9 +34,10 @@ if (location.pathname.endsWith("/index.html")) {
 // document (overflow hidden, .app-scroll owns scrolling) and --wc-w reserves
 // the top-right corner for the floating window controls, so header content
 // never slides beneath them and there is no layout shift.
-if (window.desktop) {
+const desktop = desktopBridge();
+if (desktop) {
   document.documentElement.dataset.shell = "desktop";
-  if (window.desktop.platform !== "darwin") {
+  if (desktop.platform !== "darwin") {
     document.documentElement.style.setProperty("--wc-w", "120px");
   } else {
     // Clear the native traffic-light strip above the sidebar brand.

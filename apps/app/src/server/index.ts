@@ -51,6 +51,7 @@ app.use(
     allowHeaders: [
       "Content-Type",
       "Authorization",
+      "X-App-Version",
       "X-Client-Id",
       "X-Platform",
       "X-Device-Label",

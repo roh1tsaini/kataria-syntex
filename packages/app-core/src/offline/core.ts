@@ -246,7 +246,6 @@ type PendingStatus = "pending" | "conflict" | "error";
 
 export type PendingChallan = {
   clientRef: string;
-  originDevice: string;
   status: PendingStatus;
   /** Server's next-free number, set when a sync hit a number clash (409). */
   suggestion?: string;

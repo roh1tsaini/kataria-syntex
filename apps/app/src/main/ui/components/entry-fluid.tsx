@@ -25,7 +25,6 @@ const FRAG = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
 uniform float uTime;
-uniform float uDark;
 // Light ramp: core -> mid sky -> deep edge
 uniform vec3 uCore;
 uniform vec3 uMid;
@@ -159,82 +158,104 @@ export function EntryFluid() {
       return;
     }
 
-    const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-    if (!vs) {
-      fail("vert-compile");
-      return;
-    }
-    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-    if (!fs) {
-      fail("frag-compile");
-      return;
-    }
-    const prog = gl.createProgram();
-    if (!prog) {
-      fail("program");
-      return;
-    }
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      fail("link");
-      return;
-    }
-    gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 3, -1, -1, 3]),
-      gl.STATIC_DRAW,
-    );
-    const loc = gl.getAttribLocation(prog, "p");
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-
-    const uRes = gl.getUniformLocation(prog, "uRes");
-    const uTime = gl.getUniformLocation(prog, "uTime");
-    const uDark = gl.getUniformLocation(prog, "uDark");
-    const uCore = gl.getUniformLocation(prog, "uCore");
-    const uMid = gl.getUniformLocation(prog, "uMid");
-    const uEdge = gl.getUniformLocation(prog, "uEdge");
-
-    const dark = document.documentElement.classList.contains("dark");
-    // Light: core → mid sky → deep periwinkle edge.
-    const [coreL, midL, edgeL] = dark
-      ? [
-          oklchToRgb(0.45, 0.085, 288),
-          oklchToRgb(0.27, 0.085, 284),
-          oklchToRgb(0.17, 0.05, 280),
-        ]
-      : [
-          oklchToRgb(0.99, 0.012, 290),
-          oklchToRgb(0.87, 0.055, 286),
-          oklchToRgb(0.72, 0.115, 282),
-        ];
-    gl.uniform2f(uRes, w, h);
-    gl.uniform1f(uDark, dark ? 1 : 0);
-    gl.uniform3f(uCore, coreL[0], coreL[1], coreL[2]);
-    gl.uniform3f(uMid, midL[0], midL[1], midL[2]);
-    gl.uniform3f(uEdge, edgeL[0], edgeL[1], edgeL[2]);
-
-    canvas.width = w;
-    canvas.height = h;
-    // Resizing the canvas does NOT update the GL viewport — the default one
-    // is the JSX 2×2 size and only that corner would ever rasterize.
-    gl.viewport(0, 0, w, h);
-
     let raf = 0;
     let lost = false;
     const start = performance.now();
 
+    // Uniform locations live outside init() because draw/applyTheme close
+    // over them; a context restore invalidates them, so init() rebuilds
+    // the whole set.
+    let uTime: WebGLUniformLocation | null = null;
+    let ramp: {
+      core: WebGLUniformLocation | null;
+      mid: WebGLUniformLocation | null;
+      edge: WebGLUniformLocation | null;
+    } | null = null;
+
     const draw = (now: number) => {
-      gl?.uniform1f(uTime, (now - start) / 1000);
-      gl?.drawArrays(gl.TRIANGLES, 0, 3);
+      if (!gl) return;
+      gl.uniform1f(uTime, (now - start) / 1000);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
-    // One wrap so reduced-motion draws exactly one still frame
+
+    /** Ramp uniforms read fresh from the theme class so the canvas tracks
+     * the CSS sky it sits behind. Light: core → mid sky → deep periwinkle
+     * edge; dark: deep indigo night with a dim glow. */
+    const applyTheme = () => {
+      if (!gl || !ramp) return;
+      const dark = document.documentElement.classList.contains("dark");
+      const [core, mid, edge] = dark
+        ? [
+            oklchToRgb(0.45, 0.085, 288),
+            oklchToRgb(0.27, 0.085, 284),
+            oklchToRgb(0.17, 0.05, 280),
+          ]
+        : [
+            oklchToRgb(0.99, 0.012, 290),
+            oklchToRgb(0.87, 0.055, 286),
+            oklchToRgb(0.72, 0.115, 282),
+          ];
+      gl.uniform3f(ramp.core, core[0], core[1], core[2]);
+      gl.uniform3f(ramp.mid, mid[0], mid[1], mid[2]);
+      gl.uniform3f(ramp.edge, edge[0], edge[1], edge[2]);
+    };
+
+    /** Builds/links the program + buffer and applies the static uniforms.
+     * Returns false (fail() already called) on any failure. */
+    const init = (): boolean => {
+      if (!gl) return false;
+      const vs = compile(gl, gl.VERTEX_SHADER, VERT);
+      if (!vs) {
+        fail("vert-compile");
+        return false;
+      }
+      const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+      if (!fs) {
+        fail("frag-compile");
+        return false;
+      }
+      const prog = gl.createProgram();
+      if (!prog) {
+        fail("program");
+        return false;
+      }
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        fail("link");
+        return false;
+      }
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 3, -1, -1, 3]),
+        gl.STATIC_DRAW,
+      );
+      const loc = gl.getAttribLocation(prog, "p");
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+      uTime = gl.getUniformLocation(prog, "uTime");
+      ramp = {
+        core: gl.getUniformLocation(prog, "uCore"),
+        mid: gl.getUniformLocation(prog, "uMid"),
+        edge: gl.getUniformLocation(prog, "uEdge"),
+      };
+      gl.uniform2f(gl.getUniformLocation(prog, "uRes"), w, h);
+      applyTheme();
+
+      canvas.width = w;
+      canvas.height = h;
+      // Resizing the canvas does NOT update the GL viewport — the default one
+      // is the JSX 2×2 size and only that corner would ever rasterize.
+      gl.viewport(0, 0, w, h);
+      return true;
+    };
+
     const loop = (now: number) => {
       draw(now);
       raf = requestAnimationFrame(loop);
@@ -247,10 +268,21 @@ export function EntryFluid() {
     };
     const onRestored = () => {
       lost = false;
-      if (!reduceMotion) raf = requestAnimationFrame(loop);
+      // The restored context ships no program, buffers or locations —
+      // rebuild everything before drawing again.
+      if (!init()) return;
+      if (reduceMotion) draw(performance.now());
+      else if (!document.hidden) raf = requestAnimationFrame(loop);
     };
-    canvas.addEventListener("webglcontextlost", onLost);
-    canvas.addEventListener("webglcontextrestored", onRestored);
+
+    // The ramp colors are uniforms, so a theme flip mid-mount re-applies
+    // them (initTheme follows the system theme without a user toggle).
+    // Reduced motion repaints its single still frame in the new palette.
+    const themeObs = new MutationObserver(() => {
+      if (lost) return;
+      applyTheme();
+      if (reduceMotion) draw(performance.now());
+    });
 
     const onVisibility = () => {
       cancelAnimationFrame(raf);
@@ -258,6 +290,15 @@ export function EntryFluid() {
         raf = requestAnimationFrame(loop);
       }
     };
+
+    if (!init()) return;
+
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
+    themeObs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
     document.addEventListener("visibilitychange", onVisibility);
 
     if (reduceMotion) {
@@ -268,6 +309,7 @@ export function EntryFluid() {
 
     return () => {
       cancelAnimationFrame(raf);
+      themeObs.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       canvas.removeEventListener("webglcontextlost", onLost);
       canvas.removeEventListener("webglcontextrestored", onRestored);

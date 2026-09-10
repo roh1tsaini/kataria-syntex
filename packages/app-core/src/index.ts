@@ -30,6 +30,9 @@ export { friendlyError } from "./errors";
 export { configureToasts, toastSuccess, toastError } from "./toast";
 export { registerDataCache } from "./data-caches";
 
+// Update-download progress (ETA math shared by every shell's update store)
+export { createEtaEstimator, type UpdateProgress } from "./progress";
+
 // Realtime change bus
 export {
   subscribeChanges,

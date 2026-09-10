@@ -16,6 +16,7 @@ import {
   type Host,
   type PlatformAdapter,
 } from "@kataria-syntex/app-core";
+import type { DesktopBridge } from "../../../electron/preload";
 
 export type { Host };
 
@@ -23,6 +24,14 @@ export function detectHost(): Host {
   if (typeof window === "undefined") return "web";
   if (window.desktop) return "electron";
   return "web";
+}
+
+/** The Electron IPC bridge (see electron/preload.ts). Null on web/PWA.
+ * Everything that touches window.desktop outside this file goes through
+ * here (or desktopWindow below) so the bridge surface stays in one module. */
+export function desktopBridge(): DesktopBridge | null {
+  if (detectHost() !== "electron") return null;
+  return window.desktop ?? null;
 }
 
 /** True outside plain browsers — the Electron shell. (Installed PWAs run on

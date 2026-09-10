@@ -86,7 +86,7 @@ export function MorphPanel({
         isOpen && "shadow-lift",
         className,
       )}
-      style={{ borderRadius: isOpen ? "1rem" : "0.75rem" }}
+      style={{ borderRadius: isOpen ? "var(--radius-xl)" : "var(--radius-lg)" }}
     >
       <button
         type="button"

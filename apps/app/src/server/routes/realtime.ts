@@ -15,6 +15,7 @@ import type { Env } from "../env";
 import { generateToken, sha256Hex } from "../lib/token";
 import { requireAuth } from "../auth/session";
 import { resolveMember, type PermsEnv } from "../auth/perms";
+import { apiError } from "../lib/api-error";
 
 export const realtimeRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -38,7 +39,7 @@ realtimeRoute.post("/ticket", async (c) => {
     }),
   });
   if (res.status !== 204) {
-    return c.json({ error: "realtime_ticket_failed" }, 503);
+    return apiError(c, "realtime_ticket_failed", 503);
   }
   return c.json({ ticket });
 });

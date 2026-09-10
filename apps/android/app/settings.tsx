@@ -19,6 +19,7 @@ import {
   type Numbering,
   type NumberingType,
 } from "@kataria-syntex/app-core";
+import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { ACCENT_NAMES, themeStore, usePalette } from "@/theme";
 import { ACCENT_TOKENS, type AccentName } from "@/theme/tokens";
 import { cn } from "@/lib/cn";
@@ -259,7 +260,7 @@ function UpdateRow() {
   const latestVersion = useUpdates((s) => s.latestVersion);
   const checking = useUpdates((s) => s.checking);
   const status = useUpdates((s) => s.status);
-  const percent = useUpdates((s) => s.percent);
+  const progress = useUpdates((s) => s.progress);
   const [result, setResult] = useState<string | null>(null);
   const p = usePalette();
 
@@ -281,7 +282,15 @@ function UpdateRow() {
   return (
     <SettingsRow label="Updates" hint={result ?? undefined}>
       <View className="flex-row items-center gap-2">
-        {updateAvailable ? (
+        {downloading && progress ? (
+          <Text
+            className="flex-1 text-xs tabular-nums"
+            style={{ color: p.mutedForeground }}
+            numberOfLines={2}
+          >
+            {formatUpdateProgress(progress)}
+          </Text>
+        ) : updateAvailable ? (
           <Text
             className="flex-1 text-xs tabular-nums"
             style={{ color: p.mutedForeground }}
@@ -292,13 +301,7 @@ function UpdateRow() {
         {updateAvailable || downloading ? (
           <View className="shrink-0">
             <Button
-              label={
-                downloading
-                  ? percent !== null
-                    ? `${percent}%`
-                    : "Downloading…"
-                  : "Update"
-              }
+              label={downloading ? "Downloading…" : "Update"}
               onPress={() => void installUpdate()}
               disabled={downloading}
               loading={downloading}

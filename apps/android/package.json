@@ -1,6 +1,5 @@
 {
   "name": "@kataria-syntex/android",
-  "version": "0.6.0",
   "private": true,
   "type": "module",
   "main": "expo-router/entry",

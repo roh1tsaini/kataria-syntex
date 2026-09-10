@@ -92,6 +92,9 @@ type MastersState = {
   createSupplier: (input: SupplierInput) => Promise<void>;
   updateSupplier: (id: string, input: SupplierInput) => Promise<void>;
   deleteSupplier: (id: string) => Promise<void>;
+  /** Account teardown (logout/401) — the next account starts with empty
+   * registers, never the previous one's rows. */
+  reset: () => void;
 };
 
 /** Mirrors the current masters state into the offline cache. */
@@ -204,6 +207,20 @@ export const useMasters = create<MastersState>()((set, get) => {
     createSupplier: suppliers.create,
     updateSupplier: suppliers.update,
     deleteSupplier: suppliers.remove,
+
+    reset: () =>
+      set({
+        customers: [],
+        customersLoading: false,
+        jobWorkers: [],
+        jobWorkersLoading: false,
+        deniers: [],
+        deniersLoading: false,
+        colors: [],
+        colorsLoading: false,
+        suppliers: [],
+        suppliersLoading: false,
+      }),
   };
 });
 

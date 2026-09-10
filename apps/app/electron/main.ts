@@ -192,7 +192,6 @@ function registerIpc(): void {
     writeToken(token),
   );
   ipcMain.handle("kc:api", handleApi);
-  ipcMain.handle("kc:download", handleDownload);
   ipcMain.handle("kc:render-pdf", handleRenderPdf);
   // macOS update flow only: hand a published release URL to the OS browser.
   // Locked to the app's own origin so the bridge can never be a general
@@ -217,32 +216,6 @@ function registerIpc(): void {
     "kc:win:is-maximized",
     () => mainWindow?.isMaximized() ?? false,
   );
-}
-
-async function handleDownload(_event: unknown, raw: unknown) {
-  if (raw === null || typeof raw !== "object")
-    return { status: 0, base64: null };
-  const path = (raw as Record<string, unknown>).path;
-  if (typeof path !== "string" || !path.startsWith("/"))
-    return { status: 0, base64: null };
-  const url = `${API_ORIGIN}/api${path}`;
-  const headers: Record<string, string> = {
-    "X-App-Version": app.getVersion(),
-  };
-  const token = await readToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 60_000);
-  try {
-    const res = await net.fetch(url, { headers, signal: ctrl.signal });
-    if (!res.ok) return { status: res.status, base64: null };
-    const buf = Buffer.from(await res.arrayBuffer());
-    return { status: res.status, base64: buf.toString("base64") };
-  } catch {
-    return { status: 0, base64: null };
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 /**

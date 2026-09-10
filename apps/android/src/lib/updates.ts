@@ -1,13 +1,19 @@
 /**
  * Update store for the Android app — mirrors apps/app's update UX contract:
- * poll the published manifest on launch + every 4h, banner for available,
- * blocking dialog for the 426 floor, download with percent, install via the
- * system package installer.
+ * poll the published manifest on launch + every 4h, banner for available
+ * (dismissable per version), blocking dialog for the 426 floor, APK download
+ * with live byte/percent/ETA progress, install via the system package
+ * installer.
  */
 
 import { create } from "zustand";
-import { setUpdateRequiredHandler } from "@kataria-syntex/app-core";
-import { appVersion, apiBaseUrl } from "./core-adapter";
+import { compareSemver } from "@kataria-syntex/shared";
+import {
+  createEtaEstimator,
+  setUpdateRequiredHandler,
+  type UpdateProgress,
+} from "@kataria-syntex/app-core";
+import { apiBaseUrl, appVersion, uiStorage } from "./core-adapter";
 import {
   downloadAndInstallApk,
   fetchManifest,
@@ -19,17 +25,24 @@ export type UpdateState = {
   latestVersion: string | null;
   requiredMinVersion: string | null;
   status: "idle" | "checking" | "downloading" | "ready" | "error";
-  percent: number | null;
+  /** Live APK download progress — null when nothing is in flight. */
+  progress: UpdateProgress | null;
   checking: boolean;
+  /** Version deferred via the banner's dismiss — the banner stays hidden
+   * until a different version ships. */
+  dismissedVersion: string | null;
   checkNow: () => Promise<"up-to-date" | "available" | "error">;
   installUpdate: () => Promise<void>;
   markRequired: (minVersion: string) => void;
+  dismiss: () => void;
 };
 
 /** Poll cadence — launch + every 4h, matching desktop. */
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const DISMISS_KEY = "updates.dismissedVersion";
 
 let wired = false;
+const etaFrom = createEtaEstimator();
 
 // Wire app-core's 426 classifier to the blocking-dialog state before the
 // first request can 426.
@@ -41,8 +54,9 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   latestVersion: null,
   requiredMinVersion: null,
   status: "idle",
-  percent: null,
+  progress: null,
   checking: false,
+  dismissedVersion: uiStorage.get(DISMISS_KEY),
 
   checkNow: async () => {
     set({ checking: true });
@@ -62,20 +76,49 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   installUpdate: async () => {
-    set({ status: "downloading", percent: 0 });
+    etaFrom.reset();
+    set({
+      status: "downloading",
+      progress: {
+        percent: 0,
+        transferredBytes: 0,
+        totalBytes: 0,
+        etaSeconds: null,
+      },
+    });
     try {
-      await downloadAndInstallApk(apiBaseUrl(), (percent) => set({ percent }));
-      set({ status: "ready", percent: null });
+      await downloadAndInstallApk(apiBaseUrl(), ({ bytes, total }) => {
+        set({
+          progress: {
+            percent: total > 0 ? Math.min(100, (bytes / total) * 100) : 0,
+            transferredBytes: bytes,
+            totalBytes: total,
+            etaSeconds: etaFrom.sample(bytes, total),
+          },
+        });
+      });
+      // Fully downloaded — the system installer dialog takes over from here.
+      set({ status: "ready", progress: null });
     } catch {
-      set({ status: "error", percent: null });
+      etaFrom.reset();
+      set({ status: "error", progress: null });
     }
   },
 
   markRequired: (minVersion) => {
     const current = get().requiredMinVersion;
-    if (!current || minVersion > current) {
+    // Keep the highest floor ever seen this session — string comparison
+    // would rank "0.10.0" below "0.9.0" and silently drop the gate.
+    if (!current || compareSemver(minVersion, current) > 0) {
       set({ requiredMinVersion: minVersion });
     }
+  },
+
+  dismiss: () => {
+    const version = get().latestVersion;
+    if (!version) return;
+    uiStorage.set(DISMISS_KEY, version);
+    set({ dismissedVersion: version });
   },
 }));
 

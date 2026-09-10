@@ -24,6 +24,21 @@ import type {
 export type Permission = SharedPermission;
 export const ALL_PERMISSIONS: Permission[] = [...SHARED_ALL_PERMISSIONS];
 
+/** Account teardown: page stores reset with the caches so the next account
+ * on this device never renders the previous one's rows or pickers. Dynamic
+ * imports keep the store graph cycle-free (same pattern as logout's old
+ * direct challans call). */
+async function resetPageStores(): Promise<void> {
+  const [{ useChallans }, { useMasters }, { useRecipes }] = await Promise.all([
+    import("./challans"),
+    import("./masters"),
+    import("./recipes"),
+  ]);
+  useChallans.getState().reset();
+  useMasters.getState().reset();
+  useRecipes.getState().reset();
+}
+
 export type User = {
   id: string;
   phone: string | null;
@@ -282,6 +297,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
         // workspaceId key prevents cross-account display but the memory is
         // still the prior account's data — drop it with the storage.
         invalidateDataCaches();
+        await resetPageStores();
         void core()
           .writeToken(null)
           .catch(() => {});
@@ -345,9 +361,8 @@ export const useAuth = create<AuthState>()((set, get) => ({
       // Same contract as the 401 path: page module caches go with the
       // account (see data-caches).
       invalidateDataCaches();
+      await resetPageStores();
       recountPending();
-      const { useChallans } = await import("./challans");
-      useChallans.getState().clearSummaryCache();
       set({
         status: "guest",
         user: null,

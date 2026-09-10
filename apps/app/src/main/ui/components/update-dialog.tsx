@@ -9,6 +9,7 @@
  */
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";
+import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { Button } from "@/ui/components/ui/button";
 import {
   Dialog,
@@ -41,7 +42,7 @@ export function UpdateDialog() {
   const requiredMinVersion = useUpdates((s) => s.requiredMinVersion);
   const installUpdate = useUpdates((s) => s.installUpdate);
   const status = useUpdates((s) => s.status);
-  const percent = useUpdates((s) => s.percent);
+  const progress = useUpdates((s) => s.progress);
   const copy = actionCopy();
   const busy = status === "downloading";
 
@@ -63,15 +64,21 @@ export function UpdateDialog() {
             <DialogDescription>{copy.description}</DialogDescription>
           </DialogHeader>
         </div>
+        {busy && progress && (
+          <p
+            className="text-center text-xs tabular-nums text-muted-foreground"
+            role="status"
+          >
+            {formatUpdateProgress(progress)}
+          </p>
+        )}
         <Button
           className="w-full"
           onClick={() => void installUpdate()}
           disabled={busy}
           loading={busy}
         >
-          {busy
-            ? `Downloading… ${percent !== null ? `${percent}%` : ""}`
-            : copy.cta}
+          {busy ? "Downloading…" : copy.cta}
         </Button>
       </DialogContent>
     </Dialog>

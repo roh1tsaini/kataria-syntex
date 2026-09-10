@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "ks-biz-app-db",
       // CI auto-provisions the database and injects the real id on deploy
-      // (.github/workflows/cf-deploy.yml). Local dev works as-is with the
+      // (.github/workflows/pipeline.yml). Local dev works as-is with the
       // placeholder — wrangler backs it with a local SQLite database.
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "drizzle",
@@ -28,7 +28,7 @@
       "binding": "RELEASES",
       // Installers, APK and update manifests under app/ — served publicly at
       // /releases/* by the worker (src/server/lib/releases.ts). CI ensures
-      // the bucket exists before deploying (.github/workflows/cf-deploy.yml),
+      // the bucket exists before deploying (.github/workflows/pipeline.yml),
       // mirroring the D1 flow; local dev simulates it with the same name.
       "bucket_name": "ks-releases",
     },

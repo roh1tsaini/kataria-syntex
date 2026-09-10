@@ -3,28 +3,38 @@
  * version out?". ONE state shape and ONE surface set (banner for
  * non-blocking, blocking dialog for the 426 floor) for every host.
  *
- * - Web/PWA: the service worker is the updater, in "prompt" mode. A new
- *   deploy installs (precaches) in the background; the SW never activates
- *   itself and the tab never auto-reloads. The banner shows "ready to
- *   update"; installUpdate() sends skip-waiting, then reloads once the
- *   waiting worker controls the page. A hidden update check runs hourly so
+ * - Web/PWA: the custom service worker (src/main/sw.ts) installs a new
+ *   deploy sequentially and posts ks:sw-progress messages — this store
+ *   turns them into live download progress (percent, size, ETA) on the
+ *   banner. When the new worker is fully cached it sits WAITING; the
+ *   banner's "reload to apply" sends SKIP_WAITING and reloads on the
+ *   resulting controllerchange. The worker never activates itself and a
+ *   tab is never force-reloaded. A hidden update check runs hourly so
  *   long-lived tabs find deploys.
  * - Electron Windows/Linux: status is pushed over the kc:update:* IPC bridge
- *   (electron/updater.ts) — silent background download, "restart to update".
+ *   (electron/updater.ts) — silent background download with byte progress,
+ *   "restart to update" when staged.
  * - Electron macOS: polls latest.json from the Worker's /releases bucket on
  *   launch + every 4h; the banner drives the dmg download. (The Android app
  *   runs its own manifest poller — apps/android.)
  *
  * Force updates (server 426 / published minVersion) set `requiredMinVersion`,
  * which the blocking dialog in ui/components/update-dialog.tsx renders
- * undismissably. On web that action awaits SW activation before reloading —
- * see applyWebUpdate().
+ * undismissably. The non-blocking banner can be dismissed — the dismissal
+ * remembers the version, so the banner stays gone until the NEXT version
+ * ships instead of nagging on every load.
  */
 import { create } from "zustand";
 import { compareSemver } from "@kataria-syntex/shared";
-import { apiOrigin, setUpdateRequiredHandler } from "@kataria-syntex/app-core";
-import { registerSW } from "virtual:pwa-register";
-import { detectHost } from "@/lib/platform";
+import {
+  apiOrigin,
+  createEtaEstimator,
+  setUpdateRequiredHandler,
+  type UpdateProgress,
+} from "@kataria-syntex/app-core";
+import { desktopBridge } from "@/lib/platform";
+
+export type { UpdateProgress };
 
 export type UpdateState = {
   /** Latest version published to /releases, when known. */
@@ -33,20 +43,27 @@ export type UpdateState = {
   requiredMinVersion: string | null;
   /** Coarse status for the Settings row / banner. */
   status: "idle" | "checking" | "downloading" | "ready" | "error";
-  /** Download percent while status === "downloading" (Android). */
-  percent: number | null;
+  /** Live download/install progress — null when nothing is in flight. */
+  progress: UpdateProgress | null;
   /** True while a manual (Settings) check is in flight. */
   checking: boolean;
   /** Host-specific artifact URL from the manifest (macOS dmg). */
   downloadUrl: string | null;
   /**
    * Web/PWA only — truthy once a new service worker is WAITING (new build
-   * fully precached, not yet controlling). Set by onNeedRefresh.
+   * fully cached, not yet controlling).
    */
   swWaiting: boolean;
+  /** Version deferred via the banner's dismiss — hides the banner until a
+   * different version ships. */
+  dismissedVersion: string | null;
+  /** Set by dismiss() even when the published version isn't known yet —
+   * hides the banner for this page session unconditionally. */
+  dismissedThisSession: boolean;
   checkNow: () => Promise<"up-to-date" | "available" | "error">;
   installUpdate: () => Promise<void>;
   markRequired: (minVersion: string) => void;
+  dismiss: () => void;
 };
 
 /** Where latest.json lives (same origin; native shells bake the absolute origin). */
@@ -81,7 +98,7 @@ async function fetchManifest(): Promise<LatestManifest | null> {
 
 /** macOS Electron reports as desktop but updates via manifest + dmg. */
 function usesManifestFlow(): boolean {
-  return detectHost() === "electron" && window.desktop?.platform === "darwin";
+  return desktopBridge()?.platform === "darwin";
 }
 
 /** The manifest artifact this host installs. */
@@ -98,81 +115,14 @@ const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 /** Hidden service-worker update probe for long-lived tabs. */
 const SW_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
-/**
- * Web/PWA install flow. prompt-mode registration; `updateSW()` messages the
- * waiting worker to skipWaiting, then this side reloads ONLY after the
- * "controlling" event (the waiting worker is active) — a reload before that
- * would just re-serve the old precached shell and never converge on a 426.
- */
-let updateSwFn: ((reloadPage?: boolean) => Promise<void>) | null = null;
-let swWaitingResolve: (() => void) | null = null;
+const DISMISS_KEY = "updates.dismissedVersion";
 
-function registerServiceWorker(): void {
-  if ("serviceWorker" in navigator) {
-    updateSwFn = registerSW({
-      immediate: true,
-      onNeedRefresh: () => {
-        useUpdates.setState({ swWaiting: true, status: "ready" });
-        // The SW events carry no version number — read the published
-        // manifest so the banner can show one (also re-arms the 426 floor).
-        void useUpdates.getState().checkNow();
-        if (swWaitingResolve) {
-          swWaitingResolve();
-          swWaitingResolve = null;
-        }
-      },
-    });
+function readDismissedVersion(): string | null {
+  try {
+    return localStorage.getItem(DISMISS_KEY);
+  } catch {
+    return null;
   }
-}
-
-/** Resolves once a waiting worker exists (immediately if one is already
- * there, else after probing the registration with a bounded timeout). */
-function waitForWaitingWorker(timeoutMs = 10_000): Promise<void> {
-  return new Promise((resolve) => {
-    if (useUpdates.getState().swWaiting) {
-      resolve();
-      return;
-    }
-    swWaitingResolve = resolve;
-    // A 426 can land before the browser's own update check has fetched the
-    // new sw.js — force a check so the waiting worker materializes instead
-    // of us timing out into a plain reload.
-    void navigator.serviceWorker
-      ?.getRegistration()
-      .then((reg) => {
-        void reg?.update().catch(() => {});
-      })
-      .catch(() => {});
-    let elapsed = 0;
-    const timer = setInterval(() => {
-      elapsed += 500;
-      if (useUpdates.getState().swWaiting || elapsed >= timeoutMs) {
-        clearInterval(timer);
-        if (swWaitingResolve === resolve) swWaitingResolve = null;
-        resolve();
-      }
-    }, 500);
-  });
-}
-
-/**
- * Web/PWA install flow. registerType "prompt": the waiting worker never
- * activates itself, and the registered plugin callback reloads the page ONLY
- * after the new worker takes control (the `controlling` event) — so this
- * side must never race it with its own reload.
- */
-async function applyWebUpdate(): Promise<void> {
-  if (!updateSwFn) {
-    // Registration failed / unsupported — a plain reload still re-fetches
-    // the fresh shell (index.html is no-cache) and re-arms the 426 gate.
-    window.location.reload();
-    return;
-  }
-  await waitForWaitingWorker();
-  await updateSwFn();
-  // Reload happens via the plugin's controlling listener. If no waiting
-  // worker materialized within the timeout, force the handover ourselves.
-  if (!useUpdates.getState().swWaiting) window.location.reload();
 }
 
 // Wire the api client's 426 classifier to the blocking-dialog state. Module
@@ -181,25 +131,38 @@ setUpdateRequiredHandler((minVersion) =>
   useUpdates.getState().markRequired(minVersion),
 );
 
+// ETA math shared by every host's progress source (only one is ever active).
+const etaFrom = createEtaEstimator();
+
 export const useUpdates = create<UpdateState>()((set, get) => ({
   latestVersion: null,
   requiredMinVersion: null,
   status: "idle",
-  percent: null,
+  progress: null,
   checking: false,
   downloadUrl: null,
   swWaiting: false,
+  dismissedVersion: readDismissedVersion(),
+  dismissedThisSession: false,
 
   checkNow: async () => {
     set({ checking: true });
     try {
-      if (detectHost() === "electron" && !usesManifestFlow()) {
-        const res = await window.desktop?.checkForUpdate();
-        if (res?.kind === "available" || res?.kind === "ready") {
-          set({ latestVersion: res.version, status: "ready" });
+      const desktop = desktopBridge();
+      if (desktop && !usesManifestFlow()) {
+        const res = await desktop.checkForUpdate();
+        if (res.kind === "available") {
+          // autoDownload is on in the shell — the "downloading" event follows
+          // immediately; "ready" must wait for update-downloaded, not fire
+          // while the installer is still on the wire.
+          set({ latestVersion: res.version, status: "idle", progress: null });
           return "available";
         }
-        return res?.kind === "error" ? "error" : "up-to-date";
+        if (res.kind === "ready") {
+          set({ latestVersion: res.version, status: "ready", progress: null });
+          return "available";
+        }
+        return res.kind === "error" ? "error" : "up-to-date";
       }
       // Web and macOS Electron read the same published manifest. (Web
       // additionally learns about deploys via the SW waiting event — this
@@ -215,7 +178,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         set({ status: "ready" });
         return "available";
       }
-      // A waiting worker (deploy mid-install) is surfaced by onNeedRefresh.
+      // A waiting worker (deploy mid-install) is surfaced by the SW events.
       return "up-to-date";
     } finally {
       set({ checking: false });
@@ -223,18 +186,21 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   installUpdate: async () => {
-    if (detectHost() === "electron") {
+    const desktop = desktopBridge();
+    if (desktop) {
       if (usesManifestFlow()) {
         // macOS: hand the published dmg to the OS browser.
         const url = get().downloadUrl;
-        if (url) await window.desktop?.openReleaseUrl(url);
+        if (url) await desktop.openReleaseUrl(url);
         return;
       }
-      await window.desktop?.restartToUpdate();
+      await desktop.restartToUpdate();
       return;
     }
-    // Web/PWA: skip-waiting → wait for the new worker to control the page →
-    // reload. Safe from the banner AND from the 426 dialog.
+    // Web/PWA: skip-waiting → the new worker takes control → the
+    // controllerchange listener reloads. Only meaningful once the new build
+    // is fully cached (waiting) — mid-install there is nothing to apply.
+    if (!get().swWaiting) return;
     await applyWebUpdate();
   },
 
@@ -245,7 +211,178 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       set({ requiredMinVersion: minVersion });
     }
   },
+
+  dismiss: () => {
+    const version = get().latestVersion;
+    if (version) {
+      try {
+        localStorage.setItem(DISMISS_KEY, version);
+      } catch {
+        // storage unavailable — dismissal stays for this session only
+      }
+    }
+    // Unknown version (manifest unreachable) still hides the banner — for
+    // this page session; a persisted defer needs the version to compare
+    // against the next deploy.
+    set({
+      dismissedThisSession: true,
+      ...(version ? { dismissedVersion: version } : {}),
+    });
+  },
 }));
+
+// ── Web/PWA service-worker flow ─────────────────────────────────────────────
+
+type SwProgressEvent =
+  | {
+      type: "ks:sw-progress";
+      stage: "install";
+      done: number;
+      totalFiles: number;
+      bytes: number;
+      totalBytes: number;
+    }
+  | { type: "ks:sw-progress"; stage: "done" }
+  | { type: "ks:sw-progress"; stage: "error" };
+
+function isSwProgressEvent(value: unknown): value is SwProgressEvent {
+  if (value === null || typeof value !== "object") return false;
+  const rec = value as Record<string, unknown>;
+  if (rec.type !== "ks:sw-progress") return false;
+  return (
+    rec.stage === "install" || rec.stage === "done" || rec.stage === "error"
+  );
+}
+
+function handleSwProgress(event: SwProgressEvent): void {
+  if (event.stage === "error") {
+    // Install failed — the old version keeps working; the hourly probe
+    // retries. No UI state: the banner simply never appears.
+    etaFrom.reset();
+    useUpdates.setState({ status: "idle", progress: null });
+    return;
+  }
+  // The new build is fully cached — install-phase messages (which can arrive
+  // straggling after the worker reached "installed") must never override the
+  // ready state or re-disable the apply button.
+  if (useUpdates.getState().swWaiting) return;
+  if (event.stage === "done") {
+    void observeRegistration();
+    return;
+  }
+  // Fill the banner's version number from the published manifest once, and
+  // attach to the installing worker (updatefound may have fired before the
+  // page attached its listeners — installs start during navigation).
+  if (!useUpdates.getState().latestVersion) {
+    void useUpdates.getState().checkNow();
+  }
+  void observeRegistration();
+  const percent =
+    event.totalBytes > 0
+      ? (event.bytes / event.totalBytes) * 100
+      : (event.done / event.totalFiles) * 100;
+  useUpdates.setState({
+    status: "downloading",
+    progress: {
+      percent,
+      transferredBytes: event.bytes,
+      totalBytes: event.totalBytes,
+      etaSeconds: etaFrom.sample(event.bytes, event.totalBytes),
+    },
+  });
+}
+
+/** Set only by installUpdate() — the controllerchange listener reloads the
+ * page ONLY for a user-requested apply, never for a first install/claim. */
+let applyRequested = false;
+
+async function registerServiceWorker(): Promise<void> {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (applyRequested) window.location.reload();
+  });
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    const data: unknown = event.data;
+    if (isSwProgressEvent(data)) handleSwProgress(data);
+  });
+  try {
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    watchForWaiting(reg);
+    // Installs start at the navigation-time update check — they can begin
+    // (and even finish) before this page's listeners exist, and no message
+    // will have arrived to re-arm the watch. Re-check the registration a
+    // few times after load; observeRegistration is idempotent.
+    for (const delay of [1_000, 4_000, 15_000]) {
+      setTimeout(() => void observeRegistration(), delay);
+    }
+  } catch {
+    // Registration blocked/unsupported — the app still works online; the
+    // manifest check keeps arming the 426 floor.
+  }
+}
+
+/** A worker that finished installing while an old one still controls the
+ * page is a WAITING update — announce it to the banner. */
+function announceWaiting(): void {
+  if (!navigator.serviceWorker.controller) return; // first install
+  if (useUpdates.getState().swWaiting) return;
+  etaFrom.reset();
+  void useUpdates.getState().checkNow();
+  useUpdates.setState({ swWaiting: true, progress: null, status: "ready" });
+}
+
+function watchForWaiting(reg: ServiceWorkerRegistration): void {
+  // An update may already be waiting from before this page load.
+  if (reg.waiting) announceWaiting();
+  reg.addEventListener("updatefound", () => {
+    const installing = reg.installing;
+    if (!installing) return;
+    installing.addEventListener("statechange", () => {
+      if (installing.state === "installed") announceWaiting();
+    });
+  });
+}
+
+/** (Re)attaches waiting/installing observation to the current registration —
+ * safe to call repeatedly; installs can start before the page's listeners
+ * exist, so progress messages re-arm the watch mid-flight. */
+async function observeRegistration(): Promise<void> {
+  const reg = await navigator.serviceWorker
+    ?.getRegistration()
+    .catch(() => undefined);
+  if (!reg) return;
+  if (reg.waiting) {
+    announceWaiting();
+    return;
+  }
+  const worker = reg.installing;
+  if (worker) {
+    worker.addEventListener("statechange", () => {
+      if (worker.state === "installed") announceWaiting();
+    });
+  }
+}
+
+async function applyWebUpdate(): Promise<void> {
+  const reg = await navigator.serviceWorker
+    ?.getRegistration()
+    .catch(() => undefined);
+  const waiting = reg?.waiting;
+  if (!waiting || !navigator.serviceWorker.controller) {
+    // Nothing to hand over to — a plain reload re-fetches the fresh shell
+    // (index.html is no-cache) and re-arms the 426 gate.
+    window.location.reload();
+    return;
+  }
+  applyRequested = true;
+  waiting.postMessage({ type: "SKIP_WAITING" });
+  // The controllerchange listener (wired at registration) reloads as soon as
+  // the new worker controls the page. If activation stalls, force the
+  // handover after a generous window — an early reload would just re-serve
+  // the old precached shell and never converge.
+  await new Promise((resolve) => setTimeout(resolve, 10_000));
+  if (useUpdates.getState().swWaiting) window.location.reload();
+}
 
 /** Launch-time wiring: SW registration (web), the macOS poller, IPC events.
  * StrictMode mounts App twice in dev — wire exactly once. */
@@ -254,12 +391,11 @@ let updateChecksWired = false;
 export function initUpdateChecks(): void {
   if (updateChecksWired) return;
   updateChecksWired = true;
-  const host = detectHost();
-  if (host === "web") {
-    registerServiceWorker();
-    // Long-lived tabs: prompt-mode SWs are checked by the browser on
-    // navigation only, so a standalone PWA window left open for days would
-    // never see a deploy. The hourly probe covers that.
+  if (desktopBridge() === null) {
+    void registerServiceWorker();
+    // Long-lived tabs: SWs are checked by the browser on navigation only, so
+    // a standalone PWA window left open for days would never see a deploy.
+    // The hourly probe covers that.
     setInterval(() => {
       void navigator.serviceWorker?.getRegistrations().then((regs) => {
         for (const reg of regs) void reg.update();
@@ -270,15 +406,34 @@ export function initUpdateChecks(): void {
   void useUpdates.getState().checkNow();
   setInterval(() => void useUpdates.getState().checkNow(), CHECK_INTERVAL_MS);
 
-  if (host === "electron" && window.desktop?.onUpdateStatus) {
-    window.desktop.onUpdateStatus((s) => {
-      if (s.kind === "available" || s.kind === "ready") {
+  const desktop = desktopBridge();
+  if (desktop?.onUpdateStatus) {
+    desktop.onUpdateStatus((s) => {
+      if (s.kind === "available") {
+        // Match checkNow: the download starts automatically in the shell.
         useUpdates.setState({
           latestVersion: s.version,
-          status: s.kind === "ready" ? "ready" : "idle",
+          status: "idle",
+          progress: null,
         });
+        etaFrom.reset();
+      } else if (s.kind === "ready") {
+        useUpdates.setState({
+          latestVersion: s.version,
+          status: "ready",
+          progress: null,
+        });
+        etaFrom.reset();
       } else if (s.kind === "downloading") {
-        useUpdates.setState({ status: "downloading" });
+        useUpdates.setState({
+          status: "downloading",
+          progress: {
+            percent: s.percent,
+            transferredBytes: s.transferred,
+            totalBytes: s.total,
+            etaSeconds: etaFrom.sample(s.transferred, s.total),
+          },
+        });
       }
     });
   }
@@ -287,10 +442,15 @@ export function initUpdateChecks(): void {
 /** True where the banner (not the blocking dialog) is the update surface. */
 export function showUpdateBanner(): boolean {
   const s = useUpdates.getState();
-  if (detectHost() === "web") {
-    // Web banner: a waiting service worker (new build precached, ready to
-    // apply). The blocking dialog covers the 426 floor separately.
-    return s.swWaiting && !s.requiredMinVersion;
+  if (s.requiredMinVersion) return false;
+  if (s.dismissedThisSession) return false;
+  // Deferred via the banner's dismiss — hidden until a different version.
+  if (s.dismissedVersion && s.latestVersion === s.dismissedVersion) {
+    return false;
   }
-  return usesManifestFlow() && s.status === "ready" && !s.requiredMinVersion;
+  if (desktopBridge() === null) {
+    // Web/PWA: live install progress, then the waiting worker.
+    return s.progress !== null || s.swWaiting;
+  }
+  return usesManifestFlow() && s.status === "ready";
 }

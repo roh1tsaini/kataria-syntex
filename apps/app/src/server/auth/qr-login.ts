@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { Db } from "../lib/db";
 import { invites, memberships, qrLogins, users } from "../db/schema";
 import { generateId, generateQrLoginCode } from "../lib/token";
@@ -134,6 +134,12 @@ export async function approveQrLogin(
           and(
             eq(invites.workspaceId, approver.workspaceId),
             isNull(invites.consumedAt),
+            // Expired pre-adds are dead everywhere else (see members.ts) —
+            // the QR grant path must not resurrect them.
+            or(
+              isNull(invites.expiresAt),
+              gt(invites.expiresAt, toIso(new Date())),
+            ),
             eq(
               row.identifier.includes("@") ? invites.email : invites.phone,
               row.identifier,

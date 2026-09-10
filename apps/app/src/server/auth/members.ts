@@ -138,16 +138,20 @@ export async function attachExistingUser(
   permissions: Permission[],
 ): Promise<void> {
   const nowIso = toIso(new Date());
-  await d
-    .insert(memberships)
-    .values({ userId, workspaceId, isPrimaryAdmin: false, joinedAt: nowIso })
-    .onConflictDoNothing();
-  for (const perm of permissions) {
-    await d
-      .insert(memberPermissions)
-      .values({ userId, workspaceId, permission: perm })
-      .onConflictDoNothing();
-  }
+  // One batch — a mid-loop failure must not leave the user attached with a
+  // partial permission set (same invariant as setMemberPermissions below).
+  await d.batch([
+    d
+      .insert(memberships)
+      .values({ userId, workspaceId, isPrimaryAdmin: false, joinedAt: nowIso })
+      .onConflictDoNothing(),
+    ...permissions.map((perm) =>
+      d
+        .insert(memberPermissions)
+        .values({ userId, workspaceId, permission: perm })
+        .onConflictDoNothing(),
+    ),
+  ]);
 }
 
 export type MemberRow = {

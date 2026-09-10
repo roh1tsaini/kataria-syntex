@@ -72,10 +72,26 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // Updates are user-applied: a new deploy installs in the background and
-      // the update banner (update-surface.tsx) applies it on click. The
-      // service worker never force-reloads a tab mid-edit.
-      registerType: "prompt",
+      // Custom service worker (src/main/sw.ts) — owns the precache install
+      // loop so the app can show real download progress during a deploy, and
+      // owns the prompt-mode apply flow (SKIP_WAITING on click, never an
+      // automatic reload). Updates are user-applied; a tab is never
+      // force-reloaded mid-edit.
+      strategies: "injectManifest",
+      srcDir: "src/main",
+      filename: "sw.ts",
+      // Registration lives in store/updates.ts (it must attach the progress
+      // message listeners BEFORE registering) — no plugin bootstrap script.
+      injectRegister: null,
+      injectManifest: {
+        // Precache every JS/CSS chunk: the app is offline-capable by design
+        // (lib/offline queues challans against cached masters/session), so
+        // every route chunk must load with no network. This is the standard
+        // shape for offline SPAs — do NOT narrow it to "the shell"; lazy
+        // routes would 404 offline. TTFs are the one deliberate exception
+        // (first-use runtime cache in sw.ts).
+        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+      },
       manifest: {
         name: "Kataria Syntex Biz App",
         short_name: "KS Biz App",
@@ -86,7 +102,7 @@ export default defineConfig({
         orientation: "any",
         start_url: "/",
         scope: "/",
-        theme_color: "#141210",
+        theme_color: "#0a0a0a",
         background_color: "#0a0a0a",
         icons: [
           { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
@@ -102,42 +118,6 @@ export default defineConfig({
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
-          },
-        ],
-      },
-      workbox: {
-        // API calls are never cached — offline queuing is handled in-app
-        // (lib/offline) against explicit user intent, not a stale SW cache.
-        // /releases/* must bypass the SPA fallback too: the fallback would
-        // answer installer/APK downloads with cached index.html (users get
-        // an .htm file instead of the app).
-        navigateFallbackDenylist: [/^\/api\//, /^\/releases\//],
-        // Precache every JS/CSS chunk: the app is offline-capable by design
-        // (lib/offline queues challans against cached masters/session), so
-        // every route chunk must load with no network. This is the standard
-        // workbox shape for offline SPAs — do NOT narrow it to "the shell";
-        // lazy routes would 404 offline. TTFs are the one deliberate
-        // exception (runtime cache below); the plugin auto-adds the four
-        // small manifest icons.
-        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
-        runtimeCaching: [
-          {
-            // Inter TTFs (~1.6 MB, fetched only when rendering a challan
-            // PDF) cache on first use instead of riding every release's
-            // precache diff. Content-hashed URLs + versioned cache name: a
-            // new app version starts fresh and cleanupOutdatedCaches
-            // removes the old one.
-            urlPattern: /\.ttf$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "app-runtime-v1",
-              expiration: {
-                maxEntries: 8,
-                maxAgeSeconds: 30 * 24 * 60 * 60,
-                purgeOnQuotaError: true,
-              },
-              cacheableResponse: { statuses: [200] },
-            },
           },
         ],
       },

@@ -79,6 +79,13 @@ export function PackingImportDialog({
     });
   };
 
+  // Closing by any path (Cancel, Escape, overlay, import) drops the stale
+  // selection — reopening starts clean instead of pre-checking old rows.
+  const handleOpenChange = (next: boolean) => {
+    onOpenChange(next);
+    if (!next) setSelected(new Set());
+  };
+
   const importSelected = () => {
     const items: PackingItem[] = [];
     for (const entry of entries) {
@@ -87,12 +94,11 @@ export function PackingImportDialog({
       }
     }
     onImport(items);
-    onOpenChange(false);
-    setSelected(new Set());
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Import from Packing</DialogTitle>

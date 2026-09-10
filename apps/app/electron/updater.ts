@@ -22,7 +22,13 @@ export type UpdateStatus =
   | { kind: "checking" }
   | { kind: "available"; version: string }
   | { kind: "not-available" }
-  | { kind: "downloading"; percent: number }
+  | {
+      kind: "downloading";
+      percent: number;
+      transferred: number;
+      total: number;
+      bytesPerSecond: number;
+    }
   | { kind: "ready"; version: string }
   | { kind: "error"; message: string };
 
@@ -75,7 +81,13 @@ export function initUpdater(getWin: () => BrowserWindow | null): void {
     broadcast({ kind: "not-available" }),
   );
   autoUpdater.on("download-progress", (progress) =>
-    broadcast({ kind: "downloading", percent: Math.round(progress.percent) }),
+    broadcast({
+      kind: "downloading",
+      percent: Math.round(progress.percent),
+      transferred: progress.transferred,
+      total: progress.total,
+      bytesPerSecond: progress.bytesPerSecond,
+    }),
   );
   autoUpdater.on("update-downloaded", (info) =>
     broadcast({ kind: "ready", version: info.version ?? "" }),

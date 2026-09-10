@@ -50,7 +50,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   }, [start]);
 
   useEffect(() => {
-    if (!pairing || secondsLeft <= 0) return;
+    if (!pairing) return;
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | null = null;
 

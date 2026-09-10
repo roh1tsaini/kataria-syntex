@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import { useRouter } from "expo-router";
 import {
   useAuth,
   friendlyError,
@@ -39,6 +40,8 @@ function countdownParts(expiresAt: string | null): {
 export function QrLoginPanel({ identifier }: { identifier?: string }) {
   const startQrLogin = useAuth((s) => s.startQrLogin);
   const pollQrLogin = useAuth((s) => s.pollQrLogin);
+  const authed = useAuth((s) => s.status === "authed");
+  const router = useRouter();
   const [pairing, setPairing] = useState<QrLoginCode | null>(null);
   const [polling, setPolling] = useState<
     "pending" | "expired" | "not_found" | null
@@ -65,6 +68,12 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   useEffect(() => {
     void start();
   }, [start]);
+
+  // Approval flips the session on the store — leave the QR screen the same
+  // way OTP login does (web's panel navigates identically).
+  useEffect(() => {
+    if (authed) router.replace("/");
+  }, [authed, router]);
 
   useEffect(() => {
     if (!pairing || total <= 0) return;

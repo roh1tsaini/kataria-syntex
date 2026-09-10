@@ -6,7 +6,7 @@
  * installer (REQUEST_INSTALL_PACKAGES).
  *
  * Same manifest contract as every other shell: /releases/app/android/latest.json
- * published by .github/workflows/app-build.yml.
+ * published by .github/workflows/pipeline.yml.
  */
 
 import * as FileSystem from "expo-file-system/legacy";
@@ -56,14 +56,18 @@ function artifactUrl(apiBase: string, manifest: UpdateManifest): string | null {
   return `${apiBase}${apk}`;
 }
 
+/** Live download progress — bytes on the wire and the APK's total size
+ * (0 until Content-Length arrives). */
+export type ApkProgress = { bytes: number; total: number };
+
 /**
  * Streams the APK to the app's private cache, then hands the file to the
- * system installer. onPercent reports 0–100. Throws on any failure — the
- * update store maps that to status "error".
+ * system installer. onProgress fires as chunks land (bytes/total). Throws on
+ * any failure — the update store maps that to status "error".
  */
 export async function downloadAndInstallApk(
   apiBase: string,
-  onPercent: (percent: number) => void,
+  onProgress: (progress: ApkProgress) => void,
 ): Promise<void> {
   const manifest = await fetchManifest(apiBase);
   if (!manifest) throw new Error("manifest_unavailable");
@@ -76,11 +80,18 @@ export async function downloadAndInstallApk(
     { intermediates: true },
   ).catch(() => {});
 
-  // Download in the background session type so large APKs survive
-  // app switches. /releases is public by design (install links work in any
-  // browser), so no Authorization header is needed.
-  const res = await FileSystem.downloadAsync(url, target);
-  onPercent(100);
+  // Resumable session (instead of downloadAsync) so the store gets live
+  // byte progress for the update dialog's size/percent/ETA readout.
+  // /releases is public by design (install links work in any browser), so
+  // no Authorization header is needed.
+  const download = FileSystem.createDownloadResumable(url, target, {}, (p) => {
+    onProgress({
+      bytes: p.totalBytesWritten,
+      total: p.totalBytesExpectedToWrite,
+    });
+  });
+  const res = await download.downloadAsync();
+  if (!res) throw new Error("download_failed");
 
   if (Platform.OS !== "android") throw new Error("android_only");
 

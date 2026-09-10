@@ -27,4 +27,5 @@ export * from "./validation";
 export * from "./math";
 export * from "./fy";
 export * from "./semver";
+export * from "./format";
 export * from "./realtime";

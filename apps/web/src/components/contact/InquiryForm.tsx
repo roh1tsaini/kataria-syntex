@@ -1,13 +1,22 @@
 "use client";
 
-import { cloneElement, useEffect, useState, type FormEvent } from "react";
+import {
+  cloneElement,
+  useCallback,
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { products } from "@kataria-syntex/shared";
-import { inquirySchema, type InquiryInput } from "@kataria-syntex/shared";
+import {
+  cn,
+  inquirySchema,
+  products,
+  type InquiryInput,
+} from "@kataria-syntex/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@kataria-syntex/shared";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -33,19 +42,28 @@ const emptyDraft: Draft = {
  */
 function useDraft() {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  // Hydration gate: without it the persist effect's first run would write
+  // the empty draft over the saved one before the loaded state lands.
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}");
       setDraft({ ...emptyDraft, ...saved });
     } catch {
       // corrupt draft — start fresh
+    } finally {
+      setHydrated(true);
     }
   }, []);
   useEffect(() => {
+    if (!hydrated) return;
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  }, [draft]);
-  const setField = <K extends keyof Draft>(field: K, value: Draft[K]) =>
-    setDraft((d) => ({ ...d, [field]: value }));
+  }, [draft, hydrated]);
+  const setField = useCallback(
+    <K extends keyof Draft>(field: K, value: Draft[K]) =>
+      setDraft((d) => ({ ...d, [field]: value })),
+    [],
+  );
   const reset = () => setDraft(emptyDraft);
   return { ...draft, setField, reset };
 }
@@ -108,8 +126,7 @@ export function InquiryForm({ initialProduct }: { initialProduct?: string }) {
   // Deep links like /contact?product=... pre-fill the draft.
   useEffect(() => {
     if (initialProduct) draft.setField("product", initialProduct);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialProduct]);
+  }, [initialProduct, draft.setField]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

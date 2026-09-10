@@ -3,7 +3,7 @@
  * bucket via the Cloudflare REST API, writes the update manifests, and
  * verifies every published URL resolves before declaring success.
  *
- * Runs in .github/workflows/app-build.yml after the desktop/Android builds.
+ * Runs in .github/workflows/pipeline.yml after the desktop/Android builds.
  * Latest-only retention: a new release replaces every previous object under
  * app/ (the 10 GB free tier stays empty; caches stay valid because artifact
  * filenames are versioned and only the manifests keep stable URLs).

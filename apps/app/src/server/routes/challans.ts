@@ -15,7 +15,8 @@ import {
   stockEntries,
 } from "../db/schema";
 import { likeContains } from "../lib/like";
-import { challanBodySchema } from "@kataria-syntex/shared";
+import { toDate } from "../lib/datetime";
+import { challanBodySchema, fyForDate } from "@kataria-syntex/shared";
 import { consumeBudget } from "../lib/rate-limit";
 import {
   createChallan,
@@ -120,7 +121,10 @@ challansRoute.get("/", async (c) => {
       : Promise.resolve([] as Array<{ count: number }>),
   ]);
 
-  const total = Number(countRes[0]?.count ?? 0);
+  // Unpaged reads return every matching row, so the count IS rows.length —
+  // a 0 here would make the client's total fallback ("N records", page
+  // count) lie until the next paginated refresh.
+  const total = paged ? Number(countRes[0]?.count ?? 0) : rows.length;
   return c.json({
     items: rows.map((r) =>
       toChallanDto(r, labelById.get(r.financialYearId) ?? ""),
@@ -220,7 +224,14 @@ challansRoute.post("/", requirePermission("create_challan"), async (c) => {
     c.req.header("x-client-id"),
     ["challans", "stock"],
   );
-  return c.json(result);
+  // Same DTO shape as PUT — clients type the response challan as a
+  // ChallanDto (fyLabel included), not the raw insert row.
+  return c.json({
+    challan: toChallanDto(
+      result.challan,
+      fyForDate(toDate(result.challan.date)).label,
+    ),
+  });
 });
 
 // ── Update ───────────────────────────────────────────────────────────────────

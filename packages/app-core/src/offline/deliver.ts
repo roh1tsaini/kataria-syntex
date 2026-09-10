@@ -18,7 +18,6 @@ export async function deliver(p: PendingChallan): Promise<DeliverResult> {
         ...p.input,
         offline: {
           clientRef: p.clientRef,
-          originDevice: p.originDevice,
           challanNumber: p.challanNumber,
           seq: p.seq,
           fyLabel: p.fyLabel,

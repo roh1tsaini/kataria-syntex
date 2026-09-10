@@ -14,7 +14,7 @@
       "binding": "INQUIRY_DB",
       "database_name": "ks-web-db",
       // CI auto-provisions the database and injects the real id on deploy
-      // (.github/workflows/cf-deploy.yml). Local dev reads bindings from this
+      // (.github/workflows/pipeline.yml). Local dev reads bindings from this
       // file through the Cloudflare Vite plugin.
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "drizzle",
