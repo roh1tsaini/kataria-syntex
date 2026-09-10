@@ -6,10 +6,13 @@
  *
  * - install caches every manifest entry SEQUENTIALLY, skipping files already
  *   cached by the previous version, and broadcasts byte progress to the app
- *   (ks:sw-progress messages) so the update banner can show
- *   "34% · 12.8 of 38.1 MB · ~20s left" while a deploy downloads.
- * - fetch serves precached assets cache-first, the precached index.html for
- *   navigations (never for /api/* or /releases/*), and caches the Inter TTFs
+ *   (ks:sw-progress messages) so Settings can show
+ *   "34% · 12.8 of 38.1 MB · ~20s left" while a deploy downloads. The banner
+ *   stays silent during the download — it only appears once the build is
+ *   ready to apply.
+ * - fetch serves precached assets cache-first, network-first for navigations
+ *   (fresh shell on every load, precached index.html as the offline
+ *   fallback) — never for /api/* or /releases/* — and caches the Inter TTFs
  *   on first use (they only matter when rendering a challan PDF).
  * - prompt mode: the worker NEVER activates itself — the app posts
  *   SKIP_WAITING when the user clicks "Reload to update", and reloads on the
@@ -143,9 +146,23 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
+        // Network-first: every full page load revalidates the shell against
+        // the edge (index.html is no-cache), so a deployed build reaches an
+        // open tab on its next navigation without waiting for the new worker
+        // to activate. The precached copy is the offline fallback only — a
+        // cache-first navigation would pin the old __APP_VERSION__ until the
+        // user clicks through the banner, which is the every-page nag loop.
         const cache = await caches.open(PRECACHE);
-        const cached = await cache.match(INDEX_KEY);
-        return cached ?? fetch(request);
+        try {
+          const fresh = await fetch(request);
+          if (fresh.ok) return fresh;
+          const cached = await cache.match(INDEX_KEY);
+          return cached ?? fresh;
+        } catch {
+          const cached = await cache.match(INDEX_KEY);
+          if (cached) return cached;
+          throw new Error("offline without a cached shell");
+        }
       })(),
     );
     return;

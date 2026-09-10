@@ -3,6 +3,11 @@ import { inquirySchema } from "@kataria-syntex/shared";
 
 export const dynamic = "force-dynamic";
 
+// Inquiry responses carry per-submission results — never cacheable by the
+// browser or the edge. POSTs are not cached by default, but the header pins
+// the contract explicitly (same story as the business app's /api/* no-store).
+const NO_STORE = { "Cache-Control": "no-store" };
+
 // Separate D1 (ks-web-db) keeps public inquiries isolated from the
 // business app D1. Free tier: 500MB/DB, 5M reads/day.
 
@@ -39,7 +44,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid request body." },
-      { status: 400 },
+      { status: 400, headers: NO_STORE },
     );
   }
 
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
       ? (body as { website?: unknown }).website
       : undefined;
   if (rawWebsite) {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }, { headers: NO_STORE });
   }
 
   const parsed = inquirySchema.safeParse(body);
@@ -59,7 +64,7 @@ export async function POST(request: Request) {
         error: "Please review the highlighted fields.",
         fields: parsed.error.flatten().fieldErrors,
       },
-      { status: 422 },
+      { status: 422, headers: NO_STORE },
     );
   }
 
@@ -76,11 +81,11 @@ export async function POST(request: Request) {
       console.warn(
         "inquiry: INQUIRY_DB not bound — dev fallback, not persisting",
       );
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true }, { headers: NO_STORE });
     }
     return NextResponse.json(
       { ok: false, error: "Could not save inquiry — please try again." },
-      { status: 500 },
+      { status: 500, headers: NO_STORE },
     );
   }
 
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
     if ((rate?.c ?? 0) >= 5) {
       return NextResponse.json(
         { ok: false, error: "Too many inquiries — please try again later." },
-        { status: 429 },
+        { status: 429, headers: NO_STORE },
       );
     }
 
@@ -124,12 +129,12 @@ export async function POST(request: Request) {
       )
       .run();
 
-    return NextResponse.json({ ok: true, id });
+    return NextResponse.json({ ok: true, id }, { headers: NO_STORE });
   } catch (err) {
     console.error("inquiry insert failed", err);
     return NextResponse.json(
       { ok: false, error: "Could not save inquiry — please try again." },
-      { status: 500 },
+      { status: 500, headers: NO_STORE },
     );
   }
 }

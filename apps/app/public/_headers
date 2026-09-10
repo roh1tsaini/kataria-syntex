@@ -5,14 +5,22 @@
 # before setting a new value ("! Cache-Control").
 #
 # The policy, matching how large SPA + API deployments ship:
-# - HTML and the service worker: never cached; always revalidated. This is
-#   what makes every deploy reach users on their next load.
+# - HTML and unhashed files (service worker, manifest, theme-init, icons,
+#   fonts): never cached without revalidation. This is what makes every
+#   deploy reach users on their next load.
 # - Vite content-hashed assets: immutable for a year. New content always
 #   ships under a new URL, so a long TTL is safe and free of staleness.
-#   /sw.js lives outside /assets/ so it keeps the revalidate default.
+#   Only content-hashed URLs may be immutable — never index.html.
+# - Deploys are atomic: Workers publishes every file together, so HTML never
+#   references missing or mixed-revision assets; no ?v= cache-busting
+#   (revisions ride inside the SW precache keys, not the network URLs).
 
 /*
   Cache-Control: public, max-age=0, must-revalidate
+
+/sw.js
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
 
 /assets/*
   ! Cache-Control

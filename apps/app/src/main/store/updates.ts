@@ -5,10 +5,10 @@
  *
  * - Web/PWA: the custom service worker (src/main/sw.ts) installs a new
  *   deploy sequentially and posts ks:sw-progress messages — this store
- *   turns them into live download progress (percent, size, ETA) on the
- *   banner. When the new worker is fully cached it sits WAITING; the
- *   banner's "reload to apply" sends SKIP_WAITING and reloads on the
- *   resulting controllerchange. The worker never activates itself and a
+ *   turns them into live download progress (percent, size, ETA) for the
+ *   Settings row. The banner stays silent until the new worker is fully
+ *   cached and WAITING; its "reload to apply" sends SKIP_WAITING and
+ *   reloads on the resulting controllerchange. The worker never activates itself and a
  *   tab is never force-reloaded. A hidden update check runs hourly so
  *   long-lived tabs find deploys.
  * - Electron Windows/Linux: status is pushed over the kc:update:* IPC bridge
@@ -464,12 +464,21 @@ export function showUpdateBanner(): boolean {
   if (s.requiredMinVersion) return false;
   if (s.dismissedThisSession) return false;
   // Deferred via the banner's dismiss — hidden until a different version.
-  if (s.dismissedVersion && s.latestVersion === s.dismissedVersion) {
+  // latestVersion arrives async after the waiting flag, so a dismissed
+  // version with the manifest still in flight counts as dismissed: the
+  // common case is the same build re-announced on a fresh load, and a
+  // genuinely new build re-shows the banner once its version arrives.
+  if (
+    s.dismissedVersion &&
+    (s.latestVersion === null || s.latestVersion === s.dismissedVersion)
+  ) {
     return false;
   }
   if (desktopBridge() === null) {
-    // Web/PWA: live install progress, then the waiting worker.
-    return s.progress !== null || s.swWaiting;
+    // Web/PWA: the waiting worker only. Install progress stays silent
+    // (Settings shows it) — announcing every install nags on every page
+    // while a slow network streams the deploy.
+    return s.swWaiting;
   }
   return usesManifestFlow() && s.status === "ready";
 }
