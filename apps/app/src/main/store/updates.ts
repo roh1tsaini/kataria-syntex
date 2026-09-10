@@ -321,10 +321,21 @@ async function registerServiceWorker(): Promise<void> {
   }
 }
 
+/** Install finished or died without producing a waiting update — the
+ * banner's progress readout must never freeze on a stale percent. */
+function clearInstallProgress(): void {
+  etaFrom.reset();
+  useUpdates.setState({ progress: null, status: "idle" });
+}
+
 /** A worker that finished installing while an old one still controls the
- * page is a WAITING update — announce it to the banner. */
+ * page is a WAITING update — announce it to the banner. On a fresh origin
+ * (no old controller) the page IS the new version: drop the install banner. */
 function announceWaiting(): void {
-  if (!navigator.serviceWorker.controller) return; // first install
+  if (!navigator.serviceWorker.controller) {
+    clearInstallProgress();
+    return;
+  }
   if (useUpdates.getState().swWaiting) return;
   etaFrom.reset();
   void useUpdates.getState().checkNow();
@@ -339,6 +350,9 @@ function watchForWaiting(reg: ServiceWorkerRegistration): void {
     if (!installing) return;
     installing.addEventListener("statechange", () => {
       if (installing.state === "installed") announceWaiting();
+      // A failed install (network flap mid-deploy) retires as "redundant"
+      // without ever reaching "installed" — clear the frozen readout.
+      else if (installing.state === "redundant") clearInstallProgress();
     });
   });
 }
@@ -359,7 +373,12 @@ async function observeRegistration(): Promise<void> {
   if (worker) {
     worker.addEventListener("statechange", () => {
       if (worker.state === "installed") announceWaiting();
+      else if (worker.state === "redundant") clearInstallProgress();
     });
+  } else if (useUpdates.getState().progress !== null) {
+    // Nothing is installing or waiting anymore (broadcasts lost, install
+    // finished between observations) — never keep a dead progress readout.
+    clearInstallProgress();
   }
 }
 
