@@ -32,10 +32,18 @@ export type Palette = {
   input: string;
 };
 
+// Palettes are cached per scheme/accent — useSyncExternalStore's getSnapshot
+// must return a stable reference or React re-renders forever and native
+// crashes with "Maximum update depth exceeded" on launch.
+const paletteCache = new Map<string, Palette>();
+
 function palette(scheme: Scheme, accent: AccentName): Palette {
+  const key = `${scheme}:${accent}`;
+  const cached = paletteCache.get(key);
+  if (cached) return cached;
   const t = TOKENS[scheme];
   const a = ACCENT_TOKENS[accent][scheme];
-  return {
+  const p: Palette = {
     scheme,
     accent,
     background: t.background,
@@ -57,6 +65,8 @@ function palette(scheme: Scheme, accent: AccentName): Palette {
     border: t.border,
     input: t.input,
   };
+  paletteCache.set(key, p);
+  return p;
 }
 
 // ── Theme store (useSyncExternalStore — no zustand dependency here) ─────────
