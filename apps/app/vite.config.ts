@@ -41,9 +41,20 @@ function appOrigin(): Plugin {
     name: "kataria-app-origin",
     transformIndexHtml(html) {
       const raw = process.env.APP_URL ?? process.env.VITE_API_URL ?? "";
-      if (!raw) return html.replace(" https://CHANGE_ME_APP_ORIGIN", "");
+      // The https entry is the API origin; its wss twin covers the realtime
+      // WebSocket (same host, ws scheme).
+      if (!raw) {
+        return html
+          .replace(" https://CHANGE_ME_APP_ORIGIN", "")
+          .replace(" wss://CHANGE_ME_APP_ORIGIN", "");
+      }
       const origin = `https://${raw.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
-      return html.replaceAll("https://CHANGE_ME_APP_ORIGIN", origin);
+      return html
+        .replaceAll("https://CHANGE_ME_APP_ORIGIN", origin)
+        .replaceAll(
+          "wss://CHANGE_ME_APP_ORIGIN",
+          origin.replace("https:", "wss:"),
+        );
     },
   };
 }
@@ -152,6 +163,8 @@ export default defineConfig({
       "/api": {
         target: process.env.VITE_PROXY_TARGET ?? "http://localhost:3000",
         changeOrigin: false,
+        // Realtime WebSocket upgrades proxy through too.
+        ws: true,
       },
     },
   },
@@ -163,6 +176,7 @@ export default defineConfig({
       "/api": {
         target: process.env.VITE_PROXY_TARGET ?? "http://localhost:3000",
         changeOrigin: false,
+        ws: true,
       },
     },
   },

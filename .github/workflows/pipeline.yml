@@ -32,10 +32,10 @@ permissions:
 # quota free (each run uploads ~400MB of installers).
 env:
   ACTIONS_ARTIFACT_RETENTION_DAYS: 3
-
-  # API origin for native builds — set the APP_URL repo variable (the App
-  # FQDN, no trailing slash) after the first deploy.
-  VITE_API_URL: ${{ vars.APP_URL }}
+  # NOTE: VITE_API_URL is deliberately NOT set here. The deploy job builds
+  # the web/PWA SPA same-origin; a baked API origin there must stay scoped to
+  # the desktop job below (the repo variable APP_URL is a bare FQDN, and a
+  # scheme-less origin turns every fetch() URL relative — app shows offline).
 
 jobs:
   gate:
@@ -189,6 +189,10 @@ jobs:
     needs: gate
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 60
+    env:
+      # API origin for the packaged renderer (PDF downloads etc. read it at
+      # build time). The APP_URL repo variable is the App FQDN, no scheme.
+      VITE_API_URL: ${{ vars.APP_URL }}
     strategy:
       fail-fast: false
       matrix:

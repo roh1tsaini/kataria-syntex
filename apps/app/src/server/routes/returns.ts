@@ -13,6 +13,7 @@ import {
 } from "../lib/document-pipeline";
 import { dateStringSchema } from "@kataria-syntex/shared";
 import { apiError } from "../lib/api-error";
+import { publishChanges } from "../realtime/publish";
 
 export const returnsRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -111,6 +112,13 @@ returnsRoute.post("/", requirePermission("create_return"), async (c) => {
     parsed.data,
   );
   if ("error" in result) return apiError(c, result.error, 400);
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    workspaceId,
+    c.req.header("x-client-id"),
+    ["returns", "stock"],
+  );
   return c.json({ ok: true, returnId: result.returnId });
 });
 
@@ -126,5 +134,12 @@ returnsRoute.put("/:id", requirePermission("edit_return"), async (c) => {
     parsed.data,
   );
   if ("error" in result) return apiError(c, result.error, result.status ?? 400);
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    c.get("member").workspaceId,
+    c.req.header("x-client-id"),
+    ["returns", "stock"],
+  );
   return c.json({ ok: true, returnId: result.returnId, items: result.items });
 });

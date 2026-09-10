@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import {
@@ -29,6 +29,7 @@ import {
   api,
   toastError,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -330,20 +331,28 @@ function FlowCards() {
   );
   const [loading, setLoading] = useState(() => !cachedFlowCards[cacheKey]);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!cacheKey) return;
-    void (async () => {
-      try {
-        const res = await api<{ cards: FlowCard[] }>("/reports/dashboard");
-        cachedFlowCards[cacheKey] = res.cards;
-        setCards(res.cards);
-      } catch {
-        // Non-critical — dashboard works without it
-      } finally {
-        setLoading(false);
-      }
-    })();
+    try {
+      const res = await api<{ cards: FlowCard[] }>("/reports/dashboard");
+      cachedFlowCards[cacheKey] = res.cards;
+      setCards(res.cards);
+    } catch {
+      // Non-critical — dashboard works without it
+    } finally {
+      setLoading(false);
+    }
   }, [cacheKey]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Flow cards aggregate every document type — refresh on any write.
+  useRealtimeEvent(
+    ["challans", "returns", "raw-material", "packing", "stock"],
+    load,
+  );
 
   if (loading) return null;
   if (cards.length === 0) return null;
@@ -474,6 +483,19 @@ export function Dashboard() {
       cancelled = true;
     };
   }, [currentFy, summary, cacheKey]);
+
+  // Other devices' challan writes land here live — clearSummaryCache first
+  // so the next summary() call bypasses the store's cache.
+  const clearSummaryCache = useChallans((s) => s.clearSummaryCache);
+  useRealtimeEvent(["challans", "stock"], () => {
+    clearSummaryCache();
+    summary(currentFy?.label, workspace?.id)
+      .then((res) => {
+        setSales(res.sales);
+        setOutward(res.outward);
+      })
+      .catch(() => {});
+  });
 
   const stats = useMemo(() => {
     const fy = currentFy?.label ?? "";

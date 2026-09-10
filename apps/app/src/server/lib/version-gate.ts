@@ -6,8 +6,10 @@
  * pile of parse failures after a breaking deploy.
  *
  * Exempt from the gate: /api/health (updaters poll it before anything
- * else) and /api/auth (a client must always be able to learn WHY it is
- * locked out — and the login screen itself offers the update path).
+ * else), /api/auth (a client must always be able to learn WHY it is
+ * locked out — and the login screen itself offers the update path), and
+ * /api/realtime/ws (the browser WebSocket handshake cannot carry custom
+ * headers; the one-shot ticket already proves a fresh, authed session).
  */
 import type { MiddlewareHandler } from "hono";
 import { compareSemver } from "@kataria-syntex/shared";
@@ -25,7 +27,8 @@ export const versionGate: MiddlewareHandler<{ Bindings: Env }> = async (
   const exempt =
     path === "/api/health" ||
     path === "/api/auth" ||
-    path.startsWith("/api/auth/");
+    path.startsWith("/api/auth/") ||
+    path === "/api/realtime/ws";
   if (exempt) return next();
 
   const clientVersion = c.req.header("X-App-Version");

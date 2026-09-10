@@ -9,6 +9,7 @@ import { requireAuth } from "../auth/session";
 import { createRawMaterial, updateRawMaterial } from "../lib/document-pipeline";
 import { dateStringSchema } from "@kataria-syntex/shared";
 import { apiError } from "../lib/api-error";
+import { publishChanges } from "../realtime/publish";
 
 export const rawMaterialRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -95,6 +96,13 @@ rawMaterialRoute.post(
       parsed.data,
     );
     if ("error" in result) return apiError(c, result.error, 400);
+    publishChanges(
+      c.env,
+      c.executionCtx,
+      workspaceId,
+      c.req.header("x-client-id"),
+      ["raw-material", "stock"],
+    );
     return c.json({
       ok: true,
       entryId: result.entryId,
@@ -120,6 +128,13 @@ rawMaterialRoute.put(
     );
     if ("error" in result)
       return apiError(c, result.error, result.status ?? 400);
+    publishChanges(
+      c.env,
+      c.executionCtx,
+      c.get("member").workspaceId,
+      c.req.header("x-client-id"),
+      ["raw-material", "stock"],
+    );
     return c.json({ ok: true, entryId: result.entryId, items: result.items });
   },
 );

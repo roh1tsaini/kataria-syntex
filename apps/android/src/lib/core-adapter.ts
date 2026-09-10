@@ -15,6 +15,7 @@
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import NetInfo from "@react-native-community/netinfo";
+import { AppState } from "react-native";
 import { createMMKV } from "react-native-mmkv";
 import { configureCore, type CoreStorage } from "@kataria-syntex/app-core";
 const TOKEN_KEY = "auth.sessionToken";
@@ -82,6 +83,17 @@ export function configureAndroidCore(): void {
         onChange(s.isConnected === true),
       );
       return unsub;
+    },
+    realtimeOrigin() {
+      // https:// → wss:// and http:// → ws:// in app-core's URL builder.
+      return apiBaseUrl();
+    },
+    onActivityChange(onActive) {
+      // Backgrounded Androids lose the socket; foregrounding reconnects.
+      const sub = AppState.addEventListener("change", (state) =>
+        onActive(state === "active"),
+      );
+      return () => sub.remove();
     },
   });
 }

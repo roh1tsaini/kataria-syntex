@@ -50,6 +50,7 @@ import {
   toastSuccess,
   toastError,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { fmtDate, fmtWt, todayLocal } from "@/ui/lib/format";
 import {
@@ -148,6 +149,9 @@ export function ReturnsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Other devices' writes arrive live; own writes refresh via store paths.
+  useRealtimeEvent(["returns", "stock"], load);
 
   if (showForm || editId || editingId) {
     return (

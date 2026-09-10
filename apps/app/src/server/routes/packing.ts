@@ -9,6 +9,7 @@ import { requireAuth } from "../auth/session";
 import { dateStringSchema } from "@kataria-syntex/shared";
 import { createPacking, updatePacking } from "../lib/document-pipeline";
 import { apiError } from "../lib/api-error";
+import { publishChanges } from "../realtime/publish";
 
 export const packingRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -117,6 +118,13 @@ packingRoute.post("/", requirePermission("create_packing"), async (c) => {
     parsed.data,
   );
   if ("error" in result) return apiError(c, result.error, 400);
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    workspaceId,
+    c.req.header("x-client-id"),
+    ["packing", "stock"],
+  );
   return c.json({
     ok: true,
     entryId: result.entryId,
@@ -137,5 +145,12 @@ packingRoute.put("/:id", requirePermission("edit_packing"), async (c) => {
     parsed.data,
   );
   if ("error" in result) return apiError(c, result.error, result.status ?? 400);
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    c.get("member").workspaceId,
+    c.req.header("x-client-id"),
+    ["packing", "stock"],
+  );
   return c.json({ ok: true, entryId: result.entryId, items: result.items });
 });

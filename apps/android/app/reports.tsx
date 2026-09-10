@@ -24,6 +24,7 @@ import {
   registerDataCache,
   useAuth,
   usePermission,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { Badge, Button, EmptyState, Skeleton } from "@/ui/kit";
@@ -230,6 +231,12 @@ function ReportView({ reportId }: { reportId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Report rows derive from every document type — any write can change them.
+  useRealtimeEvent(
+    ["challans", "returns", "raw-material", "packing", "stock"],
+    load,
+  );
 
   const report = REPORTS.find((r) => r.id === reportId);
   const title = report?.label ?? "Report";

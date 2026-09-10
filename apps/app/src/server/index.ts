@@ -15,6 +15,7 @@ import { rawMaterialRoute } from "./routes/raw-material";
 import { packingRoute } from "./routes/packing";
 import { stockRoute } from "./routes/stock";
 import { reportsRoute } from "./routes/reports";
+import { realtimeRoute } from "./routes/realtime";
 import { apiError } from "./lib/api-error";
 import { versionGate } from "./lib/version-gate";
 import { APP_VERSION, MIN_APP_VERSION } from "./lib/app-version";
@@ -50,6 +51,7 @@ app.use(
     allowHeaders: [
       "Content-Type",
       "Authorization",
+      "X-Client-Id",
       "X-Platform",
       "X-Device-Label",
       "X-Device-Fingerprint",
@@ -81,6 +83,9 @@ app.route("/api/raw-material", rawMaterialRoute);
 app.route("/api/packing", packingRoute);
 app.route("/api/stock", stockRoute);
 app.route("/api/reports", reportsRoute);
+// Realtime sits below the version gate like every domain route (the ticket
+// call is a normal api() request and must obey the same update contract).
+app.route("/api/realtime", realtimeRoute);
 
 app.notFound((c) => {
   return apiError(c, "not_found", 404);

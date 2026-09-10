@@ -30,6 +30,14 @@ export { friendlyError } from "./errors";
 export { configureToasts, toastSuccess, toastError } from "./toast";
 export { registerDataCache } from "./data-caches";
 
+// Realtime change bus
+export {
+  subscribeChanges,
+  useRealtime,
+  useRealtimeEvent,
+  type ChangeHandler,
+} from "./realtime";
+
 // Stores
 export {
   useAuth,

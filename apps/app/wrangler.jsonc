@@ -33,6 +33,23 @@
       "bucket_name": "ks-releases",
     },
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "REALTIME",
+        "class_name": "RealtimeRoom",
+      },
+    ],
+  },
+  // SQLite-backed DO storage is mandated on the free plan; the room uses no
+  // storage at all (pure WebSocket fan-out) but the migration is required
+  // for the class to deploy.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RealtimeRoom"],
+    },
+  ],
   "vars": {
     // Non-secret config. Secrets (PINGRAM_API_KEY etc.) live in .dev.vars
     // locally and `wrangler secret put` in production.

@@ -23,6 +23,7 @@ import {
   toastError,
   friendlyError,
   randomId,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { round3Str } from "@kataria-syntex/shared";
 import { usePalette } from "@/theme";
@@ -324,6 +325,9 @@ export default function RawMaterialRoute() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Other devices' writes arrive live; own writes refresh via store paths.
+  useRealtimeEvent(["raw-material", "stock"], load);
 
   // Web gates /raw-material behind ProtectedRoute
   // requirePermission="create_raw_material" (redirects home). Same gate,

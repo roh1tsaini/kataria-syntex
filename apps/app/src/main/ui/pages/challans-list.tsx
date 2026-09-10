@@ -26,6 +26,7 @@ import {
   friendlyError,
   toastError,
   toastSuccess,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -211,6 +212,18 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
     );
     return () => clearTimeout(t);
   }, [kind.type, fy, q, page, refresh]);
+
+  // Other devices' challan writes land here live; this device's writes
+  // already refresh through the store's mutation paths.
+  useRealtimeEvent(["challans", "stock"], () =>
+    refresh({
+      type: kind.type,
+      fy: fy || undefined,
+      q: q.trim() || undefined,
+      page,
+      limit: LIST_PAGE_SIZE,
+    }),
+  );
 
   return (
     <>

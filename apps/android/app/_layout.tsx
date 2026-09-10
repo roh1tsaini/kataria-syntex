@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   useAuth,
   useOfflineSync,
+  useRealtime,
   hydrateMastersCache,
 } from "@kataria-syntex/app-core";
 import { configureAndroidCore } from "@/lib/core-adapter";
@@ -31,6 +32,7 @@ configureAndroidToasts();
 function Boot() {
   const status = useAuth((s) => s.status);
   useOfflineSync();
+  useRealtime();
 
   useEffect(() => {
     initUpdateChecks();

@@ -6,7 +6,7 @@
  * (useChallans().summary + summaryCache read-through).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
@@ -20,6 +20,7 @@ import {
   api,
   toastError,
   friendlyError,
+  useRealtimeEvent,
   type Challan,
   type RecentChallan,
 } from "@kataria-syntex/app-core";
@@ -393,22 +394,30 @@ function FlowCards({ wsId }: { wsId: string | undefined }) {
     () => cachedFlowCards[cacheKey] ?? [],
   );
 
-  useEffect(() => {
+  // Monotonic guard: a slow response (effect load vs realtime-triggered
+  // reload) must never clobber a fresher one that already landed.
+  const loadSeq = useRef(0);
+  const load = useCallback(async () => {
     if (!cacheKey) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await api<{ cards: FlowCardData[] }>("/reports/dashboard");
-        cachedFlowCards[cacheKey] = res.cards;
-        if (!cancelled) setCards(res.cards);
-      } catch {
-        // Non-critical — the dashboard works without it (no view_reports).
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    const seq = ++loadSeq.current;
+    try {
+      const res = await api<{ cards: FlowCardData[] }>("/reports/dashboard");
+      cachedFlowCards[cacheKey] = res.cards;
+      if (seq === loadSeq.current) setCards(res.cards);
+    } catch {
+      // Non-critical — the dashboard works without it (no view_reports).
+    }
   }, [cacheKey]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Flow cards aggregate every document type — refresh on any write.
+  useRealtimeEvent(
+    ["challans", "returns", "raw-material", "packing", "stock"],
+    load,
+  );
 
   if (cards.length === 0) return null;
 
@@ -557,6 +566,20 @@ export default function DashboardTab() {
       };
     }, [currentFy, summary, cacheKey, workspace?.id]),
   );
+
+  // Other devices' challan writes land here live — clearSummaryCache first
+  // so the next summary() call bypasses the store's cache.
+  const clearSummaryCache = useChallans((s) => s.clearSummaryCache);
+  useRealtimeEvent(["challans", "stock"], () => {
+    if (!currentFy) return;
+    clearSummaryCache();
+    summary(currentFy.label, workspace?.id)
+      .then((res) => {
+        setSales(res.sales);
+        setOutward(res.outward);
+      })
+      .catch(() => {});
+  });
 
   const stats = useMemo(() => {
     const fy = currentFy?.label ?? "";

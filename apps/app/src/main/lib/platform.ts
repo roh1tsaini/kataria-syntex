@@ -106,6 +106,22 @@ function localStorageStorage(): CoreStorage {
   };
 }
 
+/**
+ * The baked API origin, normalized to an absolute https:// URL (or "" for
+ * same-origin). VITE_API_URL comes from the APP_URL repo variable, which is
+ * a bare FQDN — a scheme-less value would make every fetch URL RELATIVE
+ * (requests land on <page>/app.example.com/api/… → SPA HTML → the app reads
+ * "offline"), so a bare host is always upgraded to https. Native shells'
+ * build steps do the same normalization (electron/build.ts, the Android
+ * EXTRA_API_BASE step).
+ */
+function bakedApiOrigin(): string {
+  const raw = import.meta.env.VITE_API_URL?.trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/+$/, "");
+  return `https://${raw.replace(/^https?:\/\//i, "").replace(/\/+$/, "")}`;
+}
+
 /** Configures app-core for this shell. Called exactly once from main.tsx,
  * before the first render. Electron's session token lives in the OS
  * keychain via the IPC bridge; the web session is the HttpOnly cookie, so
@@ -113,9 +129,10 @@ function localStorageStorage(): CoreStorage {
 export function configureWebCore(appVersion: string): void {
   const host = detectHost();
   const desktop = window.desktop;
+  const apiOrigin = bakedApiOrigin();
   const adapter: PlatformAdapter = {
     host,
-    apiBaseUrl: import.meta.env.VITE_API_URL ?? "",
+    apiBaseUrl: apiOrigin,
     appVersion,
     storage: localStorageStorage(),
     async readToken() {
@@ -144,6 +161,17 @@ export function configureWebCore(appVersion: string): void {
         window.removeEventListener("online", online);
         window.removeEventListener("offline", offline);
       };
+    },
+    realtimeOrigin() {
+      if (apiOrigin) return apiOrigin;
+      // Same-origin web/PWA: derive from the page itself (apiBaseUrl is "").
+      const loc = window.location;
+      return `${loc.protocol === "https:" ? "wss:" : "ws:"}//${loc.host}`;
+    },
+    onActivityChange(onActive) {
+      const handler = () => onActive(document.visibilityState === "visible");
+      document.addEventListener("visibilitychange", handler);
+      return () => document.removeEventListener("visibilitychange", handler);
     },
   };
   if (host === "electron" && desktop) {

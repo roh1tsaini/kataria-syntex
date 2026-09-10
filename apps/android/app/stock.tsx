@@ -17,6 +17,7 @@ import {
   usePermission,
   registerDataCache,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { fmtWt } from "@/lib/format";
@@ -190,6 +191,10 @@ function StockPage({
     }
     void load();
   }, [load, stockType, workspaceId]);
+
+  // Other devices' writes arrive live; this device's writes refresh through
+  // its own store paths.
+  useRealtimeEvent(["stock", "challans", "raw-material", "packing"], load);
 
   const filtered = useMemo(
     () =>

@@ -79,11 +79,36 @@ function deviceFingerprint(): string | null {
   }
 }
 
+const CLIENT_ID_KEY = "realtime.clientId";
+
+/**
+ * Stable install id for realtime echo suppression: the server stamps each
+ * broadcast with the writer's client id, and a client skips events it
+ * caused itself. Same persistence pattern as the device fingerprint. Null
+ * when storage is unavailable — the caller then omits the header entirely
+ * (a shared sentinel id would wrongly suppress echoes between unrelated
+ * storage-less clients).
+ */
+export function clientId(): string | null {
+  try {
+    let id = core().storage.get(CLIENT_ID_KEY);
+    if (!id) {
+      id = randomId();
+      core().storage.set(CLIENT_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 export function deviceHeaders(): Record<string, string> {
   const a = core();
   // Version gate: every client announces its build (the Electron main process
   // overrides with the packaged app.getVersion() for the desktop shell).
-  const version = { "X-App-Version": a.appVersion };
+  const cid = clientId();
+  const version: Record<string, string> = { "X-App-Version": a.appVersion };
+  if (cid) version["X-Client-Id"] = cid;
   if (a.host === "electron")
     return {
       ...version,

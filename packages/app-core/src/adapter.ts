@@ -46,6 +46,13 @@ export interface PlatformAdapter {
   deviceLabel(): string;
   /** Connectivity change events; returns an unsubscribe function. */
   onNetworkChange(onChange: (online: boolean) => void): () => void;
+  /** Absolute ws:// or wss:// origin that hosts /api/realtime. Null (or an
+   * adapter that leaves it unset) disables the realtime layer — the app
+   * keeps working through its poll-and-sync paths. */
+  realtimeOrigin?(): string | null;
+  /** Foreground/visibility changes (optional). Realtime reconnects
+   * immediately when the shell becomes active. */
+  onActivityChange?(onActive: (active: boolean) => void): () => void;
   /** Electron IPC transport — unset on web and Android. */
   transport?: DesktopTransport;
 }

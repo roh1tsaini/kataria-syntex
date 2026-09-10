@@ -50,6 +50,7 @@ import {
   toastSuccess,
   toastError,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { fmtDate, fmtWt, todayLocal } from "@/ui/lib/format";
 import { round3Str } from "@kataria-syntex/shared";
@@ -153,6 +154,9 @@ export function RawMaterialPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Other devices' writes arrive live; own writes refresh via store paths.
+  useRealtimeEvent(["raw-material", "stock"], load);
 
   if (showForm || editId || editingId) {
     return (

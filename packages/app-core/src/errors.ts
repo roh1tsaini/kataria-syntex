@@ -84,6 +84,10 @@ const SERVER_MESSAGES = {
     "PDF service isn't set up on the server yet. Ask the admin to configure it.",
   pdf_render_failed:
     "Couldn't generate the PDF right now. Please try again shortly.",
+  // realtime — the client backs off and reconnects; this copy only backs
+  // the rare surfaced toast if the ticket mint keeps failing.
+  realtime_ticket_failed:
+    "Live updates are unavailable right now. Lists still refresh normally.",
   // qr login
   qr_code_invalid: "That code is not valid or was already used.",
   qr_code_expired: "That code has expired. Ask for a new one.",

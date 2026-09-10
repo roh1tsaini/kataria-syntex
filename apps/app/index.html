@@ -14,12 +14,13 @@
     <!--
       CSP for the SPA. connect-src allows the deployed backend origin (the
       CHANGE_ME_APP_ORIGIN placeholder is injected at build time by the
-      kataria-app-origin Vite plugin) + the Vite HMR websockets in dev.
+      kataria-app-origin Vite plugin — its https twin covers the realtime
+      WebSocket) + the Vite HMR websockets in dev.
       style-src 'unsafe-inline' is required by Tailwind v4's injected styles.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://CHANGE_ME_APP_ORIGIN ws://localhost:1420 ws://localhost:1421"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://CHANGE_ME_APP_ORIGIN wss://CHANGE_ME_APP_ORIGIN ws://localhost:1420 ws://localhost:1421"
     />
     <title>Kataria Syntex Biz App</title>
   </head>

@@ -21,6 +21,7 @@ import {
   toastError,
   friendlyError,
   randomId,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { requestDiscard } from "@/ui/confirm";
@@ -251,6 +252,9 @@ export default function ReturnsRoute() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Other devices' writes arrive live; own writes refresh via store paths.
+  useRealtimeEvent(["returns", "stock"], load);
 
   // Web gates /returns behind ProtectedRoute requirePermission="create_return"
   // (redirects home). Same gate, rendered inline as an empty state.

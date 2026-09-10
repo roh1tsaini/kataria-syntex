@@ -21,6 +21,7 @@ import {
   useAuth,
   useChallans,
   usePermission,
+  useRealtimeEvent,
   type Challan,
   type ChallanType,
 } from "@kataria-syntex/app-core";
@@ -311,6 +312,12 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
       return () => clearTimeout(t);
     }, [fy, q, loadPage]),
   );
+
+  // Other devices' challan writes land here live; this device's writes
+  // already refresh through the store's mutation paths.
+  useRealtimeEvent(["challans", "stock"], () => {
+    void loadPage(1, { fy, q });
+  });
 
   const onEndReached = useCallback(() => {
     if (loadingMoreRef.current || busy || page >= pageCount) return;

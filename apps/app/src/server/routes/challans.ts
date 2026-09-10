@@ -37,6 +37,7 @@ import {
   renderHtmlPdf,
 } from "../lib/browser-pdf";
 import { apiError } from "../lib/api-error";
+import { publishChanges } from "../realtime/publish";
 
 export const challansRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -212,6 +213,13 @@ challansRoute.post("/", requirePermission("create_challan"), async (c) => {
       },
       "status" in result ? (result.status as 409) : 400,
     );
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    workspaceId,
+    c.req.header("x-client-id"),
+    ["challans", "stock"],
+  );
   return c.json(result);
 });
 
@@ -230,6 +238,13 @@ challansRoute.put("/:id", requirePermission("edit_challan"), async (c) => {
   );
   if ("error" in result)
     return apiError(c, result.error, "status" in result ? result.status : 400);
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    c.get("member").workspaceId,
+    c.req.header("x-client-id"),
+    ["challans", "stock"],
+  );
   return c.json({ ok: true, challan: result.challan, items: result.items });
 });
 
@@ -271,6 +286,13 @@ challansRoute.delete("/:id", requirePermission("delete_challan"), async (c) => {
     db.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
     db.delete(challans).where(eq(challans.id, existing.id)),
   ]);
+  publishChanges(
+    c.env,
+    c.executionCtx,
+    workspaceId,
+    c.req.header("x-client-id"),
+    ["challans", "stock"],
+  );
   return c.json({ ok: true });
 });
 

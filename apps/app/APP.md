@@ -90,6 +90,7 @@ Latest stable majors; never downgrade to escape a break.
 | PWA         | vite-plugin-pwa (prompt mode, Workbox) — update banner in update-surface.tsx                                             |
 | API         | Hono 4 · zod 4 at every boundary                                                                                         |
 | Data        | Drizzle ORM + drizzle-kit · Cloudflare D1                                                                                |
+| Realtime    | Durable Objects (SQLite class, no storage used) — WebSocket fan-out per workspace                                        |
 | PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                             |
 | Desktop     | Electron 43 · electron-builder 26                                                                                        |
 | Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline engine (web + Electron here, Android in `apps/android`) |
@@ -109,6 +110,7 @@ apps/app/
 │   │   ├── db/schema.ts         # 30 tables (Drizzle)
 │   │   ├── auth/                # session, otp, qr-login, perms, members
 │   │   ├── routes/              # thin: parse → lib module → JSON
+│   │   ├── realtime/            # RealtimeRoom DO + publish helper (fan-out only)
 │   │   └── lib/                 # document-pipeline, stock, password, pingram…
 │   ├── main/                    # SPA (web + electron share it)
 │   │   ├── lib/platform.ts      # host detection + configureWebCore (app-core seam)
@@ -119,11 +121,12 @@ apps/app/
 ├── electron/                    # main.ts (keychain, net bridge, printToPDF), preload, build
 ├── drizzle/                     # migrations (timestamped folders)
 ├── design.md                    # design system — read before any UI change
-└── wrangler.jsonc               # Worker + assets + D1 config
+└── wrangler.jsonc               # Worker + assets + D1 + DO (realtime) config
 
 packages/app-core/               # shared business core (all shells)
 ├── src/adapter.ts               # PlatformAdapter seam — configureCore()
-├── src/api.ts                   # api(), ApiError, apiBlob, deviceHeaders
+├── src/api.ts                   # api(), ApiError, apiBlob, deviceHeaders, clientId
+├── src/realtime.ts              # WebSocket change bus — useRealtime, useRealtimeEvent
 ├── src/store/                   # zustand: auth, challans, masters, recipes
 ├── src/offline/                 # caches + outbox + sync engine
 ├── src/errors.ts                # friendlyError
@@ -139,11 +142,12 @@ SPA → same-origin `/api/*` (Vite proxy in dev) → Worker → Hono
 
 Platform differences live in each shell's `PlatformAdapter`
 (`packages/app-core/src/adapter.ts` — the seam where the business core
-meets its host: API base, token storage, sync KV, network events, optional
-Electron transport). This app configures it via `configureWebCore()` in
-`src/main/lib/platform.ts` (wired in `main.tsx`); Android configures it via
-`configureAndroidCore()` in `apps/android/src/lib/core-adapter.ts`. Never
-branch on platform elsewhere.
+meets its host: API base, token storage, sync KV, network events,
+realtime origin, foreground events, optional Electron transport). This
+app configures it via `configureWebCore()` in `src/main/lib/platform.ts`
+(wired in `main.tsx`); Android configures it via `configureAndroidCore()`
+in `apps/android/src/lib/core-adapter.ts`. Never branch on platform
+elsewhere.
 
 | Shell    | Session storage                              | API origin                                                            |
 | -------- | -------------------------------------------- | --------------------------------------------------------------------- |
@@ -370,6 +374,37 @@ keys), MMKV on Android. Same engine, same behavior everywhere.
   one account's queue can never sync under another's session.
 - Network classifier: only true network failures (incl. 502/504, captive
   portals) flip offline; HTTP errors stay online.
+
+### 11.1 · Realtime
+
+Server push on top of the poll paths — an upgrade, never a dependency: if
+the socket is down, lists stay correct through the 30 s heartbeat and
+refetch-on-mount.
+
+- Transport: one `RealtimeRoom` Durable Object per workspace
+  (`src/server/realtime/room.ts`), WebSocket Hibernation API — idle sockets
+  cost nothing on the free tier; client `ping` → `pong` is answered by the
+  runtime's auto-response pair without waking the room. The room stores no
+  business data (D1 stays the single source of truth).
+- Auth: browser WS handshakes can't carry headers, so the client mints a
+  one-shot ticket through the normal version-gated `POST /api/realtime/ticket`
+  (session-scoped, single-use, 60 s TTL) and opens `GET /api/realtime/ws`
+  (worker entry forwards upgrades; exempt from the version gate + Hono).
+- Publish: every document write (challans create/update/delete, returns,
+  raw-material, packing, masters CRUD) fans out tiny refresh hints
+  `{"e":"<entity>","by":"<clientId>"}` via `publishChanges()` on
+  `waitUntil` — best-effort, never blocks or fails the write.
+- Client (`packages/app-core/src/realtime.ts`): `useRealtime()` mounts once
+  per shell next to `useOfflineSync()`; exponential-backoff reconnect,
+  immediate on network return + app foreground (`onActivityChange`).
+  Echo suppression via the stable install id in `X-Client-Id`
+  (`clientId()` in api.ts) — a client skips events it caused itself.
+- Consumption: pages call `useRealtimeEvent(entities, load)` to live-refresh
+  (stock, packing, raw-material, returns, reports, dashboard, challan
+  registers); events are hints — the actual data refetches through the
+  normal `api()` paths, so the bus carries no business data.
+- Android note: backgrounded sockets die; foregrounding (`AppState`) +
+  network events drive reconnect. Pages refresh on focus as before.
 - Challan PDFs: Electron renders locally with its own Chromium (works
   offline); web/PWA and Android fetch the server-rendered copy. Both paths
   render the SAME HTML template with inlined Inter → visually identical.

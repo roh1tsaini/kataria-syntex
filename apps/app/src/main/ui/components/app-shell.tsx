@@ -45,6 +45,7 @@ import {
   useAuth,
   isPackerOnlyWorkspace,
   useOfflineSync,
+  useRealtime,
   useSync,
 } from "@kataria-syntex/app-core";
 import {
@@ -759,6 +760,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
   const railOpen = !railCollapsed || railHot;
 
   useOfflineSync();
+  useRealtime();
 
   useEffect(() => {
     refreshCompany().catch(() => {});

@@ -51,6 +51,7 @@ import {
   toastSuccess,
   toastError,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { fmtDate, fmtWt, todayLocal } from "@/ui/lib/format";
 import {
@@ -185,6 +186,9 @@ export function PackingPage() {
     }
     void load();
   }, [load, activeTab, workspaceId]);
+
+  // Other devices' writes arrive live; own writes refresh via store paths.
+  useRealtimeEvent(["packing", "stock"], load);
 
   if (showForm || editingId) {
     return (

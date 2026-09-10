@@ -20,6 +20,7 @@ import {
   toastError,
   friendlyError,
   randomId,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { round3Str } from "@kataria-syntex/shared";
 import { usePalette } from "@/theme";
@@ -401,6 +402,9 @@ export default function PackingRoute() {
     }
     void load();
   }, [load, activeTab, workspaceId]);
+
+  // Other devices' writes arrive live; own writes refresh via store paths.
+  useRealtimeEvent(["packing", "stock"], load);
 
   if (showForm || editingId) {
     return (

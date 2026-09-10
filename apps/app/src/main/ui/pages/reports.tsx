@@ -42,6 +42,7 @@ import {
   registerDataCache,
   api,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 const REPORTS: {
   id: string;
@@ -214,6 +215,12 @@ function ReportView({ reportId }: { reportId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Report rows derive from every document type — any write can change them.
+  useRealtimeEvent(
+    ["challans", "returns", "raw-material", "packing", "stock"],
+    load,
+  );
 
   const report = REPORTS.find((r) => r.id === reportId);
   const title = report?.label ?? "Report";

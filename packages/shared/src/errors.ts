@@ -62,6 +62,8 @@ const API_CODES = [
   // pdf
   "pdf_not_configured",
   "pdf_render_failed",
+  // realtime
+  "realtime_ticket_failed",
   // qr login
   "qr_code_invalid",
   "qr_code_expired",

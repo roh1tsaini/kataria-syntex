@@ -16,6 +16,7 @@ import {
 import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import { apiError } from "../lib/api-error";
+import { publishChanges } from "../realtime/publish";
 
 export const mastersRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -88,6 +89,13 @@ function registerMaster<TInput>(
       const nowIso = toIso(new Date());
       const row = toInsertRow(parsed.data, c.get("member").workspaceId, nowIso);
       await getDb(c.env.DB).insert(table).values(row);
+      publishChanges(
+        c.env,
+        c.executionCtx,
+        c.get("member").workspaceId,
+        c.req.header("x-client-id"),
+        ["masters"],
+      );
       return c.json({ ok: true, item: row });
     },
   );
@@ -118,6 +126,13 @@ function registerMaster<TInput>(
         ...toUpdateFields(parsed.data, nowIso),
       };
       await db.update(table).set(row).where(eq(table.id, existing.id));
+      publishChanges(
+        c.env,
+        c.executionCtx,
+        workspaceId,
+        c.req.header("x-client-id"),
+        ["masters"],
+      );
       return c.json({ ok: true, item: row });
     },
   );
@@ -148,6 +163,13 @@ function registerMaster<TInput>(
           return apiError(c, "in_use", 409);
         throw err;
       }
+      publishChanges(
+        c.env,
+        c.executionCtx,
+        workspaceId,
+        c.req.header("x-client-id"),
+        ["masters"],
+      );
       return c.json({ ok: true });
     },
   );

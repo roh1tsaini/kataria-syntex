@@ -28,6 +28,7 @@ import {
   useAuth,
   registerDataCache,
   friendlyError,
+  useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 type StockGroup = {
   denierId: string | null;
@@ -100,6 +101,10 @@ export function StockPage() {
     }
     void load();
   }, [load, stockType, workspaceId]);
+
+  // Other devices' writes arrive live; this device's writes refresh through
+  // its own store paths.
+  useRealtimeEvent(["stock", "challans", "raw-material", "packing"], load);
 
   const filtered = items.filter(
     (i) =>
