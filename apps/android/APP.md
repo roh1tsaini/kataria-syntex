@@ -80,11 +80,12 @@ Latest stable majors; never downgrade to escape a break.
 ```
 apps/android/
 ├── app/                       # expo-router routes (file = screen)
-│   ├── _layout.tsx            # boot: configureAndroidCore, toasts, sync, updates
+│   ├── _layout.tsx            # boot: theme, configureAndroidCore, toasts, bootstrap, sync, splash, updates
 │   ├── index.tsx              # auth gate
 │   ├── auth.tsx               # login (identifier → OTP/password), QR panel
 │   ├── login/scan/[code].tsx  # QR approve screen (camera)
 │   ├── (tabs)/                # bottom tabs: Dashboard · Challans · Job work · Packing · More
+│   │                          #   (each hidden unless the role holds its permission)
 │   ├── challan-editor.tsx     # full-screen challan editor
 │   ├── challan-detail.tsx
 │   ├── returns.tsx · raw-material.tsx · packing.tsx · stock.tsx
@@ -93,16 +94,21 @@ apps/android/
 ├── src/
 │   ├── lib/
 │   │   ├── core-adapter.ts    # configureAndroidCore() — the app-core seam
+│   │   ├── theme.ts           # theme persistence + live system-scheme sync
 │   │   ├── updates.ts         # update store: poll manifest, banner, install
 │   │   ├── installer.ts       # APK download (expo-file-system) + system installer
 │   │   ├── pdf.ts             # server PDF download → share / PrintManager
 │   │   ├── toasts.ts          # Android toast sink (configureAndroidToasts)
-│   │   ├── format.ts · dashboard-math.ts · cn.ts
-│   ├── ui/                    # kit.tsx primitives, sync.tsx, update-surface.tsx,
-│   │                          # qr-login-panel.tsx, feather.tsx icons, confirm.ts
+│   │   ├── use-masters-load.ts # load → block save → nonce-retry (editor forms)
+│   │   ├── challan-kinds.ts   # one kind table: registers, detail, editor
+│   │   ├── format.ts          # single home for number/date/count formatting
+│   │   ├── dashboard-math.ts · motion.ts · cn.ts
+│   ├── ui/                    # kit.tsx primitives, count-up.tsx (rolling digits),
+│   │                          # sync.tsx, update-surface.tsx, qr-login-panel.tsx,
+│   │                          # feather.tsx icons, confirm.ts
 │   └── theme/
 │       ├── tokens.ts          # GENERATED from globals.css — never hand-edit
-│       └── index.ts           # usePalette(): scheme + 6 accents
+│       └── index.ts           # usePalette() (scheme + 6 accents), withAlpha(), SCRIM
 ├── plugins/with-signing.ts    # wires keystore.properties into the release build
 ├── scripts/
 │   ├── convert-tokens.ts      # globals.css oklch → sRGB → src/theme/tokens.ts
@@ -126,15 +132,15 @@ window/document/localStorage. Each shell configures it once at boot via
 Android's adapter: `src/lib/core-adapter.ts` → `configureAndroidCore()`,
 called at the top of `app/_layout.tsx` (module scope, StrictMode-safe):
 
-| Adapter field     | Android implementation                                                                         |
-| ----------------- | ---------------------------------------------------------------------------------------------- |
-| `host`            | `"android"`                                                                                    |
-| `apiBaseUrl`      | baked `extra.apiBaseUrl` (CI `EXTRA_API_BASE`); dev `http://localhost:3000` over `adb reverse` |
-| `appVersion`      | expo-constants (`app.config.ts` version)                                                       |
-| `storage`         | MMKV instance id `ks-app-core` (synchronous — the offline engine's KV contract is sync)        |
-| token read/write  | expo-secure-store key `auth.sessionToken` (keystore encryption; never plaintext)               |
-| `deviceLabel`     | `"Android"`                                                                                    |
-| `onNetworkChange` | NetInfo connectivity events                                                                    |
+| Adapter field     | Android implementation                                                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`            | `"android"`                                                                                                                                                                                                         |
+| `apiBaseUrl`      | baked `extra.apiBaseUrl` (CI `EXTRA_API_BASE`); dev-only `http://localhost:3000` over `adb reverse` (`__DEV__`); release without a baked origin returns `""` and fails loudly instead of silently hitting localhost |
+| `appVersion`      | expo-constants (`app.config.ts` version)                                                                                                                                                                            |
+| `storage`         | MMKV instance id `ks-app-core` (synchronous — the offline engine's KV contract is sync)                                                                                                                             |
+| token read/write  | expo-secure-store key `auth.sessionToken` (keystore encryption; never plaintext)                                                                                                                                    |
+| `deviceLabel`     | `"Android"`                                                                                                                                                                                                         |
+| `onNetworkChange` | NetInfo connectivity events                                                                                                                                                                                         |
 
 Web/Electron counterpart: `apps/app/src/main/lib/platform.ts`
 (`configureWebCore`, wired in `main.tsx`).
@@ -157,6 +163,9 @@ bun run android                            # install + launch the dev build
   `https://` origin and passes it as `EXTRA_API_BASE`; `app.config.ts`
   stores it in `extra.apiBaseUrl`, `core-adapter.ts` reads it through
   expo-constants. A bare FQDN would build broken relative URLs.
+- QR approval links use the custom `kataria://` scheme in dev and the release
+  HTTPS origin's `/login/scan/<code>` path in production; both are registered
+  in the native Android intent filters so camera taps route into Expo Router.
 - Auth on dev: OTP or password as on web (see `apps/app/APP.md` §9).
 - Metro needs the monorepo roots — `metro.config.cjs` watches the workspace
   root and resolves `node_modules` from both roots (Bun hoisting).
@@ -184,8 +193,9 @@ Update flow (`src/lib/updates.ts` + `installer.ts`):
    shell.
 4. Install: APK streamed via expo-file-system into app-private storage
    (progress percent) → handed to the system package installer through a
-   share intent. `REQUEST_INSTALL_PACKAGES`; first install asks once for
-   "install unknown apps".
+   VIEW intent on the FileProvider content URI (expo-intent-launcher;
+   expo-sharing is the fallback). `REQUEST_INSTALL_PACKAGES`; first install
+   asks once for "install unknown apps".
 
 Same signing identity as every previous install — the signature never
 changes.
@@ -201,13 +211,23 @@ every visual value (radius ladder, spacing, type, color).
   `bun scripts/convert-tokens.ts`** and commit the regenerated tokens.
 - `src/theme/index.ts` exposes `usePalette()` — scheme (light/dark,
   `userInterfaceStyle: automatic`) + 6 accents, same picker semantics as
-  the web accent picker.
+  the web accent picker. `withAlpha()` tints a palette color safely (tokens
+  are hex in light mode but `rgba()` in dark for `border`/`input`, so string
+  concatenation would produce an invalid color); `SCRIM` is the one overlay
+  scrim.
+- `src/lib/theme.ts` owns the choice: a stored scheme wins, otherwise the OS
+  scheme is followed live (`Appearance`); accent and scheme persist in the
+  adapter's `uiStorage`, which is never wiped on logout. Both are edited in
+  Settings → Appearance, and the status bar follows the resolved scheme.
 - `tailwind.config.js` mirrors the radius ladder (8/10/12/16/20px) and
   Inter font families; colors are NOT in the Tailwind config — components
   read the runtime palette.
-- UI primitives live in `src/ui/kit.tsx`; mobile grammar adaptations are
-  deliberate: bottom-sheet pickers instead of popovers, native confirm
-  dialogs, date fields as validated `YYYY-MM-DD` text.
+- `src/ui/kit.tsx` implements design.md §2.2–§2.4 exactly — controls 10px,
+  cards 12px, badges 8px (soft tint + hairline), page titles 28px, pulsing
+  skeletons, loading buttons that keep their label (no spinners). Mobile
+  grammar adaptations are deliberate: bottom-sheet pickers instead of
+  popovers, native confirm dialogs, date fields as validated `YYYY-MM-DD`
+  text.
 
 ## 9 · Continuous Native Generation (CNG)
 

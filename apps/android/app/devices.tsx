@@ -21,7 +21,7 @@ import {
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { confirm } from "@/ui/confirm";
-import { Badge, Button, Input, Screen } from "@/ui/kit";
+import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
 
 function platformIconName(platform: string) {
   if (platform === "android") return "smartphone" as const;
@@ -314,11 +314,25 @@ function DevicesPage() {
   const refreshDevices = useAuth((s) => s.refreshDevices);
   const deleteDevice = useAuth((s) => s.deleteDevice);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [qrApproveOpen, setQrApproveOpen] = useState(false);
   const p = usePalette();
 
   useEffect(() => {
-    void refreshDevices().catch(() => {});
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    void refreshDevices()
+      .catch((err) => {
+        if (!cancelled) setLoadError(friendlyError(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshDevices]);
 
   const onDelete = async (id: string) => {
@@ -350,7 +364,7 @@ function DevicesPage() {
           <Button
             label="Approve a device"
             onPress={() => setQrApproveOpen(true)}
-            className="min-h-[36px] px-3"
+            className="min-h-[44px] px-3"
           />
         </View>
       }
@@ -369,27 +383,54 @@ function DevicesPage() {
           <View style={{ height: 1, backgroundColor: p.border }} />
         )}
         ListEmptyComponent={
-          <View className="items-center gap-4 py-10">
-            <Feather name="smartphone" size={24} color={p.mutedForeground} />
-            <View className="items-center gap-1">
-              <Text
-                className="text-[15px] font-semibold"
-                style={{ color: p.foreground }}
-              >
-                No devices found
-              </Text>
-              <Text
-                className="text-center text-[13px]"
-                style={{ color: p.mutedForeground }}
-              >
-                Pair a new device to sign in from it.
-              </Text>
+          loading && devices.length === 0 ? (
+            <View className="gap-2 px-4 py-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
             </View>
-            <Button
-              label="Approve a device"
-              onPress={() => setQrApproveOpen(true)}
-            />
-          </View>
+          ) : loadError && devices.length === 0 ? (
+            <View className="items-center gap-3 py-10">
+              <Text
+                className="text-center text-sm"
+                style={{ color: p.destructive }}
+              >
+                {loadError}
+              </Text>
+              <Button
+                label="Retry"
+                variant="secondary"
+                onPress={() => {
+                  setLoadError(null);
+                  setLoading(true);
+                  void refreshDevices()
+                    .catch((err) => setLoadError(friendlyError(err)))
+                    .finally(() => setLoading(false));
+                }}
+              />
+            </View>
+          ) : (
+            <View className="items-center gap-4 py-10">
+              <Feather name="smartphone" size={24} color={p.mutedForeground} />
+              <View className="items-center gap-1">
+                <Text
+                  className="text-[15px] font-semibold"
+                  style={{ color: p.foreground }}
+                >
+                  No devices found
+                </Text>
+                <Text
+                  className="text-center text-[13px]"
+                  style={{ color: p.mutedForeground }}
+                >
+                  Pair a new device to sign in from it.
+                </Text>
+              </View>
+              <Button
+                label="Approve a device"
+                onPress={() => setQrApproveOpen(true)}
+              />
+            </View>
+          )
         }
         contentContainerClassName="px-4 pb-8"
       />

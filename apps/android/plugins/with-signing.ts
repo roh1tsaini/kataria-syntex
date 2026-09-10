@@ -10,13 +10,18 @@ import type { ConfigPlugin } from "@expo/config-plugins";
 import { withAppBuildGradle } from "@expo/config-plugins";
 
 const DEFS_MARKER = "defaultConfig {";
+const BUILD_TYPES_MARKER = "buildTypes {";
 const RELEASE_SIGNING_MARKER = "signingConfig signingConfigs.debug";
 
 const plugin: ConfigPlugin = (config) => {
   return withAppBuildGradle(config, (mod) => {
     let src = mod.modResults.contents;
 
-    if (!src.includes(DEFS_MARKER) || !src.includes(RELEASE_SIGNING_MARKER)) {
+    if (
+      !src.includes(DEFS_MARKER) ||
+      !src.includes(BUILD_TYPES_MARKER) ||
+      !src.includes(RELEASE_SIGNING_MARKER)
+    ) {
       throw new Error(
         "with-signing: app/build.gradle template changed — signing markers not found. " +
           "Update plugins/with-signing.ts to match the new template.",
@@ -38,15 +43,25 @@ ${DEFS_MARKER}`,
     );
 
     // Point the release buildType at the release signing config when the
-    // keystore is present (falls back to debug signing otherwise).
-    src = src.replace(
-      RELEASE_SIGNING_MARKER,
+    // keystore is present (fall back to debug signing otherwise). The
+    // template also has a debug signing marker, so scope the replacement to
+    // the release block instead of replacing the first occurrence globally.
+    const buildTypesAt = src.indexOf(BUILD_TYPES_MARKER);
+    const releaseAt = src.indexOf("release {", buildTypesAt);
+    const releaseSigningAt = src.indexOf(RELEASE_SIGNING_MARKER, releaseAt);
+    if (releaseAt < 0 || releaseSigningAt < 0) {
+      throw new Error(
+        "with-signing: release signing marker is not inside buildTypes.release.",
+      );
+    }
+    src =
+      src.slice(0, releaseSigningAt) +
       `if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             } else {
                 signingConfig signingConfigs.debug
-            }`,
-    );
+            }` +
+      src.slice(releaseSigningAt + RELEASE_SIGNING_MARKER.length);
 
     // Declare the release signing config after the existing debug one.
     src = src.replace(

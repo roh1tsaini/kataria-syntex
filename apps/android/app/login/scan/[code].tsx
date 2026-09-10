@@ -7,18 +7,40 @@
 
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import { api, useAuth, friendlyError } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
-import { Button, Card } from "@/ui/kit";
+import { usePalette, withAlpha } from "@/theme";
+import { Button, Card, Skeleton } from "@/ui/kit";
 
 type QrInfo = {
   status: "pending" | "approved" | "expired" | "not_found";
   targetName: string | null;
 };
 
+function ScanApproveSkeleton() {
+  const p = usePalette();
+  return (
+    <View
+      className="flex-1 items-center justify-center p-4"
+      style={{ backgroundColor: p.background }}
+    >
+      <Card className="w-full max-w-sm">
+        <View className="gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-11 w-full rounded-md" />
+        </View>
+      </Card>
+    </View>
+  );
+}
+
 export default function ScanApproveRoute() {
-  const { code = "" } = useLocalSearchParams<{ code?: string }>();
+  const params = useLocalSearchParams<{ code?: string | string[] }>();
+  const rawCode = params.code ?? "";
+  const code = Array.isArray(rawCode) ? (rawCode[0] ?? "") : rawCode;
   const status = useAuth((s) => s.status);
   const approveQrLogin = useAuth((s) => s.approveQrLogin);
   const [info, setInfo] = useState<QrInfo | null>(null);
@@ -43,11 +65,20 @@ export default function ScanApproveRoute() {
     };
   }, [status, code]);
 
-  useEffect(() => {
-    if (status === "guest") router.replace("/auth");
-  }, [status, router]);
-
-  if (status === "loading") return null;
+  // No code in the deep link is unrecoverable — send them to sign-in rather
+  // than rendering an approve card that would post an empty code.
+  if (status === "loading") return <ScanApproveSkeleton />;
+  if (status !== "authed" || !code) {
+    return (
+      <Redirect
+        href={
+          code
+            ? { pathname: "/auth", params: { returnTo: `/login/scan/${code}` } }
+            : "/auth"
+        }
+      />
+    );
+  }
 
   const approve = async () => {
     setError(null);
@@ -91,6 +122,34 @@ export default function ScanApproveRoute() {
     >
       <Card className="w-full max-w-sm">
         <View className="gap-3">
+          <View
+            className="h-10 w-10 items-center justify-center rounded-lg"
+            style={{
+              backgroundColor: approvedAs
+                ? withAlpha(p.success, 0.1)
+                : expiredOrUsed
+                  ? withAlpha(p.destructive, 0.1)
+                  : withAlpha(p.primary, 0.1),
+            }}
+          >
+            <Feather
+              name={
+                approvedAs
+                  ? "check-circle"
+                  : expiredOrUsed
+                    ? "alert-triangle"
+                    : "shield"
+              }
+              size={20}
+              color={
+                approvedAs
+                  ? p.success
+                  : expiredOrUsed
+                    ? p.destructive
+                    : p.primary
+              }
+            />
+          </View>
           <Text
             className="text-[17px] font-semibold"
             style={{ color: p.foreground }}

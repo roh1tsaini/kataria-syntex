@@ -30,7 +30,7 @@ export function Select({
   const current = options.find((o) => o.value === value);
   return (
     <View
-      className="min-h-[44px] flex-row flex-wrap items-center gap-1.5 rounded-lg border px-2 py-1.5"
+      className="min-h-[44px] flex-row flex-wrap items-center gap-1.5 rounded-md border px-2 py-1.5"
       style={{
         backgroundColor: p.card,
         borderColor: invalid ? p.destructive : p.input,
@@ -53,7 +53,7 @@ export function Select({
             accessibilityState={{ selected, disabled }}
             disabled={disabled}
             onPress={() => onChange(o.value)}
-            className="min-h-[34px] justify-center rounded-md border px-2.5"
+            className="min-h-[44px] min-w-[44px] justify-center rounded-md border px-2.5"
             style={({ pressed }) => ({
               backgroundColor: selected ? p.primary : "transparent",
               borderColor: selected ? p.primary : p.border,
@@ -81,7 +81,7 @@ export function Textarea(props: React.ComponentProps<typeof TextInput>) {
       placeholderTextColor={p.mutedForeground}
       multiline
       textAlignVertical="top"
-      className="min-h-[88px] rounded-lg border px-3 py-2.5 text-[15px]"
+      className="min-h-[88px] rounded-md border px-3 py-2.5 text-[15px]"
       style={{
         backgroundColor: p.card,
         borderColor: p.input,
@@ -92,7 +92,9 @@ export function Textarea(props: React.ComponentProps<typeof TextInput>) {
   );
 }
 
-/** 44px square icon-only action — edit/delete affordances in list rows. */
+/** 44px circular icon-only action — edit/delete affordances in list rows.
+ *  design.md §2.7: a lone icon action is a circle, transparent at rest and
+ *  tinted on press (hover on pointers), pressing down to scale(0.9). */
 export function IconButton({
   icon,
   label,
@@ -114,10 +116,12 @@ export function IconButton({
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
-      className="h-11 w-11 items-center justify-center rounded-lg"
+      className="h-11 w-11 items-center justify-center rounded-full border"
       style={({ pressed }) => ({
-        opacity: pressed || disabled ? 0.6 : 1,
-        transform: pressed && !disabled ? [{ scale: 0.97 }] : [{ scale: 1 }],
+        borderColor: pressed ? "transparent" : p.border,
+        backgroundColor: pressed ? p.muted : "transparent",
+        opacity: disabled ? 0.5 : 1,
+        transform: pressed && !disabled ? [{ scale: 0.9 }] : [{ scale: 1 }],
       })}
     >
       <Feather

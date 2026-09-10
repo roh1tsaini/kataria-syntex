@@ -20,10 +20,10 @@ import {
   type Member,
   type Permission,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha } from "@/theme";
 import { cn } from "@/lib/cn";
 import { confirm } from "@/ui/confirm";
-import { Badge, Button, Card, Input, Screen } from "@/ui/kit";
+import { Badge, Button, Card, Input, Screen, Skeleton } from "@/ui/kit";
 
 const PERMISSION_GROUPS: { label: string; perms: Permission[] }[] = [
   {
@@ -141,7 +141,7 @@ function RowButton({
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}
       onPress={onPress}
-      className="min-h-[36px] justify-center rounded-lg border px-3"
+      className="min-h-[44px] justify-center rounded-md border px-3"
       style={({ pressed }) => ({
         opacity: pressed ? 0.7 : disabled ? 0.5 : 1,
         borderColor: color ? tint : p.border,
@@ -171,7 +171,7 @@ function BundleChip({
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      className="min-h-[36px] justify-center rounded-lg border px-3"
+      className="min-h-[44px] justify-center rounded-md border px-3"
       style={({ pressed }) => ({
         opacity: pressed ? 0.7 : 1,
         borderColor: active ? p.primary : p.border,
@@ -531,6 +531,8 @@ function MembersPage() {
   const bootstrap = useAuth((s) => s.bootstrap);
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const p = usePalette();
 
@@ -538,7 +540,19 @@ function MembersPage() {
   const canManage = isPrimaryAdmin;
 
   useEffect(() => {
-    void refreshMembers().catch(() => {});
+    let cancelled = false;
+    setListLoading(true);
+    setListError(null);
+    void refreshMembers()
+      .catch((err) => {
+        if (!cancelled) setListError(friendlyError(err));
+      })
+      .finally(() => {
+        if (!cancelled) setListLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshMembers]);
 
   const run = async (
@@ -607,7 +621,33 @@ function MembersPage() {
               label={`${members.length} ${members.length === 1 ? "member" : "members"}`}
             />
           </View>
-          {members.length === 0 ? (
+          {listLoading && members.length === 0 ? (
+            <View className="gap-2 px-4 py-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </View>
+          ) : listError && members.length === 0 ? (
+            <View className="gap-2 px-4 py-6">
+              <Text
+                className="text-center text-sm"
+                style={{ color: p.destructive }}
+              >
+                {listError}
+              </Text>
+              <Button
+                label="Retry"
+                variant="secondary"
+                onPress={() => {
+                  setListError(null);
+                  setListLoading(true);
+                  void refreshMembers()
+                    .catch((err) => setListError(friendlyError(err)))
+                    .finally(() => setListLoading(false));
+                }}
+              />
+            </View>
+          ) : members.length === 0 ? (
             <View className="items-center gap-1 py-10">
               <Feather name="user-plus" size={24} color={p.mutedForeground} />
               <Text
@@ -630,7 +670,7 @@ function MembersPage() {
                 className="px-4"
                 style={{
                   borderTopWidth: i > 0 ? 1 : 0,
-                  borderTopColor: `${p.border}a6`,
+                  borderTopColor: withAlpha(p.border, 0.65),
                 }}
               >
                 <MemberRow
@@ -702,7 +742,7 @@ function MembersPage() {
               className="border-b px-4 py-2.5 text-xs"
               style={{
                 color: p.mutedForeground,
-                borderColor: `${p.border}a6`,
+                borderColor: withAlpha(p.border, 0.65),
               }}
             >
               Invited members who have not yet signed in.
@@ -713,7 +753,7 @@ function MembersPage() {
                 className="px-4"
                 style={{
                   borderTopWidth: i > 0 ? 1 : 0,
-                  borderTopColor: `${p.border}a6`,
+                  borderTopColor: withAlpha(p.border, 0.65),
                 }}
               >
                 <View className="flex-row items-center gap-3 py-3">

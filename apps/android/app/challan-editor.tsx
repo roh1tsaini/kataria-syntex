@@ -19,19 +19,20 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { MorphSheet } from "@/ui/morph-sheet";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import {
   useAuth,
   useChallans,
   useMasters,
+  usePermission,
   friendlyError,
   randomId,
   readCompany,
@@ -49,40 +50,12 @@ import {
   formatNumberForType,
   round3,
 } from "@kataria-syntex/shared";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha, SCRIM } from "@/theme";
 import { Badge, Button, Field, Input, Screen } from "@/ui/kit";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
-
-// ── Kind descriptors (the fields these screens consume from web's
-//    challans-shared.tsx) ─────────────────────────────────────────────────────
-
-type EditorKind = {
-  type: ChallanType;
-  singular: string;
-  party: string;
-};
-
-const KINDS: Record<"sales" | "outward", EditorKind> = {
-  sales: { type: "sales", singular: "sales challan", party: "Customer" },
-  outward: {
-    type: "outward",
-    singular: "job-work challan",
-    party: "Job worker",
-  },
-};
-
-// ── Format helpers (port of web ui/lib/format) ──────────────────────────────
-
-const fmtBoxes = (n: number): string => n.toLocaleString("en-IN");
-const fmtWt = (n: number): string =>
-  n.toLocaleString("en-IN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  });
-const todayLocal = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+import { fmtBoxes, fmtWt, todayLocal } from "@/lib/format";
+import { kindFromParam } from "@/lib/challan-kinds";
+import { useMastersLoad } from "@/lib/use-masters-load";
 
 // ── Item rows ───────────────────────────────────────────────────────────────
 
@@ -280,7 +253,7 @@ function ConfirmModal({
     >
       <View
         className="flex-1 items-center justify-center p-6"
-        style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+        style={{ backgroundColor: SCRIM }}
       >
         <View
           className="w-full max-w-sm rounded-xl border p-4"
@@ -333,23 +306,6 @@ function ConfirmModal({
 }
 
 // ── Masters-load (port of web use-masters-load hook) ────────────────────────
-
-function useMastersLoad(load: () => Promise<unknown>): {
-  failed: boolean;
-  retry: () => void;
-} {
-  const [failed, setFailed] = useState(false);
-  const [nonce, setNonce] = useState(0);
-  const loadRef = useRef(load);
-  loadRef.current = load;
-
-  useEffect(() => {
-    setFailed(false);
-    void loadRef.current().catch(() => setFailed(true));
-  }, [nonce]);
-
-  return { failed, retry: () => setNonce((n) => n + 1) };
-}
 
 // ── Packing import sheet (port of web packing-import-dialog) ────────────────
 
@@ -427,13 +383,19 @@ function PackingImportSheet({
     }
     onImport(items);
     onOpenChange(false);
-    setSelected(new Set());
+  };
+
+  // Any dismissal — Import, Cancel, scrim, hardware back — clears the
+  // selection, so reopening never re-imports rows the user already added.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setSelected(new Set());
+    onOpenChange(next);
   };
 
   return (
     <MorphSheet
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title="Import from Packing"
     >
       <View style={{ backgroundColor: p.background }}>
@@ -489,7 +451,7 @@ function PackingImportSheet({
                   <View
                     className="flex-row items-center gap-2 border-b px-3 py-2"
                     style={{
-                      borderColor: `${p.border}66`,
+                      borderColor: withAlpha(p.border, 0.4),
                       backgroundColor: p.muted,
                     }}
                   >
@@ -640,7 +602,7 @@ export default function ChallanEditorScreen() {
   const router = useRouter();
   const kindParam = Array.isArray(params.kind) ? params.kind[0] : params.kind;
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
-  const kind = KINDS[kindParam === "outward" ? "outward" : "sales"];
+  const kind = kindFromParam(kindParam);
   const isEdit = !!id;
 
   const { detail, create, update, load, clearDetail } = useChallans();
@@ -659,12 +621,16 @@ export default function ChallanEditorScreen() {
     refreshColors,
   } = useMasters();
   const company = useAuth((s) => s.company);
+  const status = useAuth((s) => s.status);
+  const can = usePermission();
+  const canSave = isEdit ? can("edit_challan") : can("create_challan");
 
   const [date, setDate] = useState(todayLocal());
   const [partyId, setPartyId] = useState("");
   const [notes, setNotes] = useState("");
   const [rows, setRows] = useState<ItemRow[]>([emptyRow()]);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -699,9 +665,12 @@ export default function ChallanEditorScreen() {
 
   useEffect(() => {
     if (isEdit && id && !prefilled.current)
-      void load(id).catch((err) => {
-        setError(friendlyError(err, "Could not load the challan."));
-      });
+      void load(id)
+        .then(() => setLoadFailed(false))
+        .catch((err) => {
+          setLoadFailed(true);
+          setError(friendlyError(err, "Could not load the challan."));
+        });
   }, [isEdit, id, load]);
 
   useEffect(() => {
@@ -839,6 +808,10 @@ export default function ChallanEditorScreen() {
   })();
 
   const onSave = async () => {
+    if (isEdit && loadFailed) {
+      setError("Couldn't load the challan. Retry the load first.");
+      return;
+    }
     if (mastersFailed) {
       setError("Couldn't load the master data. Retry the load first.");
       return;
@@ -918,6 +891,10 @@ export default function ChallanEditorScreen() {
   const newLabel = kind.type === "sales" ? "sales challan" : "job-work challan";
   const p = usePalette();
 
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
+  if (!canSave) return <Redirect href="/" />;
+
   const partyOptions: PickerOption[] = parties.map((party) => ({
     id: party.id,
     label: party.name,
@@ -967,10 +944,7 @@ export default function ChallanEditorScreen() {
       title={isEdit ? `Edit ${newLabel}` : `New ${newLabel}`}
       subtitle={`${company?.name ?? "Company"} · number assigned when saved`}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <KeyboardAvoidingView behavior={undefined} className="flex-1">
         <View className="flex-1">
           <SyncBanner onOpen={() => setSyncOpen(true)} />
 
@@ -978,6 +952,25 @@ export default function ChallanEditorScreen() {
             className="flex-1"
             contentContainerClassName="px-4 pb-6"
             keyboardShouldPersistTaps="handled"
+            refreshControl={
+              <RefreshControl
+                refreshing={false}
+                onRefresh={() => {
+                  if (isEdit && id) {
+                    setLoadFailed(false);
+                    void load(id)
+                      .then(() => setLoadFailed(false))
+                      .catch((err) => {
+                        setLoadFailed(true);
+                        setError(
+                          friendlyError(err, "Could not load the challan."),
+                        );
+                      });
+                  }
+                  void retryMasters();
+                }}
+              />
+            }
           >
             {error ? (
               <View

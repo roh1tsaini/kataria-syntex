@@ -21,10 +21,10 @@ export async function fetchChallanPdf(
   challanId: string,
   challanNumber: string,
 ): Promise<string> {
-  const dir = `${FileSystem.documentDirectory}pdfs/`;
-  await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(
-    () => {},
-  );
+  const baseDir = FileSystem.documentDirectory;
+  if (!baseDir) throw new ApiError(0, "storage_unavailable");
+  const dir = `${baseDir}pdfs/`;
+  await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
   const target = `${dir}${safeFilename(challanNumber)}`;
 
   const token = await core().readToken();
@@ -51,12 +51,33 @@ export async function fetchChallanPdf(
   }
 
   const bytes = new Uint8Array(await res.arrayBuffer());
+  // Hermes has no btoa and spread of large arrays overflows the stack —
+  // encode in small chunks with a manual base64 alphabet instead.
+  const alphabet =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   let binary = "";
-  const chunk = 0x8000;
+  const chunk = 0x4000;
   for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    const end = Math.min(i + chunk, bytes.length);
+    let chunkBits = "";
+    for (let j = i; j < end; j++) {
+      chunkBits += String.fromCharCode(bytes[j]);
+    }
+    binary += chunkBits;
   }
-  await FileSystem.writeAsStringAsync(target, btoa(binary), {
+  let base64 = "";
+  for (let i = 0; i < binary.length; i += 3) {
+    const a = binary.charCodeAt(i);
+    const b = i + 1 < binary.length ? binary.charCodeAt(i + 1) : 0;
+    const c = i + 2 < binary.length ? binary.charCodeAt(i + 2) : 0;
+    const triple = (a << 16) | (b << 8) | c;
+    base64 +=
+      alphabet[(triple >> 18) & 63] +
+      alphabet[(triple >> 12) & 63] +
+      (i + 1 < binary.length ? alphabet[(triple >> 6) & 63] : "=") +
+      (i + 2 < binary.length ? alphabet[triple & 63] : "=");
+  }
+  await FileSystem.writeAsStringAsync(target, base64, {
     encoding: FileSystem.EncodingType.Base64,
   });
   return target;
@@ -68,6 +89,8 @@ export async function shareChallanPdf(
   challanNumber: string,
 ): Promise<void> {
   const uri = await fetchChallanPdf(challanId, challanNumber);
+  const available = await Sharing.isAvailableAsync();
+  if (!available) throw new ApiError(0, "share_unavailable");
   await Sharing.shareAsync(uri, {
     mimeType: "application/pdf",
     dialogTitle: "Share challan PDF",

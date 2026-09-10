@@ -17,6 +17,13 @@ export const daysAgoISO = (n: number): string => {
   return localDateKey(d);
 };
 
+/** "1,234 boxes" / "1 box" — every register footer counts the same way. */
+export const countLabel = (n: number, singular: string, plural: string) =>
+  `${n.toLocaleString("en-IN")} ${n === 1 ? singular : plural}`;
+
+/** Today as YYYY-MM-DD in the device timezone. */
+export const todayLocal = (): string => localDateKey();
+
 export const fmtDate = (iso: string) => {
   // Date-only strings ("2026-09-03") parse as UTC midnight — construct the
   // date from its parts so timezones west of UTC don't render the previous
@@ -29,6 +36,7 @@ export const fmtDate = (iso: string) => {
         Number(iso.slice(8, 10)),
       )
     : new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",

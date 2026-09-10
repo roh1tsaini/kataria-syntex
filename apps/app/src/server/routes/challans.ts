@@ -80,6 +80,8 @@ challansRoute.get("/", async (c) => {
     const search = or(
       likeContains(challans.customerName, q),
       likeContains(challans.jobWorkerName, q),
+      // The register's search field promises "customer or challan #".
+      likeContains(challans.challanNumber, q),
     );
     if (search) conditions.push(search);
   }

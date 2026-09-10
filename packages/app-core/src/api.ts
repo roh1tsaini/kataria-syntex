@@ -239,9 +239,15 @@ export function base64ToBlob(base64: string, type: string): Blob {
  * rules as `api()`, but the body is raw bytes (used for PDFs). Web/desktop
  * only; the Android app downloads files through its own native transport.
  */
-export async function apiBlob(path: string): Promise<Blob> {
+export async function apiBlob(
+  path: string,
+  options: { timeoutMs?: number } = {},
+): Promise<Blob> {
+  const { timeoutMs = 30_000 } = options;
   const a = core();
   const resolvedToken = await a.readToken();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let res: Response;
   try {
     res = await fetch(`${a.apiBaseUrl}/api${path}`, {
@@ -250,18 +256,31 @@ export async function apiBlob(path: string): Promise<Blob> {
         ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
         ...deviceHeaders(),
       },
+      signal: ctrl.signal,
     });
   } catch {
     throw networkError();
+  } finally {
+    clearTimeout(timer);
   }
   if (!res.ok) {
     let code = res.status === 429 ? "rate_limited" : "pdf_render_failed";
+    let data: unknown;
     try {
-      const body = (await res.json()) as { error?: unknown };
-      if (typeof body.error === "string") code = body.error;
+      data = (await res.json()) as { error?: unknown };
+      if (
+        data !== null &&
+        typeof data === "object" &&
+        "error" in data &&
+        typeof (data as { error: unknown }).error === "string"
+      ) {
+        code = (data as { error: string }).error;
+      }
     } catch {
       // non-JSON error body — keep the status-derived code
     }
+    if (res.status === 426 || code === "update_required")
+      raiseUpdateRequired(data);
     throw new ApiError(res.status, code);
   }
   return res.blob();

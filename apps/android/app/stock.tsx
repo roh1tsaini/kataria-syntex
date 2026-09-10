@@ -20,7 +20,7 @@ import {
   useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
-import { fmtWt } from "@/lib/format";
+import { countLabel, fmtWt } from "@/lib/format";
 import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
 
 type StockGroup = {
@@ -42,9 +42,6 @@ const stockCache: Record<string, Record<StockType, StockGroup[] | null>> = {};
 registerDataCache(() => {
   for (const key of Object.keys(stockCache)) delete stockCache[key];
 });
-
-const countLabel = (n: number, singular: string, plural: string): string =>
-  `${n.toLocaleString("en-IN")} ${n === 1 ? singular : plural}`;
 
 function StockCard({ item }: { item: StockGroup }) {
   const p = usePalette();
@@ -160,35 +157,55 @@ function StockPage({
   // itself (it would always compare equal).
   const stockTypeRef = useRef(stockType);
   stockTypeRef.current = stockType;
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+  const loadSeq = useRef(0);
   const p = usePalette();
 
   const load = useCallback(async () => {
     const type = stockType;
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
     if (!stockCache[workspaceId]?.[type]) {
       setLoading(true);
     }
     setLoadError(null);
     try {
       const res = await api<{ items: StockGroup[] }>(`/stock?type=${type}`);
-      if (type !== stockTypeRef.current) return;
+      if (
+        seq !== loadSeq.current ||
+        requestedWorkspace !== workspaceRef.current ||
+        type !== stockTypeRef.current
+      )
+        return;
       (stockCache[workspaceId] ??= { raw: null, dyed: null })[type] = res.items;
       setItems(res.items);
     } catch (err) {
-      if (type === stockTypeRef.current && !stockCache[workspaceId]?.[type]) {
+      if (
+        seq === loadSeq.current &&
+        requestedWorkspace === workspaceRef.current &&
+        type === stockTypeRef.current &&
+        !stockCache[requestedWorkspace]?.[type]
+      ) {
         setItems([]);
         setLoadError(friendlyError(err));
       }
     } finally {
-      if (type === stockTypeRef.current) setLoading(false);
+      if (
+        seq === loadSeq.current &&
+        requestedWorkspace === workspaceRef.current &&
+        type === stockTypeRef.current
+      )
+        setLoading(false);
     }
   }, [stockType, workspaceId]);
 
   useEffect(() => {
     const cached = stockCache[workspaceId]?.[stockType];
-    if (cached) {
-      setItems(cached);
-      setLoading(false);
-    }
+    setItems(cached ?? []);
+    setLoading(!cached);
+    setLoadError(null);
     void load();
   }, [load, stockType, workspaceId]);
 
@@ -273,7 +290,7 @@ function StockPage({
               accessibilityRole="button"
               accessibilityLabel="Clear search"
               onPress={() => setQ("")}
-              className="absolute right-1 top-1 h-[42px] w-[42px] items-center justify-center rounded-md"
+              className="absolute right-1 top-1 h-11 w-11 items-center justify-center rounded-full"
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
               <Feather name="x" size={14} color={p.mutedForeground} />

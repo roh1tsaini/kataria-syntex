@@ -128,6 +128,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
   // stale response must never clobber newer state.
   let refreshSeq = 0;
   let loadSeq = 0;
+  let summarySeq = 0;
   // The list page's current query. Post-mutation refreshes (create/update/
   // remove) pass no filter — reusing this keeps the paginated page state
   // (rows + total) consistent instead of resetting it to an unfiltered read.
@@ -220,6 +221,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
     clearDetail: () => set({ detail: null }),
 
     summary: async (fy, workspaceId) => {
+      const seq = ++summarySeq;
       const fyParam = fy ? `&fy=${encodeURIComponent(fy)}` : "";
       const cacheKey = `${workspaceId ?? ""}:${fy ?? ""}`;
       try {
@@ -231,7 +233,11 @@ export const useChallans = create<ChallansState>()((set, get) => {
           sales: mergePending(salesRes.items, { type: "sales", fy }),
           outward: mergePending(outwardRes.items, { type: "outward", fy }),
         };
-        set((s) => ({ summaryCache: { ...s.summaryCache, [cacheKey]: res } }));
+        if (seq === summarySeq) {
+          set((s) => ({
+            summaryCache: { ...s.summaryCache, [cacheKey]: res },
+          }));
+        }
         return res;
       } catch (err) {
         if (err instanceof ApiError && err.isNetworkError) {
@@ -244,9 +250,11 @@ export const useChallans = create<ChallansState>()((set, get) => {
             sales: local.filter((c) => c.type === "sales"),
             outward: local.filter((c) => c.type === "outward"),
           };
-          set((s) => ({
-            summaryCache: { ...s.summaryCache, [cacheKey]: res },
-          }));
+          if (seq === summarySeq) {
+            set((s) => ({
+              summaryCache: { ...s.summaryCache, [cacheKey]: res },
+            }));
+          }
           return res;
         }
         throw err;

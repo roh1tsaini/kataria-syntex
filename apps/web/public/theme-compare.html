@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kataria Syntex — theme directions</title>
+    <style>
+      /* ---------- candidate faces (OFL, self-hosted) ---------- */
+      @font-face {
+        font-family: "Fraunces";
+        src: url("/theme-fonts/fraunces-normal.woff2") format("woff2");
+        font-weight: 400 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Fraunces";
+        src: url("/theme-fonts/fraunces-italic.woff2") format("woff2");
+        font-weight: 400 700;
+        font-style: italic;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Instrument Serif";
+        src: url("/theme-fonts/instrument-serif-normal.woff2") format("woff2");
+        font-weight: 400;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Instrument Serif";
+        src: url("/theme-fonts/instrument-serif-italic.woff2") format("woff2");
+        font-weight: 400;
+        font-style: italic;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Bricolage";
+        src: url("/theme-fonts/bricolage.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Geist";
+        src: url("/theme-fonts/geist.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Geist Mono";
+        src: url("/theme-fonts/geist-mono.woff2") format("woff2");
+        font-weight: 400 600;
+        font-display: block;
+      }
+
+      /* ---------- page chrome ---------- */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      :root {
+        --page: #f4f4f5;
+        --page-ink: #18181b;
+        --page-dim: #71717a;
+        --page-line: rgb(0 0 0 / 0.12);
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--page-ink);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 40px 20px 96px;
+      }
+      .intro h1 {
+        margin: 0;
+        font-size: 30px;
+        letter-spacing: -0.02em;
+      }
+      .intro p {
+        max-width: 62ch;
+        margin: 10px 0 0;
+        color: var(--page-dim);
+      }
+      .intro strong {
+        color: var(--page-ink);
+      }
+
+      /* ---------- specimen frame ---------- */
+      .specimen {
+        --bg: #ffffff;
+        --bg-2: #f4f4f5;
+        --surface: #ffffff;
+        --surface-2: #fafafa;
+        --ink: #18181b;
+        --ink-2: #52525b;
+        --ink-3: #a1a1aa;
+        --line: rgb(0 0 0 / 0.09);
+        --line-strong: rgb(0 0 0 / 0.16);
+        --accent: #18181b;
+        --accent-ink: #ffffff;
+        --highlight: #d97706;
+        --shadow: 0 24px 60px -28px rgb(0 0 0 / 0.32);
+
+        /* display + mono default to the shared faces; each direction overrides */
+        --display: "Geist", ui-sans-serif, system-ui, sans-serif;
+        --mono: "Geist Mono", ui-monospace, monospace;
+        --display-weight: 600;
+        --display-tracking: -0.03em;
+        --display-leading: 1.02;
+        --display-style: normal;
+
+        background: var(--bg);
+        color: var(--ink);
+        border: 1px solid var(--page-line);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+        transition:
+          background-color 260ms,
+          color 260ms,
+          border-color 260ms;
+      }
+      .specimen.dark {
+        box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.6);
+      }
+
+      /* ---------- specimen header ---------- */
+      .frame-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--line);
+        background: var(--bg-2);
+      }
+      .badge {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .frame-head .name {
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .frame-head .faces {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-2);
+      }
+      .frame-head .spacer {
+        flex: 1;
+      }
+      .mode {
+        display: inline-flex;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .mode button {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 6px 13px;
+        border: 0;
+        background: transparent;
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      .mode button[aria-pressed="true"] {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      /* ---------- specimen body ---------- */
+      .body {
+        padding: 30px 28px 34px;
+      }
+      .specimen.dark .body {
+        background-image: radial-gradient(
+          46rem 22rem at 12% -10%,
+          color-mix(in oklab, var(--accent) 20%, transparent),
+          transparent 62%
+        );
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 12px;
+        background: var(--surface);
+      }
+      .eyebrow i {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--highlight);
+        display: block;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        gap: 34px;
+        align-items: start;
+        margin-top: 22px;
+      }
+      @media (max-width: 760px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      h2.headline {
+        margin: 0;
+        font-family: var(--display);
+        font-weight: var(--display-weight);
+        font-style: var(--display-style);
+        letter-spacing: var(--display-tracking);
+        line-height: var(--display-leading);
+        font-size: clamp(38px, 5vw, 54px);
+        text-wrap: balance;
+      }
+      h2.headline em {
+        font-style: inherit;
+        color: var(--highlight);
+      }
+      .lede {
+        margin: 16px 0 0;
+        max-width: 46ch;
+        color: var(--ink-2);
+        font-size: 16px;
+        line-height: 1.6;
+        text-wrap: pretty;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 46px;
+        padding: 0 20px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background-color 180ms,
+          color 180ms,
+          border-color 180ms,
+          transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn.solid {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .btn.ghost {
+        border-color: var(--line-strong);
+        color: var(--ink);
+        background: transparent;
+      }
+      .btn.ghost:hover {
+        border-color: var(--ink);
+      }
+
+      .fineprint {
+        margin: 26px 0 0;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: var(--ink-3);
+        text-transform: uppercase;
+      }
+
+      /* ---------- card ---------- */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow:
+          0 1px 2px rgb(0 0 0 / 0.04),
+          0 14px 30px -18px rgb(0 0 0 / 0.3);
+      }
+      .art {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        background: var(--accent);
+        overflow: hidden;
+      }
+      .art img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: grayscale(1) brightness(1.14) contrast(0.98);
+        mix-blend-mode: multiply;
+      }
+      .card-body {
+        padding: 18px;
+      }
+      .card-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--ink-2);
+      }
+      .chip {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: color-mix(in oklab, var(--highlight) 16%, transparent);
+        color: var(--highlight);
+      }
+      .card h3 {
+        margin: 10px 0 0;
+        font-family: var(--display);
+        font-weight: var(--display-weight);
+        letter-spacing: -0.02em;
+        font-size: 21px;
+      }
+      .card p {
+        margin: 8px 0 0;
+        font-size: 13.5px;
+        color: var(--ink-2);
+      }
+      .specs {
+        margin: 16px 0 0;
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+        display: grid;
+        gap: 7px;
+      }
+      .specs div {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-2);
+      }
+      .specs div b {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      /* ---------- stat band ---------- */
+      .band {
+        margin-top: 22px;
+        border-radius: 18px;
+        padding: 4px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        overflow: hidden;
+      }
+      @media (max-width: 620px) {
+        .band {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .band div {
+        padding: 16px 18px;
+        background: color-mix(in oklab, var(--accent) 88%, transparent);
+      }
+      .band b {
+        display: block;
+        font-family: var(--display);
+        font-weight: var(--display-weight);
+        letter-spacing: -0.02em;
+        font-size: 26px;
+        color: var(--highlight);
+      }
+      .band span {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.72;
+      }
+
+      /* ---------- swatch strip ---------- */
+      .strip {
+        margin-top: 22px;
+        display: flex;
+        gap: 4px;
+        border-radius: 12px;
+        overflow: hidden;
+        padding: 6px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+      }
+      .strip i {
+        flex: 1;
+        height: 52px;
+        border-radius: 4px;
+      }
+      .strip-caption {
+        margin: 8px 0 0;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+
+      /* ---------- controls row ---------- */
+      .controls {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 620px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+      .field label {
+        display: block;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        margin-bottom: 6px;
+      }
+      .field input,
+      .field .select {
+        width: 100%;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 14px;
+      }
+      .field input::placeholder {
+        color: var(--ink-3);
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .pills button {
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: transparent;
+        color: var(--ink-2);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .pills button[aria-pressed="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      .pills button.accent-pill[aria-pressed="true"] {
+        background: var(--highlight);
+        border-color: var(--highlight);
+        color: var(--accent-ink);
+      }
+
+      /* ================= A · SLATE ================= */
+      .p-a {
+        --bg: #fbfbfa;
+        --bg-2: #f4f4f2;
+        --surface: #ffffff;
+        --surface-2: #f7f7f5;
+        --ink: #1c1c1a;
+        --ink-2: #5b5b56;
+        --ink-3: #a3a39c;
+        --line: rgb(28 28 26 / 0.1);
+        --line-strong: rgb(28 28 26 / 0.18);
+        --accent: #1c1c1a;
+        --accent-ink: #fbfbfa;
+        --highlight: #b45309;
+        --display: "Geist", ui-sans-serif, system-ui, sans-serif;
+      }
+      .p-a.dark {
+        --bg: #131311;
+        --bg-2: #1a1a18;
+        --surface: #1c1c1a;
+        --surface-2: #222220;
+        --ink: #f2f2ee;
+        --ink-2: #a8a8a0;
+        --ink-3: #6e6e68;
+        --line: rgb(255 255 255 / 0.1);
+        --line-strong: rgb(255 255 255 / 0.2);
+        --accent: #f2f2ee;
+        --accent-ink: #131311;
+        --highlight: #f59e0b;
+      }
+      .p-a .art {
+        background: #2a2a27;
+      }
+      .p-a.dark .art {
+        background: #f2f2ee;
+      }
+
+      /* ================= B · CLAY ================= */
+      .p-b {
+        --bg: #faf6f1;
+        --bg-2: #f2ebe3;
+        --surface: #ffffff;
+        --surface-2: #faf6f1;
+        --ink: #261c16;
+        --ink-2: #6d5a4d;
+        --ink-3: #a99486;
+        --line: rgb(38 28 22 / 0.12);
+        --line-strong: rgb(38 28 22 / 0.22);
+        --accent: #8a3a1e;
+        --accent-ink: #fdf7f2;
+        --highlight: #a8481f;
+        --display: "Fraunces", Georgia, serif;
+        --display-weight: 600;
+        --display-tracking: -0.025em;
+        --display-leading: 1;
+      }
+      .p-b.dark {
+        --bg: #1a1310;
+        --bg-2: #221a15;
+        --surface: #241b16;
+        --surface-2: #2c221b;
+        --ink: #f6ece3;
+        --ink-2: #c0a795;
+        --ink-3: #8a7263;
+        --line: rgb(246 236 227 / 0.12);
+        --line-strong: rgb(246 236 227 / 0.22);
+        --accent: #c2592e;
+        --accent-ink: #1a1310;
+        --highlight: #e8834a;
+      }
+      .p-b .art {
+        background: #8a3a1e;
+      }
+      .p-b.dark .art {
+        background: #e8b48f;
+      }
+      .p-b .chip {
+        background: color-mix(in oklab, var(--highlight) 14%, transparent);
+      }
+
+      /* ================= C · FOREST ================= */
+      .p-c {
+        --bg: #f7f7f4;
+        --bg-2: #efefea;
+        --surface: #ffffff;
+        --surface-2: #f7f7f4;
+        --ink: #14201b;
+        --ink-2: #4e5b54;
+        --ink-3: #98a29b;
+        --line: rgb(20 32 27 / 0.1);
+        --line-strong: rgb(20 32 27 / 0.18);
+        --accent: #17362b;
+        --accent-ink: #f4f7f4;
+        --highlight: #0f766e;
+        --display: "Instrument Serif", Georgia, serif;
+        --display-weight: 400;
+        --display-tracking: -0.015em;
+        --display-leading: 1.04;
+      }
+      .p-c.dark {
+        --bg: #0e1613;
+        --bg-2: #141d19;
+        --surface: #16211c;
+        --surface-2: #1b2721;
+        --ink: #eef4ef;
+        --ink-2: #a7b6ac;
+        --ink-3: #6d7c73;
+        --line: rgb(238 244 239 / 0.1);
+        --line-strong: rgb(238 244 239 / 0.2);
+        --accent: #eef4ef;
+        --accent-ink: #0e1613;
+        --highlight: #2dd4bf;
+      }
+      .p-c .art {
+        background: #1d4034;
+      }
+      .p-c.dark .art {
+        background: #cfe4d7;
+      }
+
+      /* specimen stack */
+      .stack {
+        display: grid;
+        gap: 56px;
+      }
+      .swatch-ready .strip i {
+        height: 56px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="intro">
+        <h1>Three directions for the new site</h1>
+        <p>
+          Same content, same layout, same components in each — only the palette
+          and the type pairing change. <strong>Light and Dark</strong>
+          for every direction; toggle either. Bottom of each specimen is the
+          same trio of yarns, the same eight shades from the real card, and the
+          same form controls.
+        </p>
+      </div>
+
+      <div class="stack" style="margin-top: 34px">
+        <!-- ============ A ============ -->
+        <section class="specimen p-a" id="spec-a">
+          <header class="frame-head">
+            <span class="badge">A</span>
+            <span class="name">Slate</span>
+            <span class="faces"
+              >Geist · Geist Mono — warm near-black + amber</span
+            >
+            <span class="spacer"></span>
+            <span class="mode" role="group" aria-label="Mode for A">
+              <button type="button" data-mode="light" aria-pressed="true">
+                Light
+              </button>
+              <button type="button" data-mode="dark" aria-pressed="false">
+                Dark
+              </button>
+            </span>
+          </header>
+          <div class="body">
+            <span class="eyebrow"
+              ><i></i>B2B yarn supply — Surat · Est. 2009</span
+            >
+            <div class="layout">
+              <div>
+                <h2 class="headline">
+                  The right yarn,<br />with a <em>straight answer</em>.
+                </h2>
+                <p class="lede">
+                  Cotton, polyester, and dyed yarn for weaving units, exporters,
+                  and garment teams — quoted on your requirement, not a price
+                  list.
+                </p>
+                <div class="actions">
+                  <button class="btn solid" type="button">
+                    Send an inquiry →
+                  </button>
+                  <button class="btn ghost" type="button">
+                    Browse the yarns
+                  </button>
+                </div>
+                <p class="fineprint">
+                  21.17°N 72.83°E — quoted on your requirement
+                </p>
+              </div>
+              <div class="card">
+                <div class="art">
+                  <img src="/images/cotton-yarn.webp" alt="" />
+                </div>
+                <div class="card-body">
+                  <div class="card-top">
+                    <span>KS-CT-01</span><span class="chip">Cotton</span>
+                  </div>
+                  <h3>Combed Cotton Yarn</h3>
+                  <p>Clean, even yarn for fine shirting and knit programs.</p>
+                  <div class="specs">
+                    <div><span>COUNT RANGE</span><b>Ne 20 – Ne 40</b></div>
+                    <div><span>SPINNING</span><b>Ring spun</b></div>
+                    <div><span>FORM</span><b>Cone, waxed</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="band">
+              <div><b>16+</b><span>years in the trade</span></div>
+              <div><b>20+</b><span>export countries</span></div>
+              <div><b>6+</b><span>high-demand states</span></div>
+              <div><b>01</b><span>point of contact</span></div>
+            </div>
+
+            <div class="strip" data-swatches></div>
+            <p class="strip-caption">RAJ shade card — 8 of 200+ shades</p>
+
+            <div class="controls">
+              <div class="field">
+                <label for="a-mail">Email</label>
+                <input id="a-mail" placeholder="you@company.com" />
+              </div>
+              <div class="field">
+                <label>Filter by family</label>
+                <div class="pills">
+                  <button type="button" aria-pressed="true">All</button>
+                  <button type="button" aria-pressed="false">Cotton</button>
+                  <button type="button" aria-pressed="false">Polyester</button>
+                  <button type="button" class="accent-pill" aria-pressed="true">
+                    Dyed
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ B ============ -->
+        <section class="specimen p-b" id="spec-b">
+          <header class="frame-head">
+            <span class="badge">B</span>
+            <span class="name">Clay</span>
+            <span class="faces"
+              >Fraunces · Geist Mono — warm paper + burnt clay</span
+            >
+            <span class="spacer"></span>
+            <span class="mode" role="group" aria-label="Mode for B">
+              <button type="button" data-mode="light" aria-pressed="true">
+                Light
+              </button>
+              <button type="button" data-mode="dark" aria-pressed="false">
+                Dark
+              </button>
+            </span>
+          </header>
+          <div class="body">
+            <span class="eyebrow"
+              ><i></i>B2B yarn supply — Surat · Est. 2009</span
+            >
+            <div class="layout">
+              <div>
+                <h2 class="headline">
+                  The right yarn,<br />with a <em>straight answer</em>.
+                </h2>
+                <p class="lede">
+                  Cotton, polyester, and dyed yarn for weaving units, exporters,
+                  and garment teams — quoted on your requirement, not a price
+                  list.
+                </p>
+                <div class="actions">
+                  <button class="btn solid" type="button">
+                    Send an inquiry →
+                  </button>
+                  <button class="btn ghost" type="button">
+                    Browse the yarns
+                  </button>
+                </div>
+                <p class="fineprint">
+                  21.17°N 72.83°E — quoted on your requirement
+                </p>
+              </div>
+              <div class="card">
+                <div class="art">
+                  <img src="/images/cotton-yarn.webp" alt="" />
+                </div>
+                <div class="card-body">
+                  <div class="card-top">
+                    <span>KS-CT-01</span><span class="chip">Cotton</span>
+                  </div>
+                  <h3>Combed Cotton Yarn</h3>
+                  <p>Clean, even yarn for fine shirting and knit programs.</p>
+                  <div class="specs">
+                    <div><span>COUNT RANGE</span><b>Ne 20 – Ne 40</b></div>
+                    <div><span>SPINNING</span><b>Ring spun</b></div>
+                    <div><span>FORM</span><b>Cone, waxed</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="band">
+              <div><b>16+</b><span>years in the trade</span></div>
+              <div><b>20+</b><span>export countries</span></div>
+              <div><b>6+</b><span>high-demand states</span></div>
+              <div><b>01</b><span>point of contact</span></div>
+            </div>
+
+            <div class="strip" data-swatches></div>
+            <p class="strip-caption">RAJ shade card — 8 of 200+ shades</p>
+
+            <div class="controls">
+              <div class="field">
+                <label for="b-mail">Email</label>
+                <input id="b-mail" placeholder="you@company.com" />
+              </div>
+              <div class="field">
+                <label>Filter by family</label>
+                <div class="pills">
+                  <button type="button" aria-pressed="true">All</button>
+                  <button type="button" aria-pressed="false">Cotton</button>
+                  <button type="button" aria-pressed="false">Polyester</button>
+                  <button type="button" class="accent-pill" aria-pressed="true">
+                    Dyed
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ C ============ -->
+        <section class="specimen p-c" id="spec-c">
+          <header class="frame-head">
+            <span class="badge">C</span>
+            <span class="name">Forest</span>
+            <span class="faces"
+              >Instrument Serif · Geist Mono — deep green + teal</span
+            >
+            <span class="spacer"></span>
+            <span class="mode" role="group" aria-label="Mode for C">
+              <button type="button" data-mode="light" aria-pressed="true">
+                Light
+              </button>
+              <button type="button" data-mode="dark" aria-pressed="false">
+                Dark
+              </button>
+            </span>
+          </header>
+          <div class="body">
+            <span class="eyebrow"
+              ><i></i>B2B yarn supply — Surat · Est. 2009</span
+            >
+            <div class="layout">
+              <div>
+                <h2 class="headline">
+                  The right yarn,<br />with a <em>straight answer</em>.
+                </h2>
+                <p class="lede">
+                  Cotton, polyester, and dyed yarn for weaving units, exporters,
+                  and garment teams — quoted on your requirement, not a price
+                  list.
+                </p>
+                <div class="actions">
+                  <button class="btn solid" type="button">
+                    Send an inquiry →
+                  </button>
+                  <button class="btn ghost" type="button">
+                    Browse the yarns
+                  </button>
+                </div>
+                <p class="fineprint">
+                  21.17°N 72.83°E — quoted on your requirement
+                </p>
+              </div>
+              <div class="card">
+                <div class="art">
+                  <img src="/images/cotton-yarn.webp" alt="" />
+                </div>
+                <div class="card-body">
+                  <div class="card-top">
+                    <span>KS-CT-01</span><span class="chip">Cotton</span>
+                  </div>
+                  <h3>Combed Cotton Yarn</h3>
+                  <p>Clean, even yarn for fine shirting and knit programs.</p>
+                  <div class="specs">
+                    <div><span>COUNT RANGE</span><b>Ne 20 – Ne 40</b></div>
+                    <div><span>SPINNING</span><b>Ring spun</b></div>
+                    <div><span>FORM</span><b>Cone, waxed</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="band">
+              <div><b>16+</b><span>years in the trade</span></div>
+              <div><b>20+</b><span>export countries</span></div>
+              <div><b>6+</b><span>high-demand states</span></div>
+              <div><b>01</b><span>point of contact</span></div>
+            </div>
+
+            <div class="strip" data-swatches></div>
+            <p class="strip-caption">RAJ shade card — 8 of 200+ shades</p>
+
+            <div class="controls">
+              <div class="field">
+                <label for="c-mail">Email</label>
+                <input id="c-mail" placeholder="you@company.com" />
+              </div>
+              <div class="field">
+                <label>Filter by family</label>
+                <div class="pills">
+                  <button type="button" aria-pressed="true">All</button>
+                  <button type="button" aria-pressed="false">Cotton</button>
+                  <button type="button" aria-pressed="false">Polyester</button>
+                  <button type="button" class="accent-pill" aria-pressed="true">
+                    Dyed
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // Real shade codes/hexes from the RAJ card (packages/shared).
+      const SWATCHES = [
+        "#FFA500",
+        "#4DD0E1",
+        "#00838F",
+        "#7B1F3A",
+        "#E91E63",
+        "#43A047",
+        "#3949AB",
+        "#8D6E63",
+      ];
+      for (const strip of document.querySelectorAll("[data-swatches]")) {
+        strip.innerHTML = SWATCHES.map(
+          (hex) => `<i style="background:${hex}"></i>`,
+        ).join("");
+      }
+
+      for (const head of document.querySelectorAll(".mode")) {
+        const specimen = head.closest(".specimen");
+        for (const button of head.querySelectorAll("button")) {
+          button.addEventListener("click", () => {
+            const dark = button.dataset.mode === "dark";
+            specimen.classList.toggle("dark", dark);
+            for (const b of head.querySelectorAll("button")) {
+              b.setAttribute("aria-pressed", String(b === button));
+            }
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

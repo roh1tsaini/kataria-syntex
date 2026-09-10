@@ -208,6 +208,8 @@ function applySession(
   ) => void,
   payload: SessionPayload,
 ): void {
+  // A fresh login supersedes any in-flight bootstrap reconciliation.
+  ++bootstrapGeneration;
   // Fresh login: drop any data a previous account left on this device.
   clearAccountCache();
   invalidateDataCaches();
@@ -247,6 +249,8 @@ function cachedWorkspace(
   };
 }
 
+let bootstrapGeneration = 0;
+
 export const useAuth = create<AuthState>()((set, get) => ({
   // No storage reads at module scope — stores evaluate before the shell's
   // configureCore() runs (ES import hoisting). bootstrap() hydrates the
@@ -262,10 +266,12 @@ export const useAuth = create<AuthState>()((set, get) => ({
   financialYears: [],
 
   bootstrap: async () => {
+    const generation = ++bootstrapGeneration;
+    const current = () => generation === bootstrapGeneration;
     // Cached session first: a device that signed in before (or is offline)
     // starts usable, then /auth/me reconciles with the server.
     const cached = readSession();
-    if (cached) {
+    if (cached && current()) {
       set({
         status: "authed",
         user: cached.user,
@@ -274,6 +280,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
     }
     try {
       const me = await api<MePayload>("/auth/me", {});
+      if (!current()) return;
       set({ status: "authed", user: me.user, workspace: me.workspace });
       cacheSession({ user: me.user, workspace: me.workspace });
     } catch (err) {
@@ -281,7 +288,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
         // Server unreachable: a device that signed in before stays usable
         // offline with its cached profile (challan creation is queued).
         const cached = readSession();
-        if (cached) {
+        if (cached && current()) {
           set({
             status: "authed",
             user: cached.user,
@@ -289,8 +296,10 @@ export const useAuth = create<AuthState>()((set, get) => ({
           });
           return;
         }
+        if (!current()) return;
         set({ status: "guest" });
       } else if (err instanceof ApiError && err.status === 401) {
+        if (!current()) return;
         clearSessionCache();
         clearAccountCache();
         // Page module caches hold the old account's rows in memory; the
@@ -298,11 +307,13 @@ export const useAuth = create<AuthState>()((set, get) => ({
         // still the prior account's data — drop it with the storage.
         invalidateDataCaches();
         await resetPageStores();
+        if (!current()) return;
         void core()
           .writeToken(null)
           .catch(() => {});
         set({ status: "guest", user: null, workspace: null });
       } else {
+        if (!current()) return;
         set({ status: "guest" });
       }
     }
@@ -349,6 +360,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
+    ++bootstrapGeneration;
     try {
       await api("/auth/logout", { method: "POST" });
     } catch {

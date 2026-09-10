@@ -11,10 +11,10 @@
  * table collapses into the same mobile card list it already renders <640px.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import {
   useAuth,
   useChallans,
@@ -24,62 +24,13 @@ import {
   toastError,
   type ChallanItem,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
+import { usePalette, SCRIM } from "@/theme";
 import { Badge, Button, EmptyState, Screen, Skeleton } from "@/ui/kit";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
 import { shareChallanPdf, printChallanPdf } from "@/lib/pdf";
+import { kindFromParam } from "@/lib/challan-kinds";
+import { fmtBoxes, fmtWt, fmtDate } from "@/lib/format";
 import { RecipeLinkButton } from "./colors";
-
-// ── Kind descriptors (mirror of the editor's map) ───────────────────────────
-
-type DetailKind = {
-  type: "sales" | "outward";
-  singular: string;
-  party: string;
-  listTitle: string;
-};
-
-const KINDS: Record<"sales" | "outward", DetailKind> = {
-  sales: {
-    type: "sales",
-    singular: "sales challan",
-    party: "Customer",
-    listTitle: "sales challans",
-  },
-  outward: {
-    type: "outward",
-    singular: "job-work challan",
-    party: "Job worker",
-    listTitle: "job-work challans",
-  },
-};
-
-// ── Format helpers (port of web ui/lib/format) ──────────────────────────────
-
-const fmtBoxes = (n: number): string => n.toLocaleString("en-IN");
-const fmtWt = (n: number): string =>
-  n.toLocaleString("en-IN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  });
-const fmtDate = (iso: string): string => {
-  // Date-only strings ("2026-09-03") parse as UTC midnight — construct the
-  // date from its parts so timezones west of UTC don't render the previous
-  // day.
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
-  const d = dateOnly
-    ? new Date(
-        Number(iso.slice(0, 4)),
-        Number(iso.slice(5, 7)) - 1,
-        Number(iso.slice(8, 10)),
-      )
-    : new Date(iso);
-  return d.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
 
 // ── Line item card (the web's <640px mobile card) ───────────────────────────
 
@@ -192,13 +143,26 @@ export default function ChallanDetailScreen() {
     id?: string | string[];
   }>();
   const router = useRouter();
-  const kindParam = Array.isArray(params.kind) ? params.kind[0] : params.kind;
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
-  const kind = KINDS[kindParam === "outward" ? "outward" : "sales"];
+  const kind = kindFromParam(
+    Array.isArray(params.kind) ? params.kind[0] : params.kind,
+  );
+
+  // Deep links (QR, notification, shared link) can land here with an empty
+  // back stack — a bare back() would be a no-op and strand the user.
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(kind.type === "sales" ? "/challans" : "/outward");
+  };
 
   const { detail, load, remove, clearDetail } = useChallans();
   const company = useAuth((s) => s.company);
+  const status = useAuth((s) => s.status);
   const canEdit = usePermission()("edit_challan");
+  const canDelete = usePermission()("delete_challan");
 
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -210,13 +174,20 @@ export default function ChallanDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
+    setError(null);
+    setNotFound(false);
     void load(id).catch((err) => {
+      if (cancelled) return;
       if (err instanceof ApiError && err.code === "not_found") {
         setNotFound(true);
         return;
       }
       setError(friendlyError(err, "Something went wrong."));
     });
+    return () => {
+      cancelled = true;
+    };
   }, [id, load]);
 
   // Never let a previously-loaded challan leak into this (or another) route.
@@ -228,7 +199,7 @@ export default function ChallanDetailScreen() {
     setDeleting(true);
     try {
       await remove(id);
-      router.back();
+      goBack();
     } catch (err) {
       // Toast only — a failed delete must not tear down the detail view.
       toastError(
@@ -274,6 +245,9 @@ export default function ChallanDetailScreen() {
 
   const p = usePalette();
 
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
+
   if (notFound) {
     return (
       <Screen title="Challan not found">
@@ -285,7 +259,7 @@ export default function ChallanDetailScreen() {
           <Button
             label={`Back to ${kind.listTitle}`}
             variant="secondary"
-            onPress={() => router.back()}
+            onPress={goBack}
           />
         </View>
       </Screen>
@@ -295,16 +269,30 @@ export default function ChallanDetailScreen() {
   if (error) {
     return (
       <Screen title="Challan">
-        <View className="flex-1 px-4">
+        <View className="flex-1 gap-3 px-4">
           <Text className="text-sm" style={{ color: p.destructive }}>
             {error}
           </Text>
-          <View className="mt-3">
-            <Button
-              label="Back"
-              variant="secondary"
-              onPress={() => router.back()}
-            />
+          <View className="flex-row gap-2">
+            <View className="flex-1">
+              <Button
+                label="Retry"
+                onPress={() => {
+                  if (!id) return;
+                  setError(null);
+                  void load(id).catch((err) => {
+                    if (err instanceof ApiError && err.code === "not_found") {
+                      setNotFound(true);
+                      return;
+                    }
+                    setError(friendlyError(err, "Something went wrong."));
+                  });
+                }}
+              />
+            </View>
+            <View className="flex-1">
+              <Button label="Back" variant="secondary" onPress={goBack} />
+            </View>
           </View>
         </View>
       </Screen>
@@ -379,13 +367,15 @@ export default function ChallanDetailScreen() {
                 className="min-w-[100px] flex-1"
               />
             ) : null}
-            <Button
-              label="Delete"
-              variant="destructive"
-              loading={deleting}
-              onPress={() => setDeleteOpen(true)}
-              className="min-w-[100px] flex-1"
-            />
+            {canDelete ? (
+              <Button
+                label="Delete"
+                variant="destructive"
+                loading={deleting}
+                onPress={() => setDeleteOpen(true)}
+                className="min-w-[100px] flex-1"
+              />
+            ) : null}
           </View>
 
           {/* Party + summary */}
@@ -588,7 +578,7 @@ export default function ChallanDetailScreen() {
       >
         <View
           className="flex-1 items-center justify-center p-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          style={{ backgroundColor: SCRIM }}
         >
           <View
             className="w-full max-w-sm rounded-xl border p-4"

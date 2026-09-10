@@ -38,8 +38,11 @@ export function prevFilter(
     const prev = fyPrevLabel(fy);
     return (c) => c.fyLabel === prev;
   }
-  if (period === "30d")
-    return (c) => c.date >= daysAgoISO(59) && c.date < daysAgoISO(29);
+  if (period === "30d") {
+    const start = daysAgoISO(59);
+    const end = daysAgoISO(29);
+    return (c) => c.date >= start && c.date < end;
+  }
   return () => false;
 }
 

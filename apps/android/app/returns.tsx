@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { MorphSheet } from "@/ui/morph-sheet";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   registerDataCache,
   useAuth,
@@ -37,7 +37,8 @@ import {
   Skeleton,
 } from "@/ui/kit";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
-import { fmtDate, fmtWt, localDateKey } from "@/lib/format";
+import { countLabel, fmtDate, fmtWt, localDateKey } from "@/lib/format";
+import { useMastersLoad } from "@/lib/use-masters-load";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,9 +82,6 @@ const emptyRow = (): ItemRow => ({
   netWt: "",
   cones: "",
 });
-
-const countLabel = (n: number, singular: string, plural: string): string =>
-  `${n.toLocaleString("en-IN")} ${n === 1 ? singular : plural}`;
 
 const isValidDateKey = (v: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
@@ -165,21 +163,6 @@ function OptionSheet({
 
 /** Loads master data for a form, collapsing failures into one retry state
  * (same contract as apps/app's use-masters-load hook). */
-function useMastersLoad(load: () => Promise<unknown>): {
-  failed: boolean;
-  retry: () => void;
-} {
-  const [failed, setFailed] = useState(false);
-  const [nonce, setNonce] = useState(0);
-  const loadRef = useRef(load);
-  loadRef.current = load;
-  useEffect(() => {
-    setFailed(false);
-    void loadRef.current().catch(() => setFailed(true));
-  }, [nonce]);
-  return { failed, retry: () => setNonce((n) => n + 1) };
-}
-
 /** Shell-level sync strip — web renders the banner above every page; the
  * Android shell has none, so each screen mounts its own. */
 function SyncStrip() {
@@ -219,6 +202,7 @@ export default function ReturnsRoute() {
     : (params.edit ?? undefined);
   const router = useRouter();
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
+  const status = useAuth((s) => s.status);
   const can = usePermission();
   const p = usePalette();
   const [items, setItems] = useState<ReturnEntry[]>(
@@ -230,44 +214,64 @@ export default function ReturnsRoute() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Monotonic guard: overlapping loads (a realtime event landing while one is
+  // already in flight) resolve out of order, and a slow older response must
+  // never overwrite a newer one.
+  const loadSeq = useRef(0);
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+
   const load = useCallback(async () => {
-    if (!returnsCache[workspaceId]) {
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
+    if (!returnsCache[requestedWorkspace]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: ReturnEntry[] }>("/returns");
-      returnsCache[workspaceId] = res.items;
+      if (
+        seq !== loadSeq.current ||
+        requestedWorkspace !== workspaceRef.current
+      )
+        return;
+      returnsCache[requestedWorkspace] = res.items;
       setItems(res.items);
     } catch {
-      if (!returnsCache[workspaceId]) {
+      if (
+        seq !== loadSeq.current ||
+        requestedWorkspace !== workspaceRef.current
+      )
+        return;
+      if (!returnsCache[requestedWorkspace]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      setLoading(false);
+      if (
+        seq === loadSeq.current &&
+        requestedWorkspace === workspaceRef.current
+      )
+        setLoading(false);
     }
   }, [workspaceId]);
 
   useEffect(() => {
+    const cached = workspaceId ? (returnsCache[workspaceId] ?? null) : null;
+    setItems(cached ?? []);
+    setLoading(!cached);
+    setLoadError(false);
     void load();
-  }, [load]);
+  }, [load, workspaceId]);
 
   // Other devices' writes arrive live; own writes refresh via store paths.
   useRealtimeEvent(["returns", "stock"], load);
 
   // Web gates /returns behind ProtectedRoute requirePermission="create_return"
-  // (redirects home). Same gate, rendered inline as an empty state.
-  if (!can("create_return")) {
-    return (
-      <Screen title="Returns" subtitle="Dyed yarn returned from job workers.">
-        <EmptyState
-          title="No access to returns"
-          message="Your member role doesn't include creating returns."
-        />
-      </Screen>
-    );
-  }
+  // (redirects home).
+  if (status === "loading") return null;
+  if (!can("create_return")) return <Redirect href="/" />;
 
   if (showForm || paramEdit || editingId) {
     return (

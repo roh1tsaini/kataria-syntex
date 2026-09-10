@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { MorphSheet } from "@/ui/morph-sheet";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   registerDataCache,
   useAuth,
@@ -40,7 +40,7 @@ import {
   Skeleton,
 } from "@/ui/kit";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
-import { fmtDate, fmtWt, localDateKey } from "@/lib/format";
+import { countLabel, fmtDate, fmtWt, localDateKey } from "@/lib/format";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,9 +83,6 @@ const emptyRow = (): ItemRow => ({
   packingUnit: "",
   packingCount: "",
 });
-
-const countLabel = (n: number, singular: string, plural: string): string =>
-  `${n.toLocaleString("en-IN")} ${n === 1 ? singular : plural}`;
 
 const isValidDateKey = (v: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
@@ -292,6 +289,7 @@ export default function RawMaterialRoute() {
     : (params.edit ?? undefined);
   const router = useRouter();
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
+  const status = useAuth((s) => s.status);
   const can = usePermission();
   const p = usePalette();
   const [items, setItems] = useState<RawEntry[]>(
@@ -303,45 +301,64 @@ export default function RawMaterialRoute() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Monotonic guard: overlapping loads (a realtime event landing while one is
+  // already in flight) resolve out of order, and a slow older response must
+  // never overwrite a newer one.
+  const loadSeq = useRef(0);
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+
   const load = useCallback(async () => {
-    if (!rawCache[workspaceId]) {
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
+    if (!rawCache[requestedWorkspace]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: RawEntry[] }>("/raw-material");
-      rawCache[workspaceId] = res.items;
+      if (
+        seq !== loadSeq.current ||
+        requestedWorkspace !== workspaceRef.current
+      )
+        return;
+      rawCache[requestedWorkspace] = res.items;
       setItems(res.items);
     } catch {
-      if (!rawCache[workspaceId]) {
+      if (
+        seq !== loadSeq.current ||
+        requestedWorkspace !== workspaceRef.current
+      )
+        return;
+      if (!rawCache[requestedWorkspace]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      setLoading(false);
+      if (
+        seq === loadSeq.current &&
+        requestedWorkspace === workspaceRef.current
+      )
+        setLoading(false);
     }
   }, [workspaceId]);
 
   useEffect(() => {
+    const cached = workspaceId ? (rawCache[workspaceId] ?? null) : null;
+    setItems(cached ?? []);
+    setLoading(!cached);
+    setLoadError(false);
     void load();
-  }, [load]);
+  }, [load, workspaceId]);
 
   // Other devices' writes arrive live; own writes refresh via store paths.
   useRealtimeEvent(["raw-material", "stock"], load);
 
   // Web gates /raw-material behind ProtectedRoute
-  // requirePermission="create_raw_material" (redirects home). Same gate,
-  // rendered inline as an empty state.
-  if (!can("create_raw_material")) {
-    return (
-      <Screen title="Raw material" subtitle="Grey yarn intake.">
-        <EmptyState
-          title="No access to raw material"
-          message="Your member role doesn't include creating raw material entries."
-        />
-      </Screen>
-    );
-  }
+  // requirePermission="create_raw_material" (redirects home).
+  if (status === "loading") return null;
+  if (!can("create_raw_material")) return <Redirect href="/" />;
 
   if (showForm || paramEdit || editingId) {
     return (

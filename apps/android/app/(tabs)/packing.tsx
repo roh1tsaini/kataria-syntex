@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { Redirect } from "expo-router";
 import { MorphSheet } from "@/ui/morph-sheet";
 import {
   registerDataCache,
@@ -35,42 +36,8 @@ import {
   Skeleton,
 } from "@/ui/kit";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
-
-// ── Shared format helpers (apps/app's ui/lib/format, RN side) ───────────────
-
-const fmtWt = (n: number) =>
-  n.toLocaleString("en-IN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  });
-
-const fmtDate = (iso: string) => {
-  // Date-only strings ("2026-09-03") parse as UTC midnight — construct the
-  // date from its parts so timezones west of UTC don't render the previous
-  // day.
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
-  const d = dateOnly
-    ? new Date(
-        Number(iso.slice(0, 4)),
-        Number(iso.slice(5, 7)) - 1,
-        Number(iso.slice(8, 10)),
-      )
-    : new Date(iso);
-  return d.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-/** Today's date as YYYY-MM-DD in the device timezone. */
-const todayLocal = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-const countLabel = (n: number, singular: string, plural: string): string =>
-  `${n.toLocaleString("en-IN")} ${n === 1 ? singular : plural}`;
+import { useMastersLoad } from "@/lib/use-masters-load";
+import { countLabel, fmtBoxes, fmtDate, fmtWt, todayLocal } from "@/lib/format";
 
 // ── Form helpers shared by the packing form ─────────────────────────────────
 
@@ -230,21 +197,6 @@ const isValidDateKey = (v: string) =>
 
 /** Loads master data for a form, collapsing failures into one retry state
  * (same contract as apps/app's use-masters-load hook). */
-function useMastersLoad(load: () => Promise<unknown>): {
-  failed: boolean;
-  retry: () => void;
-} {
-  const [failed, setFailed] = useState(false);
-  const [nonce, setNonce] = useState(0);
-  const loadRef = useRef(load);
-  loadRef.current = load;
-  useEffect(() => {
-    setFailed(false);
-    void loadRef.current().catch(() => setFailed(true));
-  }, [nonce]);
-  return { failed, retry: () => setNonce((n) => n + 1) };
-}
-
 /** Shell-level sync strip — web renders the banner above every page; the
  * Android shell has none, so each screen mounts its own. */
 function SyncStrip() {
@@ -352,6 +304,7 @@ registerDataCache(() => {
 
 export default function PackingRoute() {
   const [activeTab, setActiveTab] = useState<PackingType>("sale");
+  const status = useAuth((s) => s.status);
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const can = usePermission();
   const p = usePalette();
@@ -370,41 +323,65 @@ export default function PackingRoute() {
   // against itself (it would always compare equal).
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
     const tab = activeTab;
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
     if (!packingCache[workspaceId]?.[tab]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: PackingEntry[] }>(`/packing?type=${tab}`);
-      if (tab !== activeTabRef.current) return;
+      if (
+        seq !== loadSeq.current ||
+        requestedWorkspace !== workspaceRef.current ||
+        tab !== activeTabRef.current
+      )
+        return;
       (packingCache[workspaceId] ??= { sale: null, job_work: null })[tab] =
         res.items;
       setItems(res.items);
     } catch {
-      if (tab === activeTabRef.current && !packingCache[workspaceId]?.[tab]) {
+      if (
+        seq === loadSeq.current &&
+        requestedWorkspace === workspaceRef.current &&
+        tab === activeTabRef.current &&
+        !packingCache[requestedWorkspace]?.[tab]
+      ) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      if (tab === activeTabRef.current) setLoading(false);
+      if (
+        seq === loadSeq.current &&
+        requestedWorkspace === workspaceRef.current &&
+        tab === activeTabRef.current
+      )
+        setLoading(false);
     }
   }, [activeTab, workspaceId]);
 
   useEffect(() => {
     const cached = packingCache[workspaceId]?.[activeTab];
-    if (cached) {
-      setItems(cached);
-      setLoading(false);
-    }
+    setItems(cached ?? []);
+    setLoading(!cached);
+    setLoadError(false);
     void load();
   }, [load, activeTab, workspaceId]);
 
   // Other devices' writes arrive live; own writes refresh via store paths.
   useRealtimeEvent(["packing", "stock"], load);
 
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
+  // Web gates /packing behind ProtectedRoute requirePermission="create_packing".
+  if (!can("create_packing")) return <Redirect href="/" />;
   if (showForm || editingId) {
     return (
       <PackingForm

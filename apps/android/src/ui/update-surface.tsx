@@ -6,12 +6,20 @@
  * 426 floor (minAppVersion) or the manifest publishes minVersion.
  */
 
-import { Linking, Pressable, Text, View } from "react-native";
+import {
+  Linking,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { useUpdates } from "@/lib/updates";
 import { apiBaseUrl } from "@/lib/core-adapter";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha } from "@/theme";
 import { Button } from "@/ui/kit";
 
 export function UpdateBanner() {
@@ -24,14 +32,22 @@ export function UpdateBanner() {
     dismiss,
   } = useUpdates();
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   // Deferred versions stay dismissed — the banner returns when a different
   // version ships, not on every launch.
   if (!latestVersion || latestVersion === dismissedVersion) return null;
   if (status !== "ready" && status !== "downloading") return null;
+  // design.md §3: a full-width strip directly under the title bar (here the
+  // top of the window), hairline bottom edge, 44px minimum.
   return (
     <View
-      className="flex-row items-center justify-between gap-3 px-4 py-2.5"
-      style={{ backgroundColor: p.accentSoft }}
+      className="min-h-[44px] flex-row items-center justify-between gap-3 border-b px-4 pb-2.5"
+      style={{
+        backgroundColor: p.accentSoft,
+        borderBottomColor: p.border,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingTop: insets.top + 10,
+      }}
     >
       <Text
         className="flex-1 text-[13px] tabular-nums"
@@ -46,7 +62,7 @@ export function UpdateBanner() {
         accessibilityRole="button"
         onPress={() => void installUpdate()}
         disabled={status === "downloading"}
-        className="min-h-[36px] justify-center px-1"
+        className="min-h-[44px] min-w-[44px] justify-center px-1"
       >
         <Text
           className="text-[13px] font-semibold"
@@ -77,64 +93,63 @@ export function UpdateBlockingDialog() {
   if (!requiredMinVersion) return null;
   const downloading = status === "downloading";
   return (
-    <View
-      className="absolute inset-0 items-center justify-center p-6"
-      style={{ backgroundColor: `${p.background}f0` }}
-    >
+    <Modal visible transparent animationType="fade" statusBarTranslucent>
       <View
-        className="w-full max-w-sm gap-4 rounded-xl border p-5"
-        style={{ backgroundColor: p.card, borderColor: p.border }}
+        className="flex-1 items-center justify-center p-6"
+        style={{ backgroundColor: withAlpha(p.background, 0.94) }}
       >
-        <Text
-          className="text-[17px] font-semibold"
-          style={{ color: p.foreground }}
+        <View
+          className="w-full max-w-sm gap-4 rounded-xl border p-5"
+          style={{ backgroundColor: p.card, borderColor: p.border }}
         >
-          Update required
-        </Text>
-        <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-          Version {requiredMinVersion} or newer is required to keep using the
-          app. Install the latest version to continue.
-        </Text>
-        {downloading && progress && (
           <Text
-            className="text-center text-[12px] tabular-nums"
-            style={{ color: p.mutedForeground }}
+            className="text-[17px] font-semibold"
+            style={{ color: p.foreground }}
           >
-            {formatUpdateProgress(progress)}
+            Update required
           </Text>
-        )}
-        <Button
-          label={downloading ? "Downloading…" : "Update app"}
-          onPress={() => void installUpdate()}
-          disabled={downloading}
-          loading={downloading}
-        />
-        {status === "error" && (
-          <Text className="text-[12px]" style={{ color: p.destructive }}>
-            Download failed. Check your connection and try again.
+          <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
+            Version {requiredMinVersion} or newer is required to keep using the
+            app. Install the latest version to continue.
           </Text>
-        )}
-        {downloadUrl && (
-          <Text
-            className="text-[11px]"
-            style={{ color: p.mutedForeground }}
-            onPress={() => {
-              void Linking.openURL(downloadUrl).catch(() => undefined);
-            }}
-          >
-            Or download the APK from the website.
-          </Text>
-        )}
+          {downloading && progress && (
+            <Text
+              className="text-center text-[12px] tabular-nums"
+              style={{ color: p.mutedForeground }}
+            >
+              {formatUpdateProgress(progress)}
+            </Text>
+          )}
+          <Button
+            label={downloading ? "Downloading…" : "Update app"}
+            onPress={() => void installUpdate()}
+            disabled={downloading}
+            loading={downloading}
+          />
+          {status === "error" && (
+            <Text className="text-[12px]" style={{ color: p.destructive }}>
+              If Android opened install settings, allow installs from this
+              source, then try again. Otherwise check your connection.
+            </Text>
+          )}
+          {downloadUrl && (
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => {
+                void Linking.openURL(downloadUrl).catch(() => undefined);
+              }}
+              className="min-h-[44px] justify-center"
+            >
+              <Text
+                className="text-[11px]"
+                style={{ color: p.mutedForeground }}
+              >
+                Or download the APK from the website.
+              </Text>
+            </Pressable>
+          )}
+        </View>
       </View>
-    </View>
-  );
-}
-
-export function UpdateSurface() {
-  return (
-    <>
-      <UpdateBanner />
-      <UpdateBlockingDialog />
-    </>
+    </Modal>
   );
 }

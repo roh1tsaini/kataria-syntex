@@ -10,12 +10,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import { MorphSheet } from "@/ui/morph-sheet";
 import {
   friendlyError,
   toastError,
   toastSuccess,
+  useAuth,
   useMasters,
   usePermission,
   type Customer,
@@ -28,7 +29,15 @@ import {
   type SupplierInput,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
-import { Badge, Button, EmptyState, Field, Input, Skeleton } from "@/ui/kit";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Field,
+  Input,
+  PageTitle,
+  Skeleton,
+} from "@/ui/kit";
 import { confirm, requestDiscard } from "@/ui/confirm";
 
 const TABS = [
@@ -369,6 +378,7 @@ function MasterTab<I extends { id: string; name: string }, In>({
 
 export default function MastersRoute() {
   const p = usePalette();
+  const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
   const router = useRouter();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
@@ -577,6 +587,11 @@ export default function MastersRoute() {
     meta: (i) => [i.phone, i.address, i.gstin].filter(Boolean).join(" · "),
   };
 
+  // Web gates /masters behind ProtectedRoute requirePermission="manage_masters".
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
+  if (!canManage) return <Redirect href="/" />;
+
   return (
     <View className="flex-1" style={{ backgroundColor: p.background }}>
       <View className="px-4 pt-4">
@@ -586,9 +601,7 @@ export default function MastersRoute() {
         >
           Reference data
         </Text>
-        <Text className="text-[22px] font-bold" style={{ color: p.foreground }}>
-          Masters
-        </Text>
+        <PageTitle>Masters</PageTitle>
         <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
           Customers, job workers, suppliers and deniers used across challans.
         </Text>
@@ -608,7 +621,7 @@ export default function MastersRoute() {
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               onPress={() => selectTab(t.key)}
-              className="min-h-[40px] flex-row items-center gap-1.5 rounded-full border px-3.5"
+              className="min-h-[44px] flex-row items-center gap-1.5 rounded-full border px-3.5"
               style={({ pressed }) => ({
                 backgroundColor: active ? p.primary : p.card,
                 borderColor: active ? p.primary : p.border,

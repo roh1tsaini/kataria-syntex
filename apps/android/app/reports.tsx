@@ -6,7 +6,7 @@
  * label/value pairs (numeric columns right-aligned, ledger-style).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import {
   api,
   friendlyError,
@@ -26,7 +26,7 @@ import {
   useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
-import { Badge, Button, EmptyState, Skeleton } from "@/ui/kit";
+import { Badge, Button, EmptyState, PageTitle, Skeleton } from "@/ui/kit";
 import { uiStorage } from "@/lib/core-adapter";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 
@@ -82,19 +82,25 @@ const REPORTS: {
 
 // Keyed by "workspaceId:reportId[?query]" so one account's rows never leak
 // into another's. Registered so account resets (logout/401) wipe it.
-const reportCache: Record<string, { items: Record<string, unknown>[] }> = {};
+type ReportResponse = {
+  items: Record<string, unknown>[];
+  /** Total matching rows before the server's cap (transaction-log only). */
+  total?: number;
+  truncated?: boolean;
+};
+const reportCache: Record<string, ReportResponse> = {};
 registerDataCache(() => {
   for (const key of Object.keys(reportCache)) delete reportCache[key];
 });
 
 // Column visibility persists across sessions (web uses localStorage; here
-// the adapter's uiStorage). Invalidation story: entries whose column no
-// longer exists in a report are pruned on load, mirroring web's cleanup.
-const STORAGE_KEY = "reports.hiddenCols";
+// the adapter's uiStorage), keyed by workspace so one account's layout never
+// leaks into another's. Invalidation story: entries whose column no longer
+// exists in a report are pruned on load, mirroring web's cleanup.
 
-function readHiddenCols(): Record<string, boolean> {
+function readHiddenCols(storageKey: string): Record<string, boolean> {
   try {
-    const parsed: unknown = JSON.parse(uiStorage.get(STORAGE_KEY) ?? "{}");
+    const parsed: unknown = JSON.parse(uiStorage.get(storageKey) ?? "{}");
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return Object.fromEntries(
         Object.entries(parsed as Record<string, unknown>).filter(
@@ -117,17 +123,14 @@ function columnLabel(key: string) {
 
 export default function ReportsRoute() {
   const { report } = useLocalSearchParams<{ report?: string }>();
+  const status = useAuth((s) => s.status);
   const canView = usePermission()("view_reports");
   const reportId = typeof report === "string" ? report : undefined;
 
-  if (!canView) {
-    return (
-      <EmptyState
-        title="No access"
-        message="Your role can't open reports. Ask the admin for the view reports permission."
-      />
-    );
-  }
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
+  // Web gates /reports behind ProtectedRoute requirePermission="view_reports".
+  if (!canView) return <Redirect href="/" />;
   if (!reportId) return <ReportGrid />;
   return <ReportView reportId={reportId} />;
 }
@@ -141,9 +144,13 @@ function ReportGrid() {
       contentContainerClassName="px-4 pb-8 gap-2.5"
       style={{ backgroundColor: p.background }}
     >
-      <Text className="text-[22px] font-bold" style={{ color: p.foreground }}>
-        Reports
+      <Text
+        className="text-[11px] font-bold uppercase tracking-wider"
+        style={{ color: p.mutedForeground }}
+      >
+        Insights
       </Text>
+      <PageTitle>Reports</PageTitle>
       <Text className="mb-1 text-[13px]" style={{ color: p.mutedForeground }}>
         Totals by period, party and stock.
       </Text>
@@ -191,18 +198,26 @@ function ReportView({ reportId }: { reportId: string }) {
   const p = usePalette();
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const baseKey = `${workspaceId}:${reportId}`;
-  const [data, setData] = useState<{
-    items: Record<string, unknown>[];
-  } | null>(() => reportCache[baseKey] ?? null);
+  const [data, setData] = useState<ReportResponse | null>(
+    () => reportCache[baseKey] ?? null,
+  );
   const [loading, setLoading] = useState(() => !reportCache[baseKey]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [hiddenCols, setHiddenCols] =
-    useState<Record<string, boolean>>(readHiddenCols);
+  const colsKey = `${workspaceId}:reports.hiddenCols`;
+  const [hiddenCols, setHiddenCols] = useState<Record<string, boolean>>(() =>
+    readHiddenCols(colsKey),
+  );
   const [colsOpen, setColsOpen] = useState(false);
 
+  // Monotonic request id: overlapping loads (debounced date edits, realtime
+  // events) resolve out of order, and a slow stale response must never
+  // clobber the newer one's rows.
+  const loadSeq = useRef(0);
+
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     const params = new URLSearchParams();
     if (from) params.set("from", from);
     if (to) params.set("to", to);
@@ -213,17 +228,17 @@ function ReportView({ reportId }: { reportId: string }) {
     }
     setLoadError(null);
     try {
-      const res = await api<{ items: Record<string, unknown>[] }>(
-        `/reports/${reportId}${qs}`,
-      );
+      const res = await api<ReportResponse>(`/reports/${reportId}${qs}`);
+      if (seq !== loadSeq.current) return;
       reportCache[cacheKey] = res;
       setData(res);
     } catch (err) {
+      if (seq !== loadSeq.current) return;
       // Clear stale rows so a failure never reads as "no data".
       setData(null);
       setLoadError(friendlyError(err));
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, [baseKey, reportId, from, to]);
 
@@ -245,16 +260,6 @@ function ReportView({ reportId }: { reportId: string }) {
     [rows],
   );
   const visibleColumns = columns.filter((key) => !hiddenCols[key]);
-  // Numeric columns right-align so figures scan like a ledger.
-  const numericColumns = useMemo(
-    () =>
-      new Set(
-        columns.filter((key) =>
-          rows.some((row) => typeof row[key] === "number"),
-        ),
-      ),
-    [columns, rows],
-  );
 
   // Drop visibility settings whose column no longer exists in this report.
   useEffect(() => {
@@ -270,11 +275,11 @@ function ReportView({ reportId }: { reportId: string }) {
 
   useEffect(() => {
     try {
-      uiStorage.set(STORAGE_KEY, JSON.stringify(hiddenCols));
+      uiStorage.set(colsKey, JSON.stringify(hiddenCols));
     } catch {
       // Storage unavailable — the toggle just won't persist.
     }
-  }, [hiddenCols]);
+  }, [hiddenCols, colsKey]);
 
   const toggleHidden = (key: string) =>
     setHiddenCols((prev) => {
@@ -284,9 +289,10 @@ function ReportView({ reportId }: { reportId: string }) {
       return next;
     });
 
-  const cellText = (val: unknown, numeric: boolean) => {
+  // Web formats any number the same way regardless of column classification.
+  const cellText = (val: unknown) => {
     if (typeof val === "number") {
-      return numeric && Number.isInteger(val) ? fmtBoxes(val) : fmtWt(val);
+      return Number.isInteger(val) ? fmtBoxes(val) : fmtWt(val);
     }
     return val === null || val === undefined ? "—" : String(val);
   };
@@ -297,7 +303,9 @@ function ReportView({ reportId }: { reportId: string }) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Back to reports"
-          onPress={() => router.push("/reports")}
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/reports")
+          }
           className="h-11 w-11 items-center justify-center rounded-lg"
           style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
         >
@@ -310,13 +318,7 @@ function ReportView({ reportId }: { reportId: string }) {
           >
             Report
           </Text>
-          <Text
-            className="text-[22px] font-bold"
-            style={{ color: p.foreground }}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
+          <PageTitle numberOfLines={1}>{title}</PageTitle>
         </View>
       </View>
 
@@ -400,30 +402,40 @@ function ReportView({ reportId }: { reportId: string }) {
         ) : (
           <FlatList
             data={rows}
-            keyExtractor={(_, idx) =>
-              String(
-                (
-                  rows[idx] as {
-                    id?: unknown;
-                  }
-                )?.id ?? idx,
-              )
+            keyExtractor={(item, idx) =>
+              String((item as { id?: unknown }).id ?? idx)
             }
             contentContainerClassName="px-4 pb-8 gap-2"
             ListHeaderComponent={
-              <View className="mb-1 flex-row items-center justify-between gap-2">
-                <Badge
-                  label={`${rows.length.toLocaleString()} ${rows.length === 1 ? "row" : "rows"}`}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Toggle columns"
-                  onPress={() => setColsOpen((o) => !o)}
-                  className="h-11 w-11 items-center justify-center rounded-lg"
-                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-                >
-                  <Feather name="sliders" size={18} color={p.mutedForeground} />
-                </Pressable>
+              <View className="mb-1 gap-1">
+                <View className="flex-row items-center justify-between gap-2">
+                  <Badge
+                    label={`${rows.length.toLocaleString()} ${rows.length === 1 ? "row" : "rows"}`}
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle columns"
+                    onPress={() => setColsOpen((o) => !o)}
+                    className="h-11 w-11 items-center justify-center rounded-lg"
+                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  >
+                    <Feather
+                      name="sliders"
+                      size={18}
+                      color={p.mutedForeground}
+                    />
+                  </Pressable>
+                </View>
+                {data?.truncated ? (
+                  <Text
+                    className="text-[11px]"
+                    style={{ color: p.mutedForeground }}
+                  >
+                    Showing the first {rows.length.toLocaleString("en-IN")} of{" "}
+                    {(data.total ?? rows.length).toLocaleString("en-IN")} rows.
+                    Narrow the date range to see the rest.
+                  </Text>
+                ) : null}
               </View>
             }
             renderItem={({ item, index }) => {
@@ -504,16 +516,12 @@ function ReportView({ reportId }: { reportId: string }) {
                         className="flex-1 text-right text-sm font-semibold tabular-nums"
                         style={{ color: p.foreground }}
                       >
-                        {cellText(
-                          item[headlineKey],
-                          numericColumns.has(headlineKey),
-                        )}
+                        {cellText(item[headlineKey])}
                       </Text>
                     </View>
                   ) : null}
                   <View className="gap-1.5">
                     {visibleColumns.slice(1).map((key) => {
-                      const numeric = numericColumns.has(key);
                       return (
                         <View
                           key={key}
@@ -529,7 +537,7 @@ function ReportView({ reportId }: { reportId: string }) {
                             className="min-w-0 flex-1 text-right text-[13px] font-medium tabular-nums"
                             style={{ color: p.foreground }}
                           >
-                            {cellText(item[key], numeric)}
+                            {cellText(item[key])}
                           </Text>
                         </View>
                       );

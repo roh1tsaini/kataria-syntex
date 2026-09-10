@@ -487,14 +487,33 @@ reportsRoute.get(
       };
     });
 
-    return c.json({
-      customers: customerRows.map((c) => ({
-        id: c.id,
-        name: c.name,
-        totalSold: round3(c.totalSold),
-        challanCount: c.challanCount,
+    // Every report route answers with one uniform `{ items }` row set — the
+    // report table derives its columns from the first row, so party summary
+    // flattens both party kinds into shared columns and leaves the fields a
+    // row has no value for null (rendered as "—").
+    const items = [
+      ...customerRows.map((c) => ({
+        id: `customer:${c.id}`,
+        party: c.name,
+        kind: "Customer",
+        sold: round3(c.totalSold),
+        sent: null,
+        returned: null,
+        balance: null,
+        challans: c.challanCount,
       })),
-      jobWorkers: jobWorkerSummaries,
-    });
+      ...jobWorkerSummaries.map((jw) => ({
+        id: `job-worker:${jw.id}`,
+        party: jw.name,
+        kind: "Job worker",
+        sold: null,
+        sent: jw.sent,
+        returned: jw.returned,
+        balance: jw.balance,
+        challans: jw.challanCount,
+      })),
+    ];
+
+    return c.json({ items });
   },
 );

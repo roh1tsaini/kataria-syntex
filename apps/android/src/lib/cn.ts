@@ -1,6 +1,2 @@
-/** Class merge for NativeWind — mirrors apps/app's cn(). */
-import clsx, { type ClassValue } from "clsx";
-
-export function cn(...inputs: ClassValue[]): string {
-  return clsx(inputs);
-}
+/** Class merge for NativeWind — the shared implementation, same as apps/app. */
+export { cn } from "@kataria-syntex/shared";

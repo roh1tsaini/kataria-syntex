@@ -19,12 +19,12 @@
         "@kataria-syntex/app-core": "*",
         "@kataria-syntex/shared": "*",
         "@react-native-community/netinfo": "12.0.1",
-        "clsx": "^2.1.1",
         "expo": "~57.0.21",
         "expo-camera": "~57.0.4",
         "expo-constants": "~57.0.17",
         "expo-dev-client": "~57.0.18",
         "expo-file-system": "~57.0.6",
+        "expo-intent-launcher": "^57.0.1",
         "expo-linking": "~57.0.9",
         "expo-print": "~57.0.1",
         "expo-router": "~57.0.20",
@@ -67,7 +67,7 @@
     },
     "apps/app": {
       "name": "@kataria-syntex/biz-app",
-      "version": "0.9.2",
+      "version": "0.9.3",
       "dependencies": {
         "@kataria-syntex/app-core": "*",
         "@kataria-syntex/shared": "*",
@@ -1655,6 +1655,8 @@
     "expo-font": ["expo-font@57.0.3", "", { "dependencies": { "fontfaceobserver": "^2.1.0" }, "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-kiVUnc2A8vAvO2FfDJTsQa5BwmY+PAkof/1wRb5MOkcX1jtiaSTwz9gCUAyscMBFLundZDmZrLy1P7LZVC+NvA=="],
 
     "expo-glass-effect": ["expo-glass-effect@57.0.2", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-k2Dk0uCJrGYe8DWfvlMPmJ6w7uxCmJpoJckIcNDoUn27g75c5Kv3nUa88+T4+CpeVkixwY7iWrv46B5De20S9Q=="],
+
+    "expo-intent-launcher": ["expo-intent-launcher@57.0.1", "", { "peerDependencies": { "expo": "*" } }, "sha512-BYiPEOUeW3AkW/uxEESbS2UBw9LasJ8Heb6A8kF9Ueh6pqrXQHMNJFHzfrOP8qZfv9G2e8CTzrtzpN5p0vH5fA=="],
 
     "expo-json-utils": ["expo-json-utils@57.0.1", "", {}, "sha512-cgTe1NqzQdYs/WN+3nIY5IZg8s0pb0xaTUbhYvxQDn137GbwRfHoGM2se3m3Vsl4Qu+B9G4RPEK5WJDEU2Do7g=="],
 

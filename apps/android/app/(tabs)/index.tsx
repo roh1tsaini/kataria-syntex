@@ -22,10 +22,12 @@ import {
   friendlyError,
   useRealtimeEvent,
   type Challan,
+  type Permission,
   type RecentChallan,
 } from "@kataria-syntex/app-core";
 import { usePalette, type Palette } from "@/theme";
 import { Button, Card, EmptyState, Screen, Skeleton } from "@/ui/kit";
+import { CountUp } from "@/ui/count-up";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 import {
@@ -109,12 +111,17 @@ function StatCard({
         </View>
         {delta != null ? (
           <View
-            className="rounded-sm px-1.5 py-0.5"
+            className="flex-row items-center gap-1 rounded-sm px-1.5 py-0.5"
             style={{
               backgroundColor:
                 delta >= 0 ? `${p.success}1a` : `${p.destructive}1a`,
             }}
           >
+            <Feather
+              name={delta >= 0 ? "trending-up" : "trending-down"}
+              size={11}
+              color={delta >= 0 ? p.success : p.destructive}
+            />
             <Text
               className="text-[11px] font-semibold"
               style={{ color: delta >= 0 ? p.success : p.destructive }}
@@ -134,12 +141,13 @@ function StatCard({
       {loading ? (
         <Skeleton className="mt-2 h-7 w-24" />
       ) : (
-        <Text
-          className="mt-1 text-[26px] font-bold leading-8"
-          style={{ color: p.foreground }}
-        >
-          {format ? format(value) : value.toLocaleString("en-IN")}
-        </Text>
+        <CountUp
+          target={value}
+          format={format}
+          fontSize={26}
+          color={p.foreground}
+          className="mt-1"
+        />
       )}
       {sub ? (
         <Text className="mt-1 text-xs" style={{ color: p.mutedForeground }}>
@@ -226,7 +234,13 @@ const DONUT_COLORS = (p: Palette) => [
   p.mutedForeground,
 ];
 
-function CustomerDonut({ list }: { list: Challan[] }) {
+function CustomerDonut({
+  list,
+  canViewCustomers,
+}: {
+  list: Challan[];
+  canViewCustomers: boolean;
+}) {
   const p = usePalette();
   const router = useRouter();
   const total = list.reduce((s, c) => s + c.totalNetWt, 0);
@@ -340,17 +354,27 @@ function CustomerDonut({ list }: { list: Challan[] }) {
             </Text>
           </View>
         ))}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push("/masters")}
-          className="mt-1 flex-row items-center self-start"
-          style={{ gap: 4 }}
-        >
-          <Text className="text-xs font-semibold" style={{ color: p.primary }}>
-            View customers
-          </Text>
-          <Feather name="arrow-up-right" size={12} color={p.primary} />
-        </Pressable>
+        {canViewCustomers ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push({
+                pathname: "/masters",
+                params: { tab: "customers" },
+              })
+            }
+            className="mt-1 flex-row items-center self-start"
+            style={{ gap: 4 }}
+          >
+            <Text
+              className="text-xs font-semibold"
+              style={{ color: p.primary }}
+            >
+              View customers
+            </Text>
+            <Feather name="arrow-up-right" size={12} color={p.primary} />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -370,12 +394,27 @@ registerDataCache(() => {
   cachedFlowCards = {};
 });
 
+// The server returns web paths; this maps them onto the phone IA. Keyed by
+// `link` (a stable contract) rather than the display label, so relabelling a
+// card on the server can't silently strand the tap.
 const FLOW_ROUTES: Record<string, string> = {
-  Sent: "/(tabs)/outward",
-  Returned: "/returns",
-  "In Stock Raw": "/stock?kind=raw",
-  "In Stock Dyed": "/stock?kind=dyed",
-  Sold: "/(tabs)/challans",
+  "/challans?type=outward": "/(tabs)/outward",
+  "/returns": "/returns",
+  "/stock/raw": "/stock?kind=raw",
+  "/stock/dyed": "/stock?kind=dyed",
+  "/challans?type=sales": "/(tabs)/challans",
+};
+
+const FLOW_PERMISSIONS: Record<string, Permission[]> = {
+  "/challans?type=outward": [
+    "create_challan",
+    "edit_challan",
+    "delete_challan",
+  ],
+  "/returns": ["create_return"],
+  "/stock/raw": ["view_stock"],
+  "/stock/dyed": ["view_stock"],
+  "/challans?type=sales": ["create_challan", "edit_challan", "delete_challan"],
 };
 
 const FLOW_ICONS: Record<string, FeatherGlyph> = {
@@ -386,7 +425,13 @@ const FLOW_ICONS: Record<string, FeatherGlyph> = {
   Sold: "file-text",
 };
 
-function FlowCards({ wsId }: { wsId: string | undefined }) {
+function FlowCards({
+  wsId,
+  can,
+}: {
+  wsId: string | undefined;
+  can: (permission: Permission) => boolean;
+}) {
   const p = usePalette();
   const router = useRouter();
   const cacheKey = wsId ?? "";
@@ -421,18 +466,22 @@ function FlowCards({ wsId }: { wsId: string | undefined }) {
 
   if (cards.length === 0) return null;
 
+  const visibleCards = cards.filter((card) => {
+    const permissions = FLOW_PERMISSIONS[card.link];
+    return !permissions || permissions.some((permission) => can(permission));
+  });
+  if (visibleCards.length === 0) return null;
+
   return (
     <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-      {cards.map((card, idx) => {
-        const lastOdd = idx === cards.length - 1 && cards.length % 2 === 1;
+      {visibleCards.map((card, idx) => {
+        const lastOdd =
+          idx === visibleCards.length - 1 && visibleCards.length % 2 === 1;
         return (
           <Pressable
             key={card.label}
             accessibilityRole="button"
-            onPress={() => {
-              const route = FLOW_ROUTES[card.label] ?? "/reports";
-              router.push(route);
-            }}
+            onPress={() => router.push(FLOW_ROUTES[card.link] ?? "/reports")}
             className="rounded-xl border p-3"
             style={({ pressed }) => ({
               backgroundColor: p.card,
@@ -484,30 +533,35 @@ const QUICK_LINKS: Array<{
   icon: FeatherGlyph;
   title: string;
   desc: string;
+  permissions: Permission[];
 }> = [
   {
     to: "/members",
     icon: "users",
     title: "Members",
     desc: "Invite and manage your team",
+    permissions: ["manage_members"],
   },
   {
     to: "/masters",
     icon: "book-open",
     title: "Masters",
     desc: "Customers, job workers, deniers, colors",
+    permissions: ["manage_masters"],
   },
   {
     to: "/devices",
     icon: "smartphone",
     title: "Devices",
     desc: "Pair new devices and revoke old ones",
+    permissions: ["manage_settings"],
   },
   {
     to: "/settings",
     icon: "settings",
     title: "Settings",
     desc: "Company details and challan numbering",
+    permissions: ["manage_settings"],
   },
 ];
 
@@ -522,6 +576,7 @@ export default function DashboardTab() {
   const insets = useSafeAreaInsets();
   const p = usePalette();
   const [syncOpen, setSyncOpen] = useState(false);
+  const summarySeq = useRef(0);
 
   const cacheKey = `${workspace?.id ?? ""}:${currentFy?.label ?? ""}`;
 
@@ -548,18 +603,20 @@ export default function DashboardTab() {
       }
       // Scoped to the current financial year — without it the server returns
       // every challan ever created and the dashboard filters in JS.
+      const seq = ++summarySeq.current;
       summary(currentFy.label, workspace?.id)
         .then((res) => {
-          if (cancelled) return;
+          if (cancelled || seq !== summarySeq.current) return;
           setSales(res.sales);
           setOutward(res.outward);
         })
         .catch((err) => {
-          if (!cancelled)
+          if (!cancelled && seq === summarySeq.current) {
             toastError("Could not load dashboard", friendlyError(err));
+          }
         })
         .finally(() => {
-          if (!cancelled) setLoading(false);
+          if (!cancelled && seq === summarySeq.current) setLoading(false);
         });
       return () => {
         cancelled = true;
@@ -573,12 +630,18 @@ export default function DashboardTab() {
   useRealtimeEvent(["challans", "stock"], () => {
     if (!currentFy) return;
     clearSummaryCache();
+    const seq = ++summarySeq.current;
     summary(currentFy.label, workspace?.id)
       .then((res) => {
+        if (seq !== summarySeq.current) return;
         setSales(res.sales);
         setOutward(res.outward);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (seq === summarySeq.current) {
+          toastError("Could not refresh dashboard", friendlyError(err));
+        }
+      });
   });
 
   const stats = useMemo(() => {
@@ -645,6 +708,10 @@ export default function DashboardTab() {
     month: "long",
   });
   const canCreate = can("create_challan");
+  const canViewCustomers = can("manage_masters");
+  const visibleQuickLinks = QUICK_LINKS.filter((link) =>
+    link.permissions.some((permission) => can(permission)),
+  );
 
   return (
     <View
@@ -699,7 +766,7 @@ export default function DashboardTab() {
             </View>
           ) : null}
 
-          <FlowCards wsId={workspace?.id} />
+          <FlowCards wsId={workspace?.id} can={can} />
 
           <View
             className="flex-row self-start rounded-lg p-1"
@@ -714,7 +781,7 @@ export default function DashboardTab() {
                   onPress={() => setPeriod(option.value)}
                   className="rounded-md px-3"
                   style={({ pressed }) => ({
-                    minHeight: 36,
+                    minHeight: 44,
                     justifyContent: "center",
                     backgroundColor: active ? p.card : "transparent",
                     opacity: pressed ? 0.8 : 1,
@@ -804,7 +871,10 @@ export default function DashboardTab() {
               {loading ? (
                 <Skeleton className="h-52 w-full rounded-md" />
               ) : (
-                <CustomerDonut list={salesWindow} />
+                <CustomerDonut
+                  list={salesWindow}
+                  canViewCustomers={canViewCustomers}
+                />
               )}
             </View>
           </Card>
@@ -852,8 +922,22 @@ export default function DashboardTab() {
                 </View>
               ) : recent.length === 0 ? (
                 <EmptyState
+                  icon="file-text"
                   title={`No challans yet for FY ${currentFy?.label ?? ""}`}
                   message="Create your first challan to see it here."
+                  action={
+                    canCreate ? (
+                      <Button
+                        label="Create challan"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/challan-editor",
+                            params: { kind: "sales" },
+                          })
+                        }
+                      />
+                    ) : undefined
+                  }
                 />
               ) : (
                 recent.map((r, i) => (
@@ -935,57 +1019,60 @@ export default function DashboardTab() {
             </View>
           </Card>
 
-          <Card>
-            <Text
-              className="text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: p.mutedForeground }}
-            >
-              Quick links
-            </Text>
-            <View className="mt-2">
-              {QUICK_LINKS.map((link, i) => (
-                <Pressable
-                  key={link.to}
-                  accessibilityRole="button"
-                  onPress={() => router.push(link.to)}
-                  className="flex-row items-center rounded-md px-2 py-3"
-                  style={({ pressed }) => ({
-                    gap: 12,
-                    opacity: pressed ? 0.7 : 1,
-                    borderBottomWidth: i < QUICK_LINKS.length - 1 ? 1 : 0,
-                    borderBottomColor: p.border,
-                  })}
-                >
-                  <View
-                    className="h-7 w-7 items-center justify-center rounded-md"
-                    style={{ backgroundColor: p.accentSoft }}
+          {visibleQuickLinks.length > 0 ? (
+            <Card>
+              <Text
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: p.mutedForeground }}
+              >
+                Quick links
+              </Text>
+              <View className="mt-2">
+                {visibleQuickLinks.map((link, i) => (
+                  <Pressable
+                    key={link.to}
+                    accessibilityRole="button"
+                    onPress={() => router.push(link.to)}
+                    className="flex-row items-center rounded-md px-2 py-3"
+                    style={({ pressed }) => ({
+                      gap: 12,
+                      opacity: pressed ? 0.7 : 1,
+                      borderBottomWidth:
+                        i < visibleQuickLinks.length - 1 ? 1 : 0,
+                      borderBottomColor: p.border,
+                    })}
                   >
-                    <Feather name={link.icon} size={14} color={p.accentInk} />
-                  </View>
-                  <View className="min-w-0 flex-1">
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: p.foreground }}
+                    <View
+                      className="h-7 w-7 items-center justify-center rounded-md"
+                      style={{ backgroundColor: p.accentSoft }}
                     >
-                      {link.title}
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{ color: p.mutedForeground }}
-                      numberOfLines={1}
-                    >
-                      {link.desc}
-                    </Text>
-                  </View>
-                  <Feather
-                    name="arrow-up-right"
-                    size={14}
-                    color={p.mutedForeground}
-                  />
-                </Pressable>
-              ))}
-            </View>
-          </Card>
+                      <Feather name={link.icon} size={14} color={p.accentInk} />
+                    </View>
+                    <View className="min-w-0 flex-1">
+                      <Text
+                        className="text-sm font-semibold"
+                        style={{ color: p.foreground }}
+                      >
+                        {link.title}
+                      </Text>
+                      <Text
+                        className="text-xs"
+                        style={{ color: p.mutedForeground }}
+                        numberOfLines={1}
+                      >
+                        {link.desc}
+                      </Text>
+                    </View>
+                    <Feather
+                      name="arrow-up-right"
+                      size={14}
+                      color={p.mutedForeground}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            </Card>
+          ) : null}
         </ScrollView>
       </Screen>
       <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} />

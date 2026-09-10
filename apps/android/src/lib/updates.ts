@@ -42,6 +42,8 @@ const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const DISMISS_KEY = "updates.dismissedVersion";
 
 let wired = false;
+let checkSeq = 0;
+let installInFlight: Promise<void> | null = null;
 const etaFrom = createEtaEstimator();
 
 // Wire app-core's 426 classifier to the blocking-dialog state before the
@@ -59,49 +61,73 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   dismissedVersion: uiStorage.get(DISMISS_KEY),
 
   checkNow: async () => {
+    const seq = ++checkSeq;
     set({ checking: true });
     try {
       const manifest: UpdateManifest | null = await fetchManifest(apiBaseUrl());
-      if (!manifest) return "error";
-      if (manifest.minVersion) get().markRequired(manifest.minVersion);
+      if (seq !== checkSeq) return "error";
+      if (!manifest) {
+        set({ status: "error" });
+        return "error";
+      }
+      if (
+        manifest.minVersion &&
+        compareSemver(manifest.minVersion, appVersion()) > 0
+      ) {
+        get().markRequired(manifest.minVersion);
+      }
       set({ latestVersion: manifest.version });
       if (isNewer(manifest, appVersion())) {
         set({ status: "ready" });
         return "available";
       }
+      set({ status: "idle" });
       return "up-to-date";
+    } catch {
+      if (seq !== checkSeq) return "error";
+      set({ status: "error" });
+      return "error";
     } finally {
-      set({ checking: false });
+      if (seq === checkSeq) set({ checking: false });
     }
   },
 
   installUpdate: async () => {
-    etaFrom.reset();
-    set({
-      status: "downloading",
-      progress: {
-        percent: 0,
-        transferredBytes: 0,
-        totalBytes: 0,
-        etaSeconds: null,
-      },
-    });
-    try {
-      await downloadAndInstallApk(apiBaseUrl(), ({ bytes, total }) => {
-        set({
-          progress: {
-            percent: total > 0 ? Math.min(100, (bytes / total) * 100) : 0,
-            transferredBytes: bytes,
-            totalBytes: total,
-            etaSeconds: etaFrom.sample(bytes, total),
-          },
-        });
-      });
-      // Fully downloaded — the system installer dialog takes over from here.
-      set({ status: "ready", progress: null });
-    } catch {
+    if (installInFlight) return installInFlight;
+    const run = (async () => {
       etaFrom.reset();
-      set({ status: "error", progress: null });
+      set({
+        status: "downloading",
+        progress: {
+          percent: 0,
+          transferredBytes: 0,
+          totalBytes: 0,
+          etaSeconds: null,
+        },
+      });
+      try {
+        await downloadAndInstallApk(apiBaseUrl(), ({ bytes, total }) => {
+          set({
+            progress: {
+              percent: total > 0 ? Math.min(100, (bytes / total) * 100) : 0,
+              transferredBytes: bytes,
+              totalBytes: total,
+              etaSeconds: etaFrom.sample(bytes, total),
+            },
+          });
+        });
+        // Fully downloaded — the system installer dialog takes over from here.
+        set({ status: "ready", progress: null });
+      } catch {
+        etaFrom.reset();
+        set({ status: "error", progress: null });
+      }
+    })();
+    installInFlight = run;
+    try {
+      await run;
+    } finally {
+      if (installInFlight === run) installInFlight = null;
     }
   },
 

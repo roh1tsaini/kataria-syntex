@@ -38,6 +38,7 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let backoffMs = 1_000;
 let currentWorkspaceId: string | null = null;
 let started = false;
+let connectionGeneration = 0;
 
 function realtimeSupported(): boolean {
   const a = core();
@@ -81,6 +82,7 @@ function clearReconnectTimer(): void {
 }
 
 function closeSocket(): void {
+  connectionGeneration += 1;
   clearReconnectTimer();
   backoffMs = 1_000;
   if (socket) {
@@ -113,11 +115,19 @@ async function connect(): Promise<void> {
   if (!started || socket || connecting) return;
   const workspaceId = useAuth.getState().workspace?.id;
   if (!workspaceId) return;
+  const generation = connectionGeneration;
   connecting = true;
 
   try {
     const ticket = await fetchTicket();
-    if (!started) return;
+    const liveWorkspace = useAuth.getState().workspace?.id;
+    if (
+      !started ||
+      generation !== connectionGeneration ||
+      liveWorkspace !== workspaceId
+    ) {
+      return;
+    }
     if (!ticket) {
       // Server unreachable or session gone — the sync engine surfaces state;
       // here we just back off. The next network/activity event retries sooner.

@@ -69,6 +69,41 @@ function palette(scheme: Scheme, accent: AccentName): Palette {
   return p;
 }
 
+/**
+ * Applies an alpha channel to a palette color.
+ *
+ * Tokens are hex in light mode but `rgba()` in dark mode for `border` and
+ * `input`, so naive suffix concatenation (`${p.border}a6`) yields the
+ * malformed `"rgba(255, 255, 255, 0.1)a6"` and the color silently falls back
+ * to black. Always route translucent palette colors through this.
+ */
+export function withAlpha(color: string, alpha: number): string {
+  const a = Math.min(1, Math.max(0, alpha));
+  if (color.startsWith("#")) {
+    const hex =
+      color.length === 4
+        ? color
+            .slice(1)
+            .split("")
+            .map((ch) => ch + ch)
+            .join("")
+        : color.slice(1, 7);
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+  const rgb = color.match(/rgba?\(([^)]+)\)/);
+  if (rgb) {
+    const [r, g, b] = rgb[1].split(",").map((part) => part.trim());
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+  return color;
+}
+
+/** Overlay scrim behind dialogs and sheets — design.md §3 (40% black). */
+export const SCRIM = "rgba(0, 0, 0, 0.4)";
+
 // ── Theme store (useSyncExternalStore — no zustand dependency here) ─────────
 
 type ThemeState = { scheme: Scheme; accent: AccentName };
@@ -79,6 +114,21 @@ const listeners = new Set<() => void>();
 function setTheme(next: Partial<ThemeState>): void {
   state = { ...state, ...next };
   for (const l of listeners) l();
+}
+
+// Stable module-level functions — useSyncExternalStore re-subscribes whenever
+// subscribe/getSnapshot identity changes, and getSnapshot must return a cached
+// reference. Inline arrows in usePalette recreated both every render, which
+// drove the launch-time "Maximum update depth exceeded" fatal.
+function subscribeTheme(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getThemeSnapshot(): Palette {
+  return palette(state.scheme, state.accent);
 }
 
 export const themeStore = {
@@ -96,9 +146,9 @@ export const ACCENT_NAMES: AccentName[] = ACCENTS;
 /** The live palette — subscribes to scheme/accent switches. */
 export function usePalette(): Palette {
   return useSyncExternalStore(
-    themeStore.subscribe,
-    () => palette(state.scheme, state.accent),
-    () => palette(state.scheme, state.accent),
+    subscribeTheme,
+    getThemeSnapshot,
+    getThemeSnapshot,
   );
 }
 

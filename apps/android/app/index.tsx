@@ -4,10 +4,11 @@
  * in the dashboard (same routing contract as apps/app's App.tsx).
  */
 
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { Redirect } from "expo-router";
 import { useAuth, isPackerOnlyWorkspace } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
+import { Skeleton } from "@/ui/kit";
 
 export default function Gate() {
   const status = useAuth((s) => s.status);
@@ -17,14 +18,17 @@ export default function Gate() {
   if (status === "loading") {
     return (
       <View
-        className="flex-1 items-center justify-center"
+        className="flex-1 items-center justify-center gap-3 p-6"
         style={{ backgroundColor: p.background }}
       >
-        <ActivityIndicator color={p.mutedForeground} />
+        <Skeleton className="h-12 w-12 rounded-2xl" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-28" />
       </View>
     );
   }
   if (status !== "authed") return <Redirect href="/auth" />;
-  if (isPackerOnlyWorkspace(workspace)) return <Redirect href="/packing" />;
+  if (isPackerOnlyWorkspace(workspace))
+    return <Redirect href="/(tabs)/packing" />;
   return <Redirect href="/(tabs)" />;
 }

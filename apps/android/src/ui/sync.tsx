@@ -5,14 +5,21 @@
  * retry).
  */
 
-import { useState } from "react";
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import {
   useSync,
   listPending,
   resubmitWithNumber,
   retryErrored,
   toastSuccess,
+  toastError,
   friendlyError,
   ApiError,
   type PendingChallan,
@@ -43,7 +50,7 @@ export function SyncBanner({ onOpen }: { onOpen: () => void }) {
     <Pressable
       accessibilityRole="button"
       onPress={onOpen}
-      className="flex-row items-center gap-2.5 border-b px-4 py-2"
+      className="min-h-[44px] flex-row items-center gap-2.5 border-b px-4 py-2"
       style={{ borderColor: p.border }}
     >
       <View
@@ -95,6 +102,10 @@ function ConflictRow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const p0 = usePalette();
+
+  useEffect(() => {
+    setValue(p.suggestion ?? p.challanNumber);
+  }, [p.suggestion, p.challanNumber]);
 
   const apply = async () => {
     setBusy(true);
@@ -185,10 +196,14 @@ function ErrorRow({ p }: { p: PendingChallan }) {
         label="Retry"
         variant="secondary"
         loading={busy}
+        disabled={busy}
         onPress={async () => {
           setBusy(true);
           try {
             await retryErrored(p.clientRef);
+            toastSuccess("Retry queued.");
+          } catch (err) {
+            toastError("Could not retry", friendlyError(err));
           } finally {
             setBusy(false);
           }
@@ -205,8 +220,14 @@ export function SyncSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { online, syncing } = useSync();
+  const { online, syncing, pendingCount, conflictCount, errorCount } =
+    useSync();
   const [, setTick] = useState(0);
+  // Re-read the MMKV snapshot whenever the sheet opens or the counts move —
+  // listPending() itself is not reactive.
+  useEffect(() => {
+    if (open) setTick((t) => t + 1);
+  }, [open, pendingCount, conflictCount, errorCount]);
   const pending = listPending();
   const waiting = pending.filter((p0) => p0.status === "pending");
   const conflicts = pending.filter((p0) => p0.status === "conflict");
@@ -223,77 +244,83 @@ export function SyncSheet({
             : "Offline — challans made on this device send automatically once the server is back."}
         </Text>
 
-        <View className="mt-4 gap-4" style={{ maxHeight: winH * 0.68 }}>
-          {pending.length === 0 && (
-            <EmptyState
-              title="Nothing queued"
-              message="Everything is saved on the server."
-            />
-          )}
-          {conflicts.length > 0 && (
-            <View className="gap-2">
-              <Text
-                className="text-[11px] font-bold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Number clashes
-              </Text>
-              {conflicts.map((p0) => (
-                <ConflictRow
-                  key={p0.clientRef}
-                  p={p0}
-                  onResolved={() => setTick((t) => t + 1)}
-                />
-              ))}
-            </View>
-          )}
-          {errors.length > 0 && (
-            <View className="gap-2">
-              <Text
-                className="text-[11px] font-bold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Failed to sync
-              </Text>
-              {errors.map((p0) => (
-                <ErrorRow key={p0.clientRef} p={p0} />
-              ))}
-            </View>
-          )}
-          {waiting.length > 0 && (
-            <View className="gap-2">
-              <Text
-                className="text-[11px] font-bold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Waiting to sync{syncing ? " — sending now…" : ""}
-              </Text>
-              {waiting.map((p0) => (
-                <View
-                  key={p0.clientRef}
-                  className="flex-row items-center gap-2 rounded-lg border p-3"
-                  style={{ borderColor: p.border, backgroundColor: p.muted }}
+        <ScrollView
+          className="mt-4"
+          style={{ maxHeight: winH * 0.68 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="gap-4 pb-2">
+            {pending.length === 0 && (
+              <EmptyState
+                title="Nothing queued"
+                message="Everything is saved on the server."
+              />
+            )}
+            {conflicts.length > 0 && (
+              <View className="gap-2">
+                <Text
+                  className="text-[11px] font-bold uppercase tracking-wider"
+                  style={{ color: p.mutedForeground }}
                 >
-                  <Text
-                    className="font-semibold"
-                    style={{ color: p.foreground }}
+                  Number clashes
+                </Text>
+                {conflicts.map((p0) => (
+                  <ConflictRow
+                    key={p0.clientRef}
+                    p={p0}
+                    onResolved={() => setTick((t) => t + 1)}
+                  />
+                ))}
+              </View>
+            )}
+            {errors.length > 0 && (
+              <View className="gap-2">
+                <Text
+                  className="text-[11px] font-bold uppercase tracking-wider"
+                  style={{ color: p.mutedForeground }}
+                >
+                  Failed to sync
+                </Text>
+                {errors.map((p0) => (
+                  <ErrorRow key={p0.clientRef} p={p0} />
+                ))}
+              </View>
+            )}
+            {waiting.length > 0 && (
+              <View className="gap-2">
+                <Text
+                  className="text-[11px] font-bold uppercase tracking-wider"
+                  style={{ color: p.mutedForeground }}
+                >
+                  Waiting to sync{syncing ? " — sending now…" : ""}
+                </Text>
+                {waiting.map((p0) => (
+                  <View
+                    key={p0.clientRef}
+                    className="flex-row items-center gap-2 rounded-lg border p-3"
+                    style={{ borderColor: p.border, backgroundColor: p.muted }}
                   >
-                    {p0.challanNumber}
-                  </Text>
-                  <StatusChip status={p0.status} />
-                  <Text
-                    className="flex-1 text-xs"
-                    style={{ color: p.mutedForeground }}
-                    numberOfLines={1}
-                  >
-                    {p0.local.date} ·{" "}
-                    {p0.local.customerName ?? p0.local.jobWorkerName}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
+                    <Text
+                      className="font-semibold"
+                      style={{ color: p.foreground }}
+                    >
+                      {p0.challanNumber}
+                    </Text>
+                    <StatusChip status={p0.status} />
+                    <Text
+                      className="flex-1 text-xs"
+                      style={{ color: p.mutedForeground }}
+                      numberOfLines={1}
+                    >
+                      {p0.local.date} ·{" "}
+                      {p0.local.customerName ?? p0.local.jobWorkerName}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
       </View>
     </MorphSheet>
   );

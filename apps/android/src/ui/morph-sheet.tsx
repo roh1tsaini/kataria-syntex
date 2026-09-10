@@ -13,7 +13,6 @@ import {
   BackHandler,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -28,7 +27,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usePalette } from "@/theme";
+import { usePalette, SCRIM } from "@/theme";
 import { MORPH, MORPH_EXIT, useReduceMotion } from "@/lib/motion";
 
 export function MorphSheet({
@@ -62,13 +61,15 @@ export function MorphSheet({
         : withSpring(1, MORPH);
       return;
     }
-    progress.value = withSpring(
-      0,
-      reduce ? { mass: 1, stiffness: 4000, damping: 200 } : MORPH_EXIT,
-      (finished) => {
+    if (reduce) {
+      progress.value = withTiming(0, { duration: 1 }, (finished) => {
         if (finished) runOnJS(setMounted)(false);
-      },
-    );
+      });
+      return;
+    }
+    progress.value = withSpring(0, MORPH_EXIT, (finished) => {
+      if (finished) runOnJS(setMounted)(false);
+    });
   }, [open, reduce, progress]);
 
   useEffect(() => {
@@ -100,11 +101,9 @@ export function MorphSheet({
     >
       {/* Every dismissal — scrim, back button, Close — funnels through
           onOpenChange so callers can run guards (dirty checks) first. */}
-      <KeyboardAvoidingView
-        className="flex-1 justify-end"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <KeyboardAvoidingView className="flex-1 justify-end" behavior={undefined}>
         <Pressable
+          accessibilityRole="button"
           accessibilityLabel="Close"
           onPress={() => onOpenChange(false)}
           style={[StyleSheet.absoluteFill]}
@@ -113,7 +112,7 @@ export function MorphSheet({
             style={[
               StyleSheet.absoluteFill,
               backdropStyle,
-              { backgroundColor: "#00000066" },
+              { backgroundColor: SCRIM },
             ]}
           />
         </Pressable>

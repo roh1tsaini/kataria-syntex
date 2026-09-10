@@ -8,12 +8,14 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, Redirect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useAuth,
   usePermission,
   useSync,
+  friendlyError,
+  toastError,
   type Permission,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
@@ -156,6 +158,7 @@ function MoreRow({
 }
 
 export default function MoreTab() {
+  const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
   const workspace = useAuth((s) => s.workspace);
   const company = useAuth((s) => s.company);
@@ -195,10 +198,20 @@ export default function MoreTab() {
 
   const onLogout = () => {
     setLoggingOut(true);
-    void logout().finally(() => {
-      router.replace("/auth");
-    });
+    logout()
+      .catch((err: unknown) => {
+        // The local session is cleared either way; a failed server revoke
+        // must not leave the button spinning or the promise unhandled.
+        toastError("Could not sign out", friendlyError(err));
+      })
+      .finally(() => {
+        setLoggingOut(false);
+        router.replace("/auth");
+      });
   };
+
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
 
   return (
     <View className="flex-1" style={{ paddingTop: insets.top }}>

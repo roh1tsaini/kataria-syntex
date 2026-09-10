@@ -20,7 +20,8 @@ import {
   type NumberingType,
 } from "@kataria-syntex/app-core";
 import { formatUpdateProgress } from "@kataria-syntex/shared";
-import { ACCENT_NAMES, themeStore, usePalette } from "@/theme";
+import { ACCENT_NAMES, usePalette } from "@/theme";
+import { setAccent, setScheme } from "@/lib/theme";
 import { ACCENT_TOKENS, type AccentName } from "@/theme/tokens";
 import { cn } from "@/lib/cn";
 import { fmtDate } from "@/lib/format";
@@ -269,14 +270,27 @@ function UpdateRow() {
 
   const check = async () => {
     setResult(null);
-    const outcome = await checkNow();
-    setResult(
-      outcome === "up-to-date"
-        ? "You're on the latest version."
-        : outcome === "error"
-          ? "Couldn't reach the update service."
-          : null,
-    );
+    try {
+      const outcome = await checkNow();
+      setResult(
+        outcome === "up-to-date"
+          ? "You're on the latest version."
+          : outcome === "error"
+            ? "Couldn't reach the update service."
+            : null,
+      );
+    } catch {
+      setResult("Couldn't reach the update service.");
+    }
+  };
+
+  const install = async () => {
+    setResult(null);
+    try {
+      await installUpdate();
+    } catch {
+      setResult("Download failed. Check your connection and try again.");
+    }
   };
 
   return (
@@ -302,10 +316,10 @@ function UpdateRow() {
           <View className="shrink-0">
             <Button
               label={downloading ? "Downloading…" : "Update"}
-              onPress={() => void installUpdate()}
+              onPress={() => void install()}
               disabled={downloading}
               loading={downloading}
-              className="min-h-[32px] px-3"
+              className="min-h-[44px] px-3"
             />
           </View>
         ) : (
@@ -316,12 +330,61 @@ function UpdateRow() {
               onPress={() => void check()}
               disabled={checking}
               loading={checking}
-              className="min-h-[32px] px-3"
+              className="min-h-[44px] px-3"
             />
           </View>
         )}
       </View>
     </SettingsRow>
+  );
+}
+
+function ThemeRow() {
+  const p = usePalette();
+  const options: {
+    value: "light" | "dark";
+    label: string;
+    icon: "sun" | "moon";
+  }[] = [
+    { value: "light", label: "Light", icon: "sun" },
+    { value: "dark", label: "Dark", icon: "moon" },
+  ];
+  return (
+    <View
+      className="min-h-[44px] flex-row items-center gap-1 rounded-md border p-1"
+      style={{ borderColor: p.input, backgroundColor: p.card }}
+      accessibilityRole="radiogroup"
+    >
+      {options.map((o) => {
+        const active = p.scheme === o.value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={`${o.label} theme`}
+            onPress={() => setScheme(o.value)}
+            className="min-h-[44px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md px-3"
+            style={({ pressed }) => ({
+              backgroundColor: active ? p.primary : "transparent",
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Feather
+              name={o.icon}
+              size={15}
+              color={active ? p.primaryForeground : p.mutedForeground}
+            />
+            <Text
+              className="text-[13px] font-medium"
+              style={{ color: active ? p.primaryForeground : p.foreground }}
+            >
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -338,7 +401,7 @@ function AccentRow() {
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             accessibilityLabel={`${ACCENT_LABELS[a]} accent`}
-            onPress={() => themeStore.setAccent(a)}
+            onPress={() => setAccent(a)}
             className="min-h-[44px] items-center justify-center gap-1"
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
@@ -375,6 +438,7 @@ function SettingsPage() {
   const financialYears = useAuth((s) => s.financialYears);
   const saveCompany = useAuth((s) => s.saveCompany);
   const saveNumbering = useAuth((s) => s.saveNumbering);
+  const refreshCompany = useAuth((s) => s.refreshCompany);
   const router = useRouter();
 
   const [details, setDetails] = useState({
@@ -391,7 +455,27 @@ function SettingsPage() {
   // True once the user edits anything — concurrent store refreshes
   // (other pages) must not clobber half-typed values.
   const [dirty, setDirty] = useState(false);
+  const [companyLoading, setCompanyLoading] = useState(false);
+  const [companyError, setCompanyError] = useState<string | null>(null);
   const p = usePalette();
+
+  // Deep links land here without company data — fetch on mount so the form
+  // never shows empty fields with perpetual skeletons.
+  useEffect(() => {
+    let cancelled = false;
+    setCompanyLoading(true);
+    setCompanyError(null);
+    void refreshCompany()
+      .catch((err) => {
+        if (!cancelled) setCompanyError(friendlyError(err));
+      })
+      .finally(() => {
+        if (!cancelled) setCompanyLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshCompany]);
 
   useEffect(() => {
     if (company && !dirty) {
@@ -449,6 +533,35 @@ function SettingsPage() {
         keyboardShouldPersistTaps="handled"
         contentContainerClassName="px-4 pb-8"
       >
+        {companyError ? (
+          <View
+            className="mb-3 flex-row flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
+            style={{
+              borderColor: `${p.destructive}33`,
+              backgroundColor: `${p.destructive}14`,
+            }}
+            accessibilityRole="alert"
+          >
+            <Text
+              className="min-w-0 flex-1 text-[13px]"
+              style={{ color: p.destructive }}
+            >
+              {companyError}
+            </Text>
+            <Button
+              label="Retry"
+              variant="secondary"
+              loading={companyLoading}
+              onPress={() => {
+                setCompanyError(null);
+                setCompanyLoading(true);
+                void refreshCompany()
+                  .catch((err) => setCompanyError(friendlyError(err)))
+                  .finally(() => setCompanyLoading(false));
+              }}
+            />
+          </View>
+        ) : null}
         {error ? (
           <View
             className="mb-3 rounded-lg border px-4 py-3"
@@ -714,9 +827,15 @@ function SettingsPage() {
 
         <Section
           title="Appearance"
-          description="Choose the accent colour used across the app on this device."
+          description="Choose the theme and accent colour used across the app on this device."
         >
           <Panel>
+            <SettingsRow
+              label="Theme"
+              hint="Follows the system until you pick one."
+            >
+              <ThemeRow />
+            </SettingsRow>
             <SettingsRow
               label="Accent colour"
               hint="Buttons, links and highlights."

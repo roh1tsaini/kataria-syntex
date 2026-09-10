@@ -8,8 +8,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Clipboard,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -17,17 +19,26 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import type { FeatherIconName } from "@/ui/feather";
 import {
   useAuth,
   useChallans,
   usePermission,
   useRealtimeEvent,
+  friendlyError,
+  toastError,
+  toastSuccess,
   type Challan,
   type ChallanType,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { Badge, Button, EmptyState, Skeleton } from "@/ui/kit";
-import { fmtBoxes, fmtWt } from "@/lib/format";
+import { SyncBanner, SyncSheet } from "@/ui/sync";
+import { MorphSheet } from "@/ui/morph-sheet";
+import { confirm } from "@/ui/confirm";
+import { printChallanPdf } from "@/lib/pdf";
+import { countLabel, fmtBoxes, fmtWt } from "@/lib/format";
+import type { ChallanKind } from "@/lib/challan-kinds";
 import { MORPH, useReduceMotion } from "@/lib/motion";
 import Animated, {
   useAnimatedStyle,
@@ -35,34 +46,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-
-export type ChallanKind = {
-  type: ChallanType;
-  title: string;
-  desc: string;
-  /** Row header label for the counterparty column. */
-  party: string;
-  searchPlaceholder: string;
-  emptyHint: string;
-};
-
-export const SALES_KIND: ChallanKind = {
-  type: "sales",
-  title: "Sales challans",
-  desc: "Create, edit and print.",
-  party: "Customer",
-  searchPlaceholder: "Search customer",
-  emptyHint: "No challans found",
-};
-
-export const OUTWARD_KIND: ChallanKind = {
-  type: "outward",
-  title: "Job-work challans",
-  desc: "Outward movement to job workers, no rates.",
-  party: "Job worker",
-  searchPlaceholder: "Search job worker",
-  emptyHint: "No job-work challans found",
-};
 
 const LIST_PAGE_SIZE = 25;
 
@@ -104,16 +87,28 @@ function SyncFlag({ challan }: { challan: Challan }) {
   return null;
 }
 
-function ListRow({ item }: { item: Challan }) {
+function ListRow({
+  item,
+  onMore,
+}: {
+  item: Challan;
+  onMore: (challan: Challan) => void;
+}) {
   const p = usePalette();
   const router = useRouter();
   const kind = item.type;
-  // Row entrance: fade + 14px rise on the morph spring (§5.6). Rows added
-  // by sync or draft saves grow the list smoothly; existing rows are not
-  // re-animated (FlatList reuses them).
+  // Row entrance: fade + 14px rise on the morph spring (§5.6). Skipped on
+  // first mount so 25+ rows don't animate simultaneously and jank initial
+  // render; rows added later (sync, new saves) still animate in.
   const entering = useSharedValue(0);
   const reduce = useReduceMotion();
+  const firstMount = useRef(true);
   useEffect(() => {
+    if (firstMount.current) {
+      firstMount.current = false;
+      entering.value = 1;
+      return;
+    }
     entering.value = reduce
       ? withTiming(1, { duration: 1 })
       : withSpring(1, MORPH);
@@ -122,10 +117,13 @@ function ListRow({ item }: { item: Challan }) {
     opacity: entering.value,
     transform: [{ translateY: (1 - entering.value) * 14 }],
   }));
+  const party =
+    kind === "sales" ? (item.customerName ?? "—") : (item.jobWorkerName ?? "—");
   return (
     <Animated.View style={enterStyle}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={`${item.challanNumber}, ${party}`}
         onPress={() =>
           router.push({
             pathname: "/challan-detail",
@@ -149,6 +147,23 @@ function ListRow({ item }: { item: Challan }) {
             </Text>
             <Badge label={item.fyLabel} />
             <SyncFlag challan={item} />
+            <View className="flex-1" />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Actions for ${item.challanNumber}`}
+              onPress={() => onMore(item)}
+              hitSlop={8}
+              className="-mr-2 -mt-2 h-11 w-11 items-center justify-center rounded-full"
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? p.muted : "transparent",
+              })}
+            >
+              <Feather
+                name="more-horizontal"
+                size={18}
+                color={p.mutedForeground}
+              />
+            </Pressable>
           </View>
           <View className="mt-1 flex-row items-center gap-1.5">
             <Feather name="calendar" size={12} color={p.mutedForeground} />
@@ -188,7 +203,7 @@ function ListRow({ item }: { item: Challan }) {
                 className="text-[10px] font-semibold uppercase tracking-wider"
                 style={{ color: p.mutedForeground }}
               >
-                {item.type === "sales" ? "Boxes" : "Sacks"}
+                Boxes
               </Text>
               <Text
                 className="mt-0.5 text-sm font-bold"
@@ -221,6 +236,48 @@ function ListRow({ item }: { item: Challan }) {
   );
 }
 
+/** One row of the per-challan action sheet. */
+function ActionRow({
+  icon,
+  label,
+  onPress,
+  destructive,
+  disabled,
+}: {
+  icon: FeatherIconName;
+  label: string;
+  onPress: () => void;
+  destructive?: boolean;
+  disabled?: boolean;
+}) {
+  const p = usePalette();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      className="min-h-[44px] flex-row items-center gap-3 rounded-md px-2"
+      style={({ pressed }) => ({
+        opacity: disabled ? 0.5 : pressed ? 0.6 : 1,
+      })}
+    >
+      <Feather
+        name={icon}
+        size={18}
+        color={destructive ? p.destructive : p.mutedForeground}
+      />
+      <Text
+        className="text-[15px] font-medium"
+        style={{ color: destructive ? p.destructive : p.foreground }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function RowSkeleton() {
   const p = usePalette();
   return (
@@ -239,7 +296,7 @@ function RowSkeleton() {
 }
 
 export function ChallanList({ kind }: { kind: ChallanKind }) {
-  const { total, error, refresh } = useChallans();
+  const { total, error, refresh, remove } = useChallans();
   const financialYears = useAuth((s) => s.financialYears);
   const currentFy = useAuth((s) => s.currentFy);
   const can = usePermission();
@@ -252,11 +309,86 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [actionChallan, setActionChallan] = useState<Challan | null>(null);
+  const [printing, setPrinting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const initializedFy = useRef(false);
   const loadingMoreRef = useRef(false);
   const seqRef = useRef(0);
   const canCreate = can("create_challan");
+  const canEdit = can("edit_challan");
+  const canDelete = can("delete_challan");
   const pageCount = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+
+  // ── Row actions (the web RowMenu: Open · Print · Edit · Copy ID · Delete) ──
+
+  const openChallan = (challan: Challan) => {
+    setActionChallan(null);
+    router.push({
+      pathname: "/challan-detail",
+      params: { id: challan.id, kind: challan.type },
+    });
+  };
+
+  const printChallan = async (challan: Challan) => {
+    setActionChallan(null);
+    setPrinting(true);
+    try {
+      await printChallanPdf(challan.id, challan.challanNumber);
+    } catch (err) {
+      toastError(
+        "Could not print",
+        friendlyError(err, "Something went wrong."),
+      );
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  const editChallan = (challan: Challan) => {
+    setActionChallan(null);
+    router.push({
+      pathname: "/challan-editor",
+      params: { kind: challan.type, id: challan.id },
+    });
+  };
+
+  const copyChallanId = async (challan: Challan) => {
+    setActionChallan(null);
+    try {
+      Clipboard.setString(challan.id);
+      toastSuccess("Challan ID copied.");
+    } catch {
+      toastError("Could not copy", "Clipboard is unavailable on this device.");
+    }
+  };
+
+  const deleteChallan = async (challan: Challan) => {
+    setActionChallan(null);
+    const ok = await confirm({
+      title: `Delete ${kind.singular} ${challan.challanNumber}?`,
+      description: "This permanently removes the challan and its lines.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await remove(challan.id);
+      toastSuccess(`${challan.challanNumber} deleted.`);
+      setPage(1);
+      void loadPage(1, { fy, q });
+    } catch (err) {
+      toastError(
+        "Could not delete",
+        friendlyError(err, "Something went wrong."),
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Default the FY filter to the workspace's current financial year once the
   // company profile has loaded (same behavior as the web list).
@@ -273,7 +405,12 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
   const loadPage = useCallback(
     async (nextPage: number, filter: { fy: string; q: string }) => {
       const seq = ++seqRef.current;
-      if (nextPage === 1) setBusy(true);
+      if (nextPage === 1) {
+        setBusy(true);
+        setPageError(null);
+      } else {
+        setPageError(null);
+      }
       try {
         await refresh({
           type: kind.type,
@@ -282,8 +419,12 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
           page: nextPage,
           limit: LIST_PAGE_SIZE,
         });
+      } catch (err) {
+        if (seq !== seqRef.current) return;
+        if (nextPage > 1) setPageError(friendlyError(err));
+        return;
       } finally {
-        if (nextPage === 1) setBusy(false);
+        if (nextPage === 1 && seq === seqRef.current) setBusy(false);
       }
       if (seq !== seqRef.current) return;
       const fresh = useChallans.getState().challans;
@@ -316,6 +457,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
   // Other devices' challan writes land here live; this device's writes
   // already refresh through the store's mutation paths.
   useRealtimeEvent(["challans", "stock"], () => {
+    setPage(1);
     void loadPage(1, { fy, q });
   });
 
@@ -332,6 +474,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
 
   return (
     <View className="flex-1">
+      <SyncBanner onOpen={() => setSyncOpen(true)} />
       <View className="gap-2 px-4 pb-3">
         <View
           className="min-h-[44px] flex-row items-center rounded-lg border px-1.5"
@@ -375,7 +518,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
             onPress={() => setFy("")}
             className="rounded-full border px-3.5"
             style={({ pressed }) => ({
-              minHeight: 36,
+              minHeight: 44,
               justifyContent: "center",
               backgroundColor: fy === "" ? p.primary : p.card,
               borderColor: fy === "" ? p.primary : p.border,
@@ -398,7 +541,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
                 onPress={() => setFy(active ? "" : f.label)}
                 className="rounded-full border px-3.5"
                 style={({ pressed }) => ({
-                  minHeight: 36,
+                  minHeight: 44,
                   justifyContent: "center",
                   backgroundColor: active ? p.primary : p.card,
                   borderColor: active ? p.primary : p.border,
@@ -425,23 +568,34 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
           {q.trim() ? ` for “${q.trim()}”` : ""}
         </Text>
         {error ? (
-          <Text
-            className="rounded-lg border px-4 py-3 text-sm"
+          <View
+            className="gap-2 rounded-lg border px-4 py-3"
             style={{
-              color: p.destructive,
               borderColor: `${p.destructive}33`,
               backgroundColor: `${p.destructive}14`,
             }}
           >
-            {error}
-          </Text>
+            <Text className="text-sm" style={{ color: p.destructive }}>
+              {error}
+            </Text>
+            <Button
+              label="Retry"
+              variant="secondary"
+              onPress={() => {
+                setPage(1);
+                void loadPage(1, { fy, q });
+              }}
+            />
+          </View>
         ) : null}
       </View>
 
       <FlatList
         data={rows}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ListRow item={item} />}
+        renderItem={({ item }) => (
+          <ListRow item={item} onMore={setActionChallan} />
+        )}
         contentContainerStyle={{
           gap: 12,
           paddingHorizontal: 16,
@@ -481,7 +635,27 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
                 Loading more…
               </Text>
             </View>
+          ) : pageError ? (
+            <View className="items-center gap-2 py-3">
+              <Text className="text-xs" style={{ color: p.destructive }}>
+                {pageError}
+              </Text>
+              <Button
+                label="Retry"
+                variant="secondary"
+                onPress={() => void onEndReached()}
+              />
+            </View>
           ) : null
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={busy && rows.length > 0}
+            onRefresh={() => {
+              setPage(1);
+              void loadPage(1, { fy, q });
+            }}
+          />
         }
         onEndReachedThreshold={0.4}
         onEndReached={onEndReached}
@@ -507,6 +681,53 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
           <Feather name="plus" size={24} color={p.primaryForeground} />
         </Pressable>
       ) : null}
+
+      <MorphSheet
+        open={actionChallan !== null}
+        onOpenChange={(next) => {
+          if (!next) setActionChallan(null);
+        }}
+        title={actionChallan?.challanNumber}
+      >
+        {actionChallan ? (
+          <View className="gap-0.5 px-4 pb-6 pt-2">
+            <ActionRow
+              icon="eye"
+              label="Open"
+              onPress={() => openChallan(actionChallan)}
+            />
+            <ActionRow
+              icon="printer"
+              label="Print"
+              disabled={printing}
+              onPress={() => void printChallan(actionChallan)}
+            />
+            {!actionChallan.pendingSync && canEdit ? (
+              <ActionRow
+                icon="edit-2"
+                label="Edit"
+                onPress={() => editChallan(actionChallan)}
+              />
+            ) : null}
+            <ActionRow
+              icon="copy"
+              label="Copy ID"
+              onPress={() => void copyChallanId(actionChallan)}
+            />
+            {canDelete ? (
+              <ActionRow
+                icon="trash-2"
+                label="Delete"
+                destructive
+                disabled={deleting}
+                onPress={() => void deleteChallan(actionChallan)}
+              />
+            ) : null}
+          </View>
+        ) : null}
+      </MorphSheet>
+
+      <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} />
     </View>
   );
 }

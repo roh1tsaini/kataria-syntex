@@ -54,9 +54,6 @@ function IdentifierStep({
         disabled={busy || !filled}
         loading={busy}
       />
-      <Text className="text-[11px]" style={{ color: p.mutedForeground }}>
-        Wrong number? Accounts match the phone/email the admin invited.
-      </Text>
     </View>
   );
 }
@@ -68,6 +65,7 @@ function OtpStep({
   startWithQrFallback,
   onNeedsSignup,
   onUsePassword,
+  onAuthed,
   onBack,
 }: {
   identifier: string;
@@ -76,6 +74,7 @@ function OtpStep({
   startWithQrFallback: boolean;
   onNeedsSignup: () => void;
   onUsePassword: () => void;
+  onAuthed: () => void;
   onBack: () => void;
 }) {
   const [code, setCode] = useState("");
@@ -85,7 +84,6 @@ function OtpStep({
   const [showQrFallback, setShowQrFallback] = useState(startWithQrFallback);
   const verifyOtp = useAuth((s) => s.verifyOtp);
   const requestOtp = useAuth((s) => s.requestOtp);
-  const router = useRouter();
   const p = usePalette();
 
   useEffect(() => {
@@ -103,7 +101,7 @@ function OtpStep({
     try {
       const res = await verifyOtp(identifier, code);
       if (res.outcome === "ok") {
-        router.replace("/");
+        onAuthed();
         return;
       }
       if (!draft?.name) {
@@ -116,7 +114,7 @@ function OtpStep({
         ...(draft.password ? { password: draft.password } : {}),
         ...(draft.workspaceName ? { workspaceName: draft.workspaceName } : {}),
       });
-      router.replace("/");
+      onAuthed();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -157,7 +155,7 @@ function OtpStep({
       <View className="flex-row gap-2">
         <View className="flex-1">
           <Button
-            label={cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+            label={cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
             variant="secondary"
             onPress={() => void resend()}
             disabled={cooldown > 0}
@@ -215,9 +213,15 @@ function CreateStep({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestOtp = useAuth((s) => s.requestOtp);
+  const p = usePalette();
 
   const submit = async () => {
     setError(null);
+    // Same floor as the web form (minLength=10) — RN inputs don't enforce it.
+    if (!hasInvite && password && password.length < 10) {
+      setError("Minimum 10 characters.");
+      return;
+    }
     setBusy(true);
     try {
       await requestOtp(identifier);
@@ -259,6 +263,9 @@ function CreateStep({
               onChangeText={setPassword}
               placeholder="Minimum 10 characters"
             />
+            <Text className="text-[12px]" style={{ color: p.mutedForeground }}>
+              Minimum 10 characters.
+            </Text>
           </Field>
         </>
       )}
@@ -280,23 +287,24 @@ function CreateStep({
 
 function PasswordStep({
   identifier,
+  onAuthed,
   onBack,
 }: {
   identifier: string;
+  onAuthed: () => void;
   onBack: () => void;
 }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loginPassword = useAuth((s) => s.loginPassword);
-  const router = useRouter();
 
   const submit = async () => {
     setError(null);
     setBusy(true);
     try {
       await loginPassword(identifier, password);
-      router.replace("/");
+      onAuthed();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -324,7 +332,7 @@ function PasswordStep({
   );
 }
 
-export function AuthScreen() {
+export function AuthScreen({ returnTo }: { returnTo?: string }) {
   const requestOtp = useAuth((s) => s.requestOtp);
   const lookupIdentifier = useAuth((s) => s.lookupIdentifier);
   const router = useRouter();
@@ -339,6 +347,8 @@ export function AuthScreen() {
   const [otpFallback, setOtpFallback] = useState(false);
   const [homeBusy, setHomeBusy] = useState(false);
   const [homeError, setHomeError] = useState<string | null>(null);
+
+  const finishAuth = () => router.replace(returnTo ?? "/");
 
   const handleIdentifier = async (value: string) => {
     setHomeError(null);
@@ -427,7 +437,7 @@ export function AuthScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: method === m }}
                     onPress={() => setMethod(m)}
-                    className="min-h-[40px] flex-1 items-center justify-center rounded-md"
+                    className="min-h-[44px] flex-1 items-center justify-center rounded-md"
                     style={{
                       backgroundColor: method === m ? p.card : "transparent",
                     }}
@@ -468,6 +478,7 @@ export function AuthScreen() {
                 setStep("create");
               }}
               onUsePassword={() => setStep("password")}
+              onAuthed={finishAuth}
               onBack={() => {
                 setDraft(null);
                 setStep("home");
@@ -490,6 +501,7 @@ export function AuthScreen() {
           {step === "password" && (
             <PasswordStep
               identifier={identifier}
+              onAuthed={finishAuth}
               onBack={() => setStep("otp")}
             />
           )}

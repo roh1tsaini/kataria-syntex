@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { useRouter } from "expo-router";
 import {
@@ -13,12 +13,12 @@ import {
   friendlyError,
   type QrLoginCode,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
-import { Button } from "@/ui/kit";
+import { usePalette, withAlpha } from "@/theme";
+import { Button, Skeleton } from "@/ui/kit";
 
 const POLL_INTERVAL_MS = 3000;
 
-function countdownParts(expiresAt: string | null): {
+function useCountdownParts(expiresAt: string | null): {
   mm: number;
   ss: number;
   total: number;
@@ -48,26 +48,28 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const { mm, ss, total } = countdownParts(pairing?.expiresAt ?? null);
-  const identRef = useRef(identifier);
-  identRef.current = identifier;
+  const startSeq = useRef(0);
+  const { mm, ss, total } = useCountdownParts(pairing?.expiresAt ?? null);
   const p = usePalette();
 
   const start = useCallback(async () => {
+    const seq = ++startSeq.current;
     setError(null);
     setPolling(null);
     setPairing(null);
     try {
-      const res = await startQrLogin(identRef.current || undefined);
+      const res = await startQrLogin(identifier || undefined);
+      if (seq !== startSeq.current) return;
       setPairing(res);
     } catch (err) {
+      if (seq !== startSeq.current) return;
       setError(friendlyError(err, "Could not start QR login. Try again."));
     }
-  }, [startQrLogin]);
+  }, [startQrLogin, identifier]);
 
   useEffect(() => {
     void start();
-  }, [start]);
+  }, [start, identifier]);
 
   // Approval flips the session on the store — leave the QR screen the same
   // way OTP login does (web's panel navigates identically).
@@ -76,27 +78,34 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   }, [authed, router]);
 
   useEffect(() => {
-    if (!pairing || total <= 0) return;
+    if (!pairing) return;
     let cancelled = false;
+    let inFlight = false;
     let timer: ReturnType<typeof setInterval> | null = null;
 
     const tick = async () => {
-      if (cancelled) return;
+      if (cancelled || inFlight) return;
       if (Date.now() >= new Date(pairing.expiresAt).getTime()) {
         setPolling("expired");
         if (timer) clearInterval(timer);
         return;
       }
+      inFlight = true;
       try {
         const status = await pollQrLogin(pairing.code);
         if (cancelled) return;
-        if (status === "ok") return;
+        if (status === "ok") {
+          if (timer) clearInterval(timer);
+          return;
+        }
         if (status !== "pending") {
           setPolling(status);
           if (timer) clearInterval(timer);
         }
       } catch {
         // transient network error — keep polling
+      } finally {
+        inFlight = false;
       }
     };
 
@@ -135,6 +144,8 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
       </Text>
       <View
         className="h-48 w-48 items-center justify-center rounded-lg border p-2"
+        /* The QR quiet zone must stay pure white on both schemes or cameras
+           lose the finder patterns — the one deliberate raw color in the app. */
         style={{ backgroundColor: "#ffffff", borderColor: p.border }}
       >
         {error ? (
@@ -163,7 +174,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
             {expired && (
               <View
                 className="absolute inset-0 items-center justify-center gap-2 rounded-lg p-4"
-                style={{ backgroundColor: p.card }}
+                style={{ backgroundColor: withAlpha(p.card, 0.95) }}
               >
                 <Text
                   className="text-xs font-semibold"
@@ -180,7 +191,9 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
               </View>
             )}
           </>
-        ) : null}
+        ) : (
+          <Skeleton className="h-40 w-40 rounded-md" />
+        )}
       </View>
       {!error && (
         <View className="items-center gap-1">
@@ -206,8 +219,6 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
           </Text>
         </View>
       )}
-      {/* Pressable keeps a11y tooling happy when the panel is a pure display. */}
-      <Pressable accessibilityRole="none" style={{ display: "none" }} />
     </View>
   );
 }

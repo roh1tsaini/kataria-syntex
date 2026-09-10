@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Feather } from "@expo/vector-icons";
+import { Redirect } from "expo-router";
 import {
   FlatList,
   Pressable,
@@ -23,6 +24,7 @@ import {
   friendlyError,
   toastError,
   toastSuccess,
+  useAuth,
   useMasters,
   usePermission,
   useRecipes,
@@ -35,7 +37,15 @@ import {
   type RecipeVersionPayload,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
-import { Badge, Button, EmptyState, Field, Input, Skeleton } from "@/ui/kit";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Field,
+  Input,
+  PageTitle,
+  Skeleton,
+} from "@/ui/kit";
 import { IconButton, Select, Textarea } from "@/ui/controls";
 import { confirm, requestDiscard } from "@/ui/confirm";
 import { fmtDate } from "@/lib/format";
@@ -276,12 +286,14 @@ function RecipeEditorModal({
   // Editing loads the current recipe; adding starts from a blank row.
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
     setError(null);
     if (editing) {
       setDenierId(editing.denierId);
       setLoading(true);
       fetchRecipe(editing.id)
         .then((detail) => {
+          if (cancelled) return;
           const loaded = detail.ingredients.map((i) => ({
             key: newKey(),
             name: i.name,
@@ -305,8 +317,12 @@ function RecipeEditorModal({
           setNotes(snap.notes);
           baselineRef.current = snap;
         })
-        .catch((err) => setError(friendlyError(err)))
-        .finally(() => setLoading(false));
+        .catch((err) => {
+          if (!cancelled) setError(friendlyError(err));
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
     } else {
       const blank: RecipeBaseline = {
         denierId: "",
@@ -326,8 +342,12 @@ function RecipeEditorModal({
       setMin("");
       setSec("");
       setNotes("");
+      setLoading(false);
       baselineRef.current = blank;
     }
+    return () => {
+      cancelled = true;
+    };
   }, [open, editing, fetchRecipe]);
 
   const setIngredient = (key: string, patch: Partial<IngredientDraft>) =>
@@ -383,6 +403,13 @@ function RecipeEditorModal({
     }
   };
 
+  /** Digits only, clamped to `max` — empty stays empty so a field can be cleared. */
+  const clampInt = (raw: string, max: number): string => {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return "";
+    return String(Math.min(Number(digits), max));
+  };
+
   const intField = (
     label: string,
     value: string,
@@ -399,7 +426,9 @@ function RecipeEditorModal({
       <Input
         keyboardType="number-pad"
         value={value}
-        onChangeText={onChange}
+        // maxLength only bounds the digit *count* (300 → 3 digits → 999 would
+        // pass), so the value is clamped on every keystroke as well.
+        onChangeText={(v) => onChange(clampInt(v, max))}
         maxLength={String(max).length}
         accessibilityLabel={label}
       />
@@ -650,11 +679,19 @@ function VersionViewModal({
 
   useEffect(() => {
     if (!open || !recipeId || version == null) return;
+    let cancelled = false;
     setPayload(null);
     setError(null);
     fetchVersion(recipeId, version)
-      .then(setPayload)
-      .catch((err) => setError(friendlyError(err)));
+      .then((next) => {
+        if (!cancelled) setPayload(next);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(friendlyError(err));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open, recipeId, version, fetchVersion]);
 
   return (
@@ -742,11 +779,19 @@ function RecipeDetailModal({
 
   useEffect(() => {
     if (!open || !recipeId) return;
+    let cancelled = false;
     setDetail(null);
     setError(null);
     fetchRecipe(recipeId)
-      .then(setDetail)
-      .catch((err) => setError(friendlyError(err)));
+      .then((next) => {
+        if (!cancelled) setDetail(next);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(friendlyError(err));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open, recipeId, fetchRecipe]);
 
   const onRestore = async (version: number) => {
@@ -897,6 +942,7 @@ function RecipeDetailModal({
 
 export default function ColorsRoute() {
   const p = usePalette();
+  const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
 
   const colors = useMasters((s) => s.colors);
@@ -922,10 +968,13 @@ export default function ColorsRoute() {
   );
   const [detailRecipeId, setDetailRecipeId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [registryError, setRegistryError] = useState<string | null>(null);
 
   useEffect(() => {
-    refreshColors().catch(() => {});
-    refreshDeniers().catch(() => {});
+    setRegistryError(null);
+    void Promise.all([refreshColors(), refreshDeniers()]).catch((err) =>
+      setRegistryError(friendlyError(err)),
+    );
     refreshRecipes().catch(() => {});
   }, [refreshColors, refreshDeniers, refreshRecipes]);
 
@@ -943,6 +992,10 @@ export default function ColorsRoute() {
     () => recipes.filter((r) => r.colorId === selectedColor?.id),
     [recipes, selectedColor?.id],
   );
+
+  if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
+  if (!canManage) return <Redirect href="/" />;
 
   const openAddColor = () => {
     setEditingColor(null);
@@ -997,12 +1050,7 @@ export default function ColorsRoute() {
           >
             Reference data
           </Text>
-          <Text
-            className="text-[22px] font-bold"
-            style={{ color: p.foreground }}
-          >
-            Color Organiser
-          </Text>
+          <PageTitle>Color Organiser</PageTitle>
           <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
             Colors and their dyeing recipes — one recipe per color and denier.
           </Text>
@@ -1043,10 +1091,35 @@ export default function ColorsRoute() {
             </View>
           ) : colors.length === 0 ? (
             <View className="gap-3">
-              <EmptyState
-                title="No colors yet"
-                message="Add your first color to start writing recipes."
-              />
+              {registryError ? (
+                <View
+                  className="gap-2 rounded-lg border px-4 py-3"
+                  style={{
+                    borderColor: `${p.destructive}33`,
+                    backgroundColor: `${p.destructive}14`,
+                  }}
+                >
+                  <Text className="text-sm" style={{ color: p.destructive }}>
+                    {registryError}
+                  </Text>
+                  <Button
+                    label="Retry"
+                    variant="secondary"
+                    onPress={() => {
+                      setRegistryError(null);
+                      void Promise.all([
+                        refreshColors(),
+                        refreshDeniers(),
+                      ]).catch((err) => setRegistryError(friendlyError(err)));
+                    }}
+                  />
+                </View>
+              ) : (
+                <EmptyState
+                  title="No colors yet"
+                  message="Add your first color to start writing recipes."
+                />
+              )}
               {canManage ? (
                 <Button label="Add color" onPress={openAddColor} />
               ) : null}

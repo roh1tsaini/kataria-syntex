@@ -146,7 +146,13 @@ function ReportGrid() {
 // Keyed by "workspaceId:reportId[?query]" so one account's rows never leak
 // into another's. Registered so account resets (logout/401) wipe it — see
 // lib/data-caches.
-const reportCache: Record<string, { items: Record<string, unknown>[] }> = {};
+type ReportResponse = {
+  items: Record<string, unknown>[];
+  /** Total matching rows before the server's cap (transaction-log only). */
+  total?: number;
+  truncated?: boolean;
+};
+const reportCache: Record<string, ReportResponse> = {};
 registerDataCache(() => {
   for (const key of Object.keys(reportCache)) delete reportCache[key];
 });
@@ -164,7 +170,7 @@ function ReportView({ reportId }: { reportId: string }) {
   const navigate = useNavigate();
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const baseKey = `${workspaceId}:${reportId}`;
-  const [data, setData] = useState<{ items: Record<string, unknown>[] } | null>(
+  const [data, setData] = useState<ReportResponse | null>(
     () => reportCache[baseKey] ?? null,
   );
   const [loading, setLoading] = useState(() => !reportCache[baseKey]);
@@ -204,9 +210,7 @@ function ReportView({ reportId }: { reportId: string }) {
     }
     setLoadError(null);
     try {
-      const res = await api<{ items: Record<string, unknown>[] }>(
-        `/reports/${reportId}${qs}`,
-      );
+      const res = await api<ReportResponse>(`/reports/${reportId}${qs}`);
       if (seq !== loadSeq.current) return;
       reportCache[cacheKey] = res;
       setData(res);
@@ -425,6 +429,13 @@ function ReportView({ reportId }: { reportId: string }) {
               </Popover>
             </div>
           </div>
+          {data?.truncated ? (
+            <p className="border-b border-border/60 bg-muted/40 px-4 py-2 text-xs text-muted-foreground sm:px-5">
+              Showing the first {rows.length.toLocaleString("en-IN")} of{" "}
+              {(data.total ?? rows.length).toLocaleString("en-IN")} rows. Narrow
+              the date range to see the rest.
+            </p>
+          ) : null}
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">

@@ -13,6 +13,32 @@ import pkg from "../app/package.json";
 
 const [major, minor, patch] = pkg.version.split(".").map(Number);
 
+const releaseApiBase =
+  process.env.EXTRA_API_BASE ?? "https://app.katariasyntex.workers.dev";
+let releaseHost: string | null = null;
+try {
+  const url = new URL(releaseApiBase);
+  if (url.protocol === "https:") releaseHost = url.hostname;
+} catch {
+  // Dev builds use the custom `kataria://` scheme; malformed release config
+  // must not produce a broken HTTPS intent filter.
+}
+
+const httpsQrIntentFilter = releaseHost
+  ? {
+      action: "VIEW",
+      autoVerify: true,
+      category: ["BROWSABLE", "DEFAULT"],
+      data: [
+        {
+          scheme: "https",
+          host: releaseHost,
+          pathPrefix: "/login/scan",
+        },
+      ],
+    }
+  : null;
+
 export default {
   expo: {
     name: "Kataria Syntex",
@@ -27,6 +53,7 @@ export default {
       package: "com.katariasyntex.bizapp",
       versionCode: major * 10000 + minor * 100 + patch,
       permissions: ["INTERNET", "CAMERA", "REQUEST_INSTALL_PACKAGES"],
+      intentFilters: httpsQrIntentFilter ? [httpsQrIntentFilter] : [],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",

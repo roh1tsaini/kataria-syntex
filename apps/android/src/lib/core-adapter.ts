@@ -54,8 +54,10 @@ export function apiBaseUrl(): string {
   const baked = Constants.expoConfig?.extra?.apiBaseUrl;
   if (typeof baked === "string" && baked) return baked;
   // Dev: `adb reverse tcp:3000 tcp:3000` maps device localhost to the
-  // machine running `bun run dev:server`.
-  return "http://localhost:3000";
+  // machine running `bun run dev:server`. Release without EXTRA_API_BASE
+  // returns "" so fetch fails loudly instead of silently hitting localhost.
+  if (__DEV__) return "http://localhost:3000";
+  return "";
 }
 
 export function appVersion(): string {
