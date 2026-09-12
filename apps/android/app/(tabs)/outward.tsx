@@ -18,7 +18,11 @@ export default function OutwardTab() {
   if (status === "guest") return <Redirect href="/auth" />;
   return (
     <View className="flex-1" style={{ paddingTop: insets.top }}>
-      <Screen title={OUTWARD_KIND.title} subtitle={OUTWARD_KIND.desc}>
+      <Screen
+        title={OUTWARD_KIND.title}
+        subtitle={OUTWARD_KIND.desc}
+        safeTop={false}
+      >
         <ChallanList kind={OUTWARD_KIND} />
       </Screen>
     </View>

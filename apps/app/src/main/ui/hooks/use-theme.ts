@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
+import { reportThemeBackground } from "@/lib/platform";
 
 export type Theme = "light" | "dark";
 
@@ -19,10 +20,19 @@ function readStoredTheme(): Theme | null {
   }
 }
 
+/** The desktop shell paints the window before this bundle boots; reporting
+ *  the resolved background keeps the next launch from flashing the default.
+ *  Skipped while the body is still transparent (styles not applied yet). */
+function reportBackground(): void {
+  const bg = getComputedStyle(document.body).backgroundColor;
+  if (bg.startsWith("rgb(")) reportThemeBackground(bg);
+}
+
 function apply(theme: Theme) {
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
   root.style.colorScheme = theme;
+  reportBackground();
 }
 
 /** Applies the persisted (or system) theme before first paint (see also /theme-init.js). */

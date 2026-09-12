@@ -134,12 +134,3 @@ export async function downloadAndInstallApk(
     }
   }
 }
-
-/** Deletes a staged APK after an install attempt or on cleanup. */
-export async function clearStagedApk(): Promise<void> {
-  const baseDir = FileSystem.documentDirectory;
-  if (!baseDir) return;
-  await FileSystem.deleteAsync(`${baseDir}updates/ks-biz-app.apk`, {
-    idempotent: true,
-  });
-}

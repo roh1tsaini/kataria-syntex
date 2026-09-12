@@ -10,6 +10,15 @@
 :root {
   --wc-w: 0px;
   --tl-inset: 0px;
+  /* One window-control button. The cluster reservation (--wc-w) is derived
+     from this, so a coarse pointer's 44px floor can never widen the controls
+     past the space the header reserved for them. */
+  --wc-btn-w: 2.5rem;
+}
+@media (pointer: coarse) {
+  :root {
+    --wc-btn-w: 2.75rem;
+  }
 }
 @media print {
   :root {

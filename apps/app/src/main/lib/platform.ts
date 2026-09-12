@@ -34,6 +34,13 @@ export function desktopBridge(): DesktopBridge | null {
   return window.desktop ?? null;
 }
 
+/** Desktop shell only: reports the resolved theme background so the next
+ *  launch paints in the user's theme instead of flashing the default.
+ *  No-op on web/PWA. */
+export function reportThemeBackground(background: string): void {
+  void desktopBridge()?.setThemeBackground(background);
+}
+
 /** True outside plain browsers — the Electron shell. (Installed PWAs run on
  * web too; see isPlainBrowser for the entry/download surface gate.) */
 export const isNative = () => detectHost() !== "web";

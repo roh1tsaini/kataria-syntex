@@ -103,7 +103,14 @@ function pendingProjections(filter?: ChallanListFilter): Challan[] {
       }
       return true;
     })
-    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    .sort(byCreatedDesc);
+}
+
+/** Newest first. A comparator that never returns 0 leaves equal rows in an
+ *  arbitrary order — the id tie-break keeps the order identical everywhere. */
+function byCreatedDesc(a: Challan, b: Challan): number {
+  if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
+  return a.id < b.id ? 1 : a.id === b.id ? 0 : -1;
 }
 
 /** Server rows + pending projections, newest first (pending carry their flags). */
@@ -111,15 +118,9 @@ function mergePending(
   server: Challan[],
   filter?: ChallanListFilter,
 ): Challan[] {
-  return [...pendingProjections(filter), ...server].sort((a, b) =>
-    a.date === b.date
-      ? a.createdAt < b.createdAt
-        ? 1
-        : -1
-      : a.date < b.date
-        ? 1
-        : -1,
-  );
+  const byDate = (a: Challan, b: Challan) =>
+    a.date === b.date ? byCreatedDesc(a, b) : a.date < b.date ? 1 : -1;
+  return [...pendingProjections(filter), ...server].sort(byDate);
 }
 
 export const useChallans = create<ChallansState>()((set, get) => {
@@ -128,7 +129,9 @@ export const useChallans = create<ChallansState>()((set, get) => {
   // stale response must never clobber newer state.
   let refreshSeq = 0;
   let loadSeq = 0;
-  let summarySeq = 0;
+  // Per-cache-key request ids: a summary for another FY/workspace must not
+  // invalidate this one's cache write.
+  const summarySeq = new Map<string, number>();
   // The list page's current query. Post-mutation refreshes (create/update/
   // remove) pass no filter — reusing this keeps the paginated page state
   // (rows + total) consistent instead of resetting it to an unfiltered read.
@@ -221,9 +224,11 @@ export const useChallans = create<ChallansState>()((set, get) => {
     clearDetail: () => set({ detail: null }),
 
     summary: async (fy, workspaceId) => {
-      const seq = ++summarySeq;
       const fyParam = fy ? `&fy=${encodeURIComponent(fy)}` : "";
       const cacheKey = `${workspaceId ?? ""}:${fy ?? ""}`;
+      const seq = (summarySeq.get(cacheKey) ?? 0) + 1;
+      summarySeq.set(cacheKey, seq);
+      const isCurrent = () => summarySeq.get(cacheKey) === seq;
       try {
         const [salesRes, outwardRes] = await Promise.all([
           api<{ items: Challan[] }>(`/challans?type=sales${fyParam}`),
@@ -233,7 +238,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
           sales: mergePending(salesRes.items, { type: "sales", fy }),
           outward: mergePending(outwardRes.items, { type: "outward", fy }),
         };
-        if (seq === summarySeq) {
+        if (isCurrent()) {
           set((s) => ({
             summaryCache: { ...s.summaryCache, [cacheKey]: res },
           }));
@@ -250,7 +255,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
             sales: local.filter((c) => c.type === "sales"),
             outward: local.filter((c) => c.type === "outward"),
           };
-          if (seq === summarySeq) {
+          if (isCurrent()) {
             set((s) => ({
               summaryCache: { ...s.summaryCache, [cacheKey]: res },
             }));

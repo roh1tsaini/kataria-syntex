@@ -19,7 +19,7 @@ import { bytesToBase64 } from "../../shared/base64";
 import { createCached } from "../../shared/cached";
 import interBoldUrl from "../../shared/fonts/Inter-Bold.ttf?url";
 import interRegularUrl from "../../shared/fonts/Inter-Regular.ttf?url";
-import { ApiError, apiBlob, base64ToBlob } from "@kataria-syntex/app-core";
+import { ApiError, apiBlob } from "@kataria-syntex/app-core";
 import { desktopBridge } from "@/lib/platform";
 
 /** Both Inter weights as base64 for the template's inline @font-face. */
@@ -47,31 +47,6 @@ function networkError(): ApiError {
   return new ApiError(0, "network_error");
 }
 
-/**
- * Challan PDF for every host — the one place that branches on where it runs.
- * Electron renders the caller's HTML with its own Chromium over the IPC
- * bridge (fully offline); web/PWA fetch the server-rendered copy. `localHtml`
- * is only awaited on the Electron path.
- */
-async function challanPdf(
-  challanId: string,
-  localHtml: () => Promise<string>,
-): Promise<{ blob: Blob; via: "local" | "server" }> {
-  const desktop = desktopBridge();
-  if (desktop) {
-    let res: { status: number; base64: string | null };
-    try {
-      res = await desktop.renderPdf(await localHtml());
-    } catch {
-      throw networkError();
-    }
-    if (res.status !== 200 || !res.base64)
-      throw new ApiError(res.status || 500, "pdf_render_failed");
-    return { blob: base64ToBlob(res.base64, "application/pdf"), via: "local" };
-  }
-  return { blob: await apiBlob(`/challans/${challanId}/pdf`), via: "server" };
-}
-
 function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -84,19 +59,35 @@ function saveBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Downloads the challan PDF (rendered on-device in Electron, fetched from
- * the server everywhere else — decided in challanPdf()) and saves it.
+ * Downloads the challan PDF — the one place that branches on where it runs.
+ * Electron renders the sheet with its own Chromium (fully offline) and writes
+ * it through a native save dialog; web/PWA fetch the server-rendered copy and
+ * hand it to the browser's downloader.
+ *
+ * `saved` is false only when the user dismissed the desktop save dialog.
  */
 export async function downloadChallanPdf(
   challanId: string,
   detail: SheetDetail,
   company: SheetCompany | null,
   type: ChallanType,
-): Promise<{ via: "local" | "server" }> {
-  const { blob, via } = await challanPdf(challanId, async () => {
+): Promise<{ via: "local" | "server"; saved: boolean }> {
+  const filename = safeFilename(detail.challan.challanNumber);
+  const desktop = desktopBridge();
+  if (desktop) {
     const fonts = await loadChallanFonts();
-    return buildChallanHtml({ detail, company, type, fonts });
-  });
-  saveBlob(blob, safeFilename(detail.challan.challanNumber));
-  return { via };
+    const html = buildChallanHtml({ detail, company, type, fonts });
+    let res: { status: number; base64: string | null };
+    try {
+      res = await desktop.renderPdf(html);
+    } catch {
+      throw networkError();
+    }
+    if (res.status !== 200 || !res.base64)
+      throw new ApiError(res.status || 500, "pdf_render_failed");
+    const { saved } = await desktop.saveFile(res.base64, filename);
+    return { via: "local", saved };
+  }
+  saveBlob(await apiBlob(`/challans/${challanId}/pdf`), filename);
+  return { via: "server", saved: true };
 }

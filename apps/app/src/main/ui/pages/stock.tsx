@@ -67,38 +67,53 @@ export function StockPage() {
   );
   const [loadError, setLoadError] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  // Live type mirror — the callback's captured stockType can't guard against
-  // itself (it would always compare equal).
+  // Live mirrors — the callback's captured values can't guard against
+  // themselves (they would always compare equal).
   const stockTypeRef = useRef(stockType);
   stockTypeRef.current = stockType;
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+  // Monotonic request id: overlapping loads (type switch, realtime event,
+  // workspace change) resolve out of order, and a slow stale response must
+  // never clobber the newer one's rows.
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
     const type = stockType;
-    if (!stockCache[workspaceId]?.[type]) {
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
+    const isCurrent = () =>
+      seq === loadSeq.current &&
+      requestedWorkspace === workspaceRef.current &&
+      type === stockTypeRef.current;
+    if (!stockCache[requestedWorkspace]?.[type]) {
       setLoading(true);
     }
     setLoadError(null);
     try {
       const res = await api<{ items: StockGroup[] }>(`/stock?type=${type}`);
-      if (type !== stockTypeRef.current) return;
-      (stockCache[workspaceId] ??= { raw: null, dyed: null })[type] = res.items;
+      if (!isCurrent()) return;
+      (stockCache[requestedWorkspace] ??= { raw: null, dyed: null })[type] =
+        res.items;
       setItems(res.items);
     } catch (err) {
-      if (type === stockTypeRef.current && !stockCache[workspaceId]?.[type]) {
+      if (isCurrent() && !stockCache[requestedWorkspace]?.[type]) {
         setItems([]);
         setLoadError(friendlyError(err));
       }
     } finally {
-      if (type === stockTypeRef.current) setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [stockType, workspaceId]);
 
   useEffect(() => {
+    // No cache for this type yet: show the skeleton, never the other type's
+    // rows, while the request is in flight.
     const cached = stockCache[workspaceId]?.[stockType];
-    if (cached) {
-      setItems(cached);
-      setLoading(false);
-    }
+    setItems(cached ?? []);
+    setLoading(!cached);
+    setLoadError(null);
     void load();
   }, [load, stockType, workspaceId]);
 

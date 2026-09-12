@@ -12,6 +12,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -111,7 +112,10 @@ export function Button({
 
 // ── Input ───────────────────────────────────────────────────────────────────
 
-export function Input(props: React.ComponentProps<typeof TextInput>) {
+export function Input({
+  invalid,
+  ...props
+}: React.ComponentProps<typeof TextInput> & { invalid?: boolean }) {
   const p = usePalette();
   const { style, ...rest } = props;
   return (
@@ -121,7 +125,11 @@ export function Input(props: React.ComponentProps<typeof TextInput>) {
       // Caller styles merge over the base instead of replacing it, so a screen
       // can tweak padding without losing the palette colors.
       style={[
-        { backgroundColor: p.card, borderColor: p.input, color: p.foreground },
+        {
+          backgroundColor: p.card,
+          borderColor: invalid ? p.destructive : p.input,
+          color: p.foreground,
+        },
         style,
       ]}
       {...rest}
@@ -218,28 +226,6 @@ export function PageTitle({
   );
 }
 
-/** design.md §2.4 eyebrow — 11px uppercase, wide tracking. */
-export function Eyebrow({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const p = usePalette();
-  return (
-    <Text
-      className={cn(
-        "text-[11px] font-bold uppercase tracking-wider",
-        className,
-      )}
-      style={{ color: p.mutedForeground }}
-    >
-      {children}
-    </Text>
-  );
-}
-
 // ── Skeleton / EmptyState ───────────────────────────────────────────────────
 
 /** Shimmer block standing in for real content (design.md §3 — `animate-pulse`,
@@ -321,15 +307,26 @@ export function Screen({
   subtitle,
   action,
   children,
+  safeTop = true,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
+  /** Clears the status bar. Off only for tab screens that already inset
+   *  themselves (they put a banner above the title). */
+  safeTop?: boolean;
 }) {
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <View
+      className="flex-1"
+      style={{
+        backgroundColor: p.background,
+        paddingTop: safeTop ? insets.top : 0,
+      }}
+    >
       <View className="flex-row items-end justify-between px-4 pt-4">
         <View className="flex-1">
           <PageTitle>{title}</PageTitle>

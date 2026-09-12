@@ -8,6 +8,9 @@ import type { PendingChallan } from "./core";
 export type DeliverResult =
   | { synced: true }
   | { synced: false; reason: "network" | "conflict"; suggestion?: string }
+  /** Transient: the queue must keep the item pending (session expiry, or a
+   *  server fault) rather than parking it as a permanent error. */
+  | { synced: false; reason: "retry" }
   | { synced: false; reason: "rejected"; code: string };
 
 export async function deliver(p: PendingChallan): Promise<DeliverResult> {
@@ -39,6 +42,14 @@ export async function deliver(p: PendingChallan): Promise<DeliverResult> {
     }
     if (err instanceof ApiError && err.isNetworkError)
       return { synced: false, reason: "network" };
+    // An expired session or a server fault is transient for the queue: the
+    // challan stays pending (re-auth / a recovered server resumes it) instead
+    // of being parked as a permanent error the user must clear by hand.
+    if (
+      err instanceof ApiError &&
+      (err.status === 401 || err.status === 403 || err.status >= 500)
+    )
+      return { synced: false, reason: "retry" };
     return {
       synced: false,
       reason: "rejected",

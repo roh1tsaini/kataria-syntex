@@ -38,6 +38,7 @@ import {
   PageTitle,
   Skeleton,
 } from "@/ui/kit";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { confirm, requestDiscard } from "@/ui/confirm";
 
 const TABS = [
@@ -250,6 +251,7 @@ function MasterTab<I extends { id: string; name: string }, In>({
         <Text
           className="mx-4 mt-3 rounded-lg border px-4 py-3 text-sm"
           role="alert"
+          accessibilityLiveRegion="polite"
           style={{
             color: p.destructive,
             borderColor: `${p.destructive}33`,
@@ -378,6 +380,7 @@ function MasterTab<I extends { id: string; name: string }, In>({
 
 export default function MastersRoute() {
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
   const router = useRouter();
@@ -593,7 +596,10 @@ export default function MastersRoute() {
   if (!canManage) return <Redirect href="/" />;
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: p.background, paddingTop: insets.top }}
+    >
       <View className="px-4 pt-4">
         <Text
           className="text-[11px] font-bold uppercase tracking-wider"

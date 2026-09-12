@@ -14,6 +14,7 @@ directories:
 files:
   - dist/**
   - dist-electron/**
+  - "!dist-electron/**/*.map"
   - package.json
 
 # Main process entry is package.json's "main" (dist-electron/main.cjs). The

@@ -36,6 +36,7 @@ import {
   Screen,
   Skeleton,
 } from "@/ui/kit";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
 import { countLabel, fmtDate, fmtWt, localDateKey } from "@/lib/format";
 import { useMastersLoad } from "@/lib/use-masters-load";
@@ -537,6 +538,7 @@ function ReturnForm({
   const refreshDeniers = useMasters((s) => s.refreshDeniers);
   const refreshColors = useMasters((s) => s.refreshColors);
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const [balances, setBalances] = useState<Balance[]>([]);
   const [jobWorkerId, setJobWorkerId] = useState("");
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -707,7 +709,7 @@ function ReturnForm({
     return (
       <View
         className="flex-1 px-4 pt-4"
-        style={{ backgroundColor: p.background }}
+        style={{ backgroundColor: p.background, paddingTop: insets.top + 16 }}
       >
         <View className="flex-row items-center gap-3">
           <Skeleton className="size-10 rounded-lg" />
@@ -741,7 +743,10 @@ function ReturnForm({
   const openBalances = balances.filter((b) => b.balance > 0);
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: p.background, paddingTop: insets.top }}
+    >
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 48 }}

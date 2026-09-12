@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ArrowLeft, Printer } from "lucide-react";
@@ -102,7 +102,13 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
   return (
     <div className="min-h-dvh bg-muted p-4 print:bg-white print:p-0">
       <style>{`@page { size:${SHEET_W_MM}mm ${SHEET_H_MM}mm; margin:0; }`}</style>
-      <div className="mb-4 flex items-center justify-between print:hidden">
+      {/* The action bar sits inside the Electron title-bar drag strip
+          (design.md §2.7.1) — it must subtract itself or its controls are
+          not clickable in the desktop shell. */}
+      <div
+        className="mb-4 flex items-center justify-between print:hidden"
+        style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+      >
         <Link
           to={`${kind.listPath}/${challan.id}`}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"

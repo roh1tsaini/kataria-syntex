@@ -208,8 +208,8 @@ appears on any platform.
   the TitleBar component. The sidebar is click-only — the whole `<aside>`
   carries `no-drag`, subtracting itself from the strip (drag regions resolve
   geometrically in DOM order, z-index is ignored — every surface above a
-  drag rect must set `no-drag` explicitly: controls cluster, sidebar, and
-  the update banner row).
+  drag rect must set `no-drag` explicitly: controls cluster, sidebar, the
+  update banner row, and the print route's action bar).
 - Controls (Windows/Linux): a floating cluster pinned flush into the
   top-right corner (`fixed top-0 right-0`, `h-14`, `z-40`) — three `w-10`
   no-drag buttons stretched to full header height. Glyphs are 12px inline
@@ -217,9 +217,11 @@ appears on any platform.
   rounded caps) — never icon-font glyphs. Rest: `text-muted-foreground`;
   hover: `bg-foreground/10` + `text-foreground`; close hover: `#e81123` +
   white, full bleed into the corner (no gap — the corner click must land).
-- Reservation: `--wc-w` (3 × `w-10` = 120px, set on `documentElement` by
-  the entry before first paint when `window.desktop` exists and platform
-  ≠ darwin; 0px otherwise incl. print). The header reserves it via
+- Reservation: `--wc-w` (3 × `--wc-btn-w`, set on `documentElement` by the
+  entry before first paint when `window.desktop` exists and platform
+  ≠ darwin; 0px otherwise incl. print). `--wc-btn-w` is `2.5rem`, `2.75rem`
+  under `pointer: coarse` — the 44px floor widens the controls, and the
+  reservation has to widen with them. The header reserves it via
   `pr-[calc(1rem+var(--wc-w))]` / `sm:pr-[calc(1.5rem+var(--wc-w))]` so
   content never slides beneath the controls.
 - macOS: no drawn controls — native traffic lights ride the sidebar's
@@ -244,6 +246,11 @@ appears on any platform.
   surface. The Android app draws its own native shell. The only
   window-control IPC path is `platform.ts` → `desktopWindow()`; UI never
   calls `window.desktop` directly.
+- Desktop-native behaviour: the window restores its last size, position and
+  maximized state (validated against the connected displays), the shell paints
+  its background in the user's resolved theme before the bundle boots,
+  editable fields get the standard copy/paste context menu, and PDFs are
+  written through a native save dialog — never the browser's silent download.
 
 ### 2.8 App identity (names — never invent variants)
 

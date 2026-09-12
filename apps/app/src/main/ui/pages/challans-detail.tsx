@@ -164,7 +164,8 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
     try {
       const { downloadChallanPdf } = await import("@/lib/challan-pdf");
       const res = await downloadChallanPdf(id, detail, company, kind.type);
-      if (res.via === "local")
+      // A dismissed desktop save dialog is not an error — say nothing.
+      if (res.via === "local" && res.saved)
         toastSuccess("PDF made on this device", "Rendered locally.");
     } catch (err) {
       toastError(

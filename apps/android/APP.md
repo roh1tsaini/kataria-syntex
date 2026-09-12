@@ -132,15 +132,15 @@ window/document/localStorage. Each shell configures it once at boot via
 Android's adapter: `src/lib/core-adapter.ts` → `configureAndroidCore()`,
 called at the top of `app/_layout.tsx` (module scope, StrictMode-safe):
 
-| Adapter field     | Android implementation                                                                                                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `host`            | `"android"`                                                                                                                                                                                                         |
-| `apiBaseUrl`      | baked `extra.apiBaseUrl` (CI `EXTRA_API_BASE`); dev-only `http://localhost:3000` over `adb reverse` (`__DEV__`); release without a baked origin returns `""` and fails loudly instead of silently hitting localhost |
-| `appVersion`      | expo-constants (`app.config.ts` version)                                                                                                                                                                            |
-| `storage`         | MMKV instance id `ks-app-core` (synchronous — the offline engine's KV contract is sync)                                                                                                                             |
-| token read/write  | expo-secure-store key `auth.sessionToken` (keystore encryption; never plaintext)                                                                                                                                    |
-| `deviceLabel`     | `"Android"`                                                                                                                                                                                                         |
-| `onNetworkChange` | NetInfo connectivity events                                                                                                                                                                                         |
+| Adapter field     | Android implementation                                                                                                                                                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`            | `"android"`                                                                                                                                                                                                                                         |
+| `apiBaseUrl`      | baked `extra.apiBaseUrl` (CI `EXTRA_API_BASE`); dev-only `http://localhost:3000` over `adb reverse` (`__DEV__`); a release built without an override falls back to `extra.releaseApiBase` — the same origin the release QR intent filter advertises |
+| `appVersion`      | expo-constants (`app.config.ts` version)                                                                                                                                                                                                            |
+| `storage`         | MMKV instance id `ks-app-core` (synchronous — the offline engine's KV contract is sync)                                                                                                                                                             |
+| token read/write  | expo-secure-store key `auth.sessionToken` (keystore encryption; never plaintext)                                                                                                                                                                    |
+| `deviceLabel`     | `"Android"`                                                                                                                                                                                                                                         |
+| `onNetworkChange` | NetInfo connectivity events                                                                                                                                                                                                                         |
 
 Web/Electron counterpart: `apps/app/src/main/lib/platform.ts`
 (`configureWebCore`, wired in `main.tsx`).
@@ -210,18 +210,28 @@ every visual value (radius ladder, spacing, type, color).
   runtime). **After any palette change in globals.css, run
   `bun scripts/convert-tokens.ts`** and commit the regenerated tokens.
 - `src/theme/index.ts` exposes `usePalette()` — scheme (light/dark,
-  `userInterfaceStyle: automatic`) + 6 accents, same picker semantics as
-  the web accent picker. `withAlpha()` tints a palette color safely (tokens
-  are hex in light mode but `rgba()` in dark for `border`/`input`, so string
-  concatenation would produce an invalid color); `SCRIM` is the one overlay
-  scrim.
+  `userInterfaceStyle: automatic`) + 6 accents. The default is `graphite`,
+  the monochrome accent that mirrors apps/app's single neutral `--a-*`; the
+  hues are opt-in from Settings → Appearance. `withAlpha()` tints a palette
+  color safely (tokens are hex in light mode but `rgba()` in dark for
+  `border`/`input`, so string concatenation would produce an invalid color);
+  `SCRIM` is the one overlay scrim.
 - `src/lib/theme.ts` owns the choice: a stored scheme wins, otherwise the OS
   scheme is followed live (`Appearance`); accent and scheme persist in the
   adapter's `uiStorage`, which is never wiped on logout. Both are edited in
   Settings → Appearance, and the status bar follows the resolved scheme.
-- `tailwind.config.js` mirrors the radius ladder (8/10/12/16/20px) and
-  Inter font families; colors are NOT in the Tailwind config — components
-  read the runtime palette.
+  `initTheme()` runs at boot in `app/_layout.tsx` (idempotent), so the stored
+  choice applies before the first paint.
+- Status-bar inset: `Screen` clears the status bar itself
+  (`useSafeAreaInsets`); tab screens that put a banner above the title pass
+  `safeTop={false}` and inset their own wrapper. Screens that draw their own
+  header — masters, colors, reports, and the returns / raw-material / packing
+  editors — apply `insets.top` to their root view.
+- `tailwind.config.js` mirrors the radius ladder (8/10/12/16/20px) and maps
+  `font-mono` to Android's `monospace` (pairing codes, tabular figures);
+  colors are NOT in the Tailwind config — components read the runtime
+  palette. The Inter families are declared but never registered, so text
+  currently renders in the platform font.
 - `src/ui/kit.tsx` implements design.md §2.2–§2.4 exactly — controls 10px,
   cards 12px, badges 8px (soft tint + hairline), page titles 28px, pulsing
   skeletons, loading buttons that keep their label (no spinners). Mobile
@@ -256,6 +266,13 @@ means uninstall/reinstall on every device — keep it durable outside GitHub.
 | `INTERNET`                 | API + release downloads                           |
 | `CAMERA`                   | QR login + device approval scanning (expo-camera) |
 | `REQUEST_INSTALL_PACKAGES` | in-app APK self-update via the system installer   |
+
+Transitive config plugins would otherwise merge in `RECORD_AUDIO`,
+`SYSTEM_ALERT_WINDOW` and external-storage access — `android.blockedPermissions`
+in `app.config.ts` strips them, so the shipped manifest carries exactly the
+three above. `android.allowBackup` is `false`: offline challans, masters and the
+company profile are business data and must not ride Android's cloud or
+device-transfer backups.
 
 ## 11 · PDFs & printing
 

@@ -44,7 +44,7 @@ async function runSync(): Promise<void> {
     for (let pass = 0; pass < 3; pass++) {
       const queue = listPending().filter((p) => p.status === "pending");
       if (queue.length === 0) break;
-      let stoppedByNetwork = false;
+      let stopped = false;
       for (const snapshot of queue) {
         // Re-read before delivering: the item may have been deleted or
         // renumbered since the queue snapshot was taken.
@@ -73,7 +73,13 @@ async function runSync(): Promise<void> {
           );
         } else if (result.reason === "network") {
           setOnline(false);
-          stoppedByNetwork = true; // server went away mid-sync — retry later
+          stopped = true; // server went away mid-sync — retry later
+          break;
+        } else if (result.reason === "retry") {
+          // Session expiry or a server fault: every further delivery fails the
+          // same way. Leave the queue pending so re-auth / recovery resumes it
+          // instead of parking each challan as a permanent error.
+          stopped = true;
           break;
         } else {
           updatePending(current.clientRef, {
@@ -83,7 +89,7 @@ async function runSync(): Promise<void> {
           changed = true;
         }
       }
-      if (stoppedByNetwork) break;
+      if (stopped) break;
     }
   } finally {
     recountPending();

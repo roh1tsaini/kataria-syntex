@@ -225,15 +225,6 @@ export async function api<T>(
   return classify<T>(res.status, resBody);
 }
 
-/** Raw-bytes → Blob, for shells that receive base64 bodies (the Electron
- * IPC bridge returns PDFs as base64). */
-export function base64ToBlob(base64: string, type: string): Blob {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type });
-}
-
 /**
  * Binary-download variant of the fetch transport — same auth and error-code
  * rules as `api()`, but the body is raw bytes (used for PDFs). Web/desktop

@@ -5,6 +5,8 @@
  * - getToken / setToken: encrypted session token in the OS keychain
  * - api: same-shape fetch that runs in the main process (no CORS)
  * - renderPdf: HTML → PDF with the shell's own Chromium (printToPDF)
+ * - saveFile: native save dialog + write, for the "Save as PDF" action
+ * - setThemeBackground: persists the resolved theme background for the shell
  * - window controls for the custom title bar (minimize / toggle-maximize /
  *   close / maximized state) + host platform
  * - update bridge: check / status events / quit-and-install / app version
@@ -71,6 +73,14 @@ const desktop = {
   /** /releases/* URLs only (main-validated) — macOS dmg download flow. */
   openReleaseUrl: (url: string): Promise<void> =>
     ipcRenderer.invoke("kc:open-external", url),
+  /** Desktop "Save as": native save dialog, then the main process writes the
+   *  file. Replaces the renderer's silent download. */
+  saveFile: (base64: string, filename: string): Promise<{ saved: boolean }> =>
+    ipcRenderer.invoke("kc:save-file", { base64, filename }),
+  /** Reports the resolved theme background so the next launch paints in the
+   *  user's theme instead of flashing the built-in default. */
+  setThemeBackground: (background: string): Promise<void> =>
+    ipcRenderer.invoke("kc:theme", background),
 };
 
 export type DesktopBridge = typeof desktop;

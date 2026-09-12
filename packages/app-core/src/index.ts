@@ -21,7 +21,6 @@ export {
   api,
   apiBlob,
   apiOrigin,
-  base64ToBlob,
   deviceHeaders,
   setUpdateRequiredHandler,
 } from "./api";

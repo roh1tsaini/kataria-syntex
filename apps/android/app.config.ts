@@ -41,7 +41,7 @@ const httpsQrIntentFilter = releaseHost
 
 export default {
   expo: {
-    name: "Kataria Syntex",
+    name: "Kataria Syntex Biz App",
     slug: "kataria-syntex",
     scheme: "kataria",
     version: pkg.version,
@@ -53,6 +53,18 @@ export default {
       package: "com.katariasyntex.bizapp",
       versionCode: major * 10000 + minor * 100 + patch,
       permissions: ["INTERNET", "CAMERA", "REQUEST_INSTALL_PACKAGES"],
+      // Transitive plugins (camera, sharing, file-system) otherwise merge
+      // these in. The app records no audio, draws no system overlays, and
+      // keeps every file in app-private storage — none belong in the manifest.
+      blockedPermissions: [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+      ],
+      // Offline challans, masters and the company profile are business data —
+      // they must not ride Android's cloud/device-transfer backups.
+      allowBackup: false,
       intentFilters: httpsQrIntentFilter ? [httpsQrIntentFilter] : [],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
@@ -83,7 +95,12 @@ export default {
       "./plugins/with-javac-flags.ts",
     ],
     extra: {
+      // CI bakes the deployed origin here (EXTRA_API_BASE). Empty in dev so
+      // the adapter's __DEV__ localhost path applies.
       apiBaseUrl: process.env.EXTRA_API_BASE ?? "",
+      // The origin a release falls back to when no override was baked — the
+      // same one the QR intent filter advertises, so the two never disagree.
+      releaseApiBase,
     },
   },
 };

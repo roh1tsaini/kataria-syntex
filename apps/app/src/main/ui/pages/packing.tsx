@@ -151,39 +151,54 @@ export function PackingPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formTab, setFormTab] = useState<"sale" | "job_work">(activeTab);
-  // Live tab mirror — the callback's captured activeTab can't guard against
-  // itself (it would always compare equal).
+  // Live mirrors — the callback's captured values can't guard against
+  // themselves (they would always compare equal).
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+  // Monotonic request id: overlapping loads (tab switch, realtime event,
+  // workspace change) resolve out of order, and a slow stale response must
+  // never clobber the newer one's rows.
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
     const tab = activeTab;
-    if (!packingCache[workspaceId]?.[tab]) {
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
+    const isCurrent = () =>
+      seq === loadSeq.current &&
+      requestedWorkspace === workspaceRef.current &&
+      tab === activeTabRef.current;
+    if (!packingCache[requestedWorkspace]?.[tab]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: PackingEntry[] }>(`/packing?type=${tab}`);
-      if (tab !== activeTabRef.current) return;
-      (packingCache[workspaceId] ??= { sale: null, job_work: null })[tab] =
-        res.items;
+      if (!isCurrent()) return;
+      (packingCache[requestedWorkspace] ??= { sale: null, job_work: null })[
+        tab
+      ] = res.items;
       setItems(res.items);
     } catch {
-      if (tab === activeTabRef.current && !packingCache[workspaceId]?.[tab]) {
+      if (isCurrent() && !packingCache[requestedWorkspace]?.[tab]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      if (tab === activeTabRef.current) setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [activeTab, workspaceId]);
 
   useEffect(() => {
+    // No cache for this tab yet: show the skeleton, never the other tab's
+    // rows, while the request is in flight.
     const cached = packingCache[workspaceId]?.[activeTab];
-    if (cached) {
-      setItems(cached);
-      setLoading(false);
-    }
+    setItems(cached ?? []);
+    setLoading(!cached);
+    setLoadError(false);
     void load();
   }, [load, activeTab, workspaceId]);
 

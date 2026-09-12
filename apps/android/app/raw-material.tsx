@@ -39,6 +39,7 @@ import {
   Screen,
   Skeleton,
 } from "@/ui/kit";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SyncBanner, SyncSheet } from "@/ui/sync";
 import { countLabel, fmtDate, fmtWt, localDateKey } from "@/lib/format";
 
@@ -547,6 +548,7 @@ function RawMaterialForm({
   const refreshDeniers = useMasters((s) => s.refreshDeniers);
   const refreshColors = useMasters((s) => s.refreshColors);
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const [supplierId, setSupplierId] = useState("");
   const [supplierChallanNo, setSupplierChallanNo] = useState("");
   const [date, setDate] = useState(localDateKey());
@@ -696,7 +698,7 @@ function RawMaterialForm({
     return (
       <View
         className="flex-1 px-4 pt-4"
-        style={{ backgroundColor: p.background }}
+        style={{ backgroundColor: p.background, paddingTop: insets.top + 16 }}
       >
         <View className="flex-row items-center gap-3">
           <Skeleton className="size-10 rounded-lg" />
@@ -727,7 +729,10 @@ function RawMaterialForm({
   }));
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: p.background, paddingTop: insets.top }}
+    >
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 48 }}

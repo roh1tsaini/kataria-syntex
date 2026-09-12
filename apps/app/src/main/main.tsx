@@ -38,7 +38,10 @@ const desktop = desktopBridge();
 if (desktop) {
   document.documentElement.dataset.shell = "desktop";
   if (desktop.platform !== "darwin") {
-    document.documentElement.style.setProperty("--wc-w", "120px");
+    document.documentElement.style.setProperty(
+      "--wc-w",
+      "calc(var(--wc-btn-w) * 3)",
+    );
   } else {
     // Clear the native traffic-light strip above the sidebar brand.
     document.documentElement.style.setProperty("--tl-inset", "2.25rem");

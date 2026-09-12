@@ -47,9 +47,13 @@ export async function probeServer(): Promise<boolean> {
     setOnline(true);
     return true;
   } catch (err) {
-    // An HTTP error still means "reachable"; only network failures flip us
-    // offline.
-    if (err instanceof ApiError && err.isNetworkError) setOnline(false);
-    return false;
+    // An HTTP error still means "reachable" — a 5xx on /health must not stop
+    // the sync tick. Only network failures flip us offline.
+    if (err instanceof ApiError && err.isNetworkError) {
+      setOnline(false);
+      return false;
+    }
+    setOnline(true);
+    return true;
   }
 }

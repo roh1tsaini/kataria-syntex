@@ -4,109 +4,24 @@
  * Regenerate after any palette change — never hand-edit values.
  */
 
-export type AccentName =
-  "claude" | "graphite" | "iris" | "ocean" | "emerald" | "amber";
-
-export const ACCENTS: AccentName[] = [
-  "claude",
-  "graphite",
-  "iris",
-  "ocean",
-  "emerald",
-  "amber",
-];
-
-/** Strong/accent-foreground/soft-tint/accent-ink per accent per scheme. */
-export const ACCENT_TOKENS: Record<
-  AccentName,
-  Record<
-    "light" | "dark",
-    { strong: string; fg: string; soft: string; ink: string }
-  >
+/** The one accent: strong / accent-foreground / soft tint / accent-ink, per
+ *  scheme. Neutral monochrome — the same accent apps/app uses (globals.css
+ *  `--a-*`). There is no accent picker. */
+export const ACCENT: Record<
+  "light" | "dark",
+  { strong: string; fg: string; soft: string; ink: string }
 > = {
-  claude: {
-    light: {
-      strong: "#dd6e43",
-      fg: "#fffdfc",
-      soft: "rgba(221, 110, 67, 0.1)",
-      ink: "#983e18",
-    },
-    dark: {
-      strong: "#f0986f",
-      fg: "#200b03",
-      soft: "rgba(240, 152, 111, 0.15)",
-      ink: "#fec1a6",
-    },
+  light: {
+    strong: "#191b1d",
+    fg: "#fafafa",
+    soft: "rgba(25, 27, 29, 0.07)",
+    ink: "#303337",
   },
-  graphite: {
-    light: {
-      strong: "#191b1d",
-      fg: "#fafafa",
-      soft: "rgba(25, 27, 29, 0.07)",
-      ink: "#303337",
-    },
-    dark: {
-      strong: "#e8e8e8",
-      fg: "#0d0d0d",
-      soft: "rgba(255, 255, 255, 0.1)",
-      ink: "#d7d7d7",
-    },
-  },
-  iris: {
-    light: {
-      strong: "#7b4bd4",
-      fg: "#faf9fd",
-      soft: "rgba(123, 75, 212, 0.1)",
-      ink: "#582aa2",
-    },
-    dark: {
-      strong: "#ac8ff8",
-      fg: "#0f091c",
-      soft: "rgba(172, 143, 248, 0.16)",
-      ink: "#cebfff",
-    },
-  },
-  ocean: {
-    light: {
-      strong: "#006ac5",
-      fg: "#f8fafd",
-      soft: "rgba(0, 106, 197, 0.1)",
-      ink: "#004d9a",
-    },
-    dark: {
-      strong: "#60aaf3",
-      fg: "#010e1e",
-      soft: "rgba(96, 170, 243, 0.16)",
-      ink: "#a3cffd",
-    },
-  },
-  emerald: {
-    light: {
-      strong: "#008255",
-      fg: "#f7fbf9",
-      soft: "rgba(0, 130, 85, 0.1)",
-      ink: "#006039",
-    },
-    dark: {
-      strong: "#47c496",
-      fg: "#001209",
-      soft: "rgba(71, 196, 150, 0.15)",
-      ink: "#94e1bf",
-    },
-  },
-  amber: {
-    light: {
-      strong: "#d98b09",
-      fg: "#2c1400",
-      soft: "rgba(217, 139, 9, 0.13)",
-      ink: "#7e4b00",
-    },
-    dark: {
-      strong: "#efac44",
-      fg: "#241100",
-      soft: "rgba(239, 172, 68, 0.16)",
-      ink: "#f7cc91",
-    },
+  dark: {
+    strong: "#e8e8e8",
+    fg: "#0d0d0d",
+    soft: "rgba(255, 255, 255, 0.1)",
+    ink: "#d7d7d7",
   },
 };
 

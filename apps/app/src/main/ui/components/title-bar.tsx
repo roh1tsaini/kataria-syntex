@@ -33,7 +33,7 @@ const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
 
 function MinGlyph() {
   return (
-    <svg viewBox="0 0 12 12" className="size-2.75" aria-hidden>
+    <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
       <path
         d="M1.5 6h9"
         stroke="currentColor"
@@ -48,7 +48,7 @@ function MaxGlyph() {
   return (
     <svg
       viewBox="0 0 12 12"
-      className="size-2.75"
+      className="size-3"
       aria-hidden
       fill="none"
       stroke="currentColor"
@@ -63,7 +63,7 @@ function RestoreGlyph() {
   return (
     <svg
       viewBox="0 0 12 12"
-      className="size-2.75"
+      className="size-3"
       aria-hidden
       fill="none"
       stroke="currentColor"
@@ -77,7 +77,7 @@ function RestoreGlyph() {
 
 function CloseGlyph() {
   return (
-    <svg viewBox="0 0 12 12" className="size-2.75" aria-hidden>
+    <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
       <path
         d="M2 2l8 8M10 2l-8 8"
         stroke="currentColor"
@@ -106,7 +106,7 @@ function ControlButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "grid w-10 touch-44 shrink-0 place-items-center text-muted-foreground",
+        "grid w-[var(--wc-btn-w)] touch-44 shrink-0 place-items-center text-muted-foreground",
         "transition-colors hover:bg-foreground/10 hover:text-foreground",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         // Windows close-button red, full bleed to the corner

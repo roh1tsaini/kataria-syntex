@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useMemo } from "react";
 import { useDirtyGuard } from "@/ui/hooks/use-dirty-guard";
 import { useMastersLoad } from "@/ui/hooks/use-masters-load";
@@ -132,22 +132,34 @@ export function RawMaterialPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+  // Monotonic request id: a slow stale response must never clobber the newer
+  // one's rows after a workspace switch or an overlapping realtime refresh.
+  const loadSeq = useRef(0);
+
   const load = useCallback(async () => {
-    if (!rawCache[workspaceId]) {
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
+    const isCurrent = () =>
+      seq === loadSeq.current && requestedWorkspace === workspaceRef.current;
+    if (!rawCache[requestedWorkspace]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: RawEntry[] }>("/raw-material");
-      rawCache[workspaceId] = res.items;
+      if (!isCurrent()) return;
+      rawCache[requestedWorkspace] = res.items;
       setItems(res.items);
     } catch {
-      if (!rawCache[workspaceId]) {
+      if (isCurrent() && !rawCache[requestedWorkspace]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [workspaceId]);
 

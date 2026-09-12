@@ -180,6 +180,7 @@ function PickerSheet({
               return (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityState={{ selected }}
                   onPress={() => {
                     onSelect(item.id);
                     onClose();

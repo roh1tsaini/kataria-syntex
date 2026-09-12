@@ -40,91 +40,21 @@ const table: Record<string, string> = {
   "dark.input": "oklch(1 0 0 / 14%)",
 };
 
-const accents: Record<string, { light: string[]; dark: string[] }> = {
-  claude: {
-    light: [
-      "oklch(0.66 0.15 41)",
-      "oklch(0.995 0.003 41)",
-      "oklch(0.66 0.15 41 / 10%)",
-      "oklch(0.48 0.13 41)",
-    ],
-    dark: [
-      "oklch(0.76 0.12 45)",
-      "oklch(0.18 0.04 45)",
-      "oklch(0.76 0.12 45 / 15%)",
-      "oklch(0.86 0.08 45)",
-    ],
-  },
-  graphite: {
-    light: [
-      "oklch(0.22 0.005 260)",
-      "oklch(0.985 0 0)",
-      "oklch(0.22 0.005 260 / 7%)",
-      "oklch(0.32 0.008 260)",
-    ],
-    dark: [
-      "oklch(0.93 0 0)",
-      "oklch(0.16 0 0)",
-      "oklch(1 0 0 / 10%)",
-      "oklch(0.88 0 0)",
-    ],
-  },
-  iris: {
-    light: [
-      "oklch(0.54 0.2 295)",
-      "oklch(0.985 0.005 295)",
-      "oklch(0.54 0.2 295 / 10%)",
-      "oklch(0.42 0.18 295)",
-    ],
-    dark: [
-      "oklch(0.72 0.15 295)",
-      "oklch(0.16 0.04 295)",
-      "oklch(0.72 0.15 295 / 16%)",
-      "oklch(0.84 0.09 295)",
-    ],
-  },
-  ocean: {
-    light: [
-      "oklch(0.52 0.17 250)",
-      "oklch(0.985 0.005 250)",
-      "oklch(0.52 0.17 250 / 10%)",
-      "oklch(0.42 0.15 250)",
-    ],
-    dark: [
-      "oklch(0.72 0.13 250)",
-      "oklch(0.16 0.04 250)",
-      "oklch(0.72 0.13 250 / 16%)",
-      "oklch(0.84 0.08 250)",
-    ],
-  },
-  emerald: {
-    light: [
-      "oklch(0.53 0.13 163)",
-      "oklch(0.985 0.005 163)",
-      "oklch(0.53 0.13 163 / 10%)",
-      "oklch(0.42 0.12 163)",
-    ],
-    dark: [
-      "oklch(0.74 0.13 165)",
-      "oklch(0.16 0.04 165)",
-      "oklch(0.74 0.13 165 / 15%)",
-      "oklch(0.85 0.09 165)",
-    ],
-  },
-  amber: {
-    light: [
-      "oklch(0.7 0.15 70)",
-      "oklch(0.22 0.06 70)",
-      "oklch(0.7 0.15 70 / 13%)",
-      "oklch(0.46 0.11 70)",
-    ],
-    dark: [
-      "oklch(0.79 0.14 75)",
-      "oklch(0.2 0.05 70)",
-      "oklch(0.79 0.14 75 / 16%)",
-      "oklch(0.87 0.09 75)",
-    ],
-  },
+/** The one accent — neutral monochrome, the same `--a-*` values apps/app uses
+ *  in globals.css. Order: strong, accent-foreground, soft tint, accent-ink. */
+const accent: Record<"light" | "dark", string[]> = {
+  light: [
+    "oklch(0.22 0.005 260)",
+    "oklch(0.985 0 0)",
+    "oklch(0.22 0.005 260 / 7%)",
+    "oklch(0.32 0.008 260)",
+  ],
+  dark: [
+    "oklch(0.93 0 0)",
+    "oklch(0.16 0 0)",
+    "oklch(1 0 0 / 10%)",
+    "oklch(0.88 0 0)",
+  ],
 };
 
 /** oklch(L C H / alpha%) → sRGB hex or rgba() when alpha < 1. */
@@ -172,33 +102,19 @@ const lines: string[] = [
   " * Regenerate after any palette change — never hand-edit values.",
   " */",
   "",
-  "export type AccentName =",
-  '  | "claude"',
-  '  | "graphite"',
-  '  | "iris"',
-  '  | "ocean"',
-  '  | "emerald"',
-  '  | "amber";',
-  "",
-  "export const ACCENTS: AccentName[] = [",
-  ...Object.keys(accents).map((k) => `  "${k}",`),
-  "];",
-  "",
-  "/** Strong/accent-foreground/soft-tint/accent-ink per accent per scheme. */",
-  "export const ACCENT_TOKENS: Record<",
-  "  AccentName,",
-  '  Record<"light" | "dark", { strong: string; fg: string; soft: string; ink: string }>',
+  "/** The one accent: strong / accent-foreground / soft tint / accent-ink, per",
+  " *  scheme. Neutral monochrome — the same accent apps/app uses (globals.css",
+  " *  `--a-*`). There is no accent picker. */",
+  "export const ACCENT: Record<",
+  '  "light" | "dark",',
+  "  { strong: string; fg: string; soft: string; ink: string }",
   "> = {",
 ];
-for (const [name, schemes] of Object.entries(accents)) {
-  lines.push(`  ${name}: {`);
-  for (const scheme of ["light", "dark"] as const) {
-    const [strong, fg, soft, ink] = schemes[scheme].map(toSrgb);
-    lines.push(
-      `    ${scheme}: { strong: "${strong}", fg: "${fg}", soft: "${soft}", ink: "${ink}" },`,
-    );
-  }
-  lines.push("  },");
+for (const scheme of ["light", "dark"] as const) {
+  const [strong, fg, soft, ink] = accent[scheme].map(toSrgb);
+  lines.push(
+    `  ${scheme}: { strong: "${strong}", fg: "${fg}", soft: "${soft}", ink: "${ink}" },`,
+  );
 }
 lines.push("};", "");
 lines.push(

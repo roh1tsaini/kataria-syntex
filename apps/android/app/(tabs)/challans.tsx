@@ -19,7 +19,11 @@ export default function ChallansTab() {
   if (status === "guest") return <Redirect href="/auth" />;
   return (
     <View className="flex-1" style={{ paddingTop: insets.top }}>
-      <Screen title={SALES_KIND.title} subtitle={SALES_KIND.desc}>
+      <Screen
+        title={SALES_KIND.title}
+        subtitle={SALES_KIND.desc}
+        safeTop={false}
+      >
         <ChallanList kind={SALES_KIND} />
       </Screen>
     </View>

@@ -127,22 +127,34 @@ export function ReturnsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const workspaceRef = useRef(workspaceId);
+  workspaceRef.current = workspaceId;
+  // Monotonic request id: a slow stale response must never clobber the newer
+  // one's rows after a workspace switch or an overlapping realtime refresh.
+  const loadSeq = useRef(0);
+
   const load = useCallback(async () => {
-    if (!returnsCache[workspaceId]) {
+    const requestedWorkspace = workspaceId;
+    const seq = ++loadSeq.current;
+    if (!requestedWorkspace) return;
+    const isCurrent = () =>
+      seq === loadSeq.current && requestedWorkspace === workspaceRef.current;
+    if (!returnsCache[requestedWorkspace]) {
       setLoading(true);
     }
     setLoadError(false);
     try {
       const res = await api<{ items: ReturnEntry[] }>("/returns");
-      returnsCache[workspaceId] = res.items;
+      if (!isCurrent()) return;
+      returnsCache[requestedWorkspace] = res.items;
       setItems(res.items);
     } catch {
-      if (!returnsCache[workspaceId]) {
+      if (isCurrent() && !returnsCache[requestedWorkspace]) {
         setItems([]);
         setLoadError(true);
       }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [workspaceId]);
 

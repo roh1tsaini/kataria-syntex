@@ -25,12 +25,16 @@ import {
 import { usePalette } from "@/theme";
 import { configureAndroidCore } from "@/lib/core-adapter";
 import { configureAndroidToasts } from "@/lib/toasts";
+import { initTheme } from "@/lib/theme";
 import { initUpdateChecks } from "@/lib/updates";
 import { UpdateBanner, UpdateBlockingDialog } from "@/ui/update-surface";
 
 // Boot before first render — idempotent under StrictMode double-mount.
 configureAndroidCore();
 configureAndroidToasts();
+// Restores the persisted scheme/accent (or the OS scheme) before the first
+// paint, so a user who chose Dark never sees a light flash on launch.
+initTheme();
 
 try {
   void SplashScreen.preventAutoHideAsync();

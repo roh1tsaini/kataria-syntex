@@ -51,13 +51,16 @@ export function deviceLabel(): string {
 }
 
 export function apiBaseUrl(): string {
-  const baked = Constants.expoConfig?.extra?.apiBaseUrl;
+  const extra = Constants.expoConfig?.extra;
+  const baked = extra?.apiBaseUrl;
   if (typeof baked === "string" && baked) return baked;
-  // Dev: `adb reverse tcp:3000 tcp:3000` maps device localhost to the
-  // machine running `bun run dev:server`. Release without EXTRA_API_BASE
-  // returns "" so fetch fails loudly instead of silently hitting localhost.
+  // Dev: `adb reverse tcp:3000 tcp:3000` maps device localhost to the machine
+  // running `bun run dev:server`.
   if (__DEV__) return "http://localhost:3000";
-  return "";
+  // A release built without EXTRA_API_BASE still reaches the deployed API —
+  // the same origin the QR intent filter advertises.
+  const fallback = extra?.releaseApiBase;
+  return typeof fallback === "string" ? fallback : "";
 }
 
 export function appVersion(): string {

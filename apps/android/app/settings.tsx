@@ -20,9 +20,8 @@ import {
   type NumberingType,
 } from "@kataria-syntex/app-core";
 import { formatUpdateProgress } from "@kataria-syntex/shared";
-import { ACCENT_NAMES, usePalette } from "@/theme";
-import { setAccent, setScheme } from "@/lib/theme";
-import { ACCENT_TOKENS, type AccentName } from "@/theme/tokens";
+import { usePalette } from "@/theme";
+import { setScheme } from "@/lib/theme";
 import { cn } from "@/lib/cn";
 import { fmtDate } from "@/lib/format";
 import { Badge, Button, Card, Input, Screen, Skeleton } from "@/ui/kit";
@@ -43,15 +42,6 @@ const TYPE_HINTS: Record<keyof Numbering, string> = {
   packing_s: "Shown as PKG/S/001 on sale packing",
   packing_j: "Shown as PKG/J/001 on job-work packing",
   raw: "Shown as RM/001 on raw material entries",
-};
-
-const ACCENT_LABELS: Record<AccentName, string> = {
-  claude: "Claude",
-  graphite: "Graphite",
-  iris: "Iris",
-  ocean: "Ocean",
-  emerald: "Emerald",
-  amber: "Amber",
 };
 
 /** Card with zero padding — SettingsRows carry their own inset
@@ -380,48 +370,6 @@ function ThemeRow() {
               style={{ color: active ? p.primaryForeground : p.foreground }}
             >
               {o.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function AccentRow() {
-  const p = usePalette();
-  return (
-    <View className="flex-row flex-wrap gap-3 px-4 py-3">
-      {ACCENT_NAMES.map((a) => {
-        const active = a === p.accent;
-        const swatch = ACCENT_TOKENS[a][p.scheme].strong;
-        return (
-          <Pressable
-            key={a}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            accessibilityLabel={`${ACCENT_LABELS[a]} accent`}
-            onPress={() => setAccent(a)}
-            className="min-h-[44px] items-center justify-center gap-1"
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          >
-            <View
-              className="h-8 w-8 items-center justify-center rounded-full"
-              style={{
-                backgroundColor: swatch,
-                borderWidth: active ? 2 : 0,
-                borderColor: active ? p.foreground : "transparent",
-              }}
-            >
-              {active ? (
-                <Feather name="check" size={14} color={p.background} />
-              ) : null}
-            </View>
-            <Text
-              className="text-[11px]"
-              style={{ color: active ? p.foreground : p.mutedForeground }}
-            >
-              {ACCENT_LABELS[a]}
             </Text>
           </Pressable>
         );
@@ -827,7 +775,7 @@ function SettingsPage() {
 
         <Section
           title="Appearance"
-          description="Choose the theme and accent colour used across the app on this device."
+          description="Choose the theme used across the app on this device."
         >
           <Panel>
             <SettingsRow
@@ -835,12 +783,6 @@ function SettingsPage() {
               hint="Follows the system until you pick one."
             >
               <ThemeRow />
-            </SettingsRow>
-            <SettingsRow
-              label="Accent colour"
-              hint="Buttons, links and highlights."
-            >
-              <AccentRow />
             </SettingsRow>
           </Panel>
         </Section>

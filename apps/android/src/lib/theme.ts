@@ -11,11 +11,9 @@
 
 import { Appearance } from "react-native";
 import { uiStorage } from "@/lib/core-adapter";
-import { ACCENT_NAMES, themeStore, type Scheme } from "@/theme";
-import type { AccentName } from "@/theme/tokens";
+import { themeStore, type Scheme } from "@/theme";
 
 const SCHEME_KEY = "kataria.theme.scheme";
-const ACCENT_KEY = "kataria.theme.accent";
 
 function storedScheme(): Scheme | null {
   const raw = uiStorage.get(SCHEME_KEY);
@@ -26,17 +24,16 @@ function systemScheme(): Scheme {
   return Appearance.getColorScheme() === "dark" ? "dark" : "light";
 }
 
-function isAccentName(value: string): value is AccentName {
-  return (ACCENT_NAMES as string[]).includes(value);
-}
+let initialized = false;
 
 /** Applies the stored (or system) theme before first paint, then follows
- *  later system changes while the user hasn't pinned a scheme. */
+ *  later system changes while the user hasn't pinned a scheme. Idempotent —
+ *  StrictMode's double mount must not register the Appearance listener twice. */
 export function initTheme(): void {
-  themeStore.setScheme(storedScheme() ?? systemScheme());
+  if (initialized) return;
+  initialized = true;
 
-  const accent = uiStorage.get(ACCENT_KEY);
-  if (accent && isAccentName(accent)) themeStore.setAccent(accent);
+  themeStore.setScheme(storedScheme() ?? systemScheme());
 
   Appearance.addChangeListener(({ colorScheme }) => {
     if (storedScheme()) return;
@@ -47,9 +44,4 @@ export function initTheme(): void {
 export function setScheme(scheme: Scheme): void {
   uiStorage.set(SCHEME_KEY, scheme);
   themeStore.setScheme(scheme);
-}
-
-export function setAccent(accent: AccentName): void {
-  uiStorage.set(ACCENT_KEY, accent);
-  themeStore.setAccent(accent);
 }

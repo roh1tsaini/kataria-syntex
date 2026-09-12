@@ -1,17 +1,16 @@
 /**
- * RN theme — the app-core store tree reads colors from here. Two schemes,
- * six accents, exactly the apps/app palette (globals.css values, sRGB-
- * converted by scripts/convert-tokens.ts — never hand-edit).
+ * RN theme — the app-core store tree reads colors from here. Two schemes and
+ * one neutral accent, exactly the apps/app palette (globals.css values,
+ * sRGB-converted by scripts/convert-tokens.ts — never hand-edit).
  */
 
 import { useSyncExternalStore } from "react";
-import { ACCENTS, ACCENT_TOKENS, TOKENS, type AccentName } from "./tokens";
+import { ACCENT, TOKENS } from "./tokens";
 
 export type Scheme = "light" | "dark";
 
 export type Palette = {
   scheme: Scheme;
-  accent: AccentName;
   background: string;
   foreground: string;
   card: string;
@@ -32,20 +31,18 @@ export type Palette = {
   input: string;
 };
 
-// Palettes are cached per scheme/accent — useSyncExternalStore's getSnapshot
-// must return a stable reference or React re-renders forever and native
-// crashes with "Maximum update depth exceeded" on launch.
-const paletteCache = new Map<string, Palette>();
+// Palettes are cached per scheme — useSyncExternalStore's getSnapshot must
+// return a stable reference or React re-renders forever and native crashes
+// with "Maximum update depth exceeded" on launch.
+const paletteCache = new Map<Scheme, Palette>();
 
-function palette(scheme: Scheme, accent: AccentName): Palette {
-  const key = `${scheme}:${accent}`;
-  const cached = paletteCache.get(key);
+function palette(scheme: Scheme): Palette {
+  const cached = paletteCache.get(scheme);
   if (cached) return cached;
   const t = TOKENS[scheme];
-  const a = ACCENT_TOKENS[accent][scheme];
+  const a = ACCENT[scheme];
   const p: Palette = {
     scheme,
-    accent,
     background: t.background,
     foreground: t.foreground,
     card: t.card,
@@ -65,7 +62,7 @@ function palette(scheme: Scheme, accent: AccentName): Palette {
     border: t.border,
     input: t.input,
   };
-  paletteCache.set(key, p);
+  paletteCache.set(scheme, p);
   return p;
 }
 
@@ -106,9 +103,9 @@ export const SCRIM = "rgba(0, 0, 0, 0.4)";
 
 // ── Theme store (useSyncExternalStore — no zustand dependency here) ─────────
 
-type ThemeState = { scheme: Scheme; accent: AccentName };
+type ThemeState = { scheme: Scheme };
 
-let state: ThemeState = { scheme: "light", accent: "claude" };
+let state: ThemeState = { scheme: "light" };
 const listeners = new Set<() => void>();
 
 function setTheme(next: Partial<ThemeState>): void {
@@ -128,20 +125,17 @@ function subscribeTheme(listener: () => void): () => void {
 }
 
 function getThemeSnapshot(): Palette {
-  return palette(state.scheme, state.accent);
+  return palette(state.scheme);
 }
 
 export const themeStore = {
   get: () => state,
   setScheme: (scheme: Scheme) => setTheme({ scheme }),
-  setAccent: (accent: AccentName) => setTheme({ accent }),
   subscribe(listener: () => void) {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
 };
-
-export const ACCENT_NAMES: AccentName[] = ACCENTS;
 
 /** The live palette — subscribes to scheme/accent switches. */
 export function usePalette(): Palette {
@@ -150,9 +144,4 @@ export function usePalette(): Palette {
     getThemeSnapshot,
     getThemeSnapshot,
   );
-}
-
-/** Non-hook read for handlers and sheet styling outside React. */
-export function currentPalette(): Palette {
-  return palette(state.scheme, state.accent);
 }

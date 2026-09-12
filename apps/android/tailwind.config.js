@@ -18,6 +18,11 @@ module.exports = {
       fontFamily: {
         "sans-regular": ["Inter-Regular"],
         "sans-bold": ["Inter-Bold"],
+        // Pairing codes and tabular figures — the one place a mono face is
+        // wanted (design.md §2.4). Android ships `monospace`; declaring it
+        // here makes the `font-mono` class resolve instead of silently
+        // doing nothing.
+        mono: ["monospace"],
       },
     },
   },

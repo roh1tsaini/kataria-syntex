@@ -784,19 +784,43 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [location.pathname]);
 
-  // Focus the drawer when it opens.
+  // Focus the drawer when it opens, keep Tab inside it while it is open, and
+  // hand focus back to the trigger on close — `aria-modal` promises both.
   useEffect(() => {
     if (!mobileOpen) return;
-    const id = window.setTimeout(() => {
-      const el = drawerRef.current;
-      if (!el) return;
-      const first =
-        el.querySelector<HTMLElement>(
+    const opener = document.activeElement as HTMLElement | null;
+    const el = drawerRef.current;
+    const focusables = () =>
+      Array.from(
+        el?.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) ?? el;
-      first.focus({ preventScroll: true });
+        ) ?? [],
+      ).filter((node) => node.offsetParent !== null);
+    const id = window.setTimeout(() => {
+      (focusables()[0] ?? el)?.focus({ preventScroll: true });
     }, 120);
-    return () => window.clearTimeout(id);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const items = focusables();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement;
+      const inside = !!el && !!active && el.contains(active);
+      // Wrap at either end, and pull focus back if it escaped the sheet.
+      if (!inside || (e.shiftKey ? active === first : active === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("keydown", onKeyDown);
+      if (opener && document.contains(opener)) {
+        opener.focus({ preventScroll: true });
+      }
+    };
   }, [mobileOpen]);
 
   useEffect(() => {

@@ -8,7 +8,7 @@ const BYTE_UNITS = ["B", "kB", "MB", "GB", "TB"] as const;
 
 /** "12.8 MB", "384 kB", "1.1 GB" — decimal (1000-based) units, like a
  * browser's download manager. Zero/negative/unknown → "0 kB". */
-export function formatBytes(bytes: number): string {
+function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 kB";
   const exp = Math.min(
     BYTE_UNITS.length - 1,
@@ -21,7 +21,7 @@ export function formatBytes(bytes: number): string {
 
 /** "~45s left", "~4m left", "~1h+ left". Unknown/negative → null so callers
  * drop the clause instead of printing a guess. */
-export function formatEta(seconds: number | null | undefined): string | null {
+function formatEta(seconds: number | null | undefined): string | null {
   if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return null;
   if (seconds < 10) return "a few seconds left";
   if (seconds < 60) return `~${Math.round(seconds)}s left`;

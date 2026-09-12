@@ -7,14 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import {
@@ -26,7 +19,16 @@ import {
   useRealtimeEvent,
 } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
-import { Badge, Button, EmptyState, PageTitle, Skeleton } from "@/ui/kit";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Field,
+  Input,
+  PageTitle,
+  Skeleton,
+} from "@/ui/kit";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { uiStorage } from "@/lib/core-adapter";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 
@@ -114,6 +116,10 @@ function readHiddenCols(storageKey: string): Record<string, boolean> {
   return {};
 }
 
+/** Date-range inputs are entry keys (`YYYY-MM-DD`), never free text — a
+ *  half-typed value must not reach the API as a range. */
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
 function columnLabel(key: string) {
   return key
     .replace(/([A-Z])/g, " $1")
@@ -138,6 +144,7 @@ export default function ReportsRoute() {
 function ReportGrid() {
   const router = useRouter();
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   return (
     <ScrollView
       className="flex-1"
@@ -196,6 +203,7 @@ function ReportGrid() {
 function ReportView({ reportId }: { reportId: string }) {
   const router = useRouter();
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const baseKey = `${workspaceId}:${reportId}`;
   const [data, setData] = useState<ReportResponse | null>(
@@ -216,7 +224,19 @@ function ReportView({ reportId }: { reportId: string }) {
   // clobber the newer one's rows.
   const loadSeq = useRef(0);
 
+  const fromError =
+    from !== "" && !DATE_KEY.test(from) ? "Use YYYY-MM-DD." : null;
+  const toError = to !== "" && !DATE_KEY.test(to) ? "Use YYYY-MM-DD." : null;
+  const rangeValid = !fromError && !toError;
+  const rangeSet = from !== "" || to !== "";
+
   const load = useCallback(async () => {
+    if (!rangeValid) {
+      // Keep whatever is on screen; querying a half-typed range would return
+      // nonsense and overwrite real rows.
+      setLoading(false);
+      return;
+    }
     const seq = ++loadSeq.current;
     const params = new URLSearchParams();
     if (from) params.set("from", from);
@@ -240,7 +260,7 @@ function ReportView({ reportId }: { reportId: string }) {
     } finally {
       if (seq === loadSeq.current) setLoading(false);
     }
-  }, [baseKey, reportId, from, to]);
+  }, [baseKey, reportId, from, to, rangeValid]);
 
   useEffect(() => {
     void load();
@@ -298,7 +318,10 @@ function ReportView({ reportId }: { reportId: string }) {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: p.background, paddingTop: insets.top }}
+    >
       <View className="flex-row items-center gap-1 px-4 pt-4">
         <Pressable
           accessibilityRole="button"
@@ -324,47 +347,31 @@ function ReportView({ reportId }: { reportId: string }) {
 
       {/* Date range filters — same params the web sends. */}
       <View className="flex-row gap-2 px-4 pt-4">
-        <View className="flex-1 gap-1">
-          <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
-          >
-            From
-          </Text>
-          <TextInput
-            value={from}
-            onChangeText={setFrom}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={p.mutedForeground}
-            autoCapitalize="none"
-            className="min-h-[44px] rounded-lg border px-3 text-[15px]"
-            style={{
-              backgroundColor: p.card,
-              borderColor: p.input,
-              color: p.foreground,
-            }}
-          />
+        <View className="flex-1">
+          <Field label="From" error={fromError}>
+            <Input
+              value={from}
+              onChangeText={setFrom}
+              placeholder="YYYY-MM-DD"
+              autoCapitalize="none"
+              keyboardType="numbers-and-punctuation"
+              accessibilityLabel="From date"
+              invalid={!!fromError}
+            />
+          </Field>
         </View>
-        <View className="flex-1 gap-1">
-          <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
-          >
-            To
-          </Text>
-          <TextInput
-            value={to}
-            onChangeText={setTo}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={p.mutedForeground}
-            autoCapitalize="none"
-            className="min-h-[44px] rounded-lg border px-3 text-[15px]"
-            style={{
-              backgroundColor: p.card,
-              borderColor: p.input,
-              color: p.foreground,
-            }}
-          />
+        <View className="flex-1">
+          <Field label="To" error={toError}>
+            <Input
+              value={to}
+              onChangeText={setTo}
+              placeholder="YYYY-MM-DD"
+              autoCapitalize="none"
+              keyboardType="numbers-and-punctuation"
+              accessibilityLabel="To date"
+              invalid={!!toError}
+            />
+          </Field>
         </View>
       </View>
 
@@ -397,7 +404,23 @@ function ReportView({ reportId }: { reportId: string }) {
         ) : rows.length === 0 ? (
           <EmptyState
             title="No data for this period"
-            message="Adjust the date range or check back after more entries are made."
+            message={
+              rangeSet
+                ? "Widen the date range, or clear it to see everything."
+                : "Check back after more entries are made."
+            }
+            action={
+              rangeSet ? (
+                <Button
+                  label="Clear dates"
+                  variant="secondary"
+                  onPress={() => {
+                    setFrom("");
+                    setTo("");
+                  }}
+                />
+              ) : undefined
+            }
           />
         ) : (
           <FlatList
@@ -410,7 +433,7 @@ function ReportView({ reportId }: { reportId: string }) {
               <View className="mb-1 gap-1">
                 <View className="flex-row items-center justify-between gap-2">
                   <Badge
-                    label={`${rows.length.toLocaleString()} ${rows.length === 1 ? "row" : "rows"}`}
+                    label={`${rows.length.toLocaleString("en-IN")} ${rows.length === 1 ? "row" : "rows"}`}
                   />
                   <Pressable
                     accessibilityRole="button"

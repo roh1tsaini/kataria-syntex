@@ -722,6 +722,7 @@ export default function DashboardTab() {
       <Screen
         title="Overview"
         subtitle={`${company?.name ?? workspace?.name ?? "—"} · Financial year ${currentFy?.label ?? "—"}`}
+        safeTop={false}
       >
         <ScrollView
           contentContainerStyle={{

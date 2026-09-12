@@ -90,29 +90,27 @@ function SyncFlag({ challan }: { challan: Challan }) {
 function ListRow({
   item,
   onMore,
+  animate,
 }: {
   item: Challan;
   onMore: (challan: Challan) => void;
+  /** False for the list's first batch — those rows appear immediately so 25+
+   *  rows don't animate at once and jank the initial paint. */
+  animate: boolean;
 }) {
   const p = usePalette();
   const router = useRouter();
   const kind = item.type;
-  // Row entrance: fade + 14px rise on the morph spring (§5.6). Skipped on
-  // first mount so 25+ rows don't animate simultaneously and jank initial
-  // render; rows added later (sync, new saves) still animate in.
-  const entering = useSharedValue(0);
+  // Row entrance: fade + 14px rise on the morph spring (§5.6). Starting at 1
+  // (not 0) is what keeps the first batch from painting invisible for a frame.
+  const entering = useSharedValue(animate ? 0 : 1);
   const reduce = useReduceMotion();
-  const firstMount = useRef(true);
   useEffect(() => {
-    if (firstMount.current) {
-      firstMount.current = false;
-      entering.value = 1;
-      return;
-    }
+    if (!animate) return;
     entering.value = reduce
       ? withTiming(1, { duration: 1 })
       : withSpring(1, MORPH);
-  }, [entering, reduce]);
+  }, [animate, entering, reduce]);
   const enterStyle = useAnimatedStyle(() => ({
     opacity: entering.value,
     transform: [{ translateY: (1 - entering.value) * 14 }],
@@ -317,6 +315,14 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
   const initializedFy = useRef(false);
   const loadingMoreRef = useRef(false);
   const seqRef = useRef(0);
+  // The first batch of rows appears immediately; rows mounted after that
+  // animate in (see ListRow). Flips once the first load has settled.
+  const [animateRows, setAnimateRows] = useState(false);
+  useEffect(() => {
+    if (busy) return;
+    const t = setTimeout(() => setAnimateRows(true), 0);
+    return () => clearTimeout(t);
+  }, [busy]);
   const canCreate = can("create_challan");
   const canEdit = can("edit_challan");
   const canDelete = can("delete_challan");
@@ -594,7 +600,11 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
         data={rows}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <ListRow item={item} onMore={setActionChallan} />
+          <ListRow
+            item={item}
+            onMore={setActionChallan}
+            animate={animateRows}
+          />
         )}
         contentContainerStyle={{
           gap: 12,

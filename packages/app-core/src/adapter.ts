@@ -69,7 +69,3 @@ export function core(): PlatformAdapter {
   if (!adapter) throw new Error("app-core used before configureCore()");
   return adapter;
 }
-
-export function coreConfigured(): boolean {
-  return adapter !== null;
-}

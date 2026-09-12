@@ -215,7 +215,11 @@ export default function MoreTab() {
 
   return (
     <View className="flex-1" style={{ paddingTop: insets.top }}>
-      <Screen title="More" subtitle={workspace?.name ?? undefined}>
+      <Screen
+        title="More"
+        subtitle={workspace?.name ?? undefined}
+        safeTop={false}
+      >
         <ScrollView
           contentContainerStyle={{
             paddingBottom: 48,

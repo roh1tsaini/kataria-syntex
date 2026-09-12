@@ -46,6 +46,7 @@ import {
   PageTitle,
   Skeleton,
 } from "@/ui/kit";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton, Select, Textarea } from "@/ui/controls";
 import { confirm, requestDiscard } from "@/ui/confirm";
 import { fmtDate } from "@/lib/format";
@@ -463,10 +464,7 @@ function RecipeEditorModal({
             keyboardShouldPersistTaps="handled"
           >
             {!editing ? (
-              <Field
-                label="Denier"
-                error={deniers.length === 0 ? undefined : null}
-              >
+              <Field label="Denier">
                 <Select
                   label="Denier"
                   value={denierId}
@@ -942,6 +940,7 @@ function RecipeDetailModal({
 
 export default function ColorsRoute() {
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
 
@@ -1041,7 +1040,10 @@ export default function ColorsRoute() {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
+    <View
+      className="flex-1"
+      style={{ backgroundColor: p.background, paddingTop: insets.top }}
+    >
       <View className="flex-row items-end justify-between px-4 pt-4">
         <View className="min-w-0 flex-1">
           <Text

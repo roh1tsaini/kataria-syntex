@@ -210,9 +210,11 @@ function applySession(
 ): void {
   // A fresh login supersedes any in-flight bootstrap reconciliation.
   ++bootstrapGeneration;
-  // Fresh login: drop any data a previous account left on this device.
+  // Fresh login: drop any data a previous account left on this device —
+  // storage caches, module caches, and the page stores' in-memory rows.
   clearAccountCache();
   invalidateDataCaches();
+  void resetPageStores();
   set({
     status: "authed",
     user: payload.user,
