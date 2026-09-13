@@ -1,0 +1,4390 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kataria Syntex — brand &amp; web kit</title>
+    <style>
+      /* Candidate faces (OFL, self-hosted under /theme-fonts) */
+      @font-face {
+        font-family: "Fraunces";
+        src: url("/theme-fonts/fraunces-normal.woff2") format("woff2");
+        font-weight: 400 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Instrument Serif";
+        src: url("/theme-fonts/instrument-serif-normal.woff2") format("woff2");
+        font-weight: 400;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Bricolage";
+        src: url("/theme-fonts/bricolage.woff2") format("woff2");
+        font-weight: 400 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Geist";
+        src: url("/theme-fonts/geist.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "JetBrains Mono";
+        src: url("/theme-fonts/jetbrains-mono.woff2") format("woff2");
+        font-weight: 400 600;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Space Grotesk";
+        src: url("/theme-fonts/sora.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: block;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: #0b0d12;
+        color: #e9edf4;
+        font-family:
+          ui-sans-serif,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      /* ============================================================
+         BRAND TOKENS — three source values per palette (ink/pri/acc).
+         Surfaces, hairlines, dark bands and muted text are DERIVED, so
+         a palette swap re-tints the whole page. `.ptheme` re-declares
+         the derived tokens locally so a palette card can show its own
+         colours while the rest of the page shows the selected one.
+         ============================================================ */
+      :root,
+      .ptheme {
+        --p-ink: #0a2540;
+        --p-pri: #1e3a8a;
+        --p-acc: #7dd3fc;
+
+        --surf: color-mix(in oklab, var(--p-pri) 6%, #ffffff);
+        --surf2: color-mix(in oklab, var(--p-pri) 13%, #ffffff);
+        --card: #ffffff;
+        --ink: var(--p-ink);
+        --muted: color-mix(in srgb, var(--p-ink) 68%, #ffffff);
+        --line: color-mix(in oklab, var(--p-ink) 14%, transparent);
+        --line2: color-mix(in oklab, var(--p-ink) 28%, transparent);
+        --pri: var(--p-pri);
+        --on-pri: #ffffff;
+        --acc: var(--p-acc);
+        --on-acc: #0d1016;
+        --dark: color-mix(in oklab, var(--p-ink) 80%, #000000);
+        --dark2: color-mix(in oklab, var(--p-ink) 92%, #000000);
+        --dark-ink: #ffffff;
+        --dark-muted: color-mix(in oklab, var(--p-acc) 48%, #ffffff);
+        --dark-line: color-mix(in oklab, var(--p-acc) 24%, transparent);
+        --r-btn: 11px;
+        --r-card: 16px;
+        --r-big: 24px;
+        --logo-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        --logo-weight: 700;
+        --logo-track: -0.035em;
+      }
+      [data-theme="dark"] {
+        --surf: var(--dark2);
+        --surf2: var(--dark);
+        --card: color-mix(in oklab, var(--p-ink) 72%, #000000);
+        --ink: #ffffff;
+        --muted: color-mix(in oklab, var(--p-acc) 40%, #ffffff);
+        --line: color-mix(in oklab, var(--p-acc) 16%, transparent);
+        --line2: color-mix(in oklab, var(--p-acc) 30%, transparent);
+      }
+      /* Paper surfaces stay paper in both themes — they are the point. */
+      [data-theme="dark"] .s-paper {
+        --surf: #f3efe6;
+        --surf2: #eae4d7;
+        --card: #fffdf8;
+        --ink: #14110d;
+        --muted: #575047;
+        --line: rgba(20, 17, 13, 0.14);
+        --line2: rgba(20, 17, 13, 0.34);
+      }
+      [data-theme="dark"] .s-zine {
+        --surf: #f2ece1;
+        --ink: #14110d;
+        --muted: #5a5245;
+        --line: rgba(20, 17, 13, 0.2);
+        --line2: rgba(20, 17, 13, 0.4);
+      }
+      /* ============================================================
+         STUDIO CHROME — dark on purpose: palettes, plates and cards sit
+         on a neutral dark so no scheme gets flattered by the chrome.
+         ============================================================ */
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: rgba(11, 13, 18, 0.88);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+      }
+      .bar-in {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 12px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        align-items: center;
+      }
+      .brandblock {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+      }
+      .brandblock .ksmark {
+        align-self: center;
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: #f2f5fa;
+        color: #10131a;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+      .brandblock b {
+        font-size: 15px;
+        letter-spacing: -0.01em;
+      }
+      .brandblock > span {
+        font-size: 11.5px;
+        color: #8b95a6;
+      }
+      .secnav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+      }
+      .secnav a {
+        color: #aab4c4;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 999px;
+      }
+      .secnav a:hover {
+        background: #1b212c;
+        color: #f2f5fa;
+      }
+      .bar .spacer {
+        flex: 1;
+      }
+      .ctl {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11.5px;
+        color: #8b95a6;
+      }
+      .ctl select {
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        color: #e9edf4;
+        background: #171b24;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      .seg {
+        display: inline-flex;
+        background: #171b24;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        padding: 3px;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        color: #aab4c4;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 650;
+        padding: 6px 13px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .seg button[aria-pressed="true"] {
+        background: #f2f5fa;
+        color: #10131a;
+      }
+      .palette-strip {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 0 20px 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .palette-strip .glabel {
+        font-size: 9.5px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #667085;
+        margin: 0 6px 0 10px;
+      }
+      .palette-strip .glabel:first-child {
+        margin-left: 0;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 11px 5px 6px;
+        border-radius: 999px;
+        cursor: pointer;
+        background: #171b24;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cdd5e2;
+        font-size: 11.5px;
+        font-weight: 600;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .chip:hover {
+        background: #1f2531;
+      }
+      .chip[aria-pressed="true"] {
+        background: #f2f5fa;
+        color: #10131a;
+        border-color: #f2f5fa;
+      }
+      .chip i {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        display: block;
+        flex: none;
+      }
+      .chip .dot2 {
+        width: 7px;
+        height: 7px;
+        margin-left: -5px;
+      }
+      .chip:focus-visible,
+      .seg button:focus-visible,
+      .secnav a:focus-visible {
+        outline: 2px solid #6ea8ff;
+        outline-offset: 2px;
+      }
+      .wrap {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 26px 20px 100px;
+      }
+      .intro h1 {
+        margin: 0;
+        font-size: clamp(26px, 3.4vw, 38px);
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .intro .lede {
+        max-width: 78ch;
+        margin: 12px 0 0;
+        color: #9aa5b6;
+        font-size: 14.5px;
+        line-height: 1.7;
+      }
+      .intro .lede strong {
+        color: #e9edf4;
+      }
+      .callouts {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        margin-top: 20px;
+      }
+      .callout {
+        background: #12161e;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 12.5px;
+        line-height: 1.65;
+        color: #9aa5b6;
+      }
+      .callout b {
+        display: block;
+        color: #e9edf4;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        margin-bottom: 5px;
+      }
+      .callout code {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 11.5px;
+      }
+
+      .sec {
+        margin-top: 74px;
+        scroll-margin-top: 130px;
+      }
+      .sechead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding-top: 18px;
+      }
+      .sechead .kicker {
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6ea8ff;
+      }
+      .sechead h2 {
+        margin: 6px 0 0;
+        font-size: clamp(21px, 2.4vw, 28px);
+        letter-spacing: -0.025em;
+        flex-basis: 100%;
+      }
+      .sechead p {
+        margin: 0;
+        font-size: 12.5px;
+        color: #8b95a6;
+        max-width: 70ch;
+        line-height: 1.65;
+      }
+      .note {
+        margin-top: 60px;
+        padding: 18px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 14px;
+        background: #12161e;
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: #9aa5b6;
+      }
+      .note b {
+        color: #e9edf4;
+      }
+      .note code {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 11.5px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      /* ============================================================
+         LOGO WORKBENCH — text-only identity: wordmark + KS monogram.
+         Everything reads `--logo-*`, so the face control retypes it.
+         ============================================================ */
+      .logolab {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1.25fr 1fr;
+        margin-top: 26px;
+      }
+      @media (max-width: 900px) {
+        .logolab {
+          grid-template-columns: 1fr;
+        }
+      }
+      .plate {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-height: 240px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 26px;
+        position: relative;
+        overflow: hidden;
+      }
+      .plate .tag {
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.62;
+      }
+      .plate-paper {
+        background: #ffffff;
+        color: #0d1016;
+      }
+      .plate-ink {
+        background: var(--dark2);
+        color: #ffffff;
+      }
+      .plate-accent {
+        background: var(--acc);
+        color: #0d1016;
+      }
+      .plate-grid {
+        background: #f2f4f8;
+        color: #0d1016;
+        background-image:
+          linear-gradient(
+            to right,
+            rgba(13, 16, 22, 0.07) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(13, 16, 22, 0.07) 1px,
+            transparent 1px
+          );
+        background-size: 22px 22px;
+      }
+      .wm {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: var(--logo-track);
+        line-height: 0.94;
+        font-size: clamp(28px, 4.2vw, 46px);
+        text-transform: uppercase;
+      }
+      .wm small {
+        display: block;
+        font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 600;
+        font-size: 0.28em;
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        margin-top: 0.75em;
+        opacity: 0.7;
+      }
+      .wm-row {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+      .ks {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: -0.06em;
+        line-height: 1;
+        font-size: clamp(44px, 6vw, 78px);
+      }
+      .ks-box {
+        display: grid;
+        place-items: center;
+        width: clamp(84px, 11vw, 132px);
+        height: clamp(84px, 11vw, 132px);
+        border-radius: 22%;
+        background: var(--dark2);
+        color: var(--acc);
+        font-size: clamp(38px, 5vw, 62px);
+      }
+      .ks-ring {
+        border-radius: 50%;
+        background: var(--acc);
+        color: #0d1016;
+      }
+      .ks-ghost {
+        border: 2px solid currentColor;
+        background: transparent;
+        color: inherit;
+      }
+      .lockrow {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .lockrow .lock-word {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: var(--logo-track);
+        text-transform: uppercase;
+        font-size: clamp(16px, 1.8vw, 21px);
+        line-height: 1;
+      }
+      .lockrow .lock-sub {
+        display: block;
+        font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 600;
+        font-size: 8.5px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        opacity: 0.65;
+        margin-top: 5px;
+      }
+      .lockrow .rule {
+        width: 1px;
+        align-self: stretch;
+        min-height: 34px;
+        background: currentColor;
+        opacity: 0.28;
+      }
+      .logo-matrix {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        margin-top: 26px;
+      }
+      .facecard {
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #12161e;
+      }
+      .facecard .fstage {
+        background: #ffffff;
+        color: #0d1016;
+        padding: 22px 20px;
+        display: grid;
+        gap: 14px;
+      }
+      .facecard .fstage.rev {
+        background: var(--dark2);
+        color: #ffffff;
+      }
+      .facecard .fname {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: var(--logo-track);
+        text-transform: uppercase;
+        font-size: 27px;
+        line-height: 0.95;
+      }
+      .facecard .fspec {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 12px;
+        font-size: 11px;
+        color: #8b95a6;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .facecard .fspec b {
+        color: #e9edf4;
+        font-weight: 650;
+      }
+      /* ============================================================
+         PALETTE DETAIL — the selected scheme, fully spec'd.
+         ============================================================ */
+      .detail {
+        background: #12161e;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 26px;
+        display: grid;
+        gap: 22px;
+        grid-template-columns:
+          minmax(300px, 1.15fr) minmax(280px, 0.9fr)
+          minmax(300px, 1fr);
+      }
+      @media (max-width: 1080px) {
+        .detail {
+          grid-template-columns: 1fr;
+        }
+      }
+      .detail h3 {
+        margin: 0 0 3px;
+        font-size: 16px;
+        letter-spacing: -0.01em;
+      }
+      .detail .sub {
+        font-size: 12px;
+        color: #8b95a6;
+        margin: 0 0 15px;
+        line-height: 1.6;
+      }
+      .detail .sub em {
+        color: #cdd5e2;
+        font-style: normal;
+      }
+      .swatchrow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .sw {
+        border-radius: 12px;
+        padding: 12px;
+        min-height: 104px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .sw b {
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.74;
+        font-weight: 700;
+      }
+      .sw code {
+        font-size: 12.5px;
+        font-weight: 650;
+      }
+      .sw span {
+        display: block;
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        opacity: 0.72;
+        margin-top: 2px;
+      }
+      .roles {
+        margin-top: 13px;
+        font-size: 12px;
+        line-height: 1.75;
+        color: #9aa5b6;
+      }
+      .roles b {
+        color: #e9edf4;
+        font-weight: 650;
+      }
+      .contrast {
+        display: grid;
+        gap: 7px;
+      }
+      .crow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+        padding: 8px 11px;
+        border-radius: 10px;
+        background: #171b24;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .crow .pair {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #b9c2d0;
+      }
+      .crow .pair i {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        display: block;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .crow .ratio {
+        font-weight: 700;
+      }
+      .pass {
+        color: #6ee7a8;
+      }
+      .fail {
+        color: #ff9a9a;
+      }
+      .tag {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #cbd4e2;
+      }
+      .ramp {
+        display: flex;
+        height: 34px;
+        border-radius: 9px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        margin-top: 10px;
+      }
+      .ramp i {
+        flex: 1;
+      }
+      .rampcap {
+        display: flex;
+        justify-content: space-between;
+        font-family: ui-monospace, monospace;
+        font-size: 9.5px;
+        color: #667085;
+        margin-top: 6px;
+      }
+      .printrow {
+        display: grid;
+        gap: 6px;
+        margin-top: 12px;
+      }
+      .prow {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 11.5px;
+        color: #b9c2d0;
+      }
+      .prow i {
+        width: 13px;
+        height: 13px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        flex: none;
+      }
+      .prow span {
+        margin-left: auto;
+        font-family: ui-monospace, monospace;
+        font-size: 10.5px;
+        color: #8b95a6;
+      }
+      /* Mini site slice shown inside the detail panel (always light). */
+      .mini {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: var(--surf);
+        color: var(--ink);
+        font-size: 11px;
+      }
+      .mini .mini-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 13px;
+        border-bottom: 1px solid var(--line);
+      }
+      .mini .mini-brand {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: -0.02em;
+        font-size: 11.5px;
+        text-transform: uppercase;
+      }
+      .mini .mini-pill {
+        background: var(--pri);
+        color: var(--on-pri);
+        border-radius: var(--r-btn);
+        padding: 5px 10px;
+        font-size: 9.5px;
+        font-weight: 700;
+      }
+      .mini .mini-hero {
+        padding: 15px 13px 16px;
+        display: grid;
+        gap: 10px;
+      }
+      .mini .mini-hero h4 {
+        margin: 0;
+        font-size: 17px;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+        max-width: 15ch;
+      }
+      .mini .mini-hero p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 10.5px;
+        line-height: 1.55;
+        max-width: 34ch;
+      }
+      .mini .mini-row {
+        display: flex;
+        gap: 7px;
+        margin-top: 3px;
+      }
+      .mini .mini-btn {
+        background: var(--pri);
+        color: var(--on-pri);
+        border-radius: var(--r-btn);
+        padding: 7px 11px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .mini .mini-ghost {
+        border: 1.5px solid var(--line2);
+        border-radius: var(--r-btn);
+        padding: 7px 11px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .mini .mini-swatches {
+        display: flex;
+        gap: 4px;
+        padding: 0 13px 14px;
+      }
+      .mini .mini-swatches i {
+        flex: 1;
+        height: 22px;
+        border-radius: 5px;
+      }
+      /* ============================================================
+         PALETTE LIBRARY — every scheme as its own card, grouped.
+         Each card carries inline --p-* plus `.ptheme`, so it renders
+         its own colours regardless of the selected palette.
+         ============================================================ */
+      .pgroups {
+        margin-top: 26px;
+        display: grid;
+        gap: 30px;
+      }
+      .pgroup h3 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8b95a6;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .pgroup h3::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .pcards {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      }
+      .pcard {
+        text-align: left;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        overflow: hidden;
+        background: #12161e;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        transition:
+          border-color 0.18s,
+          transform 0.18s;
+      }
+      .pcard:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.28);
+      }
+      .pcard[aria-pressed="true"] {
+        border-color: #f2f5fa;
+        box-shadow: 0 0 0 1px #f2f5fa inset;
+      }
+      .pcard .prev {
+        background: var(--surf);
+        color: var(--ink);
+        padding: 14px 14px 12px;
+        display: grid;
+        gap: 9px;
+      }
+      .pcard .prev-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 10px;
+      }
+      .pcard .prev-brand {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+      .pcard .prev-pill {
+        background: var(--pri);
+        color: var(--on-pri);
+        border-radius: 7px;
+        padding: 3px 7px;
+        font-size: 8.5px;
+        font-weight: 700;
+      }
+      .pcard .prev-h {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 2px 0 0;
+      }
+      .pcard .prev-h em {
+        color: var(--pri);
+        font-style: normal;
+      }
+      .pcard .prev-strip {
+        display: flex;
+        gap: 4px;
+      }
+      .pcard .prev-strip i {
+        flex: 1;
+        height: 26px;
+        border-radius: 6px;
+      }
+      .pcard .prev-btns {
+        display: flex;
+        gap: 6px;
+      }
+      .pcard .prev-btns span {
+        border-radius: 7px;
+        padding: 5px 9px;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .pcard .prev-btns .a {
+        background: var(--pri);
+        color: var(--on-pri);
+      }
+      .pcard .prev-btns .b {
+        border: 1.5px solid var(--line2);
+      }
+      .pcard .pmeta {
+        padding: 12px 14px 14px;
+        display: grid;
+        gap: 7px;
+      }
+      .pcard .pmeta .ptop {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .pcard .pmeta b {
+        font-size: 13.5px;
+        letter-spacing: -0.01em;
+      }
+      .pcard .pmeta .phex {
+        font-family: ui-monospace, monospace;
+        font-size: 9.5px;
+        color: #667085;
+      }
+      .pcard .pmeta .pnote {
+        display: block;
+        margin: 0;
+        font-size: 11.5px;
+        line-height: 1.6;
+        color: #8b95a6;
+      }
+      /* ============================================================
+         CARD STUDIO — visiting-card fronts & backs (85 × 53.5 mm).
+         All colours read the selected palette; the wordmark reads the
+         selected logo face. Text is real so it can be proof-read.
+         ============================================================ */
+      .cardstudio {
+        display: grid;
+        gap: 30px;
+        margin-top: 26px;
+      }
+      .cgroup h3 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8b95a6;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .cgroup h3::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .cpair {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      }
+      .cardfig {
+        margin: 0;
+        display: grid;
+        gap: 9px;
+      }
+      .cardfig .pair-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .bk {
+        width: min(300px, 100%);
+        aspect-ratio: 85 / 53.5;
+        border-radius: 9px;
+        padding: 15px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.9);
+        font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+      }
+      .bk .bk-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .bk .bk-mono {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: -0.05em;
+        line-height: 1;
+        font-size: 24px;
+      }
+      .bk .bk-chip {
+        font-family: ui-monospace, monospace;
+        font-size: 7.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.75;
+      }
+      .bk .bk-word {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: var(--logo-track);
+        text-transform: uppercase;
+        line-height: 1;
+        font-size: 15.5px;
+      }
+      .bk .bk-role {
+        font-size: 8px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .bk .bk-line {
+        font-family: ui-monospace, monospace;
+        font-size: 8.5px;
+        line-height: 1.7;
+      }
+      .bk .bk-rule {
+        height: 1px;
+        background: currentColor;
+        opacity: 0.22;
+      }
+      .bk-front {
+        background: var(--dark2);
+        color: #fff;
+      }
+      .bk-front .bk-mono {
+        color: var(--acc);
+      }
+      .bk-front .bk-role {
+        color: var(--acc);
+      }
+      .bk-back {
+        background: color-mix(in oklab, var(--p-acc) 30%, #ffffff);
+        color: var(--p-ink);
+      }
+      .bk-back .bk-mono {
+        color: var(--pri);
+      }
+      .bk-paper {
+        background: #fffdf8;
+        color: #14110d;
+      }
+      .bk-paper .bk-mono {
+        color: var(--pri);
+      }
+      .bk-paper .bk-role {
+        color: var(--pri);
+      }
+      .bk-split::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--dark2);
+        clip-path: polygon(0 0, 42% 0, 26% 100%, 0 100%);
+      }
+      .bk-split > * {
+        position: relative;
+      }
+      .bk-split .bk-mono {
+        color: var(--acc);
+        font-size: 30px;
+      }
+      .bk-band {
+        background: var(--dark2);
+        color: #fff;
+      }
+      .bk-band::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 26%;
+        background: var(--acc);
+      }
+      .bk-band > * {
+        position: relative;
+      }
+      .bk-band .bk-mono {
+        color: var(--on-acc);
+      }
+      .bk-band .bk-top {
+        color: var(--on-acc);
+      }
+      .bk-band .bk-role {
+        color: var(--acc);
+      }
+      .bk-big {
+        background: #fffdf8;
+        color: #14110d;
+      }
+      .bk-big::before {
+        content: "";
+        position: absolute;
+        left: -6%;
+        bottom: 8%;
+        width: 52%;
+        height: 22%;
+        background: var(--acc);
+        z-index: 0;
+      }
+      .bk-big > * {
+        position: relative;
+        z-index: 1;
+      }
+      .bk-big .bk-word {
+        font-size: 26px;
+      }
+      .bk-big .bk-mono {
+        color: var(--pri);
+      }
+      .bk-monoall {
+        background: var(--dark2);
+        color: #fff;
+      }
+      .bk-monoall .bk-word,
+      .bk-monoall .bk-mono,
+      .bk-monoall .bk-line,
+      .bk-monoall .bk-role {
+        font-family: ui-monospace, monospace;
+      }
+      .bk-monoall .bk-word {
+        letter-spacing: 0.02em;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      .bk-monoall .bk-mono {
+        color: var(--acc);
+      }
+      .bk-monoall .bk-role {
+        color: var(--acc);
+      }
+      .cardfig figcaption {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        font-size: 11.5px;
+        color: #8b95a6;
+      }
+      .cardfig figcaption b {
+        color: #e9edf4;
+        font-size: 12.5px;
+      }
+      .cardfig figcaption .side {
+        font-family: ui-monospace, monospace;
+        font-size: 9.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #667085;
+        min-width: 34px;
+      }
+      .cardfig .cardstack {
+        display: grid;
+        gap: 9px;
+      }
+      /* ============================================================
+         WEBSITE DIRECTIONS — miniatures of the real site at 16:11.
+         Every measurement is in cqw, so a mock scales with its card.
+         All of them read the selected palette + theme.
+         ============================================================ */
+      .cathead {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin: 34px 0 14px;
+      }
+      .cathead h3 {
+        margin: 0;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+      .cathead span {
+        font-size: 12px;
+        color: #8b95a6;
+      }
+      .cathead .rule {
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-3px);
+      }
+      .grid {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+      }
+      @media (max-width: 560px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      figure.d {
+        margin: 0;
+      }
+      .stage {
+        container-type: inline-size;
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 16 / 11;
+        background: var(--surf);
+        color: var(--ink);
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.85);
+        font-size: 1.5cqw;
+      }
+      figcaption {
+        padding: 11px 3px 0;
+        display: flex;
+        gap: 9px;
+        align-items: baseline;
+      }
+      figcaption b {
+        font-size: 13px;
+        letter-spacing: -0.005em;
+      }
+      figcaption span {
+        font-size: 12px;
+        color: #8b95a6;
+        line-height: 1.45;
+      }
+      .num {
+        font-size: 11px;
+        color: #667085;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+
+      /* ---- shared mockup primitives (sizing in cqw) ---- */
+      .m-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2cqw;
+        padding: 2.6cqw 3.6cqw;
+      }
+      .m-brand {
+        font-family: var(--logo-display);
+        font-weight: var(--logo-weight);
+        letter-spacing: -0.03em;
+        font-size: 2.05cqw;
+        text-transform: uppercase;
+      }
+      .m-links {
+        display: flex;
+        gap: 2cqw;
+        opacity: 0.6;
+        font-size: 1.35cqw;
+        font-weight: 550;
+      }
+      .m-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--r-btn);
+        padding: 1.25cqw 2.3cqw;
+        font-size: 1.3cqw;
+        font-weight: 700;
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+      }
+      .m-btn.pri {
+        background: var(--pri);
+        color: var(--on-pri);
+      }
+      .m-btn.acc {
+        background: var(--acc);
+        color: var(--on-acc);
+      }
+      .m-btn.gh {
+        border: 1.5px solid var(--line2);
+      }
+      .m-kicker {
+        font-size: 1.08cqw;
+        font-weight: 800;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--pri);
+      }
+      .m-h {
+        font-weight: 800;
+        letter-spacing: -0.038em;
+        line-height: 0.98;
+        font-size: 5.9cqw;
+        margin: 0;
+      }
+      .m-p {
+        font-size: 1.5cqw;
+        line-height: 1.6;
+        color: var(--muted);
+        margin: 0;
+      }
+      .m-acts {
+        display: flex;
+        gap: 1.2cqw;
+      }
+      .m-row {
+        display: flex;
+        gap: 1.6cqw;
+      }
+      .m-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--r-card);
+        padding: 2.2cqw;
+        flex: 1;
+      }
+      .m-art {
+        border-radius: 10px;
+        height: 9cqw;
+        background: linear-gradient(
+          150deg,
+          var(--pri),
+          color-mix(in oklab, var(--pri) 45%, var(--acc))
+        );
+        margin-bottom: 1.6cqw;
+      }
+      .m-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      /* ---------- 01 Blueprint ---------- */
+      .s-blueprint {
+        background-image:
+          radial-gradient(
+            40cqw 22cqw at 8% -6%,
+            color-mix(in oklab, var(--acc) 42%, transparent),
+            transparent 62%
+          ),
+          radial-gradient(
+            38cqw 24cqw at 96% 4%,
+            color-mix(in oklab, var(--acc) 32%, transparent),
+            transparent 60%
+          );
+      }
+      .s-blueprint::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(to right, var(--line) 1px, transparent 1px),
+          linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+        background-size: 8cqw 8cqw;
+        mask-image: radial-gradient(70% 60% at 50% 40%, #000, transparent);
+      }
+      .s-blueprint .bp-body {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 3cqw;
+        padding: 1.5cqw 3.6cqw 0;
+        align-items: start;
+      }
+      .s-blueprint .bp-copy {
+        display: grid;
+        gap: 1.5cqw;
+      }
+      .s-blueprint .bp-panel {
+        background: color-mix(in oklab, var(--card) 78%, transparent);
+        backdrop-filter: blur(6px);
+        border: 1px solid var(--line);
+        border-radius: var(--r-big);
+        padding: 2cqw;
+        box-shadow: 0 14cqw 20cqw -14cqw
+          color-mix(in oklab, var(--p-ink) 40%, transparent);
+      }
+      .s-blueprint .bp-stats {
+        display: flex;
+        gap: 1.4cqw;
+        margin-top: 1.8cqw;
+      }
+      .s-blueprint .bp-stat {
+        flex: 1;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1.4cqw;
+      }
+      .s-blueprint .bp-stat b {
+        display: block;
+        font-size: 2.5cqw;
+        color: var(--pri);
+        letter-spacing: -0.03em;
+      }
+      .s-blueprint .bp-stat span {
+        font-size: 1cqw;
+        color: var(--muted);
+      }
+
+      /* ---------- 02 Swiss Ledger ---------- */
+      .s-swiss {
+        --r-btn: 0px;
+        --r-card: 0px;
+      }
+      .s-swiss .sw-top {
+        border-bottom: 1.5px solid var(--ink);
+      }
+      .s-swiss .m-h {
+        font-size: 7.6cqw;
+        letter-spacing: -0.05em;
+      }
+      .s-swiss .sw-lede {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3cqw;
+        padding: 2.4cqw 3.6cqw;
+        border-bottom: 1px solid var(--line2);
+      }
+      .s-swiss .sw-num {
+        font-family: ui-monospace, monospace;
+        font-size: 1.2cqw;
+        letter-spacing: 0.1em;
+      }
+      .s-swiss .sw-rows {
+        padding: 0 3.6cqw;
+      }
+      .s-swiss .sw-row {
+        display: grid;
+        grid-template-columns: 5cqw 1fr 1fr 5cqw;
+        gap: 1.6cqw;
+        align-items: center;
+        padding: 1.7cqw 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 1.35cqw;
+      }
+      .s-swiss .sw-row b {
+        font-size: 1.7cqw;
+        letter-spacing: -0.02em;
+      }
+      .s-swiss .sw-row .r {
+        text-align: right;
+        color: var(--muted);
+      }
+      .s-swiss .sw-accent {
+        color: var(--pri);
+        font-weight: 700;
+      }
+
+      /* ---------- 03 Midnight Mill (always dark) ---------- */
+      .s-midnight {
+        --surf: color-mix(in oklab, var(--p-ink) 90%, #000);
+        --ink: #fff;
+        --muted: color-mix(in oklab, var(--p-acc) 42%, #fff);
+        --card: color-mix(in oklab, var(--p-ink) 74%, #000);
+        --line: color-mix(in oklab, var(--p-acc) 20%, transparent);
+        --line2: color-mix(in oklab, var(--p-acc) 34%, transparent);
+        background-image: radial-gradient(
+          44cqw 26cqw at 82% -10%,
+          color-mix(in oklab, var(--acc) 26%, transparent),
+          transparent 62%
+        );
+      }
+      .s-midnight .md-glow {
+        color: var(--acc);
+      }
+      .s-midnight .md-body {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 3cqw;
+        padding: 1.4cqw 3.6cqw 0;
+      }
+      .s-midnight .md-cards {
+        display: grid;
+        gap: 1.4cqw;
+      }
+      .s-midnight .md-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.7cqw;
+        display: flex;
+        gap: 1.5cqw;
+        align-items: center;
+      }
+      .s-midnight .md-dot {
+        width: 5cqw;
+        height: 5cqw;
+        border-radius: 9px;
+        flex: none;
+        background: linear-gradient(140deg, var(--acc), var(--pri));
+      }
+      .s-midnight .md-card b {
+        font-size: 1.5cqw;
+        display: block;
+      }
+      .s-midnight .md-card span {
+        font-size: 1.1cqw;
+        color: var(--muted);
+      }
+      /* ---------- 04 Paper & Ink ---------- */
+      .s-paper {
+        --surf: #f3efe6;
+        --surf2: #eae4d7;
+        --card: #fffdf8;
+        --ink: #14110d;
+        --muted: #575047;
+        --line: rgba(20, 17, 13, 0.14);
+        --line2: rgba(20, 17, 13, 0.34);
+        --r-btn: 2px;
+        --r-card: 2px;
+        background-image: radial-gradient(
+          60cqw 30cqw at 50% -20%,
+          rgba(255, 255, 255, 0.9),
+          transparent 70%
+        );
+      }
+      .s-paper .pp-body {
+        padding: 1cqw 3.6cqw 0;
+      }
+      .s-paper .pp-h {
+        position: relative;
+        display: inline-block;
+      }
+      .s-paper .pp-h .m-h {
+        font-size: 7.4cqw;
+        letter-spacing: -0.045em;
+        position: relative;
+        z-index: 1;
+      }
+      .s-paper .pp-h::before {
+        content: "";
+        position: absolute;
+        left: -1cqw;
+        bottom: 0.8cqw;
+        width: 40%;
+        height: 2.6cqw;
+        background: var(--acc);
+        z-index: 0;
+      }
+      .s-paper .pp-cols {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 3cqw;
+        margin-top: 2.2cqw;
+        padding-top: 2cqw;
+        border-top: 1.5px solid var(--ink);
+      }
+      .s-paper .pp-tag {
+        font-family: ui-monospace, monospace;
+        font-size: 1.1cqw;
+        color: var(--muted);
+      }
+
+      /* ---------- 05 Bento Grid ---------- */
+      .s-bento {
+        --r-card: 18px;
+        --r-big: 22px;
+      }
+      .s-bento .bn {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 1.4cqw;
+        padding: 1.4cqw 3.6cqw 0;
+      }
+      .s-bento .bn-t {
+        border-radius: var(--r-big);
+        padding: 2.2cqw;
+        border: 1px solid var(--line);
+        background: var(--card);
+        box-shadow: 0 2cqw 4cqw -2.6cqw
+          color-mix(in oklab, var(--p-ink) 45%, transparent);
+      }
+      .s-bento .bn-hero {
+        grid-column: span 2;
+        grid-row: span 2;
+        background: linear-gradient(
+          160deg,
+          color-mix(in oklab, var(--pri) 92%, #000),
+          var(--pri)
+        );
+        color: #fff;
+        border-color: transparent;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .s-bento .bn-hero .m-h {
+        font-size: 4.6cqw;
+      }
+      .s-bento .bn-hero .m-p {
+        color: color-mix(in oklab, var(--acc) 62%, #fff);
+      }
+      .s-bento .bn-kpi b {
+        display: block;
+        font-size: 3.2cqw;
+        letter-spacing: -0.04em;
+      }
+      .s-bento .bn-kpi span {
+        font-size: 1.05cqw;
+        color: var(--muted);
+      }
+      .s-bento .bn-acc {
+        background: var(--acc);
+        color: var(--on-acc);
+        border-color: transparent;
+      }
+      .s-bento .bn-acc b {
+        font-size: 1.8cqw;
+      }
+
+      /* ---------- 06 Split Screen ---------- */
+      .s-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .s-split .sp-l {
+        padding: 2.4cqw 3.2cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-right: 1px solid var(--line);
+      }
+      .s-split .sp-r {
+        background: var(--pri);
+        color: var(--on-pri);
+        padding: 3cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        position: relative;
+        overflow: hidden;
+      }
+      .s-split .sp-r::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(
+          105deg,
+          rgba(255, 255, 255, 0.13) 0 1px,
+          transparent 1px 5px
+        );
+      }
+      .s-split .sp-big {
+        position: relative;
+        z-index: 1;
+        font-size: 9cqw;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 0.85;
+        color: var(--acc);
+      }
+      .s-split .sp-cap {
+        position: relative;
+        z-index: 1;
+        font-size: 1.2cqw;
+        opacity: 0.82;
+        margin-top: 1.2cqw;
+      }
+      .s-split .m-h {
+        font-size: 5.4cqw;
+      }
+      /* ---------- 07 Spec Sheet ---------- */
+      .s-spec {
+        --r-btn: 4px;
+        --r-card: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .s-spec .m-h {
+        font-family: inherit;
+        font-size: 3.4cqw;
+        letter-spacing: -0.02em;
+      }
+      .s-spec .m-brand,
+      .s-spec .m-btn,
+      .s-spec .m-kicker {
+        font-family: inherit;
+      }
+      .s-spec .sc {
+        padding: 1.4cqw 3.4cqw;
+      }
+      .s-spec .sc-head {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.05cqw;
+        color: var(--muted);
+        border-bottom: 1px dashed var(--line2);
+        padding-bottom: 1.4cqw;
+      }
+      .s-spec .sc-line {
+        display: flex;
+        align-items: baseline;
+        gap: 1.2cqw;
+        padding: 1.15cqw 0;
+        border-bottom: 1px dotted var(--line2);
+        font-size: 1.25cqw;
+      }
+      .s-spec .sc-line .fill {
+        flex: 1;
+        border-bottom: 1px dotted var(--line2);
+        transform: translateY(-0.3cqw);
+      }
+      .s-spec .sc-line b {
+        color: var(--pri);
+        font-weight: 700;
+      }
+      .s-spec .sc-box {
+        border: 1px solid var(--line2);
+        padding: 1.6cqw;
+        margin-top: 1.6cqw;
+        font-size: 1.15cqw;
+        color: var(--muted);
+      }
+
+      /* ---------- 08 Kinetic Type ---------- */
+      .s-kinetic {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 3.4cqw;
+        background-image: radial-gradient(
+          48cqw 26cqw at 92% 108%,
+          color-mix(in oklab, var(--acc) 30%, transparent),
+          transparent 62%
+        );
+      }
+      .s-kinetic .kt {
+        font-weight: 800;
+        letter-spacing: -0.055em;
+        line-height: 0.84;
+        font-size: 13.2cqw;
+      }
+      .s-kinetic .kt em {
+        font-style: normal;
+        color: var(--pri);
+      }
+      .s-kinetic .kt-o {
+        color: transparent;
+        -webkit-text-stroke: 1.5px var(--ink);
+      }
+      .s-kinetic .kt-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2cqw;
+        margin-top: 2.4cqw;
+        border-top: 1px solid var(--line2);
+        padding-top: 1.8cqw;
+      }
+      .s-kinetic .kt-p {
+        max-width: 34cqw;
+      }
+
+      /* ---------- 09 Soft Glass ---------- */
+      .s-glass {
+        background-image:
+          radial-gradient(
+            40cqw 28cqw at 15% 10%,
+            color-mix(in oklab, var(--acc) 55%, transparent),
+            transparent 65%
+          ),
+          radial-gradient(
+            36cqw 26cqw at 85% 20%,
+            color-mix(in oklab, var(--pri) 30%, transparent),
+            transparent 62%
+          ),
+          radial-gradient(
+            50cqw 30cqw at 60% 110%,
+            color-mix(in oklab, var(--acc) 40%, transparent),
+            transparent 66%
+          );
+      }
+      .s-glass .gl-body {
+        padding: 1cqw 3.6cqw 0;
+      }
+      .s-glass .gl-panel {
+        background: color-mix(in oklab, var(--card) 62%, transparent);
+        backdrop-filter: blur(10px) saturate(140%);
+        border: 1px solid color-mix(in oklab, #fff 60%, transparent);
+        border-radius: var(--r-big);
+        padding: 2.4cqw;
+        box-shadow: 0 3cqw 6cqw -3cqw
+          color-mix(in oklab, var(--p-ink) 30%, transparent);
+      }
+      .s-glass .gl-tiles {
+        display: flex;
+        gap: 1.4cqw;
+        margin-top: 1.6cqw;
+      }
+      .s-glass .gl-tile {
+        flex: 1;
+        background: color-mix(in oklab, var(--card) 66%, transparent);
+        backdrop-filter: blur(8px);
+        border: 1px solid color-mix(in oklab, #fff 55%, transparent);
+        border-radius: 14px;
+        padding: 1.5cqw;
+      }
+      .s-glass .gl-tile b {
+        font-size: 2.2cqw;
+        display: block;
+        letter-spacing: -0.03em;
+      }
+      .s-glass .gl-tile span {
+        font-size: 1cqw;
+        color: var(--muted);
+      }
+      /* ---------- 10 Brutalist Block ---------- */
+      .s-brutal {
+        --r-btn: 0px;
+        --r-card: 0px;
+        --r-big: 0px;
+        --surf: color-mix(in oklab, var(--p-acc) 18%, #fff);
+        --line: #14110d;
+        --line2: #14110d;
+        --ink: #14110d;
+      }
+      .s-brutal .br-body {
+        padding: 1cqw 3.2cqw 0;
+      }
+      .s-brutal .br-block {
+        border: 2.5px solid var(--ink);
+        background: var(--card);
+        box-shadow: 8px 8px 0 var(--ink);
+        padding: 2.4cqw;
+      }
+      .s-brutal .m-h {
+        font-size: 6.4cqw;
+        text-transform: uppercase;
+        letter-spacing: -0.03em;
+      }
+      .s-brutal .m-btn.pri {
+        border: 2.5px solid var(--ink);
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .s-brutal .m-btn.gh {
+        border: 2.5px solid var(--ink);
+        background: var(--acc);
+        color: var(--ink);
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .s-brutal .br-strip {
+        display: flex;
+        gap: 0;
+        margin-top: 2cqw;
+        border: 2.5px solid var(--ink);
+        background: var(--acc);
+      }
+      .s-brutal .br-strip div {
+        flex: 1;
+        padding: 1.3cqw;
+        font-size: 1.2cqw;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-right: 2.5px solid var(--ink);
+      }
+      .s-brutal .br-strip div:last-child {
+        border-right: 0;
+      }
+
+      /* ---------- 11 Wound Thread ---------- */
+      .s-thread {
+        --surf: #f6f1e9;
+        --ink: #1b1712;
+        --muted: #5c5346;
+        --card: #fffdf8;
+        --line: rgba(27, 23, 18, 0.14);
+        --line2: rgba(27, 23, 18, 0.3);
+      }
+      .s-thread .th-band {
+        height: 4.4cqw;
+        background-image:
+          repeating-linear-gradient(
+            96deg,
+            color-mix(in oklab, var(--pri) 92%, #000) 0 1.6px,
+            var(--pri) 1.6px 4px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.22) 0 1px,
+            transparent 1px 3.2px
+          );
+      }
+      .s-thread .th-band.acc {
+        background-image:
+          repeating-linear-gradient(
+            96deg,
+            color-mix(in oklab, var(--acc) 80%, #000) 0 1.6px,
+            var(--acc) 1.6px 4px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.16) 0 1px,
+            transparent 1px 3.2px
+          );
+      }
+      .s-thread .th-body {
+        padding: 2cqw 3.4cqw 0;
+      }
+      .s-thread .th-stitch {
+        border-top: 2px dashed var(--line2);
+        margin: 2cqw 0 1.6cqw;
+      }
+      .s-thread .th-swatches {
+        display: flex;
+        gap: 1.2cqw;
+      }
+      .s-thread .th-sw {
+        flex: 1;
+        height: 6cqw;
+        border-radius: 7px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.5),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.22);
+        background-image:
+          repeating-linear-gradient(
+            96deg,
+            rgba(0, 0, 0, 0.28) 0 1.6px,
+            transparent 1.6px 4px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.2) 0 1px,
+            transparent 1px 3.2px
+          );
+      }
+
+      /* ---------- 12 Gallery ---------- */
+      .s-gallery .ga-art {
+        height: 42cqw;
+        background: linear-gradient(
+          140deg,
+          color-mix(in oklab, var(--pri) 88%, #000),
+          var(--pri) 55%,
+          color-mix(in oklab, var(--pri) 55%, var(--acc))
+        );
+        position: relative;
+        overflow: hidden;
+      }
+      .s-gallery .ga-art::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(
+          100deg,
+          rgba(255, 255, 255, 0.1) 0 1px,
+          transparent 1px 7px
+        );
+      }
+      .s-gallery .ga-cap {
+        position: absolute;
+        left: 3.4cqw;
+        bottom: 2.6cqw;
+        color: #fff;
+        z-index: 1;
+      }
+      .s-gallery .ga-cap .m-h {
+        font-size: 4.4cqw;
+      }
+      .s-gallery .ga-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 2cqw;
+        padding: 2cqw 3.6cqw 0;
+      }
+      .s-gallery .ga-meta div {
+        flex: 1;
+      }
+      .s-gallery .ga-meta b {
+        display: block;
+        font-size: 1.35cqw;
+        margin-bottom: 0.5cqw;
+      }
+      .s-gallery .ga-meta span {
+        font-size: 1.1cqw;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      /* ---------- 13 Supply Ops ---------- */
+      .s-ops {
+        --surf: color-mix(in oklab, var(--p-ink) 88%, #000);
+        --ink: #fff;
+        --muted: color-mix(in oklab, var(--p-acc) 40%, #fff);
+        --card: color-mix(in oklab, var(--p-ink) 70%, #000);
+        --line: color-mix(in oklab, var(--p-acc) 18%, transparent);
+        --line2: color-mix(in oklab, var(--p-acc) 32%, transparent);
+        --r-btn: 8px;
+      }
+      .s-ops .op {
+        padding: 1.4cqw 3.4cqw 0;
+        display: grid;
+        gap: 1.4cqw;
+      }
+      .s-ops .op-kpis {
+        display: flex;
+        gap: 1.3cqw;
+      }
+      .s-ops .op-kpi {
+        flex: 1;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1.5cqw;
+      }
+      .s-ops .op-kpi span {
+        font-size: 0.98cqw;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .s-ops .op-kpi b {
+        display: block;
+        font-size: 3cqw;
+        letter-spacing: -0.04em;
+        color: var(--acc);
+        margin-top: 0.6cqw;
+      }
+      .s-ops .op-kpi i {
+        font-size: 1cqw;
+        font-style: normal;
+        color: #6ee7a8;
+      }
+      .s-ops .op-chart {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 1.6cqw;
+        display: flex;
+        align-items: flex-end;
+        gap: 0.9cqw;
+        height: 15cqw;
+      }
+      .s-ops .op-chart i {
+        flex: 1;
+        border-radius: 3px 3px 0 0;
+        background: linear-gradient(to top, var(--pri), var(--acc));
+        display: block;
+      }
+
+      /* ---------- 14 Risograph Zine ---------- */
+      .s-zine {
+        --surf: #f2ece1;
+        --ink: #14110d;
+        --muted: #5a5245;
+        --card: #f8f3ea;
+        --line: rgba(20, 17, 13, 0.2);
+        --line2: rgba(20, 17, 13, 0.4);
+        --r-btn: 0px;
+        --r-card: 0px;
+      }
+      .s-zine::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(
+          currentColor 0.9px,
+          transparent 0.9px
+        );
+        background-size: 3px 3px;
+        opacity: 0.22;
+      }
+      .s-zine .zn {
+        position: relative;
+        padding: 2cqw 3.4cqw 0;
+      }
+      .s-zine .zn-h {
+        font-size: 8.6cqw;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 0.88;
+        color: var(--pri);
+        mix-blend-mode: multiply;
+      }
+      .s-zine .zn-h em {
+        font-style: normal;
+        color: var(--ink);
+      }
+      .s-zine .zn-off {
+        position: absolute;
+        left: 3.9cqw;
+        top: 2.35cqw;
+        font-size: 8.6cqw;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 0.88;
+        color: var(--acc);
+        opacity: 0.85;
+        z-index: 0;
+      }
+      .s-zine .zn-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0;
+        margin-top: 2.2cqw;
+        border: 1.5px solid var(--ink);
+      }
+      .s-zine .zn-cell {
+        padding: 1.6cqw;
+        border-right: 1.5px solid var(--ink);
+      }
+      .s-zine .zn-cell:last-child {
+        border-right: 0;
+      }
+      .s-zine .zn-cell b {
+        display: block;
+        font-size: 1.3cqw;
+        margin-bottom: 0.5cqw;
+      }
+      .s-zine .zn-cell span {
+        font-size: 1.05cqw;
+        color: var(--muted);
+      }
+      .s-zine .zn-cell.acc {
+        background: var(--acc);
+      }
+
+      /* ---------- 15 Soft Neumorph ---------- */
+      .s-neumorph {
+        --surf: color-mix(in oklab, var(--p-pri) 8%, #fff);
+        --card: var(--surf);
+        --line: transparent;
+        --r-card: 20px;
+        --r-big: 26px;
+      }
+      .s-neumorph .nm {
+        padding: 1.4cqw 3.4cqw 0;
+      }
+      .s-neumorph .nm-slab {
+        border-radius: var(--r-big);
+        padding: 2.6cqw;
+        background: var(--surf);
+        box-shadow:
+          2cqw 2cqw 4cqw color-mix(in oklab, var(--p-ink) 16%, transparent),
+          -1.6cqw -1.6cqw 3.4cqw #fff;
+      }
+      .s-neumorph .m-h {
+        font-size: 5.2cqw;
+      }
+      .s-neumorph .nm-btn {
+        border-radius: 999px;
+        padding: 1.2cqw 2.4cqw;
+        font-size: 1.3cqw;
+        font-weight: 700;
+        background: var(--surf);
+        color: var(--pri);
+        box-shadow:
+          1cqw 1cqw 2cqw color-mix(in oklab, var(--p-ink) 18%, transparent),
+          -1cqw -1cqw 2cqw #fff;
+      }
+      .s-neumorph .nm-strip {
+        display: flex;
+        gap: 1.4cqw;
+        margin-top: 1.6cqw;
+      }
+      .s-neumorph .nm-strip div {
+        flex: 1;
+        border-radius: 14px;
+        padding: 1.4cqw;
+        background: var(--surf);
+        box-shadow:
+          1cqw 1cqw 2cqw color-mix(in oklab, var(--p-ink) 14%, transparent),
+          -0.8cqw -0.8cqw 1.8cqw #fff;
+      }
+      .s-neumorph .nm-strip b {
+        font-size: 1.9cqw;
+        display: block;
+        color: var(--pri);
+      }
+      /* ---------- 16 Neo-Grid Editorial ---------- */
+      .s-neogrid::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(to right, var(--line) 1px, transparent 1px),
+          linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+        background-size:
+          16.66% 100%,
+          100% 25%;
+      }
+      .s-neogrid .ng {
+        position: relative;
+        padding: 1.4cqw 3.4cqw 0;
+      }
+      .s-neogrid .ng-h {
+        font-size: 7cqw;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 0.92;
+      }
+      .s-neogrid .ng-h .mark {
+        background: var(--pri);
+        color: var(--on-pri);
+        padding: 0 0.8cqw;
+      }
+      .s-neogrid .ng-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
+        margin-top: 2.4cqw;
+      }
+      .s-neogrid .ng-col {
+        padding: 0 1.6cqw;
+        border-left: 1px solid var(--line2);
+      }
+      .s-neogrid .ng-col:first-child {
+        border-left: 0;
+        padding-left: 0;
+      }
+      .s-neogrid .ng-col b {
+        font-size: 1.4cqw;
+        display: block;
+        margin-bottom: 0.6cqw;
+      }
+      .s-neogrid .ng-col span {
+        font-size: 1.1cqw;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .s-neogrid .ng-acc {
+        position: absolute;
+        right: 3.4cqw;
+        top: 2.2cqw;
+        width: 16cqw;
+        height: 10cqw;
+        background: var(--acc);
+        border-radius: 3px;
+      }
+
+      /* ---------- 17 Cinematic Band (always dark) ---------- */
+      .s-cinema {
+        --surf: color-mix(in oklab, var(--p-ink) 94%, #000);
+        --ink: #fff;
+        --muted: color-mix(in oklab, var(--p-acc) 38%, #fff);
+        --line: color-mix(in oklab, var(--p-acc) 16%, transparent);
+        --line2: color-mix(in oklab, var(--p-acc) 30%, transparent);
+        --r-btn: 6px;
+      }
+      .s-cinema::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            60cqw 34cqw at 50% 0%,
+            color-mix(in oklab, var(--p-pri) 62%, transparent),
+            transparent 68%
+          ),
+          radial-gradient(
+            80cqw 40cqw at 50% 120%,
+            rgba(0, 0, 0, 0.7),
+            transparent 60%
+          );
+      }
+      .s-cinema .cn {
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 6cqw;
+      }
+      .s-cinema .cn-k {
+        font-size: 1cqw;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        color: var(--acc);
+        font-weight: 700;
+      }
+      .s-cinema .cn-h {
+        font-size: 7.4cqw;
+        font-weight: 300;
+        letter-spacing: 0.02em;
+        line-height: 1.05;
+        margin: 1.6cqw 0 0;
+      }
+      .s-cinema .cn-h b {
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      .s-cinema .cn-rule {
+        width: 8cqw;
+        height: 1px;
+        background: var(--acc);
+        margin: 2cqw 0;
+      }
+      .s-cinema .cn-meta {
+        position: absolute;
+        bottom: 2.2cqw;
+        left: 3.4cqw;
+        right: 3.4cqw;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1cqw;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      /* ---------- 18 Restrained Mono ---------- */
+      .s-mono {
+        --r-btn: 8px;
+        --r-card: 12px;
+      }
+      .s-mono .mo {
+        padding: 1.4cqw 3.6cqw 0;
+      }
+      .s-mono .mo-h {
+        font-size: 5.4cqw;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.04;
+        max-width: 62%;
+      }
+      .s-mono .mo-h u {
+        text-decoration: none;
+        border-bottom: 2px solid var(--pri);
+        padding-bottom: 0.2cqw;
+      }
+      .s-mono .mo-rule {
+        height: 1px;
+        background: var(--line2);
+        margin: 2.4cqw 0 1.6cqw;
+      }
+      .s-mono .mo-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 3cqw;
+      }
+      .s-mono .mo-li {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 1.25cqw 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 1.25cqw;
+      }
+      .s-mono .mo-li .k {
+        color: var(--muted);
+      }
+      .s-mono .mo-li .v {
+        font-family: ui-monospace, monospace;
+        font-size: 1.15cqw;
+      }
+      .s-mono .m-btn.pri {
+        background: transparent;
+        color: var(--pri);
+        border: 1.5px solid var(--pri);
+      }
+      /* ---------- 19 Editorial Magazine ---------- */
+      .s-mag {
+        --surf: #f4f0e8;
+        --card: #fffdf8;
+        --ink: #161310;
+        --muted: #5a5347;
+        --line: rgba(22, 19, 16, 0.16);
+        --line2: rgba(22, 19, 16, 0.38);
+        --r-btn: 0px;
+        --r-card: 0px;
+      }
+      .s-mag .mg {
+        padding: 1.6cqw 3.6cqw 0;
+      }
+      .s-mag .mg-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-family: ui-monospace, monospace;
+        font-size: 1cqw;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1.5px solid var(--ink);
+        padding-bottom: 1.2cqw;
+      }
+      .s-mag .mg-h {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 7.2cqw;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 0.94;
+        margin: 1.8cqw 0 1.4cqw;
+      }
+      .s-mag .mg-h em {
+        font-style: italic;
+        color: var(--pri);
+      }
+      .s-mag .mg-cols {
+        column-count: 3;
+        column-gap: 2.2cqw;
+        column-rule: 1px solid var(--line);
+        font-size: 1.15cqw;
+        line-height: 1.62;
+        color: var(--muted);
+      }
+      .s-mag .mg-cols p {
+        margin: 0 0 1.2cqw;
+      }
+      .s-mag .mg-drop::first-letter {
+        float: left;
+        font-family: Georgia, serif;
+        font-size: 7cqw;
+        line-height: 0.78;
+        padding: 0.4cqw 0.7cqw 0 0;
+        color: var(--pri);
+        font-weight: 700;
+      }
+      .s-mag .mg-pull {
+        margin-top: 1.6cqw;
+        border-top: 1px solid var(--line2);
+        padding-top: 1.2cqw;
+        display: flex;
+        align-items: center;
+        gap: 1.6cqw;
+        font-family: Georgia, serif;
+        font-style: italic;
+        font-size: 1.7cqw;
+        color: var(--ink);
+      }
+      .s-mag .mg-pull .m-btn {
+        font-family: inherit;
+        font-style: normal;
+      }
+      .s-mag .mg-pull .accentbar {
+        background: var(--acc);
+        border-radius: 2px;
+        padding: 0.8cqw 1.6cqw;
+      }
+
+      /* ---------- 20 Process Rail ---------- */
+      .s-rail .rl {
+        padding: 1.6cqw 3.6cqw 0;
+      }
+      .s-rail .rl-h {
+        font-size: 4.2cqw;
+        letter-spacing: -0.035em;
+        margin: 0 0 1cqw;
+      }
+      .s-rail .rl-source {
+        font-size: 1.2cqw;
+        color: var(--muted);
+        margin: 0 0 2cqw;
+      }
+      .s-rail .rl-steps {
+        position: relative;
+        padding-left: 4.4cqw;
+      }
+      .s-rail .rl-steps::before {
+        content: "";
+        position: absolute;
+        left: 1.35cqw;
+        top: 0.9cqw;
+        bottom: 1cqw;
+        width: 1px;
+        background: var(--line2);
+      }
+      .s-rail .rl-step {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1cqw 2cqw;
+        padding: 1.5cqw 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .s-rail .rl-step:last-child {
+        border-bottom: 0;
+      }
+      .s-rail .rl-step::before {
+        content: "";
+        position: absolute;
+        left: -3.85cqw;
+        top: 2.1cqw;
+        width: 1.5cqw;
+        height: 1.5cqw;
+        border-radius: 50%;
+        background: var(--acc);
+        border: 0.35cqw solid var(--surf);
+        box-shadow: 0 0 0 1px var(--line2);
+      }
+      .s-rail .rl-step b {
+        font-size: 1.55cqw;
+        letter-spacing: -0.01em;
+      }
+      .s-rail .rl-step span {
+        grid-column: 1;
+        font-size: 1.15cqw;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .s-rail .rl-step em {
+        grid-row: 1 / span 2;
+        grid-column: 2;
+        align-self: center;
+        font-family: ui-monospace, monospace;
+        font-style: normal;
+        font-size: 1cqw;
+        color: var(--pri);
+      }
+
+      /* ---------- 21 Diagonal Split ---------- */
+      .s-diag {
+        position: relative;
+        overflow: hidden;
+      }
+      .s-diag .dg-panel {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          150deg,
+          var(--pri),
+          color-mix(in oklab, var(--pri) 55%, #000)
+        );
+        clip-path: polygon(58% 0, 100% 0, 100% 100%, 33% 100%);
+      }
+      .s-diag .dg-in {
+        position: relative;
+        height: 100%;
+        padding: 2.6cqw 3.6cqw;
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 2cqw;
+        align-items: center;
+      }
+      .s-diag .dg-l {
+        display: grid;
+        gap: 1.5cqw;
+      }
+      .s-diag .dg-r {
+        color: #fff;
+        display: grid;
+        gap: 1.2cqw;
+        align-content: center;
+        padding-left: 6cqw;
+      }
+      .s-diag .dg-big {
+        font-size: 8.4cqw;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 0.82;
+        color: var(--acc);
+      }
+      .s-diag .dg-cap {
+        font-size: 1.15cqw;
+        color: color-mix(in oklab, var(--acc) 55%, #fff);
+      }
+      .s-diag .dg-stats {
+        display: flex;
+        gap: 2.4cqw;
+        margin-top: 1cqw;
+      }
+      .s-diag .dg-stat b {
+        display: block;
+        font-size: 2.2cqw;
+        color: var(--acc);
+      }
+      .s-diag .dg-stat span {
+        font-size: 0.95cqw;
+        opacity: 0.8;
+      }
+      /* ---------- 22 Marquee Ticker ---------- */
+      .s-marquee {
+        display: flex;
+        flex-direction: column;
+      }
+      .s-marquee .mq-body {
+        padding: 1cqw 3.6cqw 0;
+        display: grid;
+        gap: 1.4cqw;
+        flex: 1;
+      }
+      .s-marquee .mq-band {
+        display: flex;
+        align-items: center;
+        gap: 1.6cqw;
+        border-top: 1.5px solid var(--ink);
+        border-bottom: 1.5px solid var(--ink);
+        padding: 1.2cqw 0;
+        font-size: 2.6cqw;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .s-marquee .mq-band.acc {
+        background: var(--pri);
+        color: var(--on-pri);
+        border-color: var(--pri);
+      }
+      .s-marquee .mq-band.acc span:nth-child(4n + 1) {
+        color: var(--acc);
+      }
+      .s-marquee .mq-band span {
+        flex: none;
+      }
+      .s-marquee .mq-band .dot {
+        width: 0.9cqw;
+        height: 0.9cqw;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.5;
+      }
+      .s-marquee .mq-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2cqw;
+        margin-top: auto;
+        padding: 1.8cqw 0 0;
+      }
+      .s-marquee .mq-h {
+        font-size: 3.6cqw;
+        letter-spacing: -0.04em;
+        margin: 0;
+        max-width: 15ch;
+      }
+
+      /* ---------- 23 Product Spotlight ---------- */
+      .s-spot {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .s-spot .sp-left {
+        padding: 2.4cqw 3.2cqw;
+        display: flex;
+        flex-direction: column;
+        gap: 1.4cqw;
+      }
+      .s-spot .sp-visual {
+        background: linear-gradient(
+          150deg,
+          color-mix(in oklab, var(--pri) 90%, #000),
+          color-mix(in oklab, var(--pri) 40%, var(--acc))
+        );
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-end;
+        padding: 2.6cqw;
+      }
+      .s-spot .sp-visual::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(
+          100deg,
+          rgba(255, 255, 255, 0.14) 0 1.5px,
+          transparent 1.5px 7px
+        );
+      }
+      .s-spot .sp-visual .sp-num {
+        position: relative;
+        z-index: 1;
+        font-family: ui-monospace, monospace;
+        font-size: 1.15cqw;
+        letter-spacing: 0.14em;
+        color: #fff;
+        opacity: 0.85;
+      }
+      .s-spot .sp-dots {
+        display: flex;
+        gap: 1cqw;
+        align-items: center;
+      }
+      .s-spot .sp-dots i {
+        width: 4.4cqw;
+        height: 4.4cqw;
+        border-radius: 50%;
+        border: 2px solid var(--surf);
+        box-shadow: 0 0 0 1px var(--line2);
+      }
+      .s-spot .sp-specs {
+        display: grid;
+        gap: 0.9cqw;
+        margin-top: auto;
+      }
+      .s-spot .sp-spec {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.1cqw;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.8cqw;
+      }
+      .s-spot .sp-spec span {
+        color: var(--muted);
+      }
+      .s-spot .sp-spec b {
+        font-family: ui-monospace, monospace;
+        font-weight: 500;
+      }
+
+      /* ---------- 24 Mosaic Tile ---------- */
+      .s-mosaic .ms {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 1.2cqw;
+        padding: 1.2cqw 3.6cqw 0;
+      }
+      .s-mosaic .ms-t {
+        border-radius: var(--r-card);
+        overflow: hidden;
+        position: relative;
+        min-height: 11cqw;
+        border: 1px solid var(--line);
+        background: var(--card);
+        padding: 1.8cqw;
+      }
+      .s-mosaic .ms-hero {
+        grid-row: span 2;
+        background: linear-gradient(
+          160deg,
+          color-mix(in oklab, var(--pri) 92%, #000),
+          var(--pri)
+        );
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .s-mosaic .ms-hero .m-p {
+        color: color-mix(in oklab, var(--acc) 60%, #fff);
+        font-size: 1.3cqw;
+      }
+      .s-mosaic .ms-hero .m-h {
+        font-size: 3.9cqw;
+      }
+      .s-mosaic .ms-swatch {
+        padding: 0;
+        display: flex;
+      }
+      .s-mosaic .ms-swatch i {
+        flex: 1;
+        height: 100%;
+        display: block;
+      }
+      .s-mosaic .ms-swatch i:nth-child(2) {
+        filter: brightness(0.86);
+      }
+      .s-mosaic .ms-swatch i:nth-child(3) {
+        filter: brightness(0.72);
+      }
+      .s-mosaic .ms-swatch i:nth-child(4) {
+        filter: brightness(0.58);
+      }
+      .s-mosaic .ms-quote {
+        background: var(--acc);
+        color: var(--on-acc);
+        border-color: transparent;
+        font-size: 1.3cqw;
+        font-weight: 650;
+        line-height: 1.4;
+      }
+      .s-mosaic .ms-quote b {
+        display: block;
+        font-size: 0.95cqw;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.7;
+        margin-bottom: 0.6cqw;
+        font-weight: 800;
+      }
+      /* ============================================================
+         PRINT LEDGER — tokens + CMYK for the selected palette.
+         ============================================================ */
+      .ledger {
+        margin-top: 26px;
+        display: grid;
+        gap: 22px;
+        grid-template-columns: 1.2fr 1fr;
+      }
+      @media (max-width: 900px) {
+        .ledger {
+          grid-template-columns: 1fr;
+        }
+      }
+      .lpanel {
+        background: #12161e;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .lpanel h3 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8b95a6;
+        font-weight: 800;
+      }
+      .ltable {
+        display: grid;
+        gap: 0;
+      }
+      .lhead,
+      .lrow2 {
+        display: grid;
+        grid-template-columns: 26px 1.5fr 1.5fr 1fr 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 0;
+        font-size: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .lhead {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #667085;
+        border-bottom-color: rgba(255, 255, 255, 0.14);
+      }
+      .lrow2:last-child {
+        border-bottom: 0;
+      }
+      .lrow2 .chipc {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+      .lrow2 .nm {
+        font-weight: 650;
+        color: #e9edf4;
+      }
+      .lrow2 .role {
+        color: #8b95a6;
+        font-size: 11.5px;
+      }
+      .lrow2 .hexv {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: #b9c2d0;
+      }
+      .lrow2 .cmyk {
+        font-family: ui-monospace, monospace;
+        font-size: 10.5px;
+        color: #8b95a6;
+      }
+      .printnote {
+        margin: 14px 0 0;
+        font-size: 12px;
+        line-height: 1.7;
+        color: #8b95a6;
+      }
+      .printnote b {
+        color: #e9edf4;
+      }
+      @media (max-width: 640px) {
+        .lhead,
+        .lrow2 {
+          grid-template-columns: 26px 1.2fr 1fr;
+        }
+        .lrow2 .role,
+        .lhead span:nth-child(3) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <div class="bar-in">
+        <div class="brandblock">
+          <span class="ksmark" aria-hidden="true">KS</span>
+          <b>Kataria Syntex</b>
+          <span>brand &amp; web kit</span>
+        </div>
+        <nav class="secnav" aria-label="Sections">
+          <a href="#logo">Logo</a>
+          <a href="#palettes">Colour</a>
+          <a href="#cards">Cards</a>
+          <a href="#web">Website</a>
+          <a href="#print">Print</a>
+        </nav>
+        <span class="spacer"></span>
+        <label class="ctl">
+          <span>Logo face</span>
+          <select id="face-select"></select>
+        </label>
+        <div class="seg" role="group" aria-label="Theme">
+          <button type="button" data-theme-btn="light" aria-pressed="true">
+            Light
+          </button>
+          <button type="button" data-theme-btn="dark" aria-pressed="false">
+            Dark
+          </button>
+        </div>
+      </div>
+      <div class="palette-strip" id="palette-strip"></div>
+    </div>
+    <div class="wrap">
+      <header class="intro" id="brief">
+        <h1>Kataria Syntex — brand &amp; web kit</h1>
+        <p class="lede">
+          One page for every open decision: the text-only logo (<strong
+            >KS</strong
+          >
+          + <strong>Kataria Syntex</strong>), a library of colour schemes, the
+          visiting card, and the website rebuild directions. Pick a palette and
+          a logo face in the bar above —
+          <strong>everything below re-renders live</strong>. Light/dark switch
+          checks the dark build. Nothing here is final; it is a picker.
+        </p>
+        <div class="callouts">
+          <div class="callout">
+            <b>Current lock (baseline)</b>
+            The live site runs <code>#0A2540</code> navy,
+            <code>#1E3A8A</code> royal, <code>#7DD3FC</code> sky,
+            <code>#B8D8F5</code> ice (owner-locked, see
+            <code>apps/web/design.md</code>). Every other scheme here is a
+            challenger.
+          </div>
+          <div class="callout">
+            <b>How to read a palette card</b>
+            Ink carries dark surfaces and headings. Primary carries actions and
+            product art. Accent is the single spot on dark — numbers, tags, card
+            back. Print stays to one solid + one spot.
+          </div>
+          <div class="callout">
+            <b>Logo rules</b>
+            Text only — no drawn symbol. The <b>KS</b> monogram is the short
+            mark (favicon, card, avatar); the wordmark is the lockup next to it.
+            Nothing is traced or illustrated.
+          </div>
+          <div class="callout">
+            <b>What happens after you pick</b>
+            Chosen palette &rarr; <code>globals.css</code> tokens + design.md
+            §2.1; chosen lockup &rarr; header, footer, card and favicon. Then
+            the pages get rebuilt in the chosen direction. This page is deleted
+            once decisions are locked.
+          </div>
+        </div>
+      </header>
+      <section class="sec" id="logo">
+        <div class="sechead">
+          <span class="kicker">01 · Identity</span>
+          <h2>Logo workbench — text only</h2>
+          <p>
+            Six candidate faces, five monogram treatments. The bar&rsquo;s
+            <em>Logo face</em> control retypes every wordmark on this page.
+            Judge the face and the lockup first, the colour second — a wordmark
+            has to survive one colour.
+          </p>
+        </div>
+        <div class="logolab">
+          <div class="plate plate-paper">
+            <span class="tag">Wordmark · primary lockup</span>
+            <div class="wm">
+              Kataria Syntex
+              <small>Yarn sourcing · Surat · Est. 2004</small>
+            </div>
+            <span class="tag" id="logo-face-label">Space Grotesk</span>
+          </div>
+          <div class="plate plate-ink">
+            <span class="tag">Wordmark · reversed</span>
+            <div class="wm">Kataria Syntex</div>
+            <span class="tag">Reversed on ink — the card front</span>
+          </div>
+          <div class="plate plate-grid">
+            <span class="tag">Monogram set</span>
+            <div class="lockrow" style="gap: 22px; flex-wrap: wrap">
+              <span class="ks">KS</span>
+              <span class="ks ks-box">KS</span>
+              <span class="ks ks-box ks-ring">KS</span>
+              <span class="ks ks-box ks-ghost">KS</span>
+            </div>
+            <span class="tag">Plain · boxed · ring · ghost</span>
+          </div>
+          <div class="plate plate-accent">
+            <span class="tag">Horizontal lockup</span>
+            <div class="lockrow">
+              <span style="font-size: 34px" class="ks">KS</span>
+              <span class="rule"></span>
+              <span>
+                <span class="lock-word">Kataria Syntex</span>
+                <span class="lock-sub">Cotton · Polyester · Dyed</span>
+              </span>
+            </div>
+            <span class="tag">Mark · rule · wordmark · sub-line</span>
+          </div>
+        </div>
+        <div class="logo-matrix" id="logo-matrix"></div>
+      </section>
+
+      <div class="note" style="margin-top: 26px">
+        <b>Logo review note.</b> The mark is two letters, so legibility at 16px
+        is the whole test — check the boxed KS at favicon size before choosing a
+        serif. A serif wordmark (Fraunces / Instrument) buys an editorial,
+        mill-age character; the grotesques read more modern trading desk. The
+        site&rsquo;s current display face is Space Grotesk.
+      </div>
+      <section class="sec" id="palettes">
+        <div class="sechead">
+          <span class="kicker">02 · Colour</span>
+          <h2>Colour schemes — 20 directions, five families</h2>
+          <p>
+            Every scheme is built from three values: <b>ink</b> (dark surfaces,
+            headings), <b>primary</b> (actions, art field) and <b>accent</b>
+            (the spot on dark). Surfaces, hairlines and muted text are derived
+            from those three — swap them and the whole system re-tints. Ratios
+            are computed live, CMYK is an approximation for the card proof.
+          </p>
+        </div>
+        <div class="detail" id="palette-detail"></div>
+        <div class="pgroups" id="palette-groups"></div>
+      </section>
+      <section class="sec" id="cards">
+        <div class="sechead">
+          <span class="kicker">03 · Print</span>
+          <h2>Visiting card — six builds</h2>
+          <p>
+            Cards are 85 &times; 53.5&nbsp;mm. Front carries the mark, name and
+            role; back carries the contact ledger. All six read the selected
+            palette and logo face, so change either and re-judge. Print rule:
+            one solid + one spot — nothing else goes to press.
+          </p>
+        </div>
+        <div class="cardstudio" id="cardstudio"></div>
+      </section>
+
+      <section class="sec" id="web">
+        <div class="sechead">
+          <span class="kicker">04 · Website</span>
+          <h2>Website directions — 24 languages</h2>
+          <p>
+            The same offer in twenty-four design languages, organised by
+            category. Each is a live miniature of the real page — nav, hero,
+            actions, product data, shade strip — and every one re-tints with the
+            palette you picked. Hover states are real; dark mode is real.
+          </p>
+        </div>
+        <div id="webgrid"></div>
+      </section>
+
+      <section class="sec" id="print">
+        <div class="sechead">
+          <span class="kicker">05 · Spec</span>
+          <h2>Tokens &amp; print ledger</h2>
+          <p>
+            The selected scheme as a token table: what each value does, its hex,
+            and a screen&rarr;print CMYK approximation. Lock the exact recipe
+            with a physical proof before any print run — on screen, hex is
+            exact.
+          </p>
+        </div>
+        <div class="ledger" id="print-ledger"></div>
+      </section>
+
+      <div class="note">
+        <b>How to use this page.</b> Click a palette chip or card to re-tint
+        everything; switch Light/Dark in the bar to check the dark build; change
+        <i>Logo face</i> to retype every wordmark. Colour roles map onto the
+        card in §6 of <code>apps/web/design.md</code>: ink = card front, accent
+        = card back and role line, primary = product art field.<br />
+        <b>After you decide.</b> The chosen palette goes into
+        <code>src/app/globals.css</code> and design.md §2.1; the chosen lockup
+        into header, footer, card and favicon. This page, the three older
+        compare pages, and the unused candidate fonts get deleted.
+      </div>
+    </div>
+    <script>
+      // ------------------------------------------------------------------
+      // Colour maths — every ratio on this page is computed, never typed.
+      // ------------------------------------------------------------------
+      const hexToRgb = (hex) => {
+        const h = hex.replace("#", "");
+        return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+      };
+      const lum = (hex) => {
+        const [r, g, b] = hexToRgb(hex).map((v) => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const ratio = (a, b) => {
+        const l1 = lum(a);
+        const l2 = lum(b);
+        const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1];
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      const mix = (hex, other, amount) => {
+        const a = hexToRgb(hex);
+        const b = hexToRgb(other);
+        return (
+          "#" +
+          a
+            .map((v, i) =>
+              Math.round(v + (b[i] - v) * amount)
+                .toString(16)
+                .padStart(2, "0"),
+            )
+            .join("")
+        );
+      };
+      const cmyk = (hex) => {
+        const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+        const k = 1 - Math.max(r, g, b);
+        const f = (v) => (k >= 1 ? 0 : (1 - v - k) / (1 - k));
+        return [f(r), f(g), f(b), k].map((v) => Math.round(v * 100)).join(" ");
+      };
+      const verdict = (r, big) => {
+        const ok = r >= (big ? 3 : 4.5);
+        return { ok, label: ok ? "AA" : "FAIL", r: r.toFixed(2) + ":1" };
+      };
+
+      // ------------------------------------------------------------------
+      // Candidate logo faces — text only, OFL, already on disk.
+      // ------------------------------------------------------------------
+      const FACES = [
+        {
+          id: "grotesk",
+          name: "Space Grotesk",
+          stack: '"Space Grotesk", ui-sans-serif, system-ui, sans-serif',
+          weight: 700,
+          track: "-0.035em",
+          note: "The site's current display face. Tight, engineered, neutral.",
+        },
+        {
+          id: "geist",
+          name: "Geist",
+          stack: '"Geist", ui-sans-serif, system-ui, sans-serif',
+          weight: 700,
+          track: "-0.03em",
+          note: "Software-grade grotesque. Cleanest at small sizes.",
+        },
+        {
+          id: "bricolage",
+          name: "Bricolage Grotesque",
+          stack: '"Bricolage", ui-sans-serif, system-ui, sans-serif',
+          weight: 700,
+          track: "-0.03em",
+          note: "Characterful grotesque — more personality, still modern.",
+        },
+        {
+          id: "fraunces",
+          name: "Fraunces",
+          stack: '"Fraunces", Georgia, serif',
+          weight: 600,
+          track: "-0.02em",
+          note: "Warm, mill-age serif. Reads dye-house and paper.",
+        },
+        {
+          id: "instrument",
+          name: "Instrument Serif",
+          stack: '"Instrument Serif", Georgia, serif',
+          weight: 400,
+          track: "-0.01em",
+          note: "Editorial high-contrast serif. Elegant, less industrial.",
+        },
+        {
+          id: "mono",
+          name: "JetBrains Mono",
+          stack: '"JetBrains Mono", ui-monospace, monospace',
+          weight: 600,
+          track: "-0.01em",
+          note: "Technical ledger mark. Use only if the site goes spec-sheet.",
+        },
+      ];
+      // ------------------------------------------------------------------
+      // Palette library — the owner-locked incumbent plus challengers.
+      // Groups render in this order; each card carries its own --p-*.
+      // ------------------------------------------------------------------
+      const G_LABEL = {
+        blues: "Blues & indigos",
+        warm: "Warm & earthy",
+        green: "Green & natural",
+        vivid: "Vivid & bold",
+        neutral: "Neutral & print",
+      };
+      const PALETTES = [
+        {
+          id: "navy-sky",
+          g: "blues",
+          name: "Navy & Sky",
+          ink: "#0a2540",
+          pri: "#1e3a8a",
+          acc: "#7dd3fc",
+          note: "The locked incumbent. Navy ink, royal action, sky spot. Prints clean, reads corporate, matches the existing card.",
+        },
+        {
+          id: "harbour",
+          g: "blues",
+          name: "Harbour Deep",
+          ink: "#061a2e",
+          pri: "#0e4a8a",
+          acc: "#8fd0ff",
+          note: "The same water, deeper and calmer. Marginally warmer accent than sky; almost no disruption to the current build.",
+        },
+        {
+          id: "indigo",
+          g: "blues",
+          name: "Indigo Ink",
+          ink: "#101935",
+          pri: "#4338ca",
+          acc: "#a5b4fc",
+          note: "Royal navy shifted toward violet. More contemporary than the incumbent, same trust register, stronger on screen.",
+        },
+        {
+          id: "cobalt",
+          g: "blues",
+          name: "Electric Cobalt",
+          ink: "#050b2e",
+          pri: "#1d4ed8",
+          acc: "#60a5fa",
+          note: "Blue but louder and more saturated. High energy, high visibility, slightly less formal — the digital-first option.",
+        },
+        {
+          id: "ocean",
+          g: "blues",
+          name: "Ocean Steel",
+          ink: "#071c2c",
+          pri: "#0369a1",
+          acc: "#7dd3fc",
+          note: "Deeper and cooler than the incumbent, edging toward cyan. Very stable on screen, quietly technical.",
+        },
+        {
+          id: "marigold",
+          g: "warm",
+          name: "Surat Marigold",
+          ink: "#1c1917",
+          pri: "#b45309",
+          acc: "#fbbf24",
+          note: "Textile-industry warmth. Amber reads Indian mill without going saffron. Strong front of card, warm site chrome.",
+        },
+        {
+          id: "terracotta",
+          g: "warm",
+          name: "Clay Terracotta",
+          ink: "#241611",
+          pri: "#c2410c",
+          acc: "#fdba74",
+          note: "Earthy, handmade, tactile. Pairs naturally with the wound-yarn texture direction on the shade card.",
+        },
+        {
+          id: "copper",
+          g: "warm",
+          name: "Slate & Copper",
+          ink: "#0f172a",
+          pri: "#9a3412",
+          acc: "#fdba74",
+          note: "Slate ink under a copper action. Industrial and warm at once — the most mature of the warm set.",
+        },
+        {
+          id: "madder",
+          g: "warm",
+          name: "Madder Thread",
+          ink: "#24120c",
+          pri: "#a8331f",
+          acc: "#d8a03a",
+          note: "Madder root is one of the oldest textile dyes in Gujarat. The sharpest break from the category — every competitor is blue.",
+        },
+        {
+          id: "sandstone",
+          g: "warm",
+          name: "Sandstone Ledger",
+          ink: "#211a12",
+          pri: "#8a6a2f",
+          acc: "#e6c877",
+          note: "Ink-brown with old-gold. Reads archival, like a ledger of lots — quiet and expensive, never flashy.",
+        },
+        {
+          id: "forest",
+          g: "green",
+          name: "Forest Loom",
+          ink: "#0b1f17",
+          pri: "#15803d",
+          acc: "#86efac",
+          note: "Green reads natural fibre and sustainability — the safest possible signal for EU export buyers.",
+        },
+        {
+          id: "teal",
+          g: "green",
+          name: "Deep Teal",
+          ink: "#062b2e",
+          pri: "#0f766e",
+          acc: "#5eead4",
+          note: "Cool, clean, slightly technical. Differentiates hard from every other yarn dealer without leaving the cool family.",
+        },
+        {
+          id: "olive",
+          g: "green",
+          name: "Olive Mill",
+          ink: "#171a0f",
+          pri: "#4d7c0f",
+          acc: "#bef264",
+          note: "Mossy and industrial. The lime spot is loud, but the ink is quiet enough to hold it — a young, mill-floor palette.",
+        },
+        {
+          id: "crimson",
+          g: "vivid",
+          name: "Crimson Thread",
+          ink: "#2a0a12",
+          pri: "#9f1239",
+          acc: "#fda4af",
+          note: "Dyed-yarn confidence. The rose accent keeps it from going aggressive; heavy and memorable in print.",
+        },
+        {
+          id: "violet",
+          g: "vivid",
+          name: "Royal Violet",
+          ink: "#1a1033",
+          pri: "#6d28d9",
+          acc: "#c4b5fd",
+          note: "Bold and modern, reads more software than textile. Sharpest pick if the goal is to look new rather than traditional.",
+        },
+        {
+          id: "plum",
+          g: "vivid",
+          name: "Plum Press",
+          ink: "#1f0a1c",
+          pri: "#86198f",
+          acc: "#f0abfc",
+          note: "Deep magenta-plum with a candy spot. Fashion-adjacent — strong for garment and hosiery buyers, riskier for trading desks.",
+        },
+        {
+          id: "signal",
+          g: "vivid",
+          name: "Signal Amber",
+          ink: "#141719",
+          pri: "#9e5508",
+          acc: "#f2b33d",
+          note: "Safety-amber is the colour of dye-house signage and machinery. Reads engineered and exact, never decorative.",
+        },
+        {
+          id: "carbon",
+          g: "neutral",
+          name: "Carbon Mono",
+          ink: "#0a0a0a",
+          pri: "#262626",
+          acc: "#a3a3a3",
+          note: "Fully neutral. The logo becomes the only colour in the system — maximum print flexibility, zero personality risk.",
+        },
+        {
+          id: "lime",
+          g: "neutral",
+          name: "Graphite & Lime",
+          ink: "#101315",
+          pri: "#365314",
+          acc: "#a3e635",
+          note: "Graphite chrome with a single acid-lime signal. Contemporary and technical — the accent is used as pure signal.",
+        },
+        {
+          id: "slate",
+          g: "neutral",
+          name: "Restrained Slate",
+          ink: "#14110d",
+          pri: "#3f3f46",
+          acc: "#d4d4d8",
+          note: "Almost no colour — one grey action and a silver spot. The logo and the shades carry everything. Safest for print.",
+        },
+      ];
+      // ------------------------------------------------------------------
+      // DOM handles
+      // ------------------------------------------------------------------
+      const root = document.documentElement;
+      const strip = document.getElementById("palette-strip");
+      const groupsEl = document.getElementById("palette-groups");
+      const detailEl = document.getElementById("palette-detail");
+      const ledgerEl = document.getElementById("print-ledger");
+      const matrixEl = document.getElementById("logo-matrix");
+      const faceSelect = document.getElementById("face-select");
+      const faceLabel = document.getElementById("logo-face-label");
+      const cardsEl = document.getElementById("cardstudio");
+      const webEl = document.getElementById("webgrid");
+
+      const SHADES = [
+        "#FFA500",
+        "#FFD700",
+        "#4DD0E1",
+        "#00838F",
+        "#7B1F3A",
+        "#43A047",
+        "#E91E63",
+        "#3949AB",
+      ];
+
+      let currentFace = FACES[0];
+      let currentPalette = PALETTES[0];
+
+      // ------------------------------------------------------------------
+      // Logo workbench
+      // ------------------------------------------------------------------
+      function faceStyle(f) {
+        return `font-family:${f.stack};font-weight:${f.weight};letter-spacing:${f.track}`;
+      }
+
+      function renderLogoMatrix() {
+        matrixEl.innerHTML = FACES.map((f) => {
+          const on = f.id === currentFace.id;
+          return `<div class="facecard"${
+            on ? ' style="border-color:#f2f5fa"' : ""
+          }>
+            <div class="fstage">
+              <span class="fname" style="${faceStyle(f)}">Kataria Syntex</span>
+              <span style="display:flex;align-items:center;gap:14px">
+                <span style="${faceStyle(f)};font-size:34px;line-height:1">KS</span>
+                <span style="font-size:10.5px;color:#8b95a6;line-height:1.45">${f.note}</span>
+              </span>
+            </div>
+            <div class="fstage rev">
+              <span class="fname" style="${faceStyle(f)}">Kataria Syntex</span>
+              <span style="display:flex;align-items:center;gap:14px">
+                <span style="${faceStyle(f)};font-size:24px;line-height:1;color:var(--acc)">KS</span>
+                <span style="font-size:10px;letter-spacing:.28em;text-transform:uppercase;opacity:.7">Yarn sourcing · Surat</span>
+              </span>
+            </div>
+            <div class="fspec">
+              <b>${f.name}</b>
+              <span>${on ? "selected" : "click to select"}</span>
+            </div>
+          </div>`;
+        }).join("");
+        matrixEl.querySelectorAll(".facecard").forEach((el, i) => {
+          el.style.cursor = "pointer";
+          el.addEventListener("click", () => applyFace(FACES[i]));
+        });
+      }
+
+      function applyFace(f) {
+        currentFace = f;
+        root.style.setProperty("--logo-display", f.stack);
+        root.style.setProperty("--logo-weight", f.weight);
+        root.style.setProperty("--logo-track", f.track);
+        faceLabel.textContent = f.name;
+        faceSelect.value = f.id;
+        renderLogoMatrix();
+        renderCards();
+      }
+
+      faceSelect.innerHTML = FACES.map(
+        (f) => `<option value="${f.id}">${f.name}</option>`,
+      ).join("");
+      faceSelect.addEventListener("change", () => {
+        const f = FACES.find((x) => x.id === faceSelect.value);
+        if (f) applyFace(f);
+      });
+      // ------------------------------------------------------------------
+      // Palette strip + library
+      // ------------------------------------------------------------------
+      function stripChip(p) {
+        return `<button type="button" class="chip" data-palette="${p.id}" aria-pressed="false">
+          <i style="background:${p.pri}"></i><i class="dot2" style="background:${p.acc}"></i>${p.name}
+        </button>`;
+      }
+
+      function renderStrip() {
+        const order = ["blues", "warm", "green", "vivid", "neutral"];
+        strip.innerHTML = order
+          .map(
+            (g) =>
+              `<span class="glabel">${G_LABEL[g]}</span>` +
+              PALETTES.filter((p) => p.g === g)
+                .map(stripChip)
+                .join(""),
+          )
+          .join("");
+      }
+
+      function paletteCard(p) {
+        return `<button type="button" class="pcard ptheme" data-palette="${p.id}" aria-pressed="false"
+          style="--p-ink:${p.ink};--p-pri:${p.pri};--p-acc:${p.acc}">
+          <span class="prev">
+            <span class="prev-nav">
+              <span class="prev-brand">Kataria Syntex</span>
+              <span class="prev-pill">Enquire</span>
+            </span>
+            <span class="prev-h">The right yarn, <em>straight answers</em>.</span>
+            <span class="prev-btns"><span class="a">Request a quote</span><span class="b">Shade card</span></span>
+            <span class="prev-strip">
+              <i style="background:${p.ink}"></i>
+              <i style="background:${p.pri}"></i>
+              <i style="background:${p.acc}"></i>
+              <i style="background:${mix(p.pri, "#ffffff", 0.86)}"></i>
+            </span>
+          </span>
+          <span class="pmeta">
+            <span class="ptop"><b>${p.name}</b><span class="phex">${p.ink} · ${p.pri} · ${p.acc}</span></span>
+            <span class="pnote">${p.note}</span>
+          </span>
+        </button>`;
+      }
+
+      function renderGroups() {
+        const order = ["blues", "warm", "green", "vivid", "neutral"];
+        groupsEl.innerHTML = order
+          .map(
+            (g) =>
+              `<div class="pgroup"><h3>${G_LABEL[g]}</h3><div class="pcards">` +
+              PALETTES.filter((p) => p.g === g)
+                .map(paletteCard)
+                .join("") +
+              `</div></div>`,
+          )
+          .join("");
+      }
+
+      function renderDetail(p) {
+        const surf = mix(p.pri, "#ffffff", 0.94);
+        const dark = mix(p.ink, "#000000", 0.2);
+        const muted = mix(p.ink, "#ffffff", 0.32);
+        const rows = [
+          ["Headings on page", p.ink, surf, "body"],
+          ["Body copy on page", muted, surf, "body"],
+          ["Body copy on card", muted, "#ffffff", "body"],
+          ["White on primary", "#ffffff", p.pri, "body"],
+          ["Accent on ink", p.acc, dark, "big"],
+          ["Accent body on ink", mix(p.acc, "#ffffff", 0.48), dark, "body"],
+          ["Hairline vs surface", mix(p.ink, surf, 0.86), surf, "decor"],
+        ];
+        const worst = rows
+          .filter((r) => r[3] === "body")
+          .map((r) => ratio(r[1], r[2]))
+          .reduce((a, b) => Math.min(a, b), 99);
+        const ramp = [
+          p.ink,
+          mix(p.ink, p.pri, 0.34),
+          mix(p.ink, p.pri, 0.67),
+          p.pri,
+          mix(p.pri, p.acc, 0.5),
+          p.acc,
+        ];
+        const sw = (name, hex, ink) =>
+          `<div class="sw" style="background:${hex};color:${ink}">
+            <b>${name}</b>
+            <div><code style="display:block">${hex.toUpperCase()}</code><span>CMYK ${cmyk(hex)}</span></div>
+          </div>`;
+
+        detailEl.innerHTML = `
+          <div>
+            <h3>${p.name}</h3>
+            <p class="sub"><em>${G_LABEL[p.g]}</em> — ${p.note}</p>
+            <div class="swatchrow">
+              ${sw("Ink", p.ink, "#fff")}
+              ${sw("Primary", p.pri, "#fff")}
+              ${sw("Accent", p.acc, "#0d1016")}
+            </div>
+            <div class="roles">
+              <b>Ink</b> — headings, dark bands, card front.
+              <b>Primary</b> — buttons, links, kickers, product art field.
+              <b>Accent</b> — numbers, tags, buttons on dark, card back.
+            </div>
+          </div>
+          <div>
+            <h3>Contrast check</h3>
+            <p class="sub">WCAG 2.1 — body 4.5:1, large text and UI edges 3:1. ${
+              worst >= 4.5
+                ? "All body pairs clear AA."
+                : "One body pair is under 4.5:1 — nudge the accent or the ink before locking."
+            }</p>
+            <div class="contrast">
+              ${rows
+                .map(([label, fg, bg, mode]) => {
+                  const r = ratio(fg, bg);
+                  const v = verdict(r, mode === "big");
+                  const score =
+                    mode === "decor"
+                      ? `<span class="ratio" style="color: #667085">${v.r}</span>
+                        <span class="tag">decor</span>`
+                      : `<span class="ratio ${v.ok ? "pass" : "fail"}">${v.r}</span>
+                        <span class="tag">${v.label}</span>`;
+                  return `<div class="crow">
+                    <span class="pair"><i style="background:${bg}"></i>
+                    <i style="background:${fg}"></i>${label}</span>
+                    <span>${score}</span>
+                  </div>`;
+                })
+                .join("")}
+            </div>
+          </div>
+          <div>
+            <h3>Live slice</h3>
+            <p class="sub">The palette doing actual work — nav, hero, actions, shade strip.</p>
+            <div class="mini ptheme" style="--p-ink:${p.ink};--p-pri:${p.pri};--p-acc:${p.acc}">
+              <div class="mini-nav">
+                <span class="mini-brand">Kataria Syntex</span>
+                <span class="mini-pill">Enquire</span>
+              </div>
+              <div class="mini-hero">
+                <h4>The right yarn, with a straight answer.</h4>
+                <p>Cotton, polyester and dyed yarn for weaving units, exporters and garment teams.</p>
+                <div class="mini-row">
+                  <span class="mini-btn">Request a quote</span>
+                  <span class="mini-ghost">Shade card</span>
+                </div>
+              </div>
+              <div class="mini-swatches">
+                ${SHADES.slice(0, 6)
+                  .map((h) => `<i style="background:${h}"></i>`)
+                  .join("")}
+              </div>
+            </div>
+            <div class="ramp">
+              ${ramp.map((h) => `<i style="background:${h}"></i>`).join("")}
+            </div>
+            <div class="rampcap"><span>${ramp[0].toUpperCase()}</span><span>ramp</span><span>${ramp[5].toUpperCase()}</span></div>
+            <div class="printrow">
+              <div class="prow"><i style="background:${p.ink}"></i>Ink<span>${cmyk(p.ink)}</span></div>
+              <div class="prow"><i style="background:${p.pri}"></i>Primary<span>${cmyk(p.pri)}</span></div>
+              <div class="prow"><i style="background:${p.acc}"></i>Accent<span>${cmyk(p.acc)}</span></div>
+            </div>
+          </div>`;
+      }
+      // ------------------------------------------------------------------
+      // Apply palette + print ledger
+      // ------------------------------------------------------------------
+      function renderLedger(p) {
+        const rows = [
+          ["Ink", "Headings, dark bands, card front", p.ink],
+          ["Primary", "Buttons, links, kickers, art field", p.pri],
+          ["Accent", "Numbers, tags, buttons on dark", p.acc],
+          ["Surface", "Cards, panels, inputs", mix(p.pri, "#ffffff", 0.94)],
+          [
+            "Surface alt",
+            "Recessed bands, art plates",
+            mix(p.pri, "#ffffff", 0.87),
+          ],
+          ["Muted", "Body copy on light", mix(p.ink, "#ffffff", 0.6)],
+          [
+            "Dark solid",
+            "Footer, card front (deepened ink)",
+            mix(p.ink, "#000000", 0.2),
+          ],
+        ];
+        ledgerEl.innerHTML = `
+          <div class="lpanel">
+            <h3>Token ledger — ${p.name}</h3>
+            <div class="ltable">
+              <div class="lhead"><span></span><span>Token</span><span>Role</span><span>Hex</span><span>CMYK</span></div>
+              ${rows
+                .map(
+                  ([nm, role, hex]) => `<div class="lrow2">
+                    <span class="chipc" style="background:${hex}"></span>
+                    <span class="nm">${nm}</span>
+                    <span class="role">${role}</span>
+                    <span class="hexv">${hex.toUpperCase()}</span>
+                    <span class="cmyk">${cmyk(hex)}</span>
+                  </div>`,
+                )
+                .join("")}
+            </div>
+          </div>
+          <div class="lpanel">
+            <h3>Print recipe — visiting card</h3>
+            <div class="printnote" style="margin-top: 0">
+              <b>Front.</b> Dark solid = ink deepened (<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px">${mix(p.ink, "#000000", 0.2).toUpperCase()}</code>), name white, role + logo spot in accent.<br />
+              <b>Back.</b> Accent tint field, ink mono text.<br />
+              <b>Approx CMYK.</b> Ink ${cmyk(p.ink)} · Primary ${cmyk(p.pri)} · Accent ${cmyk(p.acc)}.<br />
+              <b>Rule.</b> One solid + one spot. Never more than two inks on the physical card. These numbers are screen conversions — <b>lock the recipe with a physical proof before any print run</b>. On screen, hex is exact.
+            </div>
+            <div class="ramp" style="margin-top: 16px">
+              ${[p.ink, p.pri, p.acc]
+                .map((h) => `<i style="background:${h}"></i>`)
+                .join("")}
+            </div>
+            <div class="rampcap"><span>solid</span><span>action</span><span>spot</span></div>
+          </div>`;
+      }
+
+      function applyPalette(p) {
+        currentPalette = p;
+        root.style.setProperty("--p-ink", p.ink);
+        root.style.setProperty("--p-pri", p.pri);
+        root.style.setProperty("--p-acc", p.acc);
+        document.querySelectorAll("[data-palette]").forEach((el) => {
+          el.setAttribute("aria-pressed", String(el.dataset.palette === p.id));
+        });
+        renderDetail(p);
+        renderLedger(p);
+      }
+
+      strip.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-palette]");
+        if (!btn) return;
+        const p = PALETTES.find((x) => x.id === btn.dataset.palette);
+        if (p) applyPalette(p);
+      });
+      groupsEl.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-palette]");
+        if (!btn) return;
+        const p = PALETTES.find((x) => x.id === btn.dataset.palette);
+        if (p) {
+          applyPalette(p);
+          document.getElementById("palettes").scrollIntoView();
+        }
+      });
+      // ------------------------------------------------------------------
+      // Card studio — six front/back builds. Real copy, real sizes.
+      // ------------------------------------------------------------------
+      const LEDGER = `<div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
+        <div class="bk-line" style="opacity: 0.68">Surat, Gujarat, India</div>`;
+
+      const CARDS = [
+        {
+          name: "Classic Navy",
+          desc: "The incumbent treatment — solid front, accent back, mono ledger.",
+          front: `<div class="bk bk-front">
+            <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip">Est. 2004</span></div>
+            <div><div class="bk-word">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 6px">Yarn sourcing · Surat</div></div>
+            <div class="bk-rule"></div>
+          </div>`,
+          back: `<div class="bk bk-back">
+            <div class="bk-top"><span class="bk-word" style="font-size: 11px">Kataria Syntex</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
+            ${LEDGER}
+          </div>`,
+        },
+        {
+          name: "Split Diagonal",
+          desc: "Dark mark panel cut on a diagonal; wordmark holds the paper side.",
+          front: `<div class="bk bk-split">
+            <div class="bk-top" style="position: absolute; left: 16px; top: 15px"><span class="bk-mono">KS</span></div>
+            <div style="padding-left: 46%"><div class="bk-word">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 5px">Yarn sourcing</div></div>
+            <div class="bk-line" style="padding-left: 46%; opacity: 0.75">+91 93758 30760</div>
+          </div>`,
+          back: `<div class="bk bk-back">
+            <div class="bk-top"><span class="bk-chip">Back · ledger</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
+            ${LEDGER}
+          </div>`,
+        },
+        {
+          name: "Accent Band",
+          desc: "Accent band carries the mark; the solid carries the name.",
+          front: `<div class="bk bk-band">
+            <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip" style="opacity: 0.85">Est. 2004</span></div>
+            <div><div class="bk-word">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 6px">Cotton · Polyester · Dyed</div></div>
+            <div class="bk-line" style="opacity: 0.78">+91 93758 30760</div>
+          </div>`,
+          back: `<div class="bk bk-paper">
+            <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">Back · paper</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
+            <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
+            <div class="bk-role">Surat · Gujarat · India</div>
+          </div>`,
+        },
+        {
+          name: "Editorial Block",
+          desc: "Paper front, one accent block behind the big wordmark.",
+          front: `<div class="bk bk-big">
+            <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">Est. 2004</span><span class="bk-mono">KS</span></div>
+            <div><div class="bk-word">Kataria Syntex</div></div>
+            <div class="bk-line">Yarn, sourced straight from Surat.</div>
+          </div>`,
+          back: `<div class="bk bk-front">
+            <div class="bk-top"><span class="bk-chip">Back</span></div>
+            <div style="text-align: center"><span class="bk-mono" style="font-size: 54px">KS</span></div>
+            <div class="bk-line" style="text-align: center; opacity: 0.8">katariasyntex@gmail.com<br />+91 93758 30760</div>
+          </div>`,
+        },
+        {
+          name: "Mono Ledger",
+          desc: "Everything mono — the trading-desk card, no decoration.",
+          front: `<div class="bk bk-monoall">
+            <div class="bk-top"><span class="bk-word">Kataria Syntex</span><span class="bk-mono">KS</span></div>
+            <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
+            <div class="bk-role">Yarn sourcing · Surat</div>
+          </div>`,
+          back: `<div class="bk bk-paper">
+            <div class="bk-top"><span class="bk-word" style="font-size: 11px">Kataria Syntex</span><span class="bk-chip" style="opacity: 0.55">Back</span></div>
+            <div class="bk-line">Cotton · Polyester · Dyed yarn<br />Domestic & export supply<br />Est. 2004 · Surat, Gujarat, India</div>
+            <div class="bk-mono" style="font-size: 15px">KS</div>
+          </div>`,
+        },
+        {
+          name: "Paper Front",
+          desc: "Light card for pen notes — mark, wordmark, rule, nothing else.",
+          front: `<div class="bk bk-paper">
+            <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip" style="opacity: 0.55">Surat · IN</span></div>
+            <div><div class="bk-word">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 5px">Yarn sourcing · Est. 2004</div></div>
+            <div class="bk-rule"></div>
+          </div>`,
+          back: `<div class="bk bk-monoall">
+            <div class="bk-top"><span class="bk-chip" style="color: var(--acc)">Back · solid</span></div>
+            <div style="text-align: center"><span class="bk-mono" style="font-size: 46px">KS</span>
+            <div class="bk-word" style="font-size: 11px; margin-top: 6px">Kataria Syntex</div></div>
+            <div class="bk-line" style="text-align: center; opacity: 0.78">katariasyntex.workers.dev</div>
+          </div>`,
+        },
+      ];
+
+      function renderCards() {
+        cardsEl.innerHTML =
+          `<div class="cgroup"><h3>Front &amp; back — six builds</h3><div class="cpair">` +
+          CARDS.map(
+            (c) => `<figure class="cardfig">
+              <div class="pair-row">
+                <div style="display: grid; gap: 6px; flex: 1 1 240px">
+                  <span style="font-family: ui-monospace, monospace; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #667085">Front</span>
+                  ${c.front}
+                </div>
+                <div style="display: grid; gap: 6px; flex: 1 1 240px">
+                  <span style="font-family: ui-monospace, monospace; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #667085">Back</span>
+                  ${c.back}
+                </div>
+              </div>
+              <figcaption><b>${c.name}</b><span>${c.desc}</span></figcaption>
+            </figure>`,
+          ).join("") +
+          `</div></div>`;
+      }
+      // ------------------------------------------------------------------
+      // Website directions — 24 languages, grouped by category.
+      // Each body is a miniature built from the shared primitives.
+      // ------------------------------------------------------------------
+      const CAT_LABEL = {
+        corporate: "Corporate & calm",
+        editorial: "Editorial & print",
+        industrial: "Industrial & technical",
+        premium: "Dark & premium",
+        bold: "Bold & expressive",
+        product: "Product-led",
+      };
+      const NAV = (btn) =>
+        `<div class="m-nav">
+          <div class="m-brand">Kataria Syntex</div>
+          <div class="m-links"><span>Products</span><span>Shades</span><span>About</span><span>Contact</span></div>
+          ${btn || '<span class="m-btn pri">Enquire</span>'}
+        </div>`;
+
+      const DESIGNS = [
+        {
+          cat: "corporate",
+          name: "Blueprint",
+          desc: "What ships today — aurora wash, blueprint grid, frosted panel, soft blue cards. Safe, calm, corporate-clean.",
+          body: `${NAV()}
+            <div class="bp-body">
+              <div class="bp-copy">
+                <span class="m-kicker">B2B yarn sourcing · Surat</span>
+                <h3 class="m-h">Yarn supply that behaves like a system.</h3>
+                <p class="m-p">Cotton, polyester and dyed yarn for weaving, knitting and export buyers. One point of contact, enquiry to dispatch.</p>
+                <div class="m-acts"><span class="m-btn pri">Request a quote</span><span class="m-btn gh">Browse shades</span></div>
+              </div>
+              <div class="bp-panel">
+                <div class="m-art" style="height: 7cqw"></div>
+                <div class="m-mono" style="font-size: 1.1cqw; color: var(--muted)">RAJ · 30s COMBED COTTON</div>
+                <div class="bp-stats">
+                  <div class="bp-stat"><b>22+</b><span>years</span></div>
+                  <div class="bp-stat"><b>20+</b><span>countries</span></div>
+                </div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "corporate",
+          name: "Soft Glass",
+          desc: "Frosted panels over a soft gradient mesh. The Apple/macOS register — calm, expensive, slightly generic.",
+          body: `${NAV()}
+            <div class="gl-body">
+              <div class="gl-panel">
+                <span class="m-kicker">B2B yarn sourcing · Surat</span>
+                <h3 class="m-h" style="font-size: 4.8cqw; margin: 1.2cqw 0">Yarn supply that behaves like a system.</h3>
+                <p class="m-p">One point of contact, enquiry to dispatch.</p>
+                <div class="m-acts" style="margin-top: 1.6cqw"><span class="m-btn pri">Request a quote</span><span class="m-btn gh">Browse shades</span></div>
+              </div>
+              <div class="gl-tiles">
+                <div class="gl-tile"><b>22+</b><span>years</span></div>
+                <div class="gl-tile"><b>20+</b><span>countries</span></div>
+                <div class="gl-tile"><b>06+</b><span>states</span></div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "corporate",
+          name: "Soft Neumorph",
+          desc: "Extruded surfaces, no borders. Tactile and soft — but low contrast, so accessibility needs care.",
+          body: `${NAV('<span class="nm-btn">Enquire</span>')}
+            <div class="nm">
+              <div class="nm-slab">
+                <span class="m-kicker">B2B yarn sourcing · Surat</span>
+                <h3 class="m-h" style="margin: 1.1cqw 0">Yarn supply that behaves like a system.</h3>
+                <p class="m-p">One point of contact, enquiry to dispatch.</p>
+              </div>
+              <div class="nm-strip">
+                <div><b>22+</b><span style="font-size: 1cqw; color: var(--muted)">years</span></div>
+                <div><b>20+</b><span style="font-size: 1cqw; color: var(--muted)">countries</span></div>
+                <div><b>01</b><span style="font-size: 1cqw; color: var(--muted)">contact</span></div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "corporate",
+          name: "Restrained Mono",
+          desc: "Almost no colour — one accent underline and a hairline. Lets the logo carry the brand. Safest for print.",
+          body: `${NAV()}
+            <div class="mo">
+              <h3 class="mo-h">Yarn supply, <u>stated plainly</u>.</h3>
+              <div class="mo-rule"></div>
+              <div class="mo-list">
+                <div class="mo-li"><span class="k">Cotton</span><span class="v">30s combed</span></div>
+                <div class="mo-li"><span class="k">Polyester</span><span class="v">150D textured</span></div>
+                <div class="mo-li"><span class="k">Dyed</span><span class="v">RAJ shade card</span></div>
+                <div class="mo-li"><span class="k">Markets</span><span class="v">20+ countries</span></div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "editorial",
+          name: "Swiss Ledger",
+          desc: "Zero radius, hard rules, tabular rows, mono numerals. Reads as a trading desk — credible and unfussy.",
+          body: `<div class="sw-top">${NAV()}</div>
+            <div class="sw-lede">
+              <h3 class="m-h">Yarn, priced<br />and documented.</h3>
+              <div style="display: grid; gap: 1.2cqw; align-content: end">
+                <p class="m-p">A wholesale yarn desk in Surat. Counts, colours, quantities and dispatch — stated plainly, in writing.</p>
+                <div class="sw-num" style="color: var(--pri)">01 — 04 / QUOTE PROCESS</div>
+              </div>
+            </div>
+            <div class="sw-rows">
+              <div class="sw-row"><span class="sw-num">01</span><b>Cotton</b><span class="sw-accent">30s combed</span><span class="r">Surat</span></div>
+              <div class="sw-row"><span class="sw-num">02</span><b>Polyester</b><span>150D textured</span><span class="r">Pan-India</span></div>
+              <div class="sw-row"><span class="sw-num">03</span><b>Dyed</b><span>RAJ shade card</span><span class="r">Export</span></div>
+            </div>`,
+        },
+        {
+          cat: "editorial",
+          name: "Paper & Ink",
+          desc: "Warm paper, heavy display type, one flat accent block behind the headline. Print-shop feel, still modern.",
+          body: `${NAV()}
+            <div class="pp-body">
+              <div class="pp-h"><h3 class="m-h">Yarn you can<br />reorder blind.</h3></div>
+              <div class="pp-cols">
+                <div style="display: grid; gap: 1.3cqw">
+                  <p class="m-p">A wholesale yarn desk in Surat. Cotton, polyester and dyed yarn for weaving, knitting and export buyers.</p>
+                  <div class="m-acts"><span class="m-btn pri">Request a quote</span><span class="m-btn gh">Browse shades</span></div>
+                </div>
+                <div style="display: grid; gap: 0.7cqw; align-content: start">
+                  <div class="pp-tag">EST. 2004 — SURAT, GUJARAT</div>
+                  <div class="pp-tag">20+ EXPORT COUNTRIES</div>
+                  <div class="pp-tag">01 POINT OF CONTACT</div>
+                </div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "editorial",
+          name: "Risograph Zine",
+          desc: "Two-colour overprint with offset type and halftone dots. Culturally sharp, very memorable — not for everyone.",
+          body: `<div class="zn">
+            <div class="m-nav" style="padding: 0 0 1.6cqw">
+              <div class="m-brand">Kataria Syntex</div>
+              <span class="m-btn pri" style="border: 1.5px solid var(--ink); background: var(--acc); color: var(--ink)">ENQUIRE</span>
+            </div>
+            <div style="position: relative">
+              <div class="zn-off">YARN</div>
+              <div class="zn-h">YARN<br /><em>FROM SURAT.</em></div>
+            </div>
+            <div class="zn-grid">
+              <div class="zn-cell"><b>Cotton</b><span>30s combed, repeatable lots</span></div>
+              <div class="zn-cell acc"><b>Polyester</b><span>150D textured, export-ready</span></div>
+              <div class="zn-cell"><b>Dyed</b><span>RAJ card, shade-matched</span></div>
+            </div>
+          </div>`,
+        },
+        {
+          cat: "editorial",
+          name: "Neo-Grid Editorial",
+          desc: "Visible column grid, a highlighted phrase, one flat accent block. Modern editorial — structured without being stiff.",
+          body: `${NAV()}
+            <div class="ng">
+              <div class="ng-acc"></div>
+              <h3 class="ng-h">Yarn supply<br /><span class="mark">that behaves</span><br />like a system.</h3>
+              <div class="ng-cols">
+                <div class="ng-col"><b>Cotton</b><span>30s–60s combed, lot-consistent</span></div>
+                <div class="ng-col"><b>Polyester</b><span>75D–300D textured and filament</span></div>
+                <div class="ng-col"><b>Dyed</b><span>RAJ shade card, matched</span></div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "editorial",
+          name: "Editorial Magazine",
+          desc: "Serif masthead, drop cap, three columns, pull quote. The annual-report register — slow, written, authoritative.",
+          body: `${NAV('<span class="m-btn pri">Subscribe</span>')}
+            <div class="mg">
+              <div class="mg-top"><span>Kataria Syntex · The Yarn Review</span><span>Issue 22 · Surat</span></div>
+              <h3 class="mg-h">The mill <em>behind</em> the fabric.</h3>
+              <div class="mg-cols">
+                <p class="mg-drop">Cotton, polyester and dyed yarn leave this desk for weaving units, knitting floors and export buyers in more than twenty countries. The work is unglamorous: counts, lots, dispatch dates.</p>
+                <p>What buyers get is a straight answer — availability, application and commercial fit, written down, before anything ships. No catalog theatre.</p>
+              </div>
+              <div class="mg-pull"><span class="accentbar m-btn">22+ years</span><span>“Quoted on your requirement, not a price list.”</span></div>
+            </div>`,
+        },
+        {
+          cat: "industrial",
+          name: "Spec Sheet",
+          desc: "Everything mono, dotted leaders, table logic. Speaks to procurement and trading desks in their own language.",
+          body: `<div class="m-nav">
+              <div class="m-brand">KATARIA_SYNTEX</div>
+              <div class="m-links"><span>products</span><span>shades</span><span>contact</span></div>
+              <span class="m-btn pri">enquire()</span>
+            </div>
+            <div class="sc">
+              <div class="sc-head"><span>YARN_SUPPLY_SPEC v1.0</span><span>SURAT · IN · 21.17N 72.83E</span></div>
+              <div style="margin: 1.6cqw 0 1cqw"><h3 class="m-h">Yarn supply, documented.</h3></div>
+              <div class="sc-line"><span>cotton</span><span class="fill"></span><b>30s combed</b></div>
+              <div class="sc-line"><span>polyester</span><span class="fill"></span><b>150D textured</b></div>
+              <div class="sc-line"><span>dyed</span><span class="fill"></span><b>RAJ shade card</b></div>
+              <div class="sc-line"><span>markets</span><span class="fill"></span><b>20+ countries</b></div>
+              <div class="sc-box">&gt; send requirement → shortlist → confirm → dispatch</div>
+            </div>`,
+        },
+        {
+          cat: "industrial",
+          name: "Supply Ops",
+          desc: "KPI tiles and a chart strip. Feels like operations software — strong if you sell reliability, weak on warmth.",
+          body: `${NAV('<span class="m-btn acc">Enquire</span>')}
+            <div class="op">
+              <div class="op-kpis">
+                <div class="op-kpi"><span>Years</span><b>22+</b><i>steady</i></div>
+                <div class="op-kpi"><span>Countries</span><b>20+</b><i>growing</i></div>
+                <div class="op-kpi"><span>States</span><b>06+</b><i>active</i></div>
+                <div class="op-kpi"><span>Contacts</span><b>01</b><i>— you</i></div>
+              </div>
+              <div class="op-chart">
+                <i style="height: 38%"></i><i style="height: 52%"></i><i style="height: 44%"></i>
+                <i style="height: 66%"></i><i style="height: 58%"></i><i style="height: 78%"></i>
+                <i style="height: 71%"></i><i style="height: 92%"></i><i style="height: 84%"></i>
+                <i style="height: 100%"></i>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "industrial",
+          name: "Process Rail",
+          desc: "Numbered rail with the quote process written down. The most literal expression of “one point of contact”.",
+          body: `${NAV()}
+            <div class="rl">
+              <h3 class="rl-h">Enquiry to dispatch, in three moves.</h3>
+              <p class="rl-source">Send counts, quantity and destination — we shortlist on fit, not on a price list.</p>
+              <div class="rl-steps">
+                <div class="rl-step"><b>Share the requirement</b><em>01</em><span>Yarn type, quantity, end use, destination — form or WhatsApp.</span></div>
+                <div class="rl-step"><b>Shortlist the option</b><em>02</em><span>Availability, application and commercial fit, written back to you.</span></div>
+                <div class="rl-step"><b>Confirm and dispatch</b><em>03</em><span>Supply and delivery coordinated with clear communication.</span></div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "premium",
+          name: "Midnight Mill",
+          desc: "Dark-first. Ink field, glowing accent, product rows as illuminated cards. Premium and modern — prints heavy.",
+          body: `${NAV('<span class="m-btn acc">Request a quote</span>')}
+            <div class="md-body">
+              <div style="display: grid; gap: 1.5cqw; align-content: start">
+                <span class="m-kicker md-glow">Sourcing desk · Surat</span>
+                <h3 class="m-h">Yarn supply,<br /><span class="md-glow">quietly reliable.</span></h3>
+                <p class="m-p">We shortlist on availability, application and commercial fit — not a generic price list.</p>
+              </div>
+              <div class="md-cards">
+                <div class="md-card"><span class="md-dot"></span><span><b>Cotton · 30s combed</b><span>Lot-consistent, repeatable</span></span></div>
+                <div class="md-card"><span class="md-dot"></span><span><b>Polyester · 150D</b><span>Textured, export-ready</span></span></div>
+                <div class="md-card"><span class="md-dot"></span><span><b>Dyed · RAJ card</b><span>Shade-matched supply</span></span></div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "premium",
+          name: "Cinematic Band",
+          desc: "Full-bleed dark, vignette, wide letter-spaced kicker, light-weight display. The most “expensive” of the set.",
+          body: `<div class="cn">
+              <div class="cn-k">Kataria Syntex · Est. 2004</div>
+              <h3 class="cn-h">The yarn desk<br /><b>behind the fabric.</b></h3>
+              <div class="cn-rule"></div>
+              <p class="m-p" style="max-width: 52cqw; text-align: center">Cotton, polyester and dyed yarn for weaving, knitting and export buyers — sourced from Surat, shipped worldwide.</p>
+            </div>
+            <div class="cn-meta"><span>22+ years</span><span>20+ countries</span><span>01 contact</span></div>`,
+        },
+        {
+          cat: "bold",
+          name: "Split Screen",
+          desc: "Hard 50/50 with a solid primary block carrying the number. Bold, confident, extremely scannable.",
+          body: `<div class="sp-l">
+              <div class="m-nav" style="padding: 0">
+                <div class="m-brand">Kataria Syntex</div>
+                <span class="m-btn pri">Enquire</span>
+              </div>
+              <div style="display: grid; gap: 1.4cqw">
+                <span class="m-kicker">Cotton · Polyester · Dyed</span>
+                <h3 class="m-h">Yarn, sourced<br />without the runaround.</h3>
+                <p class="m-p">Tell us the yarn, quantity and destination. We come back with options that fit.</p>
+              </div>
+              <div class="m-acts"><span class="m-btn pri">Request a quote</span><span class="m-btn gh">Shade card</span></div>
+            </div>
+            <div class="sp-r">
+              <div class="sp-big">22+</div>
+              <div class="sp-cap">years supplying textile businesses across India and 20+ export markets.</div>
+            </div>`,
+        },
+        {
+          cat: "bold",
+          name: "Kinetic Type",
+          desc: "The headline is the layout. Oversized display with an outlined word. Maximum impact, minimum furniture.",
+          body: `<div class="kt">YARN<br /><em>SUPPLY</em> <span class="kt-o">SURAT</span></div>
+            <div class="kt-foot">
+              <p class="m-p kt-p">Cotton, polyester and dyed yarn for weaving, knitting and export buyers — one point of contact from enquiry to dispatch.</p>
+              <span class="m-btn pri">Request a quote</span>
+            </div>`,
+        },
+        {
+          cat: "bold",
+          name: "Brutalist Block",
+          desc: "Thick ink borders, hard offset shadows, no radius, uppercase. Loud and memorable — risky for a B2B desk.",
+          body: `${NAV('<span class="m-btn pri">ENQUIRE</span>')}
+            <div class="br-body">
+              <div class="br-block">
+                <h3 class="m-h">YARN YOU<br />CAN REORDER.</h3>
+                <p class="m-p" style="margin: 1.2cqw 0 1.6cqw">Wholesale cotton, polyester and dyed yarn from Surat. Stated plainly, supplied reliably.</p>
+                <div class="m-acts"><span class="m-btn pri">REQUEST A QUOTE</span><span class="m-btn gh">SHADE CARD</span></div>
+              </div>
+              <div class="br-strip"><div>Cotton</div><div>Polyester</div><div>Dyed</div><div>Export</div></div>
+            </div>`,
+        },
+        {
+          cat: "bold",
+          name: "Diagonal Split",
+          desc: "A cut colour field with the number living inside it. Geometric, high-energy, still orderly.",
+          body: `<div class="dg-panel"></div>
+            <div class="dg-in">
+              <div class="dg-l">
+                <span class="m-kicker">Surat · Gujarat</span>
+                <h3 class="m-h">The yarn desk behind the fabric.</h3>
+                <p class="m-p">Cotton, polyester and dyed yarn for weaving, knitting and export buyers.</p>
+                <div class="m-acts"><span class="m-btn pri">Request a quote</span><span class="m-btn gh">Shade card</span></div>
+              </div>
+              <div class="dg-r">
+                <div class="dg-big">22+</div>
+                <div class="dg-cap">years in the yarn trade — 20+ export markets served from one desk.</div>
+                <div class="dg-stats">
+                  <div class="dg-stat"><b>20+</b><span>countries</span></div>
+                  <div class="dg-stat"><b>140</b><span>shades</span></div>
+                </div>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "bold",
+          name: "Marquee Ticker",
+          desc: "Repeating type bands as the hero. Loud, market-board energy — strongest for a single clear message.",
+          body: `${NAV()}
+            <div class="mq-body">
+              <div class="mq-band">
+                <span>Cotton</span><span class="dot"></span><span>Polyester</span><span class="dot"></span><span>Dyed</span><span class="dot"></span><span>Export</span><span class="dot"></span><span>Surat</span>
+              </div>
+              <div class="mq-band acc">
+                <span>Quoted on your requirement</span><span class="dot"></span><span>Not a price list</span><span class="dot"></span><span>Quoted on your requirement</span><span class="dot"></span><span>Not a price list</span>
+              </div>
+              <div class="mq-foot">
+                <h3 class="mq-h">Yarn supply, without the runaround.</h3>
+                <span class="m-btn pri">Request a quote</span>
+              </div>
+            </div>`,
+        },
+        {
+          cat: "product",
+          name: "Bento Grid",
+          desc: "Modular tiles of mixed size. Very current, very Luma — good if you want the site to feel like a product, not a brochure.",
+          body: `${NAV()}
+            <div class="bn">
+              <div class="bn-t bn-hero">
+                <span class="m-kicker" style="color: var(--acc)">B2B yarn sourcing</span>
+                <h3 class="m-h">Yarn supply that behaves like a system.</h3>
+                <p class="m-p">One point of contact, enquiry to dispatch.</p>
+              </div>
+              <div class="bn-t bn-kpi"><b>22+</b><span>years in the trade</span></div>
+              <div class="bn-t bn-acc"><b>20+</b><span style="font-size: 1.05cqw">export countries</span></div>
+              <div class="bn-t bn-kpi"><b>01</b><span>point of contact</span></div>
+              <div class="bn-t bn-kpi"><b>140</b><span>shades on file</span></div>
+            </div>`,
+        },
+        {
+          cat: "product",
+          name: "Wound Thread",
+          desc: "Yarn texture as the actual design material — wound bands, stitched dividers, real swatches. Only this brand could use it.",
+          body: `<div class="th-band"></div>
+            ${NAV()}
+            <div class="th-body">
+              <span class="m-kicker">Wound on the card, wound on the screen</span>
+              <h3 class="m-h" style="font-size: 5cqw; margin: 1.1cqw 0">Every shade, matched<br />to the real thing.</h3>
+              <div class="th-stitch"></div>
+              <div class="th-swatches">
+                <div class="th-sw" style="background-color: ${SHADES[0]}"></div>
+                <div class="th-sw" style="background-color: ${SHADES[2]}"></div>
+                <div class="th-sw" style="background-color: ${SHADES[4]}"></div>
+                <div class="th-sw" style="background-color: ${SHADES[5]}"></div>
+              </div>
+              <div class="th-band acc" style="margin-top: 2cqw"></div>
+            </div>`,
+        },
+        {
+          cat: "product",
+          name: "Gallery",
+          desc: "One full-bleed colour band carries the whole hero. Quiet captions below. Needs real photography to work.",
+          body: `<div class="ga-art">
+              <div class="ga-cap">
+                <span class="m-kicker" style="color: var(--acc)">Surat · Gujarat · India</span>
+                <h3 class="m-h">The yarn desk<br />behind the fabric.</h3>
+              </div>
+            </div>
+            <div class="ga-meta">
+              <div><b>Cotton &amp; blends</b><span>30s–60s combed, lot-consistent</span></div>
+              <div><b>Polyester</b><span>Textured and filament, 75D–300D</span></div>
+              <div><b>Dyed</b><span>RAJ shade card, matched on request</span></div>
+            </div>`,
+        },
+        {
+          cat: "product",
+          name: "Product Spotlight",
+          desc: "One yarn takes the whole right half with live shade dots and a spec ledger. Product first, brand second.",
+          body: `${NAV('<span class="m-btn pri">Enquire</span>')}
+            <div class="sp-left">
+              <span class="m-kicker">Now supplying</span>
+              <h3 class="m-h" style="font-size: 4.4cqw">Combed cotton, 30s.</h3>
+              <p class="m-p">Clean, even yarn for fine shirting and knit programs — quoted on your requirement.</p>
+              <div class="sp-dots">
+                <i style="background: ${SHADES[0]}"></i>
+                <i style="background: ${SHADES[2]}"></i>
+                <i style="background: ${SHADES[4]}"></i>
+                <i style="background: ${SHADES[6]}"></i>
+              </div>
+              <div class="sp-specs">
+                <div class="sp-spec"><span>Count range</span><b>Ne 20 – Ne 40</b></div>
+                <div class="sp-spec"><span>Spinning</span><b>Ring spun</b></div>
+                <div class="sp-spec"><span>Form</span><b>Cone, waxed</b></div>
+              </div>
+            </div>
+            <div class="sp-visual"><span class="sp-num">KS-CT-01 · COMBED COTTON</span></div>`,
+        },
+        {
+          cat: "product",
+          name: "Mosaic Tile",
+          desc: "One hero tile plus real shade blocks and a quote tile. Colour-forward — the product is the palette.",
+          body: `${NAV()}
+            <div class="ms">
+              <div class="ms-t ms-hero">
+                <span class="m-kicker" style="color: var(--acc)">B2B yarn sourcing</span>
+                <div>
+                  <h3 class="m-h">Yarn supply that behaves like a system.</h3>
+                  <p class="m-p">One desk, enquiry to dispatch.</p>
+                </div>
+              </div>
+              <div class="ms-t ms-swatch">
+                <i style="background: ${SHADES[0]}"></i><i style="background: ${SHADES[2]}"></i><i style="background: ${SHADES[4]}"></i><i style="background: ${SHADES[5]}"></i>
+              </div>
+              <div class="ms-t ms-quote"><b>On file</b>140 dyed shades from the RAJ card.</div>
+              <div class="ms-t ms-quote" style="background: var(--card); color: var(--ink); border-color: var(--line)"><b style="color: var(--muted)">Desk</b>+91 93758 30760 · Surat, Gujarat</div>
+              <div class="ms-t ms-quote" style="background: var(--pri); color: var(--on-pri); border-color: transparent"><b style="opacity: 0.7">Markets</b>20+ export countries served.</div>
+            </div>`,
+        },
+      ];
+      // ------------------------------------------------------------------
+      // Render website directions + boot
+      // ------------------------------------------------------------------
+      const CLS = {
+        Blueprint: "s-blueprint",
+        "Soft Glass": "s-glass",
+        "Soft Neumorph": "s-neumorph",
+        "Restrained Mono": "s-mono",
+        "Swiss Ledger": "s-swiss",
+        "Paper & Ink": "s-paper",
+        "Risograph Zine": "s-zine",
+        "Neo-Grid Editorial": "s-neogrid",
+        "Editorial Magazine": "s-mag",
+        "Spec Sheet": "s-spec",
+        "Supply Ops": "s-ops",
+        "Process Rail": "s-rail",
+        "Midnight Mill": "s-midnight",
+        "Cinematic Band": "s-cinema",
+        "Split Screen": "s-split",
+        "Kinetic Type": "s-kinetic",
+        "Brutalist Block": "s-brutal",
+        "Diagonal Split": "s-diag",
+        "Marquee Ticker": "s-marquee",
+        "Bento Grid": "s-bento",
+        "Wound Thread": "s-thread",
+        Gallery: "s-gallery",
+        "Product Spotlight": "s-spot",
+        "Mosaic Tile": "s-mosaic",
+      };
+
+      function renderWeb() {
+        const order = [
+          "corporate",
+          "editorial",
+          "industrial",
+          "premium",
+          "bold",
+          "product",
+        ];
+        let n = 0;
+        webEl.innerHTML = order
+          .map((cat) => {
+            const items = DESIGNS.filter((d) => d.cat === cat);
+            return `<div class="cathead"><h3>${CAT_LABEL[cat]}</h3><span>${items.length} directions</span><span class="rule"></span></div>
+              <div class="grid">${items
+                .map((d) => {
+                  n += 1;
+                  return `<figure class="d">
+                    <div class="stage ${CLS[d.name]}">${d.body}</div>
+                    <figcaption>
+                      <span class="num">${String(n).padStart(2, "0")}</span>
+                      <b>${d.name}</b>
+                      <span>${d.desc}</span>
+                    </figcaption>
+                  </figure>`;
+                })
+                .join("")}</div>`;
+          })
+          .join("");
+      }
+
+      document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          root.dataset.theme = btn.dataset.themeBtn;
+          document
+            .querySelectorAll("[data-theme-btn]")
+            .forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        });
+      });
+
+      renderStrip();
+      renderGroups();
+      renderWeb();
+      applyFace(FACES[0]);
+      applyPalette(PALETTES[0]);
+    </script>
+  </body>
+</html>
