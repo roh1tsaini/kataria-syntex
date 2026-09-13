@@ -9,24 +9,30 @@ import { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import { useReduceMotion } from "@/lib/motion";
+import { Feather } from "@/ui/feather";
 import {
   useSync,
   listPending,
   resubmitWithNumber,
   retryErrored,
-  toastSuccess,
-  toastError,
   friendlyError,
   ApiError,
   type PendingChallan,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha } from "@/theme";
 import { Button, Input, EmptyState } from "@/ui/kit";
 import { MorphSheet } from "@/ui/morph-sheet";
+
+const styles = StyleSheet.create({
+  dim: { opacity: 0.6 },
+});
 
 /** Banner + its sheet, self-contained — the shell strip every screen mounts
  *  above its page header (apps/app renders the same pair globally under the
@@ -45,10 +51,24 @@ export function SyncBanner({ onOpen }: { onOpen: () => void }) {
   const { online, syncing, pendingCount, conflictCount, errorCount } =
     useSync();
   const p = usePalette();
+  const reduce = useReduceMotion();
   const issues = conflictCount + errorCount;
   if (online && pendingCount === 0 && issues === 0) return null;
 
+  // Same tone classes as the web banner: a tinted strip with a leading state
+  // glyph, not a bare dot — and the trailing check when everything is in
+  // flight but healthy.
   const tone = issues ? p.destructive : online ? p.primary : p.mutedForeground;
+  const tint = issues
+    ? withAlpha(p.destructive, 0.1)
+    : online
+      ? withAlpha(p.primary, 0.1)
+      : p.muted;
+  const borderTint = issues
+    ? withAlpha(p.destructive, 0.25)
+    : online
+      ? withAlpha(p.primary, 0.25)
+      : p.border;
   const label = issues
     ? `${issues} challan${issues === 1 ? "" : "s"} need${issues === 1 ? "s" : ""} attention — tap to fix`
     : online
@@ -60,20 +80,38 @@ export function SyncBanner({ onOpen }: { onOpen: () => void }) {
         : "Offline — you can keep working; saves stay on this device";
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onOpen}
-      className="min-h-[44px] flex-row items-center gap-2.5 border-b px-4 py-2"
-      style={{ borderColor: p.border }}
+    <Animated.View
+      entering={reduce ? undefined : FadeInDown.duration(200)}
+      exiting={reduce ? undefined : FadeOutUp.duration(160)}
+      style={{
+        backgroundColor: tint,
+        borderBottomColor: borderTint,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+      }}
     >
-      <View
-        className="h-2 w-2 rounded-full"
-        style={{ backgroundColor: tone }}
-      />
-      <Text className="flex-1 text-xs font-semibold" style={{ color: tone }}>
-        {label}
-      </Text>
-    </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onOpen}
+        className="min-h-[44px] flex-row items-center gap-2.5 px-4 py-2"
+      >
+        <Feather
+          name={issues ? "alert-triangle" : online ? "refresh-cw" : "cloud-off"}
+          size={14}
+          color={tone}
+        />
+        <Text className="flex-1 text-xs font-semibold" style={{ color: tone }}>
+          {label}
+        </Text>
+        {online && !issues && !syncing ? (
+          <Feather
+            name="check-circle"
+            size={14}
+            color={tone}
+            style={styles.dim}
+          />
+        ) : null}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -85,17 +123,19 @@ function StatusChip({ status }: { status: PendingChallan["status"] }) {
       : status === "conflict"
         ? "Number clash"
         : "Failed";
+  const pending = status === "pending";
   return (
     <View
-      className="self-start rounded-sm px-1.5 py-0.5"
+      className="self-start rounded-sm border px-1.5 py-0.5"
       style={{
-        backgroundColor: status === "pending" ? p.muted : `${p.destructive}1a`,
+        backgroundColor: pending ? p.muted : withAlpha(p.destructive, 0.1),
+        borderColor: pending ? p.border : withAlpha(p.destructive, 0.3),
       }}
     >
       <Text
-        className="text-[10px] font-bold uppercase tracking-wider"
+        className="text-[11px] font-semibold uppercase tracking-[0.06em]"
         style={{
-          color: status === "pending" ? p.mutedForeground : p.destructive,
+          color: pending ? p.mutedForeground : p.destructive,
         }}
       >
         {label}
@@ -134,7 +174,6 @@ function ConflictRow({
         return;
       }
       onResolved();
-      toastSuccess(`Challan ${value.trim()} resolved`);
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -172,6 +211,10 @@ function ConflictRow({
             onChangeText={setValue}
             editable={!busy}
             accessibilityLabel="New challan number"
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (!busy && value.trim()) void apply();
+            }}
           />
         </View>
         <Button
@@ -207,16 +250,13 @@ function ErrorRow({ p }: { p: PendingChallan }) {
       </Text>
       <Button
         label="Retry"
-        variant="secondary"
+        variant="outline"
         loading={busy}
         disabled={busy}
         onPress={async () => {
           setBusy(true);
           try {
             await retryErrored(p.clientRef);
-            toastSuccess("Retry queued.");
-          } catch (err) {
-            toastError("Could not retry", friendlyError(err));
           } finally {
             setBusy(false);
           }
@@ -267,6 +307,7 @@ export function SyncSheet({
               <EmptyState
                 title="Nothing queued"
                 message="Everything is saved on the server."
+                icon="check-circle"
               />
             )}
             {conflicts.length > 0 && (

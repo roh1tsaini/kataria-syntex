@@ -25,6 +25,15 @@ export const ACCENT: Record<
   },
 };
 
+/** Dashboard donut palette (`--chart-1..5` in globals.css), per scheme. */
+export const CHART: Record<
+  "light" | "dark",
+  [string, string, string, string, string]
+> = {
+  light: ["#191b1d", "#8f8f8f", "#444547", "#555555", "#7d7d7e"],
+  dark: ["#e8e8e8", "#868686", "#bfbfbf", "#4d4d4d", "#c5c5c5"],
+};
+
 export const TOKENS: Record<"light" | "dark", Record<string, string>> = {
   light: {
     background: "#fcfcfc",

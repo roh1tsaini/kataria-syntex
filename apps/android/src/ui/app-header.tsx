@@ -11,6 +11,7 @@ import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth, useSync } from "@kataria-syntex/app-core";
 import { usePalette } from "@/theme";
 import { useNavDrawer } from "@/lib/nav-drawer";
+import { useUpdates } from "@/lib/updates";
 import { Feather } from "@/ui/feather";
 
 export function AppHeader({ label }: { label: string }) {
@@ -21,6 +22,16 @@ export function AppHeader({ label }: { label: string }) {
   const company = useAuth((s) => s.company);
   const online = useSync((s) => s.online);
   const initial = user?.name.slice(0, 1).toUpperCase() ?? "K";
+  // The update strip is the window's first row (same order as apps/app's
+  // update-surface) and already clears the status bar — the header must not
+  // add the inset a second time underneath it.
+  const updateBannerVisible = useUpdates(
+    (s) =>
+      !s.requiredMinVersion &&
+      !!s.latestVersion &&
+      s.latestVersion !== s.dismissedVersion &&
+      (s.status === "ready" || s.status === "downloading"),
+  );
 
   return (
     <View
@@ -28,7 +39,7 @@ export function AppHeader({ label }: { label: string }) {
         backgroundColor: p.card,
         borderBottomColor: p.border,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        paddingTop: insets.top,
+        paddingTop: updateBannerVisible ? 0 : insets.top,
       }}
     >
       <View className="h-14 flex-row items-center gap-2 px-4">

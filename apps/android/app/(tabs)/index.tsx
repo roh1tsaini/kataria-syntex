@@ -6,11 +6,25 @@
  * (useChallans().summary + summaryCache read-through).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
 import { useRouter, useFocusEffect } from "expo-router";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 import {
   useAuth,
   useChallans,
@@ -24,8 +38,17 @@ import {
   type Permission,
   type RecentChallan,
 } from "@kataria-syntex/app-core";
-import { usePalette, type Palette } from "@/theme";
+import { usePalette, withAlpha, type Palette } from "@/theme";
+import { useReduceMotion } from "@/lib/motion";
 import { Button, Card, EmptyState, Screen, Skeleton } from "@/ui/kit";
+import {
+  AppIcon,
+  Factory,
+  PackageOpen,
+  Scale,
+  Warehouse,
+  type IconValue,
+} from "@/ui/feather";
 import { CountUp } from "@/ui/count-up";
 import { SyncStrip } from "@/ui/sync";
 import { fmtBoxes, fmtWt } from "@/lib/format";
@@ -38,13 +61,65 @@ import {
   type Period,
 } from "@/lib/dashboard-math";
 
-type FeatherGlyph = keyof typeof Feather.glyphMap;
-
 const PERIODS: Array<{ value: Period; label: string }> = [
   { value: "fy", label: "This FY" },
   { value: "30d", label: "Last 30 days" },
   { value: "all", label: "All time" },
 ];
+
+/** Web EASE_OUT — dashboard entrance tweens mirror motion/react. */
+const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
+
+/** Section entrance: the web Reveal/StaggerItem fade + 6px rise, 200ms. */
+function FadeUp({
+  children,
+  delay = 0,
+}: {
+  children: ReactNode;
+  delay?: number;
+}) {
+  const reduce = useReduceMotion();
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = reduce
+      ? withTiming(1, { duration: 0 })
+      : withDelay(delay, withTiming(1, { duration: 200, easing: EASE_OUT }));
+  }, [delay, progress, reduce]);
+  const style = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ translateY: (1 - progress.value) * 6 }],
+  }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+/** Card header band — web's bg-muted/35 strip with a hairline bottom edge. */
+function CardSectionHeader({
+  label,
+  right,
+}: {
+  label: string;
+  right?: ReactNode;
+}) {
+  const p = usePalette();
+  return (
+    <View
+      className="flex-row items-center justify-between px-4 py-3"
+      style={{
+        borderBottomWidth: 1,
+        borderBottomColor: withAlpha(p.border, 0.7),
+        backgroundColor: withAlpha(p.muted, 0.35),
+      }}
+    >
+      <Text
+        className="text-[11px] font-semibold uppercase"
+        style={{ color: p.mutedForeground, letterSpacing: 0.66 }}
+      >
+        {label}
+      </Text>
+      {right}
+    </View>
+  );
+}
 
 function recentFrom(
   list: Challan[],
@@ -66,15 +141,18 @@ function recentFrom(
 function TypeChip({ type }: { type: RecentChallan["type"] }) {
   const p = usePalette();
   const sales = type === "sales";
+  const tone = sales ? p.primary : p.warning;
   return (
     <View
-      className="self-start rounded-sm px-1.5 py-0.5"
-      style={{ backgroundColor: sales ? `${p.primary}1a` : `${p.warning}1a` }}
+      className="min-h-[20px] flex-row items-center self-start rounded-sm border px-1.5 py-0.5"
+      style={{
+        gap: 4,
+        borderColor: withAlpha(tone, 0.25),
+        backgroundColor: withAlpha(tone, 0.1),
+      }}
     >
-      <Text
-        className="text-[10px] font-bold uppercase tracking-wider"
-        style={{ color: sales ? p.primary : p.warning }}
-      >
+      <AppIcon name={sales ? "file-text" : Factory} size={12} color={tone} />
+      <Text className="text-[11px] font-semibold" style={{ color: tone }}>
         {sales ? "Sales" : "Job work"}
       </Text>
     </View>
@@ -90,7 +168,7 @@ function StatCard({
   delta,
   loading,
 }: {
-  icon: FeatherGlyph;
+  icon: IconValue;
   label: string;
   value: number;
   format?: (n: number) => string;
@@ -106,7 +184,7 @@ function StatCard({
           className="h-10 w-10 items-center justify-center rounded-lg"
           style={{ backgroundColor: p.muted }}
         >
-          <Feather name={icon} size={18} color={p.mutedForeground} />
+          <AppIcon name={icon} size={20} color={p.mutedForeground} />
         </View>
         {delta != null ? (
           <View
@@ -118,11 +196,11 @@ function StatCard({
           >
             <Feather
               name={delta >= 0 ? "trending-up" : "trending-down"}
-              size={11}
+              size={12}
               color={delta >= 0 ? p.success : p.destructive}
             />
             <Text
-              className="text-[11px] font-semibold"
+              className="text-[11px] font-medium"
               style={{ color: delta >= 0 ? p.success : p.destructive }}
             >
               {delta >= 0 ? "+" : ""}
@@ -132,8 +210,8 @@ function StatCard({
         ) : null}
       </View>
       <Text
-        className="mt-3 text-[10px] font-semibold uppercase tracking-wider"
-        style={{ color: p.mutedForeground }}
+        className="mt-3 text-[11px] font-medium uppercase"
+        style={{ color: p.mutedForeground, letterSpacing: 0.66 }}
       >
         {label}
       </Text>
@@ -143,7 +221,8 @@ function StatCard({
         <CountUp
           target={value}
           format={format}
-          fontSize={26}
+          fontSize={28}
+          fontWeight="600"
           color={p.foreground}
           className="mt-1"
         />
@@ -154,6 +233,52 @@ function StatCard({
         </Text>
       ) : null}
     </Card>
+  );
+}
+
+/** One bar: grows from the baseline with the web's 40ms stagger. */
+function VolumeBar({
+  ratio,
+  index,
+  color,
+}: {
+  ratio: number;
+  index: number;
+  color: string;
+}) {
+  const reduce = useReduceMotion();
+  const grow = useSharedValue(0);
+  const lastRatio = useRef(ratio);
+  useEffect(() => {
+    const from = lastRatio.current;
+    lastRatio.current = ratio;
+    if (reduce) {
+      grow.value = 1;
+      return;
+    }
+    // Value changes tween between heights (web `animate` behaviour); mounts
+    // grow from the baseline.
+    grow.value = from > 0 && from !== ratio ? from / ratio : 0;
+    grow.value = withDelay(
+      Math.min(index, 4) * 40,
+      withTiming(1, { duration: 200, easing: EASE_OUT }),
+    );
+  }, [grow, index, ratio, reduce]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scaleY: grow.value }],
+  }));
+  return (
+    <Animated.View
+      className="flex-1 rounded-t-md"
+      style={[
+        {
+          height: `${ratio * 100}%`,
+          transformOrigin: "bottom",
+          backgroundColor: color,
+        },
+        style,
+      ]}
+    />
   );
 }
 
@@ -168,8 +293,14 @@ function VolumeChart({
   const hasData = buckets.some((b) => b.netWt > 0);
   return (
     <View>
-      <View className="flex-row flex-wrap items-baseline gap-x-3">
-        <Text className="text-xl font-bold" style={{ color: p.foreground }}>
+      <View
+        className="flex-row flex-wrap items-baseline"
+        style={{ columnGap: 12, rowGap: 4 }}
+      >
+        <Text
+          className="text-[28px] font-bold"
+          style={{ color: p.foreground, letterSpacing: -0.62 }}
+        >
           {fmtWt(total)}{" "}
           <Text
             className="text-sm font-medium"
@@ -186,26 +317,24 @@ function VolumeChart({
         <>
           <View
             className="mt-4 h-40 flex-row items-end"
-            style={{ gap: 4 }}
+            style={{ gap: 6 }}
             accessibilityRole="image"
             accessibilityLabel="Job-work volume over time bar chart"
           >
-            {buckets.map((b) => (
-              <View
+            {buckets.map((b, i) => (
+              <VolumeBar
                 key={b.key}
-                className="flex-1 rounded-t-md"
-                style={{
-                  height: `${Math.max(b.netWt / max, 0.02) * 100}%`,
-                  backgroundColor: `${p.primary}b3`,
-                }}
+                ratio={Math.max(b.netWt / max, 0.02)}
+                index={i}
+                color={withAlpha(p.primary, 0.7)}
               />
             ))}
           </View>
-          <View className="mt-2 flex-row" style={{ gap: 4 }}>
+          <View className="mt-2 flex-row" style={{ gap: 6 }}>
             {buckets.map((b, i) => (
               <Text
                 key={i}
-                className="flex-1 text-center text-[9px] font-semibold"
+                className="flex-1 text-center text-[11px] font-medium"
                 style={{ color: p.mutedForeground }}
                 numberOfLines={1}
               >
@@ -216,6 +345,7 @@ function VolumeChart({
         </>
       ) : (
         <EmptyState
+          icon="package"
           title="No job work in this period"
           message="Outward challans will show up here."
         />
@@ -233,19 +363,13 @@ const DONUT_COLORS = (p: Palette) => [
   p.mutedForeground,
 ];
 
-function CustomerDonut({
-  list,
-  canViewCustomers,
-}: {
-  list: Challan[];
-  canViewCustomers: boolean;
-}) {
+function CustomerDonut({ list }: { list: Challan[] }) {
   const p = usePalette();
-  const router = useRouter();
   const total = list.reduce((s, c) => s + c.totalNetWt, 0);
   if (total <= 0) {
     return (
       <EmptyState
+        icon="users"
         title="No sales in this period"
         message="Sales challans will show up here."
       />
@@ -265,8 +389,9 @@ function CustomerDonut({
 
   const colors = DONUT_COLORS(p);
   const size = 144;
-  const radius = 56;
-  const stroke = 20;
+  const stroke = 12;
+  const radius = size / 2 - stroke / 2;
+  const inset = stroke;
   const cx = size / 2;
   const cy = size / 2;
   const circumference = 2 * Math.PI * radius;
@@ -274,7 +399,10 @@ function CustomerDonut({
   let acc = 0;
 
   return (
-    <View className="flex-row flex-wrap items-center" style={{ gap: 20 }}>
+    <View
+      className="flex-row flex-wrap items-center"
+      style={{ columnGap: 32, rowGap: 20 }}
+    >
       <View>
         <Svg width={size} height={size}>
           {slices.map(([name, v], i) => {
@@ -304,10 +432,10 @@ function CustomerDonut({
         <View
           className="absolute items-center justify-center rounded-full"
           style={{
-            top: stroke + 8,
-            bottom: stroke + 8,
-            left: stroke + 8,
-            right: stroke + 8,
+            top: inset,
+            bottom: inset,
+            left: inset,
+            right: inset,
             backgroundColor: p.card,
           }}
         >
@@ -318,14 +446,14 @@ function CustomerDonut({
             {fmtWt(total)}
           </Text>
           <Text
-            className="text-[10px] font-semibold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
+            className="mt-1 text-[11px] font-semibold uppercase"
+            style={{ color: p.mutedForeground, letterSpacing: 0.66 }}
           >
             kg Total
           </Text>
         </View>
       </View>
-      <View className="min-w-[180px] flex-1 gap-2">
+      <View className="min-w-[220px] flex-1" style={{ rowGap: 8 }}>
         {slices.map(([name, v], i) => (
           <View key={name} className="flex-row items-center" style={{ gap: 8 }}>
             <View
@@ -340,40 +468,19 @@ function CustomerDonut({
               {name}
             </Text>
             <Text
-              className="w-10 text-right text-sm font-semibold"
+              className="text-right text-sm font-semibold"
               style={{ color: p.foreground }}
             >
               {((v / total) * 100).toFixed(0)}%
             </Text>
             <Text
-              className="w-20 text-right text-sm"
+              className="w-24 text-right text-sm"
               style={{ color: p.mutedForeground }}
             >
               {fmtWt(v)} kg
             </Text>
           </View>
         ))}
-        {canViewCustomers ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              router.push({
-                pathname: "/masters",
-                params: { tab: "customers" },
-              })
-            }
-            className="mt-1 flex-row items-center self-start"
-            style={{ gap: 4 }}
-          >
-            <Text
-              className="text-xs font-semibold"
-              style={{ color: p.primary }}
-            >
-              View customers
-            </Text>
-            <Feather name="arrow-up-right" size={12} color={p.primary} />
-          </Pressable>
-        ) : null}
       </View>
     </View>
   );
@@ -416,10 +523,10 @@ const FLOW_PERMISSIONS: Record<string, Permission[]> = {
   "/challans?type=sales": ["create_challan", "edit_challan", "delete_challan"],
 };
 
-const FLOW_ICONS: Record<string, FeatherGlyph> = {
-  Sent: "send",
-  Returned: "corner-down-left",
-  "In Stock Raw": "database",
+const FLOW_ICONS: Record<string, IconValue> = {
+  Sent: Factory,
+  Returned: PackageOpen,
+  "In Stock Raw": Warehouse,
   "In Stock Dyed": "layers",
   Sold: "file-text",
 };
@@ -472,64 +579,68 @@ function FlowCards({
   if (visibleCards.length === 0) return null;
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-      {visibleCards.map((card, idx) => {
-        const lastOdd =
-          idx === visibleCards.length - 1 && visibleCards.length % 2 === 1;
-        return (
-          <Pressable
-            key={card.label}
-            accessibilityRole="button"
-            onPress={() => router.push(FLOW_ROUTES[card.link] ?? "/reports")}
-            className="rounded-xl border p-3"
-            style={({ pressed }) => ({
-              backgroundColor: p.card,
-              borderColor: p.border,
-              flexGrow: 1,
-              flexBasis: lastOdd ? "100%" : "46%",
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <View className="flex-row items-center" style={{ gap: 6 }}>
-              <View
-                className="h-9 w-9 items-center justify-center rounded-lg"
-                style={{ backgroundColor: p.muted }}
-              >
-                <Feather
-                  name={FLOW_ICONS[card.label] ?? "package"}
-                  size={16}
-                  color={p.mutedForeground}
-                />
+    <FadeUp>
+      <View className="flex-row flex-wrap" style={{ gap: 12 }}>
+        {visibleCards.map((card, idx) => {
+          const lastOdd =
+            idx === visibleCards.length - 1 && visibleCards.length % 2 === 1;
+          return (
+            <Pressable
+              key={card.label}
+              accessibilityRole="button"
+              onPress={() => router.push(FLOW_ROUTES[card.link] ?? "/reports")}
+              className="rounded-lg border p-3"
+              style={({ pressed }) => ({
+                backgroundColor: p.card,
+                borderColor: p.border,
+                flexGrow: 1,
+                flexBasis: lastOdd ? "100%" : "46%",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <View className="flex-row items-center" style={{ gap: 6 }}>
+                <View
+                  className="h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: p.muted }}
+                >
+                  <AppIcon
+                    name={FLOW_ICONS[card.label] ?? "package"}
+                    size={20}
+                    color={p.mutedForeground}
+                  />
+                </View>
+                <Text
+                  className="flex-1 text-xs"
+                  style={{ color: p.mutedForeground }}
+                  numberOfLines={1}
+                >
+                  {card.label}
+                </Text>
               </View>
-              <Text
-                className="flex-1 text-xs"
-                style={{ color: p.mutedForeground }}
-                numberOfLines={1}
-              >
-                {card.label}
-              </Text>
-            </View>
-            <View className="mt-2 flex-row items-baseline" style={{ gap: 4 }}>
-              <Text
-                className="text-base font-semibold"
-                style={{ color: card.value < 0 ? p.destructive : p.foreground }}
-              >
-                {card.value.toFixed(3)}
-              </Text>
-              <Text className="text-xs" style={{ color: p.mutedForeground }}>
-                {card.unit}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      })}
-    </View>
+              <View className="mt-2 flex-row items-baseline" style={{ gap: 4 }}>
+                <Text
+                  className="text-base font-semibold"
+                  style={{
+                    color: card.value < 0 ? p.destructive : p.foreground,
+                  }}
+                >
+                  {card.value.toFixed(3)}
+                </Text>
+                <Text className="text-xs" style={{ color: p.mutedForeground }}>
+                  {card.unit}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </FadeUp>
   );
 }
 
 const QUICK_LINKS: Array<{
   to: string;
-  icon: FeatherGlyph;
+  icon: IconValue;
   title: string;
   desc: string;
   permissions: Permission[];
@@ -714,10 +825,11 @@ export default function DashboardTab() {
     <Screen
       eyebrow={todayLabel}
       title="Overview"
+      headerLabel="Dashboard"
       description={`${company?.name ?? workspace?.name ?? "—"} · Financial year ${currentFy?.label ?? "—"}`}
       action={
         canCreate ? (
-          <View className="flex-row" style={{ gap: 10 }}>
+          <View className="flex-row" style={{ gap: 8 }}>
             <View className="flex-1">
               <Button
                 label="New sales challan"
@@ -733,8 +845,8 @@ export default function DashboardTab() {
             <View className="flex-1">
               <Button
                 label="New job-work"
-                icon="tool"
-                variant="secondary"
+                icon={Factory}
+                variant="outline"
                 onPress={() =>
                   router.push({
                     pathname: "/challan-editor",
@@ -751,7 +863,8 @@ export default function DashboardTab() {
       <ScrollView
         contentContainerStyle={{
           paddingBottom: 48,
-          gap: 16,
+          paddingTop: 8,
+          gap: 24,
           paddingHorizontal: 16,
         }}
         showsVerticalScrollIndicator={false}
@@ -768,17 +881,25 @@ export default function DashboardTab() {
               <Pressable
                 key={option.value}
                 accessibilityRole="button"
+                accessibilityState={{ selected: active }}
                 onPress={() => setPeriod(option.value)}
                 className="rounded-md px-3"
                 style={({ pressed }) => ({
                   minHeight: 44,
+                  minWidth: 64,
                   justifyContent: "center",
                   backgroundColor: active ? p.card : "transparent",
                   opacity: pressed ? 0.8 : 1,
+                  // shadow-soft (globals.css) — active segment lifts off the track
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: active ? 0.05 : 0,
+                  shadowRadius: 2,
+                  elevation: active ? 1 : 0,
                 })}
               >
                 <Text
-                  className="text-[13px] font-semibold"
+                  className="text-sm font-medium"
                   style={{ color: active ? p.foreground : p.mutedForeground }}
                 >
                   {option.label}
@@ -788,277 +909,307 @@ export default function DashboardTab() {
           })}
         </View>
 
-        <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-          <StatCard
-            icon="file-text"
-            label="Challans issued"
-            value={stats.count}
-            delta={stats.delta.count}
-            sub={`${stats.salesCount} sales · ${stats.outwardCount} job work`}
-            loading={loading}
-          />
-          <StatCard
-            icon="box"
-            label="Total packages"
-            value={stats.totalBoxes}
-            delta={stats.delta.boxes}
-            format={fmtBoxes}
-            sub="Boxes & sacks"
-            loading={loading}
-          />
+        <View style={{ gap: 12 }}>
+          <FadeUp delay={10}>
+            <StatCard
+              icon="file-text"
+              label="Challans issued"
+              value={stats.count}
+              delta={stats.delta.count}
+              sub={`${stats.salesCount} sales · ${stats.outwardCount} job work`}
+              loading={loading}
+            />
+          </FadeUp>
+          <FadeUp delay={50}>
+            <StatCard
+              icon="box"
+              label="Total packages"
+              value={stats.totalBoxes}
+              delta={stats.delta.boxes}
+              format={fmtBoxes}
+              sub="Boxes & sacks"
+              loading={loading}
+            />
+          </FadeUp>
+          <FadeUp delay={90}>
+            <StatCard
+              icon={Scale}
+              label="Net weight"
+              value={stats.totalNetWt}
+              delta={stats.delta.netWt}
+              format={fmtWt}
+              sub="Kilograms"
+              loading={loading}
+            />
+          </FadeUp>
+          <FadeUp delay={130}>
+            <StatCard
+              icon="layers"
+              label="Job-work sendings"
+              value={stats.outwardCount}
+              delta={stats.outwardDelta}
+              sub="Challans sent for dyeing"
+              loading={loading}
+            />
+          </FadeUp>
         </View>
-        <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-          <StatCard
-            icon="anchor"
-            label="Net weight"
-            value={stats.totalNetWt}
-            delta={stats.delta.netWt}
-            format={fmtWt}
-            sub="Kilograms"
-            loading={loading}
-          />
-          <StatCard
-            icon="send"
-            label="Job-work sendings"
-            value={stats.outwardCount}
-            delta={stats.outwardDelta}
-            sub="Challans sent for dyeing"
-            loading={loading}
-          />
-        </View>
 
-        <Card>
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: p.mutedForeground }}
-            >
-              Job-work volume over time
-            </Text>
-            <Text className="text-xs" style={{ color: p.mutedForeground }}>
-              Kilograms
-            </Text>
-          </View>
-          <View className="mt-3">
-            {loading ? (
-              <Skeleton className="h-52 w-full rounded-md" />
-            ) : (
-              <VolumeChart buckets={volumeBuckets} />
-            )}
-          </View>
-        </Card>
-
-        <Card>
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: p.mutedForeground }}
-            >
-              Dispatch by customer
-            </Text>
-          </View>
-          <View className="mt-3">
-            {loading ? (
-              <Skeleton className="h-52 w-full rounded-md" />
-            ) : (
-              <CustomerDonut
-                list={salesWindow}
-                canViewCustomers={canViewCustomers}
-              />
-            )}
-          </View>
-        </Card>
-
-        <Card>
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: p.mutedForeground }}
-            >
-              Recent challans
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/(tabs)/challans")}
-              className="flex-row items-center"
-              style={{ gap: 4 }}
-            >
-              <Text
-                className="text-xs font-semibold"
-                style={{ color: p.primary }}
-              >
-                View all
-              </Text>
-              <Feather name="arrow-up-right" size={12} color={p.primary} />
-            </Pressable>
-          </View>
-          <View className="mt-1">
-            {loading ? (
-              <View className="gap-3 py-3">
-                {[0, 1, 2, 3].map((i) => (
-                  <View
-                    key={i}
-                    className="flex-row items-center"
-                    style={{ gap: 12 }}
-                  >
-                    <Skeleton className="h-10 w-10 rounded-md" />
-                    <View className="flex-1 gap-2">
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="h-3 w-1/3" />
-                    </View>
-                    <Skeleton className="h-4 w-16" />
-                  </View>
-                ))}
-              </View>
-            ) : recent.length === 0 ? (
-              <EmptyState
-                icon="file-text"
-                title={`No challans yet for FY ${currentFy?.label ?? ""}`}
-                message="Create your first challan to see it here."
-                action={
-                  canCreate ? (
-                    <Button
-                      label="Create challan"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/challan-editor",
-                          params: { kind: "sales" },
-                        })
-                      }
-                    />
-                  ) : undefined
-                }
-              />
-            ) : (
-              recent.map((r, i) => (
-                <Pressable
-                  key={`${r.type}-${r.id}`}
-                  accessibilityRole="button"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/challan-detail",
-                      params: { id: r.id, kind: r.type },
-                    })
-                  }
-                  className="flex-row items-center py-3"
-                  style={({ pressed }) => ({
-                    gap: 12,
-                    opacity: pressed ? 0.7 : 1,
-                    borderBottomWidth: i < recent.length - 1 ? 1 : 0,
-                    borderBottomColor: p.border,
-                  })}
-                >
-                  <View
-                    className="h-7 w-7 items-center justify-center rounded-md"
-                    style={{
-                      backgroundColor:
-                        r.type === "sales" ? p.accentSoft : `${p.warning}1a`,
-                    }}
-                  >
-                    <Feather
-                      name={r.type === "sales" ? "file-text" : "send"}
-                      size={14}
-                      color={r.type === "sales" ? p.accentInk : p.warning}
-                    />
-                  </View>
-                  <View className="min-w-0 flex-1">
-                    <View className="flex-row items-center" style={{ gap: 8 }}>
-                      <Text
-                        className="text-[13px] font-bold"
-                        style={{ color: p.primary, fontFamily: "monospace" }}
-                        numberOfLines={1}
-                      >
-                        {r.number}
-                      </Text>
-                      <TypeChip type={r.type} />
-                    </View>
-                    <Text
-                      className="mt-0.5 text-xs"
-                      style={{ color: p.mutedForeground }}
-                      numberOfLines={1}
-                    >
-                      {r.party} · {r.date}
-                    </Text>
-                  </View>
-                  <View className="shrink-0 items-end">
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: p.foreground }}
-                    >
-                      {fmtBoxes(r.boxes)}{" "}
-                      <Text
-                        className="text-xs font-normal"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        {r.type === "sales" ? "boxes" : "sacks"}
-                      </Text>
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{ color: p.mutedForeground }}
-                    >
-                      {fmtWt(r.netWt)} kg
-                    </Text>
-                  </View>
-                </Pressable>
-              ))
-            )}
-          </View>
-        </Card>
-
-        {visibleQuickLinks.length > 0 ? (
-          <Card>
-            <Text
-              className="text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: p.mutedForeground }}
-            >
-              Quick links
-            </Text>
-            <View className="mt-2">
-              {visibleQuickLinks.map((link, i) => (
-                <Pressable
-                  key={link.to}
-                  accessibilityRole="button"
-                  onPress={() => router.push(link.to)}
-                  className="flex-row items-center rounded-md px-2 py-3"
-                  style={({ pressed }) => ({
-                    gap: 12,
-                    opacity: pressed ? 0.7 : 1,
-                    borderBottomWidth: i < visibleQuickLinks.length - 1 ? 1 : 0,
-                    borderBottomColor: p.border,
-                  })}
-                >
-                  <View
-                    className="h-7 w-7 items-center justify-center rounded-md"
-                    style={{ backgroundColor: p.accentSoft }}
-                  >
-                    <Feather name={link.icon} size={14} color={p.accentInk} />
-                  </View>
-                  <View className="min-w-0 flex-1">
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: p.foreground }}
-                    >
-                      {link.title}
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{ color: p.mutedForeground }}
-                      numberOfLines={1}
-                    >
-                      {link.desc}
-                    </Text>
-                  </View>
-                  <Feather
-                    name="arrow-up-right"
-                    size={14}
-                    color={p.mutedForeground}
-                  />
-                </Pressable>
-              ))}
+        <View style={{ gap: 12 }}>
+          <Card className="overflow-hidden p-0">
+            <CardSectionHeader
+              label="Job-work volume over time"
+              right={
+                <Text className="text-xs" style={{ color: p.mutedForeground }}>
+                  Kilograms
+                </Text>
+              }
+            />
+            <View style={{ padding: 16 }}>
+              {loading ? (
+                <Skeleton className="h-52 w-full rounded-md" />
+              ) : (
+                <VolumeChart buckets={volumeBuckets} />
+              )}
             </View>
           </Card>
-        ) : null}
+
+          <Card className="overflow-hidden p-0">
+            <CardSectionHeader
+              label="Dispatch by customer"
+              right={
+                canViewCustomers ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/masters",
+                        params: { tab: "customers" },
+                      })
+                    }
+                    className="flex-row items-center"
+                    style={{ gap: 4 }}
+                  >
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{ color: p.primary }}
+                    >
+                      View customers
+                    </Text>
+                    <Feather
+                      name="arrow-up-right"
+                      size={14}
+                      color={p.primary}
+                    />
+                  </Pressable>
+                ) : undefined
+              }
+            />
+            <View style={{ padding: 16 }}>
+              {loading ? (
+                <Skeleton className="h-52 w-full rounded-md" />
+              ) : (
+                <CustomerDonut list={salesWindow} />
+              )}
+            </View>
+          </Card>
+        </View>
+
+        <View style={{ gap: 12 }}>
+          <Card className="overflow-hidden p-0">
+            <CardSectionHeader
+              label="Recent challans"
+              right={
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push("/(tabs)/challans")}
+                  className="flex-row items-center"
+                  style={{ gap: 4 }}
+                >
+                  <Text
+                    className="text-xs font-semibold"
+                    style={{ color: p.primary }}
+                  >
+                    View all
+                  </Text>
+                  <Feather name="arrow-up-right" size={14} color={p.primary} />
+                </Pressable>
+              }
+            />
+            <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+              {loading ? (
+                <View className="gap-3" style={{ paddingVertical: 16 }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <View
+                      key={i}
+                      className="flex-row items-center"
+                      style={{ gap: 12 }}
+                    >
+                      <Skeleton className="h-10 w-10 rounded-md" />
+                      <View className="flex-1 gap-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-3 w-1/3" />
+                      </View>
+                      <Skeleton className="h-4 w-16" />
+                    </View>
+                  ))}
+                </View>
+              ) : recent.length === 0 ? (
+                <EmptyState
+                  icon="file-text"
+                  title={`No challans yet for FY ${currentFy?.label ?? ""}`}
+                  message="Create your first challan to see it here."
+                  action={
+                    canCreate ? (
+                      <Button
+                        label="Create challan"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/challan-editor",
+                            params: { kind: "sales" },
+                          })
+                        }
+                      />
+                    ) : undefined
+                  }
+                />
+              ) : (
+                recent.map((r, i) => (
+                  <Pressable
+                    key={`${r.type}-${r.id}`}
+                    accessibilityRole="button"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/challan-detail",
+                        params: { id: r.id, kind: r.type },
+                      })
+                    }
+                    className="flex-row items-center py-3"
+                    style={({ pressed }) => ({
+                      gap: 12,
+                      opacity: pressed ? 0.7 : 1,
+                      borderBottomWidth: i < recent.length - 1 ? 1 : 0,
+                      borderBottomColor: withAlpha(p.border, 0.65),
+                    })}
+                  >
+                    <View
+                      className="h-7 w-7 items-center justify-center rounded-md"
+                      style={{
+                        backgroundColor:
+                          r.type === "sales" ? p.accentSoft : `${p.warning}1a`,
+                      }}
+                    >
+                      <AppIcon
+                        name={r.type === "sales" ? "file-text" : Factory}
+                        size={16}
+                        color={r.type === "sales" ? p.accentInk : p.warning}
+                      />
+                    </View>
+                    <View className="min-w-0 flex-1">
+                      <View
+                        className="flex-row items-center"
+                        style={{ gap: 8 }}
+                      >
+                        <Text
+                          className="text-[13px] font-bold"
+                          style={{ color: p.primary, fontFamily: "monospace" }}
+                          numberOfLines={1}
+                        >
+                          {r.number}
+                        </Text>
+                        <TypeChip type={r.type} />
+                      </View>
+                      <Text
+                        className="mt-0.5 text-xs"
+                        style={{ color: p.mutedForeground }}
+                        numberOfLines={1}
+                      >
+                        {r.party} · {r.date}
+                      </Text>
+                    </View>
+                    <View className="shrink-0 items-end">
+                      <Text
+                        className="text-sm font-semibold"
+                        style={{ color: p.foreground }}
+                      >
+                        {fmtBoxes(r.boxes)}{" "}
+                        <Text
+                          className="text-xs font-normal"
+                          style={{ color: p.mutedForeground }}
+                        >
+                          {r.type === "sales" ? "boxes" : "sacks"}
+                        </Text>
+                      </Text>
+                      <Text
+                        className="text-xs"
+                        style={{ color: p.mutedForeground }}
+                      >
+                        {fmtWt(r.netWt)} kg
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))
+              )}
+            </View>
+          </Card>
+
+          {visibleQuickLinks.length > 0 ? (
+            <Card className="overflow-hidden p-0">
+              <CardSectionHeader label="Quick links" />
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                  paddingTop: 16,
+                  paddingBottom: 20,
+                }}
+              >
+                {visibleQuickLinks.map((link, i) => (
+                  <FadeUp key={link.to} delay={i * 50}>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => router.push(link.to)}
+                      className="flex-row items-center rounded-md px-2 py-3"
+                      style={({ pressed }) => ({
+                        gap: 12,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <View
+                        className="h-7 w-7 items-center justify-center rounded-md"
+                        style={{ backgroundColor: p.accentSoft }}
+                      >
+                        <AppIcon
+                          name={link.icon}
+                          size={16}
+                          color={p.accentInk}
+                        />
+                      </View>
+                      <View className="min-w-0 flex-1">
+                        <Text
+                          className="text-sm font-semibold"
+                          style={{ color: p.foreground }}
+                        >
+                          {link.title}
+                        </Text>
+                        <Text
+                          className="text-xs"
+                          style={{ color: p.mutedForeground }}
+                          numberOfLines={1}
+                        >
+                          {link.desc}
+                        </Text>
+                      </View>
+                      <Feather
+                        name="arrow-up-right"
+                        size={16}
+                        color={p.mutedForeground}
+                      />
+                    </Pressable>
+                  </FadeUp>
+                ))}
+              </View>
+            </Card>
+          ) : null}
+        </View>
       </ScrollView>
     </Screen>
   );

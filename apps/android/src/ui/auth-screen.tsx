@@ -6,13 +6,17 @@
  * scanned with another device).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth, friendlyError } from "@kataria-syntex/app-core";
 import { useRouter } from "expo-router";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha } from "@/theme";
 import { Button, Field, Input, Card } from "@/ui/kit";
+import { Feather } from "@/ui/feather";
+import { OtpInput } from "@/ui/otp-input";
 import { QrLoginPanel } from "@/ui/qr-login-panel";
 
 type Step = "home" | "otp" | "create" | "password";
@@ -24,6 +28,31 @@ type Draft = {
   password?: string;
 };
 
+/** Small muted underlined text action — the web `variant="link"` button
+ *  (auth uses it for "Use password instead"). */
+function LinkButton({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
+  const p = usePalette();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      className="min-h-[44px] w-full items-center justify-center"
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+    >
+      <Text className="text-xs underline" style={{ color: p.mutedForeground }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function IdentifierStep({
   busy,
   error,
@@ -34,8 +63,10 @@ function IdentifierStep({
   onNext: (identifier: string) => void;
 }) {
   const [identifier, setIdentifier] = useState("");
-  const p = usePalette();
   const filled = identifier.trim().length >= 5;
+  const submit = () => {
+    if (!busy && filled) onNext(identifier.trim());
+  };
   return (
     <View className="gap-4">
       <Field label="Phone number or email" error={error}>
@@ -43,14 +74,18 @@ function IdentifierStep({
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
+          autoComplete="username"
+          autoFocus
           placeholder="+91 98765 43210 or you@gmail.com"
           value={identifier}
           onChangeText={setIdentifier}
+          onSubmitEditing={submit}
+          returnKeyType="next"
         />
       </Field>
       <Button
         label="Continue"
-        onPress={() => onNext(identifier.trim())}
+        onPress={submit}
         disabled={busy || !filled}
         loading={busy}
       />
@@ -60,6 +95,7 @@ function IdentifierStep({
 
 function OtpStep({
   identifier,
+  returnTo,
   draft,
   hasPassword,
   startWithQrFallback,
@@ -69,6 +105,7 @@ function OtpStep({
   onBack,
 }: {
   identifier: string;
+  returnTo?: string;
   draft: Draft | null;
   hasPassword: boolean;
   startWithQrFallback: boolean;
@@ -96,6 +133,7 @@ function OtpStep({
     : `••••• ${identifier.slice(-4)}`;
 
   const submit = async () => {
+    if (busy || code.length !== 6) return;
     setError(null);
     setBusy(true);
     try {
@@ -135,12 +173,12 @@ function OtpStep({
   return (
     <View className="gap-4">
       <Field label="Verification code" error={error}>
-        <Input
-          keyboardType="number-pad"
-          maxLength={6}
-          placeholder="6-digit code"
+        <OtpInput
           value={code}
-          onChangeText={setCode}
+          onChange={setCode}
+          onSubmit={() => void submit()}
+          invalid={!!error}
+          autoFocus
         />
         <Text className="text-[12px]" style={{ color: p.mutedForeground }}>
           Sent to {masked}, expires in 5 minutes.
@@ -156,26 +194,25 @@ function OtpStep({
         <View className="flex-1">
           <Button
             label={cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
-            variant="secondary"
+            variant="outline"
             onPress={() => void resend()}
             disabled={cooldown > 0}
           />
         </View>
         <View className="flex-1">
-          <Button label="Back" variant="secondary" onPress={onBack} />
+          <Button label="Back" variant="outline" onPress={onBack} />
         </View>
       </View>
       {hasPassword && (
-        <Button
-          label="Use password instead"
-          variant="ghost"
-          onPress={onUsePassword}
-        />
+        <LinkButton label="Use password instead" onPress={onUsePassword} />
       )}
       {showQrFallback && (
         <View
           className="rounded-lg border p-4"
-          style={{ borderColor: p.border, backgroundColor: p.muted }}
+          style={{
+            borderColor: p.border,
+            backgroundColor: withAlpha(p.muted, 0.4),
+          }}
         >
           <Text
             className="text-[13px] font-medium"
@@ -188,7 +225,7 @@ function OtpStep({
             any SMS.
           </Text>
           <View className="mt-3">
-            <QrLoginPanel identifier={identifier} />
+            <QrLoginPanel identifier={identifier} returnTo={returnTo} />
           </View>
         </View>
       )}
@@ -215,7 +252,11 @@ function CreateStep({
   const requestOtp = useAuth((s) => s.requestOtp);
   const p = usePalette();
 
+  const canSubmit =
+    !!name.trim() && (hasInvite || !!workspaceName.trim()) && !busy;
+
   const submit = async () => {
+    if (!canSubmit) return;
     setError(null);
     // Same floor as the web form (minLength=10) — RN inputs don't enforce it.
     if (!hasInvite && password && password.length < 10) {
@@ -245,23 +286,44 @@ function CreateStep({
   return (
     <View className="gap-4">
       <Field label="Your name" error={error}>
-        <Input value={name} onChangeText={setName} placeholder="Full name" />
+        <Input
+          value={name}
+          onChangeText={setName}
+          placeholder="Full name"
+          autoComplete="name"
+          autoFocus
+          onSubmitEditing={() => void submit()}
+          returnKeyType="next"
+        />
       </Field>
-      {!hasInvite && (
+      {hasInvite ? (
+        <View
+          className="rounded-md border px-3 py-2"
+          style={{ borderColor: p.border, backgroundColor: p.muted }}
+        >
+          <Text className="text-xs" style={{ color: p.mutedForeground }}>
+            Invited workspace member.
+          </Text>
+        </View>
+      ) : (
         <>
           <Field label="Company / workspace name">
             <Input
               value={workspaceName}
               onChangeText={setWorkspaceName}
               placeholder="e.g. Kataria Syntex"
+              onSubmitEditing={() => void submit()}
+              returnKeyType="next"
             />
           </Field>
           <Field label="Password (optional)">
             <Input
               secureTextEntry
+              autoComplete="new-password"
               value={password}
               onChangeText={setPassword}
-              placeholder="Minimum 10 characters"
+              onSubmitEditing={() => void submit()}
+              returnKeyType="done"
             />
             <Text className="text-[12px]" style={{ color: p.mutedForeground }}>
               Minimum 10 characters.
@@ -272,15 +334,10 @@ function CreateStep({
       <Button
         label="Send verification code"
         onPress={() => void submit()}
-        disabled={busy || !name.trim() || (!hasInvite && !workspaceName.trim())}
+        disabled={!canSubmit}
         loading={busy}
       />
-      <Button
-        label="Back"
-        variant="secondary"
-        onPress={onBack}
-        disabled={busy}
-      />
+      <Button label="Back" variant="outline" onPress={onBack} disabled={busy} />
     </View>
   );
 }
@@ -300,6 +357,7 @@ function PasswordStep({
   const loginPassword = useAuth((s) => s.loginPassword);
 
   const submit = async () => {
+    if (busy || !password) return;
     setError(null);
     setBusy(true);
     try {
@@ -315,7 +373,15 @@ function PasswordStep({
   return (
     <View className="gap-4">
       <Field label="Password" error={error}>
-        <Input secureTextEntry value={password} onChangeText={setPassword} />
+        <Input
+          secureTextEntry
+          autoComplete="current-password"
+          value={password}
+          onChangeText={setPassword}
+          autoFocus
+          onSubmitEditing={() => void submit()}
+          returnKeyType="done"
+        />
       </Field>
       <Button
         label="Log in"
@@ -325,10 +391,48 @@ function PasswordStep({
       />
       <Button
         label="Use a verification code instead"
-        variant="secondary"
+        variant="outline"
         onPress={onBack}
       />
     </View>
+  );
+}
+
+/** Segmented method switch — the web MethodTab: active tab takes the card
+ *  surface + hairline border, icon + 13px medium label. */
+function MethodTab({
+  active,
+  icon,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  onPress: () => void;
+}) {
+  const p = usePalette();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-md border"
+      style={({ pressed }) => ({
+        backgroundColor: active ? p.card : "transparent",
+        borderColor: active ? p.border : "transparent",
+        opacity: pressed ? 0.8 : 1,
+      })}
+    >
+      {icon}
+      <Text
+        className="text-[13px] font-medium"
+        numberOfLines={1}
+        style={{ color: active ? p.foreground : p.mutedForeground }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -337,6 +441,7 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
   const lookupIdentifier = useAuth((s) => s.lookupIdentifier);
   const router = useRouter();
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>("home");
   const [method, setMethod] = useState<"phone" | "qr">("phone");
   const [identifier, setIdentifier] = useState("");
@@ -388,10 +493,25 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
           ? "Enter password"
           : "Verification";
 
+  const description =
+    step === "home"
+      ? "Enter your phone number or email, or scan the QR code."
+      : step === "create"
+        ? "Enter your profile details."
+        : step === "password"
+          ? "Enter your account password."
+          : null;
+
   return (
     <ScrollView
       className="flex-1"
-      contentContainerClassName="grow items-center justify-center p-4"
+      contentContainerClassName="grow items-center justify-center"
+      contentContainerStyle={{
+        paddingTop: insets.top + 16,
+        paddingBottom: insets.bottom + 16,
+        paddingHorizontal: 16,
+      }}
+      keyboardShouldPersistTaps="handled"
       style={{ backgroundColor: p.background }}
     >
       <View className="mb-6 flex-row items-center gap-3">
@@ -400,14 +520,14 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
           style={{ backgroundColor: p.foreground }}
         >
           <Text
-            className="text-lg font-semibold"
+            className="text-lg font-semibold leading-none tracking-tight"
             style={{ color: p.background }}
           >
             K
           </Text>
         </View>
         <Text
-          className="text-[17px] font-semibold"
+          className="text-[17px] font-semibold tracking-tight"
           style={{ color: p.foreground }}
         >
           {COMPANY_DETAILS.name} Biz App
@@ -416,13 +536,21 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
 
       <Card className="w-full max-w-md">
         <View className="gap-4">
-          <View>
+          <View className="gap-1.5">
             <Text
-              className="text-[17px] font-semibold"
+              className="text-[16px] font-semibold leading-tight tracking-tight"
               style={{ color: p.foreground }}
             >
               {title}
             </Text>
+            {description ? (
+              <Text
+                className="text-[14px] leading-normal"
+                style={{ color: p.mutedForeground }}
+              >
+                {description}
+              </Text>
+            ) : null}
           </View>
 
           {step === "home" && (
@@ -432,25 +560,31 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
                 style={{ backgroundColor: p.muted, borderColor: p.border }}
               >
                 {(["phone", "qr"] as const).map((m) => (
-                  <Pressable
+                  <MethodTab
                     key={m}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: method === m }}
+                    active={method === m}
                     onPress={() => setMethod(m)}
-                    className="min-h-[44px] flex-1 items-center justify-center rounded-md"
-                    style={{
-                      backgroundColor: method === m ? p.card : "transparent",
-                    }}
-                  >
-                    <Text
-                      className="text-[13px] font-medium"
-                      style={{
-                        color: method === m ? p.foreground : p.mutedForeground,
-                      }}
-                    >
-                      {m === "phone" ? "Phone / Email" : "Instant QR Login"}
-                    </Text>
-                  </Pressable>
+                    label={m === "phone" ? "Phone / Email" : "Instant QR Login"}
+                    icon={
+                      m === "phone" ? (
+                        <Feather
+                          name="smartphone"
+                          size={16}
+                          color={
+                            method === m ? p.foreground : p.mutedForeground
+                          }
+                        />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name="qrcode"
+                          size={16}
+                          color={
+                            method === m ? p.foreground : p.mutedForeground
+                          }
+                        />
+                      )
+                    }
+                  />
                 ))}
               </View>
               {method === "phone" ? (
@@ -461,7 +595,7 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
                 />
               ) : (
                 <View className="items-center py-2">
-                  <QrLoginPanel />
+                  <QrLoginPanel returnTo={returnTo} />
                 </View>
               )}
             </View>
@@ -470,6 +604,7 @@ export function AuthScreen({ returnTo }: { returnTo?: string }) {
           {step === "otp" && (
             <OtpStep
               identifier={identifier}
+              returnTo={returnTo}
               draft={draft}
               hasPassword={accountExists && hasPassword}
               startWithQrFallback={otpFallback}

@@ -26,9 +26,13 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { usePalette, SCRIM } from "@/theme";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { usePalette, SHADOWS, SCRIM } from "@/theme";
 import { MORPH, MORPH_EXIT, useReduceMotion } from "@/lib/motion";
+import { Feather } from "@/ui/feather";
 
 export function MorphSheet({
   open,
@@ -46,6 +50,7 @@ export function MorphSheet({
   maxHeight?: number;
 }) {
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
   const reduce = useReduceMotion();
   // Mounted while an enter/exit animation is on screen; RN Modal provides
@@ -81,9 +86,9 @@ export function MorphSheet({
     return () => sub.remove();
   }, [open, onOpenChange]);
 
+  // The web sheet travels the full path (y: 100% → 0), not a peeking offset.
   const panelStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (1 - progress.value) * 64 }],
-    opacity: progress.value,
+    transform: [{ translateY: (1 - progress.value) * winH }],
   }));
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
@@ -117,41 +122,45 @@ export function MorphSheet({
           />
         </Pressable>
         <SafeAreaView
-          edges={["bottom", "left", "right"]}
+          edges={["left", "right"]}
           style={{ maxHeight: maxHeight * winH }}
         >
           <Animated.View
             style={[
               panelStyle,
               {
-                backgroundColor: p.background,
+                backgroundColor: p.card,
                 borderTopColor: p.border,
                 borderTopWidth: StyleSheet.hairlineWidth,
                 borderTopLeftRadius: 20,
                 borderTopRightRadius: 20,
+                boxShadow: SHADOWS.overlay,
+                // Web mobile sheets pad 24px over the safe-area inset.
+                paddingBottom: 24 + insets.bottom,
                 overflow: "hidden",
               },
             ]}
           >
             {title ? (
-              <View className="flex-row items-center justify-between px-4 pt-4">
+              <View className="px-4 pt-4 pr-14">
                 <Text
                   className="text-[17px] font-semibold"
                   style={{ color: p.foreground }}
                 >
                   {title}
                 </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => onOpenChange(false)}
-                  className="min-h-[44px] justify-center px-3"
-                >
-                  <Text className="text-[15px]" style={{ color: p.primary }}>
-                    Close
-                  </Text>
-                </Pressable>
               </View>
             ) : null}
+            {/* Web dialog close affordance: a 44px X, no text label. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={() => onOpenChange(false)}
+              className="absolute right-2 top-2 h-11 w-11 items-center justify-center"
+              style={{ opacity: 0.7 }}
+            >
+              <Feather name="x" size={16} color={p.foreground} />
+            </Pressable>
             {children}
           </Animated.View>
         </SafeAreaView>

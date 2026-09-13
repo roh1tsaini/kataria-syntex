@@ -27,6 +27,9 @@ registry.
 Domain rules, database, API, auth, permissions — all documented in
 `apps/app/APP.md` (§6–§10) and shared unchanged.
 
+Parity rules and the verification protocol: `AGENTS.md` §2.3–§2.4.
+`apps/app/design.md` stays the single source of truth for every visual value.
+
 ## 2 · Monorepo & commands
 
 Bun workspaces + Turborepo. Bun is the only package manager.
@@ -98,7 +101,7 @@ apps/android/
 │   │   ├── updates.ts         # update store: poll manifest, banner, install
 │   │   ├── installer.ts       # APK download (expo-file-system) + system installer
 │   │   ├── pdf.ts             # server PDF download → share / PrintManager
-│   │   ├── toasts.ts          # Android toast sink (configureAndroidToasts)
+│   │   ├── toasts.ts          # app-core toast sink → card overlay (title-only, 4s, max 3)
 │   │   ├── use-masters-load.ts # load → block save → nonce-retry (editor forms)
 │   │   ├── challan-kinds.ts   # one kind table: registers, detail, editor
 │   │   ├── format.ts          # single home for number/date/count formatting
@@ -106,10 +109,14 @@ apps/android/
 │   ├── ui/                    # kit.tsx primitives, app-header.tsx, nav-drawer.tsx,
 │   │                          # nav-sections.ts (drawer tree), count-up.tsx (rolling digits),
 │   │                          # sync.tsx, update-surface.tsx, qr-login-panel.tsx,
+│   │                          # date-sheet.tsx (DateField sheet calendar),
+│   │                          # toast-overlay.tsx (bottom-center card stack),
+│   │                          # otp-input.tsx (six-cell OTP row),
 │   │                          # feather.tsx icons, confirm.ts
 │   └── theme/
 │       ├── tokens.ts          # GENERATED from globals.css — never hand-edit
-│       └── index.ts           # usePalette() (scheme + 6 accents), withAlpha(), SCRIM
+│       └── index.ts           # usePalette() (light/dark, one neutral accent),
+│                               # CHART donut palette, withAlpha(), SCRIM, SHADOWS
 ├── plugins/with-signing.ts    # wires keystore.properties into the release build
 ├── scripts/
 │   ├── convert-tokens.ts      # globals.css oklch → sRGB → src/theme/tokens.ts
@@ -145,6 +152,9 @@ called at the top of `app/_layout.tsx` (module scope, StrictMode-safe):
 
 Web/Electron counterpart: `apps/app/src/main/lib/platform.ts`
 (`configureWebCore`, wired in `main.tsx`).
+
+Toasts: `configureAndroidToasts()` (also at `app/_layout.tsx` module scope)
+wires app-core's toast sink to the card overlay — never the OS toast.
 
 ## 6 · Dev workflow
 
@@ -210,24 +220,24 @@ every visual value (radius ladder, spacing, type, color).
   (oklch) → `src/theme/tokens.ts` (sRGB hex/rgba — RN cannot parse oklch at
   runtime). **After any palette change in globals.css, run
   `bun scripts/convert-tokens.ts`** and commit the regenerated tokens.
-- `src/theme/index.ts` exposes `usePalette()` — scheme (light/dark,
-  `userInterfaceStyle: automatic`) + 6 accents. The default is `graphite`,
-  the monochrome accent that mirrors apps/app's single neutral `--a-*`; the
-  hues are opt-in from Settings → Appearance. `withAlpha()` tints a palette
-  color safely (tokens are hex in light mode but `rgba()` in dark for
-  `border`/`input`, so string concatenation would produce an invalid color);
-  `SCRIM` is the one overlay scrim.
+- `src/theme/index.ts` exposes `usePalette()` — light/dark schemes with one
+  neutral accent, the monochrome that mirrors apps/app's `--a-*` (no picker).
+  `CHART` is the dashboard donut palette (`--chart-1..5`). `withAlpha()`
+  tints a palette color safely (tokens are hex in light mode but `rgba()` in
+  dark for `border`/`input`, so string concatenation would produce an invalid
+  color); `SCRIM` is the one overlay scrim; `SHADOWS` is the soft/lift/overlay
+  ramp from `--shadow-*`, read through the `boxShadow` style prop.
 - `src/lib/theme.ts` owns the choice: a stored scheme wins, otherwise the OS
-  scheme is followed live (`Appearance`); accent and scheme persist in the
-  adapter's `uiStorage`, which is never wiped on logout. Both are edited in
-  Settings → Appearance, and the status bar follows the resolved scheme.
-  `initTheme()` runs at boot in `app/_layout.tsx` (idempotent), so the stored
-  choice applies before the first paint.
-- Status-bar inset: `Screen` clears the status bar itself
-  (`useSafeAreaInsets`); tab screens that put a banner above the title pass
-  `safeTop={false}` and inset their own wrapper. Screens that draw their own
-  header — masters, colors, reports, and the returns / raw-material / packing
-  editors — apply `insets.top` to their root view.
+  scheme is followed live (`Appearance`); the scheme persists in the
+  adapter's `uiStorage`, which is never wiped on logout. Light/Dark is
+  switched in Settings → Appearance, and the status bar follows the resolved
+  scheme. `initTheme()` runs at boot in `app/_layout.tsx` (idempotent), so the
+  stored choice applies before the first paint.
+- Status-bar inset: `Screen` clears the status bar itself (via `AppHeader`);
+  reports composes `AppHeader` directly for its grid/detail layout. The
+  returns / raw-material / packing editor sheets draw their own chrome and
+  apply `insets.top` to their root view. Auth/scan pre-auth surfaces sit
+  outside `Screen` with their own safe-area padding.
 - `tailwind.config.js` mirrors the radius ladder (8/10/12/16/20px) and maps
   `font-mono` to Android's `monospace` (pairing codes, tabular figures);
   colors are NOT in the Tailwind config — components read the runtime
@@ -237,8 +247,8 @@ every visual value (radius ladder, spacing, type, color).
   cards 12px, badges 8px (soft tint + hairline), page titles 28px, pulsing
   skeletons, loading buttons that keep their label (no spinners). Mobile
   grammar adaptations are deliberate: bottom-sheet pickers instead of
-  popovers, native confirm dialogs, date fields as validated `YYYY-MM-DD`
-  text.
+  popovers, native confirm dialogs, date fields as a sheet calendar
+  (`DateField` in `src/ui/date-sheet.tsx`, the web DatePicker counterpart).
 
 ## 9 · Continuous Native Generation (CNG)
 

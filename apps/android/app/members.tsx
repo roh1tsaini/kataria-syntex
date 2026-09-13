@@ -9,7 +9,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 import {
   useAuth,
   usePermission,
@@ -23,8 +22,16 @@ import {
 import { usePalette, withAlpha } from "@/theme";
 import { cn } from "@/lib/cn";
 import { confirm } from "@/ui/confirm";
-import { Badge, Button, Card, Input, Screen, Skeleton } from "@/ui/kit";
+import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
+import { IconButton } from "@/ui/controls";
 import { SyncStrip } from "@/ui/sync";
+import {
+  AppIcon,
+  Crown,
+  Feather,
+  ShieldCheck,
+  type IconValue,
+} from "@/ui/feather";
 
 const PERMISSION_GROUPS: { label: string; perms: Permission[] }[] = [
   {
@@ -93,7 +100,8 @@ function samePerms(a: Permission[], b: Permission[]): boolean {
 }
 
 /** Card with zero padding — header rows and list cells bleed to the edges
- * (kit Card is always p-4; these sections need edge-to-edge rows). */
+ * (kit Card is always p-4; these sections need edge-to-edge rows). Radius
+ * 12px per design.md §2.2, same as every web Card. */
 function Panel({
   className,
   children,
@@ -104,7 +112,7 @@ function Panel({
   const p = usePalette();
   return (
     <View
-      className={cn("rounded-xl border", className)}
+      className={cn("rounded-lg border", className)}
       style={{ backgroundColor: p.card, borderColor: p.border }}
     >
       {children}
@@ -114,19 +122,22 @@ function Panel({
 
 // ── Local primitives (palette-driven; the kit's Button has no style slot) ───
 
-/** Small outline action — the web ghost/outline-sm button equivalent. */
+/** Small row action — the web sm button equivalent: outline rests on the
+ * card surface, ghost is borderless (web: Edit/Cancel). */
 function RowButton({
   label,
+  icon,
   onPress,
   disabled,
   color,
-  accessibilityLabel,
+  variant = "outline",
 }: {
   label: string;
+  icon?: IconValue;
   onPress: () => void;
   disabled?: boolean;
   color?: "warning" | "destructive";
-  accessibilityLabel?: string;
+  variant?: "outline" | "ghost";
 }) {
   const p = usePalette();
   const tint =
@@ -139,17 +150,17 @@ function RowButton({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled ?? false }}
-      accessibilityLabel={accessibilityLabel}
       disabled={disabled}
       onPress={onPress}
-      className="min-h-[44px] justify-center rounded-md border px-3"
+      className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-md border px-3"
       style={({ pressed }) => ({
         opacity: pressed ? 0.7 : disabled ? 0.5 : 1,
-        borderColor: color ? tint : p.border,
-        backgroundColor: color ? `${tint}14` : "transparent",
+        borderColor: variant === "outline" ? p.border : "transparent",
+        backgroundColor: variant === "outline" ? p.card : "transparent",
       })}
     >
-      <Text className="text-[13px] font-semibold" style={{ color: tint }}>
+      {icon ? <AppIcon name={icon} size={16} color={tint} /> : null}
+      <Text className="text-[13px] font-medium" style={{ color: tint }}>
         {label}
       </Text>
     </Pressable>
@@ -175,12 +186,13 @@ function BundleChip({
       className="min-h-[44px] justify-center rounded-md border px-3"
       style={({ pressed }) => ({
         opacity: pressed ? 0.7 : 1,
-        borderColor: active ? p.primary : p.border,
+        // Web active state: border-primary/30 + accent soft fill.
+        borderColor: active ? withAlpha(p.primary, 0.3) : p.border,
         backgroundColor: active ? p.accentSoft : "transparent",
       })}
     >
       <Text
-        className="text-[13px] font-semibold"
+        className="text-[13px] font-medium"
         style={{ color: active ? p.accentInk : p.foreground }}
       >
         {label}
@@ -211,15 +223,18 @@ function BundleRow({
 }
 
 /** Permission checkbox row — 44px target, whole row toggles (web: label
- * wrapping a checkbox; here the row is the single toggle, no double-fire). */
+ * wrapping a checkbox; here the row is the single toggle, no double-fire).
+ * Add-form rows are 14px; the edit panel is the web's denser 13px grid. */
 function PermCheck({
   perm,
   checked,
   onToggle,
+  variant = "form",
 }: {
   perm: Permission;
   checked: boolean;
   onToggle: () => void;
+  variant?: "form" | "edit";
 }) {
   const p = usePalette();
   return (
@@ -227,7 +242,10 @@ function PermCheck({
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       onPress={onToggle}
-      className="min-h-[44px] flex-row items-center gap-2.5 rounded-md px-2 py-1"
+      className={cn(
+        "min-h-[44px] flex-row items-center gap-2.5 rounded-md",
+        variant === "form" ? "px-2 py-1" : "px-1.5 py-0.5",
+      )}
       style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
       <View
@@ -241,7 +259,12 @@ function PermCheck({
           <Feather name="check" size={13} color={p.primaryForeground} />
         )}
       </View>
-      <Text className="flex-1 text-[14px]" style={{ color: p.foreground }}>
+      <Text
+        className={
+          variant === "form" ? "flex-1 text-[14px]" : "flex-1 text-[13px]"
+        }
+        style={{ color: p.foreground }}
+      >
         {permissionLabel(perm)}
       </Text>
     </Pressable>
@@ -251,17 +274,24 @@ function PermCheck({
 function PermGroupList({
   selected,
   onToggle,
+  variant = "form",
 }: {
   selected: Permission[];
   onToggle: (perm: Permission) => void;
+  variant?: "form" | "edit";
 }) {
   const p = usePalette();
   return (
-    <View>
+    <View className={variant === "form" ? "gap-4" : "gap-3"}>
       {PERMISSION_GROUPS.map((group) => (
-        <View key={group.label} className="mb-2">
+        <View key={group.label}>
           <Text
-            className="px-0.5 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider"
+            className={cn(
+              "px-0.5 pb-1",
+              variant === "form"
+                ? "text-[12px] font-semibold"
+                : "text-[11px] font-semibold uppercase tracking-wider",
+            )}
             style={{ color: p.mutedForeground }}
           >
             {group.label}
@@ -272,6 +302,7 @@ function PermGroupList({
               perm={perm}
               checked={selected.includes(perm)}
               onToggle={() => onToggle(perm)}
+              variant={variant}
             />
           ))}
         </View>
@@ -321,18 +352,20 @@ function AddMemberForm() {
   };
 
   return (
-    <Card className="mt-4">
-      <Text
-        className="text-[15px] font-semibold"
-        style={{ color: p.foreground }}
-      >
-        Add a member
-      </Text>
-      <Text className="mt-0.5 text-[13px]" style={{ color: p.mutedForeground }}>
-        Enter their phone number or email to grant access.
-      </Text>
+    <Panel className="mt-6">
+      <View className="gap-1.5 border-b p-5" style={{ borderColor: p.border }}>
+        <Text
+          className="text-[16px] font-semibold"
+          style={{ color: p.foreground }}
+        >
+          Add a member
+        </Text>
+        <Text className="text-[14px]" style={{ color: p.mutedForeground }}>
+          Enter their phone number or email to grant access.
+        </Text>
+      </View>
 
-      <View className="mt-4 gap-4">
+      <View className="gap-5 p-5">
         <View className="gap-1.5">
           <Text
             className="text-[13px] font-medium"
@@ -351,9 +384,9 @@ function AddMemberForm() {
           />
         </View>
 
-        <View className="gap-2">
+        <View className="gap-2.5">
           <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
+            className="text-[11px] font-semibold uppercase tracking-wider"
             style={{ color: p.mutedForeground }}
           >
             Quick bundles
@@ -364,9 +397,9 @@ function AddMemberForm() {
           />
         </View>
 
-        <View className="gap-2">
+        <View className="gap-2.5">
           <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
+            className="text-[11px] font-semibold uppercase tracking-wider"
             style={{ color: p.mutedForeground }}
           >
             Permissions ({permissions.length} selected)
@@ -377,6 +410,7 @@ function AddMemberForm() {
         <View className="gap-2 border-t pt-4" style={{ borderColor: p.border }}>
           <Button
             label="Add member"
+            icon="user-plus"
             onPress={() => void submit()}
             disabled={
               busy || identifier.trim().length < 5 || permissions.length === 0
@@ -390,15 +424,16 @@ function AddMemberForm() {
           ) : null}
         </View>
       </View>
-    </Card>
+    </Panel>
   );
 }
 
 // ── Roster ──────────────────────────────────────────────────────────────────
 
 function RoleBadge({ isPrimaryAdmin }: { isPrimaryAdmin: boolean }) {
-  if (isPrimaryAdmin) return <Badge label="Primary Admin" tone="accent" />;
-  return <Badge label="Member" tone="warning" />;
+  if (isPrimaryAdmin)
+    return <Badge label="Primary Admin" tone="accent" icon={Crown} />;
+  return <Badge label="Member" tone="warning" icon={ShieldCheck} />;
 }
 
 function MemberRow({
@@ -456,17 +491,22 @@ function MemberRow({
           member.permissions.length > 0 ? (
             <View className="mt-1.5 flex-row flex-wrap gap-1">
               {member.permissions.map((perm) => (
-                <Badge key={perm} label={permissionLabel(perm)} />
+                <Badge
+                  key={perm}
+                  label={permissionLabel(perm)}
+                  tone="secondary"
+                />
               ))}
             </View>
           ) : null}
         </View>
         {canManage ? (
-          <View className="shrink-0 flex-row items-center gap-1.5">
+          <View className="shrink-0 flex-row items-center gap-1">
             {member.isPrimaryAdmin ? (
               isPrimaryAdmin ? (
                 <RowButton
                   label="Transfer admin"
+                  icon={Crown}
                   onPress={onTransfer}
                   disabled={busy}
                   color="warning"
@@ -476,18 +516,20 @@ function MemberRow({
               <>
                 <RowButton
                   label={editing ? "Cancel" : "Edit"}
+                  icon={ShieldCheck}
+                  variant="ghost"
                   onPress={() => {
                     setEditing(!editing);
                     setDraftPerms(member.permissions);
                   }}
                   disabled={busy}
                 />
-                <RowButton
-                  label="Remove"
+                <IconButton
+                  icon="trash-2"
+                  label={`Remove ${member.name}`}
                   onPress={onRemove}
                   disabled={busy}
-                  color="destructive"
-                  accessibilityLabel={`Remove ${member.name}`}
+                  destructive
                 />
               </>
             )}
@@ -497,13 +539,20 @@ function MemberRow({
       {editing ? (
         <View
           className="mt-3 gap-3 rounded-lg border p-4"
-          style={{ borderColor: p.border, backgroundColor: p.muted }}
+          style={{
+            borderColor: p.border,
+            backgroundColor: withAlpha(p.muted, 0.5),
+          }}
         >
           <BundleRow
             selected={draftPerms}
             onApply={(perms) => setDraftPerms(perms)}
           />
-          <PermGroupList selected={draftPerms} onToggle={togglePerm} />
+          <PermGroupList
+            selected={draftPerms}
+            onToggle={togglePerm}
+            variant="edit"
+          />
           <Button
             label="Save permissions"
             onPress={() => {
@@ -593,14 +642,14 @@ function MembersPage() {
       >
         {error ? (
           <View
-            className="mb-3 rounded-lg border px-4 py-3"
+            className="mb-6 rounded-lg border px-4 py-3"
             style={{
               borderColor: `${p.destructive}33`,
               backgroundColor: `${p.destructive}14`,
             }}
             accessibilityRole="alert"
           >
-            <Text className="text-[13px]" style={{ color: p.destructive }}>
+            <Text className="text-sm" style={{ color: p.destructive }}>
               {error}
             </Text>
           </View>
@@ -615,20 +664,24 @@ function MembersPage() {
             }}
           >
             <Text
-              className="text-[11px] font-bold uppercase tracking-wider"
+              className="text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: p.mutedForeground }}
             >
               Roster
             </Text>
             <Badge
               label={`${members.length} ${members.length === 1 ? "member" : "members"}`}
+              tone="secondary"
             />
           </View>
           {listLoading && members.length === 0 ? (
-            <View className="gap-2 px-4 py-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+            <View className="gap-4 px-4 py-4">
+              {[0, 1, 2].map((i) => (
+                <View key={i} className="gap-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-44" />
+                </View>
+              ))}
             </View>
           ) : listError && members.length === 0 ? (
             <View className="gap-2 px-4 py-6">
@@ -640,7 +693,7 @@ function MembersPage() {
               </Text>
               <Button
                 label="Retry"
-                variant="secondary"
+                variant="outline"
                 onPress={() => {
                   setListError(null);
                   setListLoading(true);
@@ -651,8 +704,13 @@ function MembersPage() {
               />
             </View>
           ) : members.length === 0 ? (
-            <View className="items-center gap-1 py-10">
-              <Feather name="user-plus" size={24} color={p.mutedForeground} />
+            <View className="items-center gap-2 py-10">
+              <View
+                className="h-10 w-10 items-center justify-center rounded-lg"
+                style={{ backgroundColor: p.muted }}
+              >
+                <Feather name="user-plus" size={20} color={p.mutedForeground} />
+              </View>
               <Text
                 className="text-[15px] font-semibold"
                 style={{ color: p.foreground }}
@@ -660,7 +718,7 @@ function MembersPage() {
                 No members yet
               </Text>
               <Text
-                className="text-center text-[13px]"
+                className="text-center text-[14px]"
                 style={{ color: p.mutedForeground }}
               >
                 Invite your team with the form below.
@@ -726,19 +784,20 @@ function MembersPage() {
         </Panel>
 
         {canManage && pendingMembers.length > 0 ? (
-          <Panel className="mt-4">
+          <Panel className="mt-6">
             <View
               className="flex-row items-center justify-between border-b px-4 py-2.5"
               style={{ borderColor: p.border, backgroundColor: p.muted }}
             >
               <Text
-                className="text-[11px] font-bold uppercase tracking-wider"
+                className="text-[11px] font-semibold uppercase tracking-wider"
                 style={{ color: p.mutedForeground }}
               >
                 Waiting to join
               </Text>
               <Badge
                 label={`${pendingMembers.length} ${pendingMembers.length === 1 ? "invite" : "invites"}`}
+                tone="secondary"
               />
             </View>
             <Text
@@ -778,12 +837,17 @@ function MembersPage() {
                     ) : null}
                     <View className="mt-1.5 flex-row flex-wrap gap-1">
                       {pm.permissions.map((perm) => (
-                        <Badge key={perm} label={permissionLabel(perm)} />
+                        <Badge
+                          key={perm}
+                          label={permissionLabel(perm)}
+                          tone="secondary"
+                        />
                       ))}
                     </View>
                   </View>
-                  <RowButton
-                    label="Remove"
+                  <IconButton
+                    icon="trash-2"
+                    label={`Remove ${pm.identifier}`}
                     onPress={() =>
                       void run(pm.id, async () => {
                         const ok = await confirm({
@@ -799,8 +863,7 @@ function MembersPage() {
                       })
                     }
                     disabled={busyId === pm.id}
-                    color="destructive"
-                    accessibilityLabel={`Remove ${pm.identifier}`}
+                    destructive
                   />
                 </View>
               </View>

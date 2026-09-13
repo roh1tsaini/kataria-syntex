@@ -33,6 +33,7 @@ import {
 import { usePalette } from "@/theme";
 import { requestDiscard } from "@/ui/confirm";
 import { Textarea } from "@/ui/controls";
+import { DateField } from "@/ui/date-sheet";
 import {
   Button,
   Card,
@@ -40,10 +41,12 @@ import {
   EmptyState,
   Field,
   Input,
+  PageTitle,
   Screen,
   Skeleton,
 } from "@/ui/kit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PackageOpen } from "@/ui/feather";
 import { SyncStrip } from "@/ui/sync";
 import { countLabel, fmtDate, fmtWt, localDateKey } from "@/lib/format";
 import { useMastersLoad } from "@/lib/use-masters-load";
@@ -90,9 +93,6 @@ const emptyRow = (): ItemRow => ({
   netWt: "",
   cones: "",
 });
-
-const isValidDateKey = (v: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
 
 // Keyed by workspace id so one account's returns never leak into another's.
 // Registered so account resets (logout/401) wipe it — see app-core data-caches.
@@ -264,9 +264,10 @@ export default function ReturnsRoute() {
   // Other devices' writes arrive live; own writes refresh via store paths.
   useRealtimeEvent(["returns", "stock"], load);
 
-  // Web gates /returns behind ProtectedRoute requirePermission="create_return"
-  // (redirects home).
+  // Web gates /returns behind ProtectedRoute requirePermission="create_return":
+  // guests land on sign-in, signed-in users without the permission go home.
   if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
   if (!can("create_return")) return <Redirect href="/" />;
 
   if (showForm || paramEdit || editingId) {
@@ -394,27 +395,34 @@ export default function ReturnsRoute() {
           ) : loadError ? (
             <View className="p-4">
               <EmptyState
+                icon={PackageOpen}
                 title="Couldn't load returns"
                 message="The server didn't answer. Check your connection and retry."
-              />
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={() => void load()}
+                action={
+                  <Button
+                    label="Retry"
+                    variant="outline"
+                    onPress={() => void load()}
+                  />
+                }
               />
             </View>
           ) : filtered.length === 0 ? (
             <View className="p-4">
               <EmptyState
+                icon={PackageOpen}
                 title="No returns yet"
                 message="Returns from job workers will appear here."
+                action={
+                  can("create_return") ? (
+                    <Button
+                      label="Create return"
+                      trailingIcon="plus"
+                      onPress={() => setShowForm(true)}
+                    />
+                  ) : undefined
+                }
               />
-              {can("create_return") ? (
-                <Button
-                  label="Create return"
-                  onPress={() => setShowForm(true)}
-                />
-              ) : null}
             </View>
           ) : (
             <FlatList
@@ -431,14 +439,14 @@ export default function ReturnsRoute() {
                     <View className="min-w-0 flex-1">
                       <View className="flex-row flex-wrap items-center gap-1.5">
                         <Text
-                          className="text-[15px] font-semibold"
+                          className="text-sm font-semibold"
                           numberOfLines={1}
                           style={{ color: p.foreground }}
                         >
                           {item.jobWorkerName}
                         </Text>
                         <Text
-                          className="text-xs font-bold tabular-nums"
+                          className="font-mono text-xs font-bold tabular-nums"
                           style={{ color: p.mutedForeground }}
                         >
                           {item.invoiceNo}
@@ -531,32 +539,6 @@ function PickerField({
         value={value}
         onSelect={onSelect}
         onClose={() => setOpen(false)}
-      />
-    </Field>
-  );
-}
-
-/** Date field — YYYY-MM-DD text entry validated at submit (no date-picker
- * package in the dependency set; the web calendar guarantees this shape). */
-function DateField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <Field label={label}>
-      <Input
-        value={value}
-        onChangeText={onChange}
-        placeholder="YYYY-MM-DD"
-        keyboardType="numbers-and-punctuation"
-        maxLength={10}
-        autoCapitalize="none"
-        autoCorrect={false}
       />
     </Field>
   );
@@ -691,8 +673,8 @@ function ReturnForm({
       setError("Couldn't load the master data. Retry the load first.");
       return;
     }
-    if (!isValidDateKey(date)) {
-      setError("Enter a date as YYYY-MM-DD");
+    if (!date) {
+      setError("Select a date.");
       return;
     }
     if (!jobWorkerId) {
@@ -787,7 +769,7 @@ function ReturnForm({
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
@@ -803,17 +785,14 @@ function ReturnForm({
           </Pressable>
           <View className="min-w-0 flex-1">
             <Text
-              className="text-[11px] font-bold uppercase tracking-wider"
+              className="text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: p.mutedForeground }}
             >
               {editId ? "Edit" : "New"}
             </Text>
-            <Text
-              className="mt-1 text-[22px] font-bold"
-              style={{ color: p.foreground }}
-            >
+            <PageTitle className="mt-1.5">
               {editId ? "Edit return" : "New return"}
-            </Text>
+            </PageTitle>
           </View>
         </View>
 
@@ -833,11 +812,7 @@ function ReturnForm({
                 Couldn&apos;t load job workers, deniers and colours. Save is
                 disabled until they load.
               </Text>
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={retryMasters}
-              />
+              <Button label="Retry" variant="outline" onPress={retryMasters} />
             </View>
           ) : null}
 
@@ -880,14 +855,16 @@ function ReturnForm({
                   autoCorrect={false}
                 />
               </Field>
-              <DateField
-                label="Date"
-                value={date}
-                onChange={(d) => {
-                  setDate(d);
-                  setDirty(true);
-                }}
-              />
+              <Field label="Date">
+                <DateField
+                  value={date}
+                  accessibilityLabel="Date"
+                  onChange={(d) => {
+                    setDate(d);
+                    setDirty(true);
+                  }}
+                />
+              </Field>
               <Field label="Remarks">
                 <Textarea
                   value={remarks}
@@ -919,7 +896,7 @@ function ReturnForm({
                     style={{ backgroundColor: `${p.muted}66` }}
                   >
                     <Text
-                      className="text-[13px] font-bold tabular-nums"
+                      className="font-mono text-[13px] font-bold tabular-nums"
                       style={{ color: p.foreground }}
                     >
                       {b.challanNumber}
@@ -930,11 +907,14 @@ function ReturnForm({
                     >
                       {fmtDate(b.date)}
                     </Text>
-                    <Badge label={`Sent: ${fmtWt(b.sent)} kg`} />
-                    <Badge label={`Returned: ${fmtWt(b.returned)} kg`} />
+                    <Badge label={`Sent: ${fmtWt(b.sent)} kg`} tone="outline" />
+                    <Badge
+                      label={`Returned: ${fmtWt(b.returned)} kg`}
+                      tone="outline"
+                    />
                     <Badge
                       label={`Balance: ${fmtWt(b.balance)} kg`}
-                      tone="accent"
+                      tone="secondary"
                     />
                   </View>
                 ))}
@@ -970,9 +950,9 @@ function ReturnForm({
               <View className="flex-row shrink-0 items-center gap-2">
                 <Badge
                   label={`${rows.length} ${rows.length === 1 ? "line" : "lines"}`}
-                  tone="accent"
+                  tone="secondary"
                 />
-                <Badge label={`${fmtWt(totalWt)} kg total`} tone="accent" />
+                <Badge label={`${fmtWt(totalWt)} kg total`} tone="secondary" />
               </View>
             </View>
 
@@ -1039,7 +1019,7 @@ function ReturnForm({
                           <Feather
                             name="trash-2"
                             size={16}
-                            color={p.destructive}
+                            color={p.mutedForeground}
                           />
                         </Pressable>
                       ) : null}
@@ -1053,28 +1033,24 @@ function ReturnForm({
                         options={challanOptions}
                         onSelect={(v) => updateRow(idx, "challanId", v)}
                       />
-                      <View className="flex-row gap-2.5">
-                        <View className="flex-1">
-                          <PickerField
-                            label="Denier"
-                            placeholder="Select denier"
-                            value={row.denierId}
-                            options={denierOptions}
-                            onSelect={(v) => updateRow(idx, "denierId", v)}
-                          />
-                        </View>
-                        <View className="flex-1">
-                          <PickerField
-                            label="Colour"
-                            placeholder="Select colour"
-                            value={row.colorId}
-                            options={colorOptions}
-                            onSelect={(v) => updateRow(idx, "colorId", v)}
-                          />
-                        </View>
-                      </View>
-                      <View className="flex-row gap-2.5">
-                        <View className="flex-1">
+                      <PickerField
+                        label="Denier"
+                        placeholder="Select denier"
+                        value={row.denierId}
+                        options={denierOptions}
+                        onSelect={(v) => updateRow(idx, "denierId", v)}
+                      />
+                      <PickerField
+                        label="Colour"
+                        placeholder="Select colour"
+                        value={row.colorId}
+                        options={colorOptions}
+                        onSelect={(v) => updateRow(idx, "colorId", v)}
+                      />
+                      {/* Web's phone grid: two columns, Cones keeps its left
+                          half-cell — basis leaves the right cell empty. */}
+                      <View className="flex-row flex-wrap gap-2.5">
+                        <View className="basis-[47%]">
                           <Field label="Lot no.">
                             <Input
                               value={row.lotNo}
@@ -1083,25 +1059,28 @@ function ReturnForm({
                             />
                           </Field>
                         </View>
-                        <View className="flex-1">
+                        <View className="basis-[47%]">
                           <Field label="Net wt (kg)">
                             <Input
                               keyboardType="decimal-pad"
+                              style={{ fontWeight: "600" }}
                               value={row.netWt}
                               onChangeText={(v) => updateRow(idx, "netWt", v)}
                               placeholder="0.000"
                             />
                           </Field>
                         </View>
+                        <View className="basis-[47%]">
+                          <Field label="Cones">
+                            <Input
+                              keyboardType="number-pad"
+                              value={row.cones}
+                              onChangeText={(v) => updateRow(idx, "cones", v)}
+                              placeholder="Optional"
+                            />
+                          </Field>
+                        </View>
                       </View>
-                      <Field label="Cones">
-                        <Input
-                          keyboardType="number-pad"
-                          value={row.cones}
-                          onChangeText={(v) => updateRow(idx, "cones", v)}
-                          placeholder="Optional"
-                        />
-                      </Field>
                     </View>
 
                     {overReceipt && bal ? (
@@ -1126,26 +1105,42 @@ function ReturnForm({
             </View>
 
             <View className="mt-4">
-              <Button label="Add item" variant="secondary" onPress={addRow} />
-            </View>
-          </Card>
-
-          {/* Actions */}
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button label="Cancel" variant="secondary" onPress={back} />
-            </View>
-            <View className="flex-1">
               <Button
-                label={editId ? "Update return" : "Create return"}
-                onPress={() => void submit()}
-                disabled={busy}
-                loading={busy}
+                label="Add item"
+                icon="plus"
+                variant="outline"
+                className="border-dashed"
+                onPress={addRow}
               />
             </View>
-          </View>
+          </Card>
         </View>
       </ScrollView>
+
+      {/* Sticky action bar — web's mobile-only bottom bar, clearing the
+          gesture area (same contract as the challan editor). */}
+      <View
+        className="flex-row gap-2 border-t px-4 pt-3"
+        style={{
+          backgroundColor: p.card,
+          borderColor: p.border,
+          paddingBottom: 12 + insets.bottom,
+        }}
+      >
+        <Button
+          label="Cancel"
+          variant="outline"
+          onPress={back}
+          className="flex-1"
+        />
+        <Button
+          label={editId ? "Update return" : "Create return"}
+          onPress={() => void submit()}
+          disabled={busy}
+          loading={busy}
+          className="flex-1"
+        />
+      </View>
     </View>
   );
 }

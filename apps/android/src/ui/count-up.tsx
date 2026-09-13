@@ -123,6 +123,8 @@ export function CountUp({
 
   const strip: StripStyle = {
     fontSize,
+    // Web uses 1em cells; RN Text crops glyphs when lineHeight < fontSize and
+    // the strip clips overflow, so the cell keeps a 1.2em native floor.
     cell: Math.round(fontSize * 1.2),
     color,
     fontWeight,

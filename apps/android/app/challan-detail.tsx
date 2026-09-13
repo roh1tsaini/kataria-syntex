@@ -24,8 +24,9 @@ import {
   toastError,
   type ChallanItem,
 } from "@kataria-syntex/app-core";
-import { usePalette, SCRIM } from "@/theme";
+import { usePalette, SCRIM, withAlpha } from "@/theme";
 import { Badge, Button, EmptyState, Screen, Skeleton } from "@/ui/kit";
+import { SearchX } from "@/ui/feather";
 import { SyncStrip } from "@/ui/sync";
 import { shareChallanPdf, printChallanPdf } from "@/lib/pdf";
 import { kindFromParam } from "@/lib/challan-kinds";
@@ -47,17 +48,14 @@ function ItemCard({ item, index }: { item: ChallanItem; index: number }) {
             className="h-7 w-7 shrink-0 items-center justify-center rounded-md"
             style={{ backgroundColor: p.muted }}
           >
-            <Text
-              className="text-xs font-bold"
-              style={{ color: p.mutedForeground }}
-            >
+            <Text className="text-xs font-bold" style={{ color: p.foreground }}>
               {index + 1}
             </Text>
           </View>
           <View className="min-w-0">
             <View className="flex-row items-center gap-1">
               <Text
-                className="shrink text-sm font-semibold"
+                className="shrink text-sm font-semibold leading-none"
                 style={{ color: p.foreground }}
                 numberOfLines={1}
               >
@@ -89,7 +87,10 @@ function ItemCard({ item, index }: { item: ChallanItem; index: number }) {
         </View>
         <View className="shrink-0 items-end">
           <View className="flex-row items-baseline gap-1">
-            <Text className="text-sm font-bold" style={{ color: p.foreground }}>
+            <Text
+              className="text-sm font-bold tabular-nums"
+              style={{ color: p.foreground }}
+            >
               {fmtWt(item.netWt)}
             </Text>
             <Text
@@ -99,7 +100,10 @@ function ItemCard({ item, index }: { item: ChallanItem; index: number }) {
               kg
             </Text>
           </View>
-          <Text className="mt-0.5 text-xs" style={{ color: p.mutedForeground }}>
+          <Text
+            className="mt-0.5 text-xs tabular-nums"
+            style={{ color: p.mutedForeground }}
+          >
             {fmtBoxes(item.boxes)} {item.boxes === 1 ? "box" : "boxes"}
           </Text>
         </View>
@@ -108,7 +112,7 @@ function ItemCard({ item, index }: { item: ChallanItem; index: number }) {
         <View className="mt-2 flex-row flex-wrap gap-1.5">
           {item.boxNo ? (
             <View
-              className="rounded px-2 py-1"
+              className="rounded-sm px-2 py-1"
               style={{ backgroundColor: p.secondary }}
             >
               <Text
@@ -121,7 +125,7 @@ function ItemCard({ item, index }: { item: ChallanItem; index: number }) {
           ) : null}
           {item.remarks ? (
             <View
-              className="rounded px-2 py-1"
+              className="rounded-sm px-2 py-1"
               style={{ backgroundColor: p.muted }}
             >
               <Text className="text-xs" style={{ color: p.mutedForeground }}>
@@ -249,16 +253,24 @@ export default function ChallanDetailScreen() {
 
   if (notFound) {
     return (
-      <Screen title="Challan not found">
+      <Screen
+        headerLabel={kind.title}
+        title={kind.title}
+        banner={<SyncStrip />}
+      >
         <View className="flex-1 px-4">
           <EmptyState
+            icon={SearchX}
             title="Challan not found"
             message={`This ${kind.singular} was deleted from another device, or the link you opened is stale.`}
-          />
-          <Button
-            label={`Back to ${kind.listTitle}`}
-            variant="secondary"
-            onPress={goBack}
+            action={
+              <Button
+                label={`Back to ${kind.listTitle}`}
+                icon="arrow-left"
+                variant="outline"
+                onPress={goBack}
+              />
+            }
           />
         </View>
       </Screen>
@@ -267,7 +279,11 @@ export default function ChallanDetailScreen() {
 
   if (error) {
     return (
-      <Screen title="Challan">
+      <Screen
+        headerLabel={kind.title}
+        title={kind.title}
+        banner={<SyncStrip />}
+      >
         <View className="flex-1 gap-3 px-4">
           <Text className="text-sm" style={{ color: p.destructive }}>
             {error}
@@ -290,7 +306,7 @@ export default function ChallanDetailScreen() {
               />
             </View>
             <View className="flex-1">
-              <Button label="Back" variant="secondary" onPress={goBack} />
+              <Button label="Back" variant="outline" onPress={goBack} />
             </View>
           </View>
         </View>
@@ -300,15 +316,17 @@ export default function ChallanDetailScreen() {
 
   if (!detail) {
     return (
-      <Screen title="Challan">
+      <Screen
+        headerLabel={kind.title}
+        title={kind.title}
+        banner={<SyncStrip />}
+      >
         <View className="flex-1 gap-3 px-4">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-3 w-36" />
-          <View className="mt-2 flex-row gap-3">
-            <Skeleton className="h-28 flex-1 rounded-lg" />
-            <Skeleton className="h-28 flex-1 rounded-lg" />
-          </View>
-          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="mt-2 h-28 rounded-lg" />
+          <Skeleton className="h-28 rounded-lg" />
+          <Skeleton className="mt-2 h-64 rounded-lg" />
         </View>
       </Screen>
     );
@@ -322,34 +340,59 @@ export default function ChallanDetailScreen() {
   return (
     <Screen
       headerLabel={kind.title}
-      eyebrow={kind.type === "sales" ? "Dispatch register" : "Dyeing movement"}
       title={challan.challanNumber}
-      description={`${challan.date} · ${company?.name ?? "This device"}`}
       banner={<SyncStrip />}
     >
       <View className="flex-1">
         <ScrollView contentContainerClassName="px-4 pb-8">
           <View className="flex-row flex-wrap items-center gap-2">
-            <Badge label={`FY ${challan.fyLabel}`} />
+            <Badge label={`FY ${challan.fyLabel}`} tone="secondary" />
             {challan.conflict ? (
-              <Badge label="Clash" tone="destructive" />
+              <Badge label="Clash" tone="destructive" icon="alert-triangle" />
             ) : challan.pendingSync ? (
-              <Badge label="Waiting to sync" />
+              <Badge label="Waiting to sync" icon="cloud-off" tone="outline" />
             ) : null}
+          </View>
+
+          {/* Date + company — the web's page-description line */}
+          <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
+            <Feather name="calendar" size={14} color={p.mutedForeground} />
+            <Text
+              className="text-[15px] tabular-nums"
+              style={{ color: p.mutedForeground }}
+            >
+              {challan.date}
+            </Text>
+            <Text
+              className="flex-1 text-[15px]"
+              style={{ color: p.mutedForeground }}
+              numberOfLines={1}
+            >
+              {company?.name ?? "This device"}
+            </Text>
           </View>
 
           {/* Actions */}
           <View className="mt-4 flex-row flex-wrap gap-2">
             <Button
+              label="Back"
+              icon="arrow-left"
+              variant="outline"
+              onPress={goBack}
+              className="min-w-[100px] flex-1"
+            />
+            <Button
               label="Share PDF"
-              variant="secondary"
+              icon="share-2"
+              variant="outline"
               loading={downloading}
               onPress={() => void onSharePdf()}
               className="min-w-[120px] flex-1"
             />
             <Button
               label="Print"
-              variant="secondary"
+              icon="printer"
+              variant="outline"
               loading={printing}
               onPress={() => void onPrint()}
               className="min-w-[100px] flex-1"
@@ -357,7 +400,8 @@ export default function ChallanDetailScreen() {
             {!challan.pendingSync && canEdit ? (
               <Button
                 label="Edit"
-                variant="secondary"
+                icon="edit-2"
+                variant="outline"
                 onPress={() =>
                   router.push({
                     pathname: "/challan-editor",
@@ -370,6 +414,7 @@ export default function ChallanDetailScreen() {
             {canDelete ? (
               <Button
                 label="Delete"
+                icon="trash-2"
                 variant="destructive"
                 loading={deleting}
                 onPress={() => setDeleteOpen(true)}
@@ -381,7 +426,7 @@ export default function ChallanDetailScreen() {
           {/* Party + summary */}
           <View className="mt-4 gap-3">
             <View
-              className="rounded-xl border p-4"
+              className="rounded-lg border p-4"
               style={{ backgroundColor: p.card, borderColor: p.border }}
             >
               <Text
@@ -391,14 +436,14 @@ export default function ChallanDetailScreen() {
                 {kind.party}
               </Text>
               <Text
-                className="mt-2 text-[15px] font-bold"
+                className="mt-2 text-[15px] font-bold tracking-tight"
                 style={{ color: p.foreground }}
               >
                 {partyName}
               </Text>
               {kind.type === "sales" && challan.customerGstin ? (
                 <View
-                  className="mt-1 self-start rounded px-2 py-1"
+                  className="mt-1 self-start rounded-sm px-2 py-1"
                   style={{ backgroundColor: p.muted }}
                 >
                   <Text
@@ -428,7 +473,7 @@ export default function ChallanDetailScreen() {
             </View>
 
             <View
-              className="rounded-xl border p-4"
+              className="rounded-lg border p-4"
               style={{ backgroundColor: p.card, borderColor: p.border }}
             >
               <Text
@@ -439,7 +484,7 @@ export default function ChallanDetailScreen() {
               </Text>
               <View className="mt-2 flex-row flex-wrap items-baseline gap-2">
                 <Text
-                  className="text-[22px] font-bold"
+                  className="text-[28px] font-bold tracking-tight tabular-nums"
                   style={{ color: p.foreground }}
                 >
                   {fmtBoxes(challan.totalBoxes)}
@@ -452,7 +497,7 @@ export default function ChallanDetailScreen() {
                 </Text>
                 <Text style={{ color: p.mutedForeground }}>·</Text>
                 <Text
-                  className="text-[22px] font-bold"
+                  className="text-[28px] font-bold tracking-tight tabular-nums"
                   style={{ color: p.primary }}
                 >
                   {fmtWt(challan.totalNetWt)}
@@ -465,7 +510,7 @@ export default function ChallanDetailScreen() {
                 </Text>
               </View>
               <Text
-                className="mt-2 text-xs"
+                className="mt-2 text-xs tabular-nums"
                 style={{ color: p.mutedForeground }}
               >
                 {items.length} {items.length === 1 ? "line" : "lines"} • FY{" "}
@@ -476,7 +521,7 @@ export default function ChallanDetailScreen() {
 
           {/* Line items */}
           <View
-            className="mt-4 overflow-hidden rounded-xl border"
+            className="mt-4 overflow-hidden rounded-lg border"
             style={{ backgroundColor: p.card, borderColor: p.border }}
           >
             <View
@@ -491,6 +536,7 @@ export default function ChallanDetailScreen() {
               </Text>
               <Badge
                 label={`${items.length} ${items.length === 1 ? "item" : "items"}`}
+                tone="secondary"
               />
             </View>
             <View className="gap-3 p-3">
@@ -508,7 +554,7 @@ export default function ChallanDetailScreen() {
                   Total
                 </Text>
                 <Text
-                  className="text-sm font-bold"
+                  className="text-sm font-bold tabular-nums"
                   style={{ color: p.foreground }}
                 >
                   {fmtBoxes(challan.totalBoxes)} boxes •{" "}
@@ -516,24 +562,30 @@ export default function ChallanDetailScreen() {
                 </Text>
               </View>
             </View>
-          </View>
 
-          {/* Notes */}
-          {challan.notes ? (
-            <View
-              className="mt-3 rounded-lg border p-4"
-              style={{ borderColor: p.border, backgroundColor: p.muted }}
-            >
-              <Text className="text-sm">
-                <Text className="font-semibold" style={{ color: p.foreground }}>
-                  Notes:{" "}
+            {/* Notes — the web keeps this inside the line-items card */}
+            {challan.notes ? (
+              <View
+                className="mx-3 mb-3 mt-3 rounded-lg border p-4"
+                style={{
+                  borderColor: p.border,
+                  backgroundColor: withAlpha(p.muted, 0.4),
+                }}
+              >
+                <Text className="text-sm leading-relaxed">
+                  <Text
+                    className="font-semibold"
+                    style={{ color: p.foreground }}
+                  >
+                    Notes:{" "}
+                  </Text>
+                  <Text style={{ color: p.mutedForeground }}>
+                    {challan.notes}
+                  </Text>
                 </Text>
-                <Text style={{ color: p.mutedForeground }}>
-                  {challan.notes}
-                </Text>
-              </Text>
-            </View>
-          ) : null}
+              </View>
+            ) : null}
+          </View>
 
           {/* Record meta — created/updated stamps (web shows none; the DTO
               carries them and the owner asked for the meta here). */}
@@ -613,7 +665,7 @@ export default function ChallanDetailScreen() {
             <View className="mt-4 flex-row justify-end gap-2">
               <Button
                 label="Cancel"
-                variant="secondary"
+                variant="outline"
                 onPress={() => setDeleteOpen(false)}
               />
               <Button

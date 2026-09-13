@@ -6,13 +6,22 @@
  */
 
 import type { Permission } from "@kataria-syntex/app-core";
-import type { FeatherIconName } from "@/ui/feather";
+import {
+  Boxes,
+  Factory,
+  PackageOpen,
+  Palette,
+  Receipt,
+  Scale,
+  Warehouse,
+  type IconValue,
+} from "@/ui/feather";
 
 export type SubNavItem = { to: string; label: string };
 export type NavItem = {
   to: string;
   label: string;
-  icon: FeatherIconName;
+  icon: IconValue;
   /** Any-of semantics, exactly as the web config. Empty = always shown. */
   permissions: Permission[];
   /** Route matches exactly (no child routes), e.g. the dashboard. */
@@ -51,13 +60,13 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/returns",
         label: "Returns",
-        icon: "corner-down-left",
+        icon: PackageOpen,
         permissions: ["create_return", "edit_return"],
       },
       {
         to: "/raw-material",
         label: "Raw Material",
-        icon: "box",
+        icon: Boxes,
         permissions: ["create_raw_material", "edit_raw_material"],
       },
     ],
@@ -68,7 +77,7 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/stock?kind=raw",
         label: "Raw Stock",
-        icon: "database",
+        icon: Warehouse,
         permissions: ["view_stock"],
       },
       {
@@ -95,7 +104,7 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/reports?report=job-work-balance",
         label: "Job-Work Balance",
-        icon: "bar-chart-2",
+        icon: Scale,
         permissions: ["view_reports"],
       },
       {
@@ -113,13 +122,13 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/reports?report=sales-register",
         label: "Sales Register",
-        icon: "file-text",
+        icon: Receipt,
         permissions: ["view_reports"],
       },
       {
         to: "/reports?report=job-work-register",
         label: "Job-Work Register",
-        icon: "settings",
+        icon: Factory,
         permissions: ["view_reports"],
       },
       {
@@ -142,7 +151,7 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/colors",
         label: "Colors & Recipes",
-        icon: "droplet",
+        icon: Palette,
         permissions: ["manage_masters"],
       },
     ],

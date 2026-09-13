@@ -3,12 +3,17 @@
  * registers (Customers / Job workers / Deniers / Suppliers) with search,
  * create/edit/delete, the same field sets and placeholders, in_use error
  * copy via friendlyError, and the manage_masters permission gate. Web's
- * radix tabs become a Pressable segmented control; the tab param lives in
- * the route (?tab=) exactly like web's search params.
+ * underlined tab strip keeps that grammar here with one sliding indicator;
+ * the tab param lives in the route (?tab=) exactly like web's search params.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import { MorphSheet } from "@/ui/morph-sheet";
@@ -28,28 +33,29 @@ import {
   type Supplier,
   type SupplierInput,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha } from "@/theme";
+import { EASE_OUT, useReduceMotion } from "@/lib/motion";
 import {
-  Badge,
   Button,
+  Badge,
   EmptyState,
   Field,
   Input,
-  PageTitle,
+  Screen,
   Skeleton,
 } from "@/ui/kit";
-import { AppHeader } from "@/ui/app-header";
 import { SyncStrip } from "@/ui/sync";
 import { confirm, requestDiscard } from "@/ui/confirm";
+import { AppIcon, Factory, type IconValue } from "@/ui/feather";
 
-const TABS = [
+type TabKey = "customers" | "jobWorkers" | "deniers" | "suppliers";
+
+const TABS: readonly { key: TabKey; label: string; icon: IconValue }[] = [
   { key: "customers", label: "Customers", icon: "users" },
-  { key: "jobWorkers", label: "Job workers", icon: "settings" },
+  { key: "jobWorkers", label: "Job workers", icon: Factory },
   { key: "deniers", label: "Deniers", icon: "layers" },
   { key: "suppliers", label: "Suppliers", icon: "truck" },
-] as const;
-
-type TabKey = (typeof TABS)[number]["key"];
+];
 
 type FieldDef = {
   key: string;
@@ -72,7 +78,174 @@ type TabConfig<I extends { id: string; name: string }, In> = {
   meta: (item: I) => string;
   empty: string;
   singular: string;
+  icon: IconValue;
 };
+
+// ── Register chrome ─────────────────────────────────────────────────────────
+
+/** Web's Tabs on mobile: one 44px row over a hairline rule, 13px medium
+ *  labels with 16px icons, and a single underline that slides between tabs
+ *  (200ms EASE_OUT; instant under reduced motion). */
+function UnderlineTabs({
+  value,
+  onChange,
+}: {
+  value: TabKey;
+  onChange: (key: TabKey) => void;
+}) {
+  const p = usePalette();
+  const reduce = useReduceMotion();
+  const [rects, setRects] = useState<
+    Partial<Record<TabKey, { x: number; width: number }>>
+  >({});
+  const x = useSharedValue(0);
+  const width = useSharedValue(0);
+  // The first placement lands without a slide — web's indicator appears at
+  // the active tab on mount; later switches animate.
+  const placed = useRef(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const rect = rects[value];
+    if (!rect) return;
+    // inset-x-2.5 on the web trigger: the underline is inset 10px each side.
+    const targetX = rect.x + 10;
+    const targetWidth = Math.max(0, rect.width - 20);
+    if (!placed.current) {
+      placed.current = true;
+      x.value = targetX;
+      width.value = targetWidth;
+      setReady(true);
+      return;
+    }
+    if (reduce) {
+      x.value = targetX;
+      width.value = targetWidth;
+      return;
+    }
+    x.value = withTiming(targetX, { duration: 200, easing: EASE_OUT });
+    width.value = withTiming(targetWidth, { duration: 200, easing: EASE_OUT });
+  }, [rects, value, reduce, x, width]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }],
+    width: width.value,
+  }));
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ flexGrow: 0 }}
+      contentContainerClassName="px-4"
+    >
+      <View className="flex-row border-b" style={{ borderColor: p.border }}>
+        {TABS.map((t) => {
+          const active = t.key === value;
+          return (
+            <Pressable
+              key={t.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              onPress={() => onChange(t.key)}
+              onLayout={(e) => {
+                const { x: tx, width: tw } = e.nativeEvent.layout;
+                setRects((prev) =>
+                  prev[t.key]?.x === tx && prev[t.key]?.width === tw
+                    ? prev
+                    : { ...prev, [t.key]: { x: tx, width: tw } },
+                );
+              }}
+              className="h-11 flex-row items-center gap-1.5 px-2.5"
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <AppIcon
+                name={t.icon}
+                size={16}
+                color={active ? p.foreground : p.mutedForeground}
+              />
+              <Text
+                className="text-[13px] font-medium"
+                style={{ color: active ? p.foreground : p.mutedForeground }}
+                numberOfLines={1}
+              >
+                {t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+        {ready ? (
+          <Animated.View
+            pointerEvents="none"
+            accessible={false}
+            style={[
+              {
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                height: 2,
+                borderRadius: 2,
+                backgroundColor: p.foreground,
+              },
+              indicatorStyle,
+            ]}
+          />
+        ) : null}
+      </View>
+    </ScrollView>
+  );
+}
+
+/** Row action — the web row's ghost sm button (44px on mobile): 16px glyph,
+ *  13px medium label, muted tint on press, destructive ink for Delete. */
+function RowAction({
+  label,
+  icon,
+  onPress,
+  disabled,
+  destructive,
+}: {
+  label: string;
+  icon: IconValue;
+  onPress: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+}) {
+  const p = usePalette();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      className="min-h-[44px] flex-row items-center gap-2 rounded-md px-3"
+      style={({ pressed }) => ({
+        backgroundColor: pressed
+          ? destructive
+            ? withAlpha(p.destructive, 0.1)
+            : p.muted
+          : "transparent",
+        opacity: disabled ? 0.5 : pressed ? 0.9 : 1,
+        transform: pressed && !disabled ? [{ scale: 0.97 }] : [{ scale: 1 }],
+      })}
+    >
+      <AppIcon
+        name={icon}
+        size={16}
+        color={destructive ? p.destructive : p.foreground}
+      />
+      <Text
+        className="text-[13px] font-medium"
+        style={{ color: destructive ? p.destructive : p.foreground }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+// ── Form dialog ─────────────────────────────────────────────────────────────
 
 function MasterFormModal<I extends { id: string; name: string }, In>({
   config,
@@ -157,10 +330,13 @@ function MasterFormModal<I extends { id: string; name: string }, In>({
               {error}
             </Text>
           ) : null}
-          <View className="mt-2 flex-row justify-end gap-2">
+          <View
+            className="flex-row justify-end gap-2 border-t pt-4"
+            style={{ borderColor: p.border }}
+          >
             <Button
               label="Cancel"
-              variant="secondary"
+              variant="outline"
               onPress={() => requestDiscard(dirty, busy, onClose)}
               disabled={busy}
             />
@@ -176,6 +352,8 @@ function MasterFormModal<I extends { id: string; name: string }, In>({
     </MorphSheet>
   );
 }
+
+// ── Register tab ────────────────────────────────────────────────────────────
 
 function MasterTab<I extends { id: string; name: string }, In>({
   config,
@@ -231,26 +409,69 @@ function MasterTab<I extends { id: string; name: string }, In>({
     setModalOpen(true);
   };
 
+  const countLabel =
+    config.loading && config.items.length === 0
+      ? "Loading…"
+      : q.trim()
+        ? `${filtered.length} of ${config.items.length}`
+        : `${config.items.length} ${config.items.length === 1 ? "record" : "records"}`;
+
   return (
-    <View className="flex-1">
-      <View className="flex-row items-center gap-2 px-4 pt-4">
-        <View className="min-w-0 flex-1">
+    <View className="mt-4 flex-1">
+      {/* Filter bar — one card holding search + the full-width add action */}
+      <View
+        className="mx-4 rounded-lg border p-3"
+        style={{ backgroundColor: p.card, borderColor: p.border }}
+      >
+        <View>
+          <Feather
+            name="search"
+            size={16}
+            color={p.mutedForeground}
+            style={{ position: "absolute", left: 12, top: 14 }}
+          />
           <Input
-            value={q}
-            onChangeText={setQ}
             placeholder={`Search ${label.toLowerCase()}…`}
             accessibilityLabel={`Search ${label.toLowerCase()}`}
+            value={q}
+            onChangeText={setQ}
             autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            style={[
+              { paddingLeft: 38, paddingRight: 40 },
+              {
+                backgroundColor: p.card,
+                borderColor: p.input,
+                color: p.foreground,
+              },
+            ]}
           />
+          {q ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              onPress={() => setQ("")}
+              className="absolute right-1 top-1 h-11 w-11 items-center justify-center rounded-full"
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <Feather name="x" size={14} color={p.mutedForeground} />
+            </Pressable>
+          ) : null}
         </View>
         {canManage ? (
-          <Button label={`Add ${config.singular}`} onPress={openAdd} />
+          <Button
+            className="mt-3"
+            label={`Add ${config.singular}`}
+            icon="plus"
+            onPress={openAdd}
+          />
         ) : null}
       </View>
 
       {error ? (
         <Text
-          className="mx-4 mt-3 rounded-lg border px-4 py-3 text-sm"
+          className="mx-4 mt-4 rounded-lg border px-4 py-3 text-sm"
           role="alert"
           accessibilityLiveRegion="polite"
           style={{
@@ -263,107 +484,130 @@ function MasterTab<I extends { id: string; name: string }, In>({
         </Text>
       ) : null}
 
-      <View className="flex-row items-center justify-between px-4 pb-1 pt-3">
-        <Text
-          className="text-[11px] font-bold uppercase tracking-wider"
-          style={{ color: p.mutedForeground }}
+      {/* Register card — muted strip over divided rows */}
+      <View
+        className="mx-4 mt-4 flex-1 overflow-hidden rounded-lg border"
+        style={{ backgroundColor: p.card, borderColor: p.border }}
+      >
+        <View
+          className="flex-row items-center justify-between border-b px-4 py-2.5"
+          style={{ borderColor: p.border, backgroundColor: p.muted }}
         >
-          {label}
-        </Text>
-        <Badge
-          label={
-            config.loading && config.items.length === 0
-              ? "Loading…"
-              : q.trim()
-                ? `${filtered.length} of ${config.items.length}`
-                : `${config.items.length} ${config.items.length === 1 ? "record" : "records"}`
-          }
-        />
-      </View>
-
-      <FlatList
-        className="flex-1 px-4"
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        contentContainerClassName="gap-2 pb-8"
-        ListEmptyComponent={
-          config.loading && config.items.length === 0 ? (
-            <View className="gap-2 py-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <View
-                  key={i}
-                  className="flex-row items-center gap-3 rounded-xl border p-4"
-                  style={{ backgroundColor: p.card, borderColor: p.border }}
-                >
-                  <View className="flex-1 gap-2">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-3 w-56" />
-                  </View>
-                  <Skeleton className="h-8 w-24" />
-                </View>
-              ))}
-            </View>
-          ) : config.items.length === 0 ? (
-            <View className="gap-3">
-              <EmptyState
-                title={`No ${label.toLowerCase()} yet`}
-                message={config.empty}
-              />
-              {canManage ? (
-                <Button label={`Add ${config.singular}`} onPress={openAdd} />
-              ) : null}
-            </View>
-          ) : (
-            <EmptyState
-              title={`Nothing matches “${q}”`}
-              message="Try a different name or clear the search."
-            />
-          )
-        }
-        renderItem={({ item }) => (
-          <View
-            className="flex-row items-center gap-1 rounded-xl border p-2"
-            style={{ backgroundColor: p.card, borderColor: p.border }}
+          <Text
+            className="text-[11px] font-semibold uppercase tracking-[0.06em]"
+            style={{ color: p.mutedForeground }}
           >
-            <View className="min-w-0 flex-1 px-2 py-1">
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: p.foreground }}
-                numberOfLines={1}
+            {label}
+          </Text>
+          <Badge label={countLabel} tone="secondary" />
+        </View>
+
+        {config.loading && config.items.length === 0 ? (
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View
+                key={i}
+                className="flex-row items-center gap-3 px-4 py-3"
+                style={
+                  i < 4
+                    ? {
+                        borderBottomWidth: 1,
+                        borderColor: withAlpha(p.border, 0.6),
+                      }
+                    : undefined
+                }
               >
-                {item.name}
-              </Text>
-              {config.meta(item) ? (
-                <Text
-                  className="mt-0.5 text-xs"
-                  style={{ color: p.mutedForeground }}
-                  numberOfLines={1}
-                >
-                  {config.meta(item)}
-                </Text>
-              ) : null}
-            </View>
-            {canManage ? (
-              <View className="flex-row shrink-0 items-center">
-                <Button
-                  label="Edit"
-                  variant="ghost"
-                  onPress={() => {
-                    setEditing(item);
-                    setModalOpen(true);
-                  }}
-                />
-                <Button
-                  label="Delete"
-                  variant="ghost"
-                  disabled={deletingId === item.id}
-                  onPress={() => void onDelete(item)}
-                />
+                <View className="flex-1 gap-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </View>
+                <Skeleton className="h-8 w-24 rounded-md" />
               </View>
-            ) : null}
+            ))}
           </View>
+        ) : config.items.length === 0 ? (
+          <EmptyState
+            icon={config.icon}
+            title={`No ${label.toLowerCase()} yet`}
+            message={config.empty}
+            action={
+              canManage ? (
+                <Button
+                  label={`Add ${config.singular}`}
+                  icon="plus"
+                  onPress={openAdd}
+                />
+              ) : undefined
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon="search"
+            title={`Nothing matches “${q}”`}
+            message="Try a different name or clear the search."
+          />
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item, index }) => (
+              <View
+                className="flex-row items-center gap-3 px-4 py-2.5"
+                style={
+                  index < filtered.length - 1
+                    ? {
+                        borderBottomWidth: 1,
+                        borderColor: withAlpha(p.border, 0.65),
+                      }
+                    : undefined
+                }
+              >
+                <View className="min-w-0 flex-1">
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{ color: p.foreground }}
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                  {config.meta(item) ? (
+                    <Text
+                      className="mt-0.5 text-xs"
+                      style={{ color: p.mutedForeground }}
+                      numberOfLines={1}
+                    >
+                      {config.meta(item)}
+                    </Text>
+                  ) : null}
+                </View>
+                {canManage ? (
+                  <View className="flex-row shrink-0 items-center gap-1">
+                    <RowAction
+                      label="Edit"
+                      icon="edit-2"
+                      onPress={() => {
+                        setEditing(item);
+                        setModalOpen(true);
+                      }}
+                    />
+                    <RowAction
+                      label="Delete"
+                      icon="trash-2"
+                      destructive
+                      disabled={deletingId === item.id}
+                      onPress={() => void onDelete(item)}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            )}
+          />
         )}
-      />
+      </View>
 
       <MasterFormModal
         key={`${editing?.id ?? "new"}-${modalOpen}`}
@@ -379,8 +623,9 @@ function MasterTab<I extends { id: string; name: string }, In>({
   );
 }
 
+// ── Route ───────────────────────────────────────────────────────────────────
+
 export default function MastersRoute() {
-  const p = usePalette();
   const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
   const router = useRouter();
@@ -391,7 +636,7 @@ export default function MastersRoute() {
     : "customers";
 
   const selectTab = (key: TabKey) => {
-    router.setParams(key === "customers" ? { tab: "" } : { tab: key });
+    router.setParams(key === "customers" ? { tab: undefined } : { tab: key });
   };
 
   const customers = useMasters((s) => s.customers);
@@ -427,6 +672,7 @@ export default function MastersRoute() {
     update: updateCustomer,
     remove: deleteCustomer,
     singular: "customer",
+    icon: "users",
     empty: "Add your first customer.",
     fields: [
       {
@@ -478,6 +724,7 @@ export default function MastersRoute() {
     update: updateJobWorker,
     remove: deleteJobWorker,
     singular: "job worker",
+    icon: Factory,
     empty: "Add your first job worker.",
     fields: [
       {
@@ -521,6 +768,7 @@ export default function MastersRoute() {
     update: updateDenier,
     remove: deleteDenier,
     singular: "denier",
+    icon: "layers",
     empty: "Add deniers like 20D, 30D, 40D.",
     fields: [
       { key: "name", label: "Denier", placeholder: "e.g. 20D", maxLength: 60 },
@@ -547,6 +795,7 @@ export default function MastersRoute() {
     update: updateSupplier,
     remove: deleteSupplier,
     singular: "supplier",
+    icon: "truck",
     empty: "Add your first supplier.",
     fields: [
       {
@@ -596,59 +845,13 @@ export default function MastersRoute() {
   if (!canManage) return <Redirect href="/" />;
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
-      <AppHeader label="Masters" />
-      <SyncStrip />
-      <View className="px-4 pt-5">
-        <Text
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: p.mutedForeground }}
-        >
-          Reference data
-        </Text>
-        <PageTitle className="mt-1.5">Masters</PageTitle>
-        <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-          Customers, job workers, suppliers and deniers used across challans.
-        </Text>
-      </View>
-
-      {/* Segmented control — the phone translation of web's tab list. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-1.5 px-4 pt-4"
-      >
-        {TABS.map((t) => {
-          const active = t.key === tab;
-          return (
-            <Pressable
-              key={t.key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              onPress={() => selectTab(t.key)}
-              className="min-h-[44px] flex-row items-center gap-1.5 rounded-full border px-3.5"
-              style={({ pressed }) => ({
-                backgroundColor: active ? p.primary : p.card,
-                borderColor: active ? p.primary : p.border,
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <Feather
-                name={t.icon}
-                size={14}
-                color={active ? p.primaryForeground : p.mutedForeground}
-              />
-              <Text
-                className="text-[13px] font-semibold"
-                style={{ color: active ? p.primaryForeground : p.foreground }}
-              >
-                {t.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
+    <Screen
+      eyebrow="Reference data"
+      title="Masters"
+      description="Customers, job workers, suppliers and deniers used across challans."
+      banner={<SyncStrip />}
+    >
+      <UnderlineTabs value={tab} onChange={selectTab} />
       {tab === "customers" ? (
         <MasterTab
           key="customers"
@@ -681,6 +884,6 @@ export default function MastersRoute() {
           label="Suppliers"
         />
       ) : null}
-    </View>
+    </Screen>
   );
 }

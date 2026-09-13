@@ -36,6 +36,7 @@ import { round3Str } from "@kataria-syntex/shared";
 import { usePalette } from "@/theme";
 import { requestDiscard } from "@/ui/confirm";
 import { Textarea } from "@/ui/controls";
+import { DateField } from "@/ui/date-sheet";
 import {
   Button,
   Card,
@@ -43,12 +44,15 @@ import {
   EmptyState,
   Field,
   Input,
+  PageTitle,
   Screen,
   Skeleton,
 } from "@/ui/kit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Boxes } from "@/ui/feather";
 import { SyncStrip } from "@/ui/sync";
 import { countLabel, fmtDate, fmtWt, localDateKey } from "@/lib/format";
+import { useMastersLoad } from "@/lib/use-masters-load";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,9 +95,6 @@ const emptyRow = (): ItemRow => ({
   packingUnit: "",
   packingCount: "",
 });
-
-const isValidDateKey = (v: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
 
 // Keyed by workspace id so one account's entries never leak into another's.
 // Registered so account resets (logout/401) wipe it — see app-core data-caches.
@@ -215,54 +216,12 @@ function PickerField({
   );
 }
 
-/** Date field — YYYY-MM-DD text entry validated at submit (no date-picker
- * package in the dependency set; the web calendar guarantees this shape). */
-function DateField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <Field label={label}>
-      <Input
-        value={value}
-        onChangeText={onChange}
-        placeholder="YYYY-MM-DD"
-        keyboardType="numbers-and-punctuation"
-        maxLength={10}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-    </Field>
-  );
-}
-
-/** Loads master data for a form, collapsing failures into one retry state
- * (same contract as apps/app's use-masters-load hook). */
-function useMastersLoad(load: () => Promise<unknown>): {
-  failed: boolean;
-  retry: () => void;
-} {
-  const [failed, setFailed] = useState(false);
-  const [nonce, setNonce] = useState(0);
-  const loadRef = useRef(load);
-  loadRef.current = load;
-  useEffect(() => {
-    setFailed(false);
-    void loadRef.current().catch(() => setFailed(true));
-  }, [nonce]);
-  return { failed, retry: () => setNonce((n) => n + 1) };
-}
-
 /** Inline alert box for form-level errors (destructive banner). */
 function ErrorBanner({ message }: { message: string }) {
   const p = usePalette();
   return (
     <View
+      accessibilityRole="alert"
       className="rounded-lg border px-4 py-3"
       style={{
         borderColor: `${p.destructive}33`,
@@ -352,8 +311,10 @@ export default function RawMaterialRoute() {
   useRealtimeEvent(["raw-material", "stock"], load);
 
   // Web gates /raw-material behind ProtectedRoute
-  // requirePermission="create_raw_material" (redirects home).
+  // requirePermission="create_raw_material": guests land on sign-in,
+  // signed-in users without the permission go home.
   if (status === "loading") return null;
+  if (status === "guest") return <Redirect href="/auth" />;
   if (!can("create_raw_material")) return <Redirect href="/" />;
 
   if (showForm || paramEdit || editingId) {
@@ -480,27 +441,34 @@ export default function RawMaterialRoute() {
           ) : loadError ? (
             <View className="p-4">
               <EmptyState
+                icon={Boxes}
                 title="Couldn't load entries"
                 message="The server didn't answer. Check your connection and retry."
-              />
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={() => void load()}
+                action={
+                  <Button
+                    label="Retry"
+                    variant="outline"
+                    onPress={() => void load()}
+                  />
+                }
               />
             </View>
           ) : filtered.length === 0 ? (
             <View className="p-4">
               <EmptyState
+                icon={Boxes}
                 title="No raw material entries"
                 message="Purchases from suppliers will appear here."
+                action={
+                  can("create_raw_material") ? (
+                    <Button
+                      label="Create entry"
+                      trailingIcon="plus"
+                      onPress={() => setShowForm(true)}
+                    />
+                  ) : undefined
+                }
               />
-              {can("create_raw_material") ? (
-                <Button
-                  label="Create entry"
-                  onPress={() => setShowForm(true)}
-                />
-              ) : null}
             </View>
           ) : (
             <FlatList
@@ -517,13 +485,13 @@ export default function RawMaterialRoute() {
                     <View className="min-w-0 flex-1">
                       <View className="flex-row flex-wrap items-center gap-1.5">
                         <Text
-                          className="text-sm font-bold tabular-nums"
+                          className="font-mono text-sm font-bold tabular-nums tracking-tight"
                           style={{ color: p.foreground }}
                         >
                           {item.entryNumber}
                         </Text>
                         <Text
-                          className="text-[15px] font-semibold"
+                          className="text-sm font-semibold"
                           numberOfLines={1}
                           style={{ color: p.foreground }}
                         >
@@ -685,8 +653,8 @@ function RawMaterialForm({
       setError("Couldn't load the master data. Retry the load first.");
       return;
     }
-    if (!isValidDateKey(date)) {
-      setError("Enter a date as YYYY-MM-DD");
+    if (!date) {
+      setError("Select a date.");
       return;
     }
     if (rows.some((r) => !r.denierId || !r.colorId || !r.netWt)) {
@@ -772,7 +740,7 @@ function RawMaterialForm({
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
@@ -788,23 +756,21 @@ function RawMaterialForm({
           </Pressable>
           <View className="min-w-0 flex-1">
             <Text
-              className="text-[11px] font-bold uppercase tracking-wider"
+              className="text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: p.mutedForeground }}
             >
               {editId ? "Edit" : "New"}
             </Text>
-            <Text
-              className="mt-1 text-[22px] font-bold"
-              style={{ color: p.foreground }}
-            >
+            <PageTitle className="mt-1.5">
               {editId ? "Edit raw material" : "New raw material"}
-            </Text>
+            </PageTitle>
           </View>
         </View>
 
         <View className="gap-4 px-4 pt-4">
           {mastersError ? (
             <View
+              accessibilityRole="alert"
               className="flex-row items-center justify-between gap-3 rounded-lg border px-4 py-3"
               style={{
                 borderColor: `${p.destructive}33`,
@@ -818,11 +784,7 @@ function RawMaterialForm({
                 Couldn&apos;t load deniers, colours and suppliers. Save is
                 disabled until they load.
               </Text>
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={retryMasters}
-              />
+              <Button label="Retry" variant="outline" onPress={retryMasters} />
             </View>
           ) : null}
 
@@ -867,14 +829,16 @@ function RawMaterialForm({
                   autoCorrect={false}
                 />
               </Field>
-              <DateField
-                label="Date"
-                value={date}
-                onChange={(d) => {
-                  setDate(d);
-                  setDirty(true);
-                }}
-              />
+              <Field label="Date">
+                <DateField
+                  value={date}
+                  accessibilityLabel="Date"
+                  onChange={(d) => {
+                    setDate(d);
+                    setDirty(true);
+                  }}
+                />
+              </Field>
               <Field label="Notes">
                 <Textarea
                   value={notes}
@@ -908,9 +872,9 @@ function RawMaterialForm({
               <View className="flex-row shrink-0 items-center gap-2">
                 <Badge
                   label={`${rows.length} ${rows.length === 1 ? "line" : "lines"}`}
-                  tone="accent"
+                  tone="secondary"
                 />
-                <Badge label={`${fmtWt(totalWt)} kg total`} tone="accent" />
+                <Badge label={`${fmtWt(totalWt)} kg total`} tone="secondary" />
               </View>
             </View>
 
@@ -967,7 +931,7 @@ function RawMaterialForm({
                         <Feather
                           name="trash-2"
                           size={16}
-                          color={p.destructive}
+                          color={p.mutedForeground}
                         />
                       </Pressable>
                     ) : null}
@@ -1021,6 +985,7 @@ function RawMaterialForm({
                         <Field label="Net wt (kg)">
                           <Input
                             keyboardType="decimal-pad"
+                            style={{ fontWeight: "600" }}
                             value={row.netWt}
                             onChangeText={(v) => updateRow(idx, "netWt", v)}
                             placeholder="0.000"
@@ -1072,23 +1037,23 @@ function RawMaterialForm({
                               row.packingUnit === "bags" ? "" : "bags",
                             )
                           }
-                          className="min-h-[44px] justify-center rounded-lg border px-3"
+                          className="min-h-[44px] justify-center rounded-md border px-2.5"
                           style={({ pressed }) => ({
                             borderColor:
-                              row.packingUnit === "bags" ? p.primary : p.border,
-                            backgroundColor:
                               row.packingUnit === "bags"
-                                ? p.primary
-                                : "transparent",
+                                ? "transparent"
+                                : p.border,
+                            backgroundColor:
+                              row.packingUnit === "bags" ? p.secondary : p.card,
                             opacity: pressed ? 0.8 : 1,
                           })}
                         >
                           <Text
-                            className="text-[13px] font-medium"
+                            className="text-[12px] font-medium"
                             style={{
                               color:
                                 row.packingUnit === "bags"
-                                  ? p.primaryForeground
+                                  ? p.secondaryForeground
                                   : p.foreground,
                             }}
                           >
@@ -1107,25 +1072,25 @@ function RawMaterialForm({
                               row.packingUnit === "boxes" ? "" : "boxes",
                             )
                           }
-                          className="min-h-[44px] justify-center rounded-lg border px-3"
+                          className="min-h-[44px] justify-center rounded-md border px-2.5"
                           style={({ pressed }) => ({
                             borderColor:
                               row.packingUnit === "boxes"
-                                ? p.primary
+                                ? "transparent"
                                 : p.border,
                             backgroundColor:
                               row.packingUnit === "boxes"
-                                ? p.primary
-                                : "transparent",
+                                ? p.secondary
+                                : p.card,
                             opacity: pressed ? 0.8 : 1,
                           })}
                         >
                           <Text
-                            className="text-[13px] font-medium"
+                            className="text-[12px] font-medium"
                             style={{
                               color:
                                 row.packingUnit === "boxes"
-                                  ? p.primaryForeground
+                                  ? p.secondaryForeground
                                   : p.foreground,
                             }}
                           >
@@ -1152,26 +1117,42 @@ function RawMaterialForm({
             </View>
 
             <View className="mt-4">
-              <Button label="Add item" variant="secondary" onPress={addRow} />
-            </View>
-          </Card>
-
-          {/* Actions */}
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button label="Cancel" variant="secondary" onPress={back} />
-            </View>
-            <View className="flex-1">
               <Button
-                label={editId ? "Update entry" : "Create entry"}
-                onPress={() => void submit()}
-                disabled={busy}
-                loading={busy}
+                label="Add item"
+                icon="plus"
+                variant="outline"
+                className="border-dashed"
+                onPress={addRow}
               />
             </View>
-          </View>
+          </Card>
         </View>
       </ScrollView>
+
+      {/* Sticky action bar — web's mobile-only bottom bar, clearing the
+          gesture area (same contract as the challan editor). */}
+      <View
+        className="flex-row gap-2 border-t px-4 pt-3"
+        style={{
+          backgroundColor: p.card,
+          borderColor: p.border,
+          paddingBottom: 12 + insets.bottom,
+        }}
+      >
+        <Button
+          label="Cancel"
+          variant="outline"
+          onPress={back}
+          className="flex-1"
+        />
+        <Button
+          label={editId ? "Update entry" : "Create entry"}
+          onPress={() => void submit()}
+          disabled={busy}
+          loading={busy}
+          className="flex-1"
+        />
+      </View>
     </View>
   );
 }

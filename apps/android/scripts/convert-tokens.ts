@@ -57,6 +57,28 @@ const accent: Record<"light" | "dark", string[]> = {
   ],
 };
 
+/** Dashboard donut grays — globals.css `--chart-1..5`. chart-1 reuses the
+ *  accent strong; chart-3/chart-5 are color-mix() blends resolved to flat
+ *  oklch here (the achromatic side contributes no hue, so the accent hue
+ *  carries through; L/C are the mix ratios, e.g. light chart-3 L =
+ *  0.55·0.22 + 0.45·0.60 = 0.391). */
+const chart: Record<"light" | "dark", string[]> = {
+  light: [
+    "oklch(0.22 0.005 260)",
+    "oklch(0.65 0 0)",
+    "oklch(0.391 0.00275 260)",
+    "oklch(0.45 0 0)",
+    "oklch(0.591 0.0015 260)",
+  ],
+  dark: [
+    "oklch(0.93 0 0)",
+    "oklch(0.62 0 0)",
+    "oklch(0.804 0 0)",
+    "oklch(0.42 0 0)",
+    "oklch(0.825 0 0)",
+  ],
+};
+
 /** oklch(L C H / alpha%) → sRGB hex or rgba() when alpha < 1. */
 function toSrgb(spec: string): string {
   const m = spec.match(
@@ -115,6 +137,18 @@ for (const scheme of ["light", "dark"] as const) {
   lines.push(
     `  ${scheme}: { strong: "${strong}", fg: "${fg}", soft: "${soft}", ink: "${ink}" },`,
   );
+}
+lines.push("};", "");
+lines.push(
+  "/** Dashboard donut palette (`--chart-1..5` in globals.css), per scheme. */",
+  "export const CHART: Record<",
+  '  "light" | "dark",',
+  "  [string, string, string, string, string]",
+  "> = {",
+);
+for (const scheme of ["light", "dark"] as const) {
+  const [c1, c2, c3, c4, c5] = chart[scheme].map(toSrgb);
+  lines.push(`  ${scheme}: ["${c1}", "${c2}", "${c3}", "${c4}", "${c5}"],`);
 }
 lines.push("};", "");
 lines.push(

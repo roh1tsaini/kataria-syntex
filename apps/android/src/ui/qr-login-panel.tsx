@@ -14,6 +14,7 @@ import {
   type QrLoginCode,
 } from "@kataria-syntex/app-core";
 import { usePalette, withAlpha } from "@/theme";
+import { Feather } from "@/ui/feather";
 import { Button, Skeleton } from "@/ui/kit";
 
 const POLL_INTERVAL_MS = 3000;
@@ -37,7 +38,13 @@ function useCountdownParts(expiresAt: string | null): {
   return { mm: Math.floor(total / 60), ss: total % 60, total };
 }
 
-export function QrLoginPanel({ identifier }: { identifier?: string }) {
+export function QrLoginPanel({
+  identifier,
+  returnTo,
+}: {
+  identifier?: string;
+  returnTo?: string;
+}) {
   const startQrLogin = useAuth((s) => s.startQrLogin);
   const pollQrLogin = useAuth((s) => s.pollQrLogin);
   const authed = useAuth((s) => s.status === "authed");
@@ -74,8 +81,8 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   // Approval flips the session on the store — leave the QR screen the same
   // way OTP login does (web's panel navigates identically).
   useEffect(() => {
-    if (authed) router.replace("/");
-  }, [authed, router]);
+    if (authed) router.replace(returnTo ?? "/");
+  }, [authed, router, returnTo]);
 
   useEffect(() => {
     if (!pairing) return;
@@ -131,7 +138,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   return (
     <View className="w-full items-center gap-4">
       <Text
-        className="max-w-[260px] text-center text-xs"
+        className="max-w-[260px] text-center text-xs leading-relaxed"
         style={{ color: p.mutedForeground }}
       >
         {error
@@ -150,15 +157,18 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
       >
         {error ? (
           <View className="h-full w-full items-center justify-center gap-2.5 p-2">
+            <Feather name="alert-circle" size={20} color={p.destructive} />
             <Text
-              className="text-center text-xs"
+              className="text-center text-xs leading-tight"
+              numberOfLines={3}
               style={{ color: p.destructive }}
             >
               {error}
             </Text>
             <Button
               label="Try again"
-              variant="secondary"
+              variant="outline"
+              icon="refresh-cw"
               onPress={() => void refresh()}
               disabled={refreshing}
             />
@@ -167,7 +177,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
           <>
             <QRCode
               value={pairing.payload}
-              size={168}
+              size={174}
               color="#0a0a0a"
               backgroundColor="transparent"
             />
@@ -184,7 +194,8 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
                 </Text>
                 <Button
                   label="Refresh"
-                  variant="secondary"
+                  variant="outline"
+                  icon="refresh-cw"
                   onPress={() => void refresh()}
                   loading={refreshing}
                 />
@@ -192,7 +203,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
             )}
           </>
         ) : (
-          <Skeleton className="h-40 w-40 rounded-md" />
+          <Skeleton className="h-full w-full rounded-sm" />
         )}
       </View>
       {!error && (
@@ -200,17 +211,26 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
           {pairing ? (
             <View
               className="rounded-md border px-3.5 py-1.5"
-              style={{ backgroundColor: p.muted, borderColor: p.border }}
+              style={{
+                backgroundColor: withAlpha(p.muted, 0.7),
+                borderColor: p.border,
+              }}
             >
               <Text
-                className="text-[15px] font-bold"
-                style={{ color: p.primary, letterSpacing: 3 }}
+                className="font-mono text-[15px] font-bold"
+                style={{ color: p.primary, letterSpacing: 2.7 }}
               >
                 {pairing.code}
               </Text>
             </View>
-          ) : null}
-          <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
+          ) : (
+            <Skeleton className="h-9 w-44 rounded-md" />
+          )}
+          <Text
+            className="text-[13px]"
+            accessibilityLiveRegion="polite"
+            style={{ color: p.mutedForeground, fontVariant: ["tabular-nums"] }}
+          >
             {expired
               ? "Code expired"
               : total > 0

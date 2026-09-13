@@ -1,15 +1,28 @@
 /**
  * Settings — the Android port of apps/app's SettingsPage. Company details
  * form, per-type document numbering editor (same fields and clamps as web),
- * financial-years list, accent picker, About with app version and the
- * check-for-updates row, behind the manage_settings gate
- * (web: ProtectedRoute requirePermission="manage_settings").
+ * financial-years list, About with app version and the check-for-updates
+ * row, behind the manage_settings gate (web: ProtectedRoute
+ * requirePermission="manage_settings").
  */
 
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 import {
   useAuth,
   usePermission,
@@ -24,8 +37,10 @@ import { usePalette } from "@/theme";
 import { setScheme } from "@/lib/theme";
 import { cn } from "@/lib/cn";
 import { fmtDate } from "@/lib/format";
-import { Badge, Button, Card, Input, Screen, Skeleton } from "@/ui/kit";
+import { MORPH, MORPH_EXIT, useReduceMotion } from "@/lib/motion";
+import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
 import { SyncStrip } from "@/ui/sync";
+import { Feather } from "@/ui/feather";
 import { appVersion } from "@/lib/core-adapter";
 import { useUpdates } from "@/lib/updates";
 
@@ -57,11 +72,101 @@ function Panel({
   const p = usePalette();
   return (
     <View
-      className={cn("rounded-xl border", className)}
+      className={cn("overflow-hidden rounded-lg border", className)}
       style={{ backgroundColor: p.card, borderColor: p.border }}
     >
       {children}
     </View>
+  );
+}
+
+type MorphGroupState = { openId: string | null; toggle: (id: string) => void };
+
+const MorphGroupContext = createContext<MorphGroupState | null>(null);
+
+/** One-open-per-group accordion — the RN counterpart of apps/app's MorphGroup
+ *  (morph.tsx): the summary stays mounted as the toggle and the body springs
+ *  open beneath it (MORPH in, MORPH_EXIT out), design.md §5.6. */
+function MorphGroup({ children }: { children: ReactNode }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggle = useCallback(
+    (id: string) => setOpenId((prev) => (prev === id ? null : id)),
+    [],
+  );
+  const value = useMemo(() => ({ openId, toggle }), [openId, toggle]);
+  return (
+    <MorphGroupContext.Provider value={value}>
+      <View className="gap-3">{children}</View>
+    </MorphGroupContext.Provider>
+  );
+}
+
+/** Collapsible card whose radius steps one rung up while open (12px → 16px,
+ *  design.md §5.6) and whose body height/opacity ride the morph spring.
+ *  Still under reduced motion. */
+function MorphPanel({
+  id,
+  summary,
+  children,
+}: {
+  id: string;
+  summary: ReactNode;
+  children: ReactNode;
+}) {
+  const p = usePalette();
+  const reduce = useReduceMotion();
+  const group = useContext(MorphGroupContext);
+  const open = group?.openId === id;
+  const progress = useSharedValue(0);
+  // The body stays mounted at height 0 so its natural size can be measured —
+  // the open height springs between 0 and that measurement.
+  const [bodyHeight, setBodyHeight] = useState(0);
+
+  useEffect(() => {
+    progress.value = reduce
+      ? withTiming(open ? 1 : 0, { duration: 1 })
+      : withSpring(open ? 1 : 0, open ? MORPH : MORPH_EXIT);
+  }, [open, reduce, progress]);
+
+  const panelStyle = useAnimatedStyle(() => ({
+    borderRadius: 12 + progress.value * 4,
+  }));
+  const bodyStyle = useAnimatedStyle(() => ({
+    height: bodyHeight * progress.value,
+    opacity: progress.value,
+  }));
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${progress.value * 180}deg` }],
+  }));
+
+  return (
+    <Animated.View
+      className="overflow-hidden border"
+      style={[{ backgroundColor: p.card, borderColor: p.border }, panelStyle]}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => group?.toggle(id)}
+        className="flex-row items-center justify-between gap-3 px-4 py-3"
+      >
+        <View className="min-w-0 flex-1">{summary}</View>
+        <Animated.View style={chevronStyle}>
+          <Feather name="chevron-down" size={16} color={p.mutedForeground} />
+        </Animated.View>
+      </Pressable>
+      <Animated.View
+        className="overflow-hidden"
+        style={bodyStyle}
+        pointerEvents={open ? "auto" : "none"}
+      >
+        <View onLayout={(e) => setBodyHeight(e.nativeEvent.layout.height)}>
+          <View className="border-t" style={{ borderColor: p.border }}>
+            {children}
+          </View>
+        </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -98,16 +203,19 @@ function Section({
 function SettingsRow({
   label,
   hint,
+  last,
   children,
 }: {
   label: string;
   hint?: string;
+  /** Last row in its card — the trailing hairline drops (web last:border-b-0). */
+  last?: boolean;
   children?: ReactNode;
 }) {
   const p = usePalette();
   return (
     <View
-      className="gap-2 border-b px-4 py-3"
+      className={cn("gap-2 px-4 py-3", !last && "border-b")}
       style={{ borderColor: p.border }}
     >
       <View>
@@ -142,105 +250,104 @@ function NumberingGroup({
   const p = usePalette();
   const preview = `${value.prefix}${"1".padStart(value.minDigits, "0")}${value.suffix}`;
   return (
-    <Panel>
-      <View
-        className="flex-row items-center justify-between gap-3 px-4 py-3"
-        style={{ borderColor: p.border }}
-      >
-        <View className="min-w-0 flex-1">
-          <Text
-            className="text-[14px] font-semibold"
-            style={{ color: p.foreground }}
+    <MorphPanel
+      id={type}
+      summary={
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="min-w-0 flex-1">
+            <Text
+              className="text-[14px] font-semibold"
+              style={{ color: p.foreground }}
+            >
+              {TYPE_LABELS[type]}
+            </Text>
+            <Text
+              className="mt-0.5 text-xs"
+              style={{ color: p.mutedForeground }}
+              numberOfLines={1}
+            >
+              {TYPE_HINTS[type]}
+            </Text>
+          </View>
+          <View
+            className="shrink-0 rounded-sm px-2.5 py-1"
+            style={{ backgroundColor: p.muted }}
           >
-            {TYPE_LABELS[type]}
-          </Text>
-          <Text
-            className="mt-0.5 text-xs"
-            style={{ color: p.mutedForeground }}
-            numberOfLines={1}
-          >
-            {TYPE_HINTS[type]}
-          </Text>
+            <Text
+              className="text-[13px] font-semibold"
+              style={{ color: p.primary, fontFamily: "monospace" }}
+            >
+              {preview}
+            </Text>
+          </View>
         </View>
-        <View
-          className="shrink-0 rounded-sm px-2.5 py-1"
-          style={{ backgroundColor: p.muted }}
-        >
-          <Text
-            className="text-[13px] font-semibold"
-            style={{ color: p.primary, fontFamily: "monospace" }}
-          >
-            {preview}
-          </Text>
-        </View>
-      </View>
-      <View style={{ borderColor: p.border }}>
-        <SettingsRow label="Prefix">
-          <Input
-            value={value.prefix}
-            onChangeText={(t) => onChange({ ...value, prefix: t })}
-            maxLength={10}
-            placeholder="CH/"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            editable={!disabled}
-            accessibilityLabel={`${TYPE_LABELS[type]} prefix`}
-            style={[
-              {
-                fontFamily: "monospace",
-                backgroundColor: p.card,
-                borderColor: p.input,
-                color: p.foreground,
-              },
-              disabled ? { opacity: 0.55 } : null,
-            ]}
-          />
-        </SettingsRow>
-        <SettingsRow label="Min digits">
-          <Input
-            keyboardType="number-pad"
-            value={String(value.minDigits)}
-            onChangeText={(t) =>
-              onChange({
-                ...value,
-                minDigits: Math.min(6, Math.max(1, Number(t) || 1)),
-              })
-            }
-            editable={!disabled}
-            accessibilityLabel={`${TYPE_LABELS[type]} min digits`}
-            style={[
-              {
-                backgroundColor: p.card,
-                borderColor: p.input,
-                color: p.foreground,
-              },
-              disabled ? { opacity: 0.55 } : null,
-            ]}
-          />
-        </SettingsRow>
-        <SettingsRow label="Suffix">
-          <Input
-            value={value.suffix}
-            onChangeText={(t) => onChange({ ...value, suffix: t })}
-            maxLength={10}
-            placeholder="/26-27"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            editable={!disabled}
-            accessibilityLabel={`${TYPE_LABELS[type]} suffix`}
-            style={[
-              {
-                fontFamily: "monospace",
-                backgroundColor: p.card,
-                borderColor: p.input,
-                color: p.foreground,
-              },
-              disabled ? { opacity: 0.55 } : null,
-            ]}
-          />
-        </SettingsRow>
-      </View>
-    </Panel>
+      }
+    >
+      <SettingsRow label="Prefix">
+        <Input
+          value={value.prefix}
+          onChangeText={(t) => onChange({ ...value, prefix: t })}
+          maxLength={10}
+          placeholder="CH/"
+          autoCapitalize="none"
+          autoCorrect={false}
+          editable={!disabled}
+          accessibilityLabel={`${TYPE_LABELS[type]} prefix`}
+          style={[
+            {
+              fontFamily: "monospace",
+              backgroundColor: p.card,
+              borderColor: p.input,
+              color: p.foreground,
+            },
+            disabled ? { opacity: 0.55 } : null,
+          ]}
+        />
+      </SettingsRow>
+      <SettingsRow label="Min digits">
+        <Input
+          keyboardType="number-pad"
+          value={String(value.minDigits)}
+          onChangeText={(t) =>
+            onChange({
+              ...value,
+              minDigits: Math.min(6, Math.max(1, Number(t) || 1)),
+            })
+          }
+          editable={!disabled}
+          accessibilityLabel={`${TYPE_LABELS[type]} min digits`}
+          style={[
+            {
+              backgroundColor: p.card,
+              borderColor: p.input,
+              color: p.foreground,
+            },
+            disabled ? { opacity: 0.55 } : null,
+          ]}
+        />
+      </SettingsRow>
+      <SettingsRow label="Suffix" last>
+        <Input
+          value={value.suffix}
+          onChangeText={(t) => onChange({ ...value, suffix: t })}
+          maxLength={10}
+          placeholder="/26-27"
+          autoCapitalize="none"
+          autoCorrect={false}
+          editable={!disabled}
+          accessibilityLabel={`${TYPE_LABELS[type]} suffix`}
+          style={[
+            {
+              fontFamily: "monospace",
+              backgroundColor: p.card,
+              borderColor: p.input,
+              color: p.foreground,
+            },
+            disabled ? { opacity: 0.55 } : null,
+          ]}
+        />
+      </SettingsRow>
+    </MorphPanel>
   );
 }
 
@@ -261,31 +368,18 @@ function UpdateRow() {
 
   const check = async () => {
     setResult(null);
-    try {
-      const outcome = await checkNow();
-      setResult(
-        outcome === "up-to-date"
-          ? "You're on the latest version."
-          : outcome === "error"
-            ? "Couldn't reach the update service."
-            : null,
-      );
-    } catch {
-      setResult("Couldn't reach the update service.");
-    }
-  };
-
-  const install = async () => {
-    setResult(null);
-    try {
-      await installUpdate();
-    } catch {
-      setResult("Download failed. Check your connection and try again.");
-    }
+    const outcome = await checkNow();
+    setResult(
+      outcome === "up-to-date"
+        ? "You're on the latest version."
+        : outcome === "error"
+          ? "Couldn't reach the update service."
+          : null,
+    );
   };
 
   return (
-    <SettingsRow label="Updates" hint={result ?? undefined}>
+    <SettingsRow label="Updates" hint={result ?? undefined} last>
       <View className="flex-row items-center gap-2">
         {downloading && progress ? (
           <Text
@@ -307,7 +401,7 @@ function UpdateRow() {
           <View className="shrink-0">
             <Button
               label={downloading ? "Downloading…" : "Update"}
-              onPress={() => void install()}
+              onPress={() => void installUpdate()}
               disabled={downloading}
               loading={downloading}
               className="min-h-[44px] px-3"
@@ -317,7 +411,8 @@ function UpdateRow() {
           <View className="shrink-0">
             <Button
               label="Check"
-              variant="secondary"
+              variant="outline"
+              icon="refresh-cw"
               onPress={() => void check()}
               disabled={checking}
               loading={checking}
@@ -388,7 +483,6 @@ function SettingsPage() {
   const saveCompany = useAuth((s) => s.saveCompany);
   const saveNumbering = useAuth((s) => s.saveNumbering);
   const refreshCompany = useAuth((s) => s.refreshCompany);
-  const router = useRouter();
 
   const [details, setDetails] = useState({
     name: "",
@@ -494,14 +588,14 @@ function SettingsPage() {
             accessibilityRole="alert"
           >
             <Text
-              className="min-w-0 flex-1 text-[13px]"
+              className="min-w-0 flex-1 text-[14px]"
               style={{ color: p.destructive }}
             >
               {companyError}
             </Text>
             <Button
               label="Retry"
-              variant="secondary"
+              variant="outline"
               loading={companyLoading}
               onPress={() => {
                 setCompanyError(null);
@@ -522,7 +616,7 @@ function SettingsPage() {
             }}
             accessibilityRole="alert"
           >
-            <Text className="text-[13px]" style={{ color: p.destructive }}>
+            <Text className="text-[14px]" style={{ color: p.destructive }}>
               {error}
             </Text>
           </View>
@@ -555,7 +649,7 @@ function SettingsPage() {
                 onChangeText={(t) => editDetails({ gstin: t })}
                 maxLength={15}
                 placeholder="27ABCDE1234F1Z5"
-                autoCapitalize="characters"
+                autoCapitalize="none"
                 autoCorrect={false}
                 editable={canEdit}
                 accessibilityLabel="GSTIN"
@@ -576,7 +670,7 @@ function SettingsPage() {
                 onChangeText={(t) => editDetails({ pan: t.toUpperCase() })}
                 maxLength={10}
                 placeholder="ABCDE1234F"
-                autoCapitalize="characters"
+                autoCapitalize="none"
                 autoCorrect={false}
                 editable={canEdit}
                 accessibilityLabel="PAN"
@@ -627,7 +721,7 @@ function SettingsPage() {
                 ]}
               />
             </SettingsRow>
-            <SettingsRow label="Phone 2">
+            <SettingsRow label="Phone 2" last>
               <Input
                 value={details.phone2}
                 onChangeText={(t) => editDetails({ phone2: t })}
@@ -647,11 +741,12 @@ function SettingsPage() {
             </SettingsRow>
             {canEdit ? (
               <View
-                className="items-end px-4 py-3"
+                className="items-end border-t px-4 py-3"
                 style={{ borderColor: p.border }}
               >
                 <Button
                   label="Save details"
+                  icon="save"
                   onPress={() =>
                     void run(
                       () => saveCompany(details),
@@ -671,7 +766,7 @@ function SettingsPage() {
           description="One format for all years — each financial year restarts the sequence at 1 automatically."
         >
           {numbering ? (
-            <View className="gap-3">
+            <MorphGroup>
               <NumberingGroup
                 type="sales"
                 value={numbering.sales}
@@ -706,6 +801,7 @@ function SettingsPage() {
                 <View className="self-start">
                   <Button
                     label="Save numbering"
+                    icon="save"
                     onPress={() =>
                       void run(
                         () => saveNumbering(numbering),
@@ -716,7 +812,7 @@ function SettingsPage() {
                   />
                 </View>
               ) : null}
-            </View>
+            </MorphGroup>
           ) : (
             <View className="gap-3" aria-hidden>
               <Skeleton className="h-44 rounded-lg" />
@@ -733,7 +829,10 @@ function SettingsPage() {
           <Panel>
             {currentFy ? (
               <View
-                className="flex-row items-center justify-between gap-4 border-b px-4 py-3"
+                className={cn(
+                  "min-h-[44px] flex-row items-center justify-between gap-4 px-4 py-2.5",
+                  financialYears.length > 0 && "border-b",
+                )}
                 style={{ borderColor: p.border }}
               >
                 <Text
@@ -742,7 +841,7 @@ function SettingsPage() {
                 >
                   Current year
                 </Text>
-                <View className="shrink-0 items-end gap-1">
+                <View className="shrink-0 flex-row items-center gap-2.5">
                   <Text
                     className="text-xs tabular-nums"
                     style={{ color: p.mutedForeground }}
@@ -753,10 +852,13 @@ function SettingsPage() {
                 </View>
               </View>
             ) : null}
-            {financialYears.map((fy) => (
+            {financialYears.map((fy, i) => (
               <View
                 key={fy.label}
-                className="flex-row items-center justify-between gap-4 border-b px-4 py-3"
+                className={cn(
+                  "min-h-[44px] flex-row items-center justify-between gap-4 px-4 py-2.5",
+                  i < financialYears.length - 1 && "border-b",
+                )}
                 style={{ borderColor: p.border }}
               >
                 <Text
@@ -784,6 +886,7 @@ function SettingsPage() {
             <SettingsRow
               label="Theme"
               hint="Follows the system until you pick one."
+              last
             >
               <ThemeRow />
             </SettingsRow>

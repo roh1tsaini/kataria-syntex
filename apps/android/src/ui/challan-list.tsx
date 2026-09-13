@@ -30,22 +30,17 @@ import {
   toastSuccess,
   type Challan,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
-import { Badge, Button, EmptyState, Screen, Skeleton } from "@/ui/kit";
+import { usePalette, withAlpha } from "@/theme";
+import { Button, Badge, EmptyState, Screen, Skeleton } from "@/ui/kit";
 import { MenuSelect } from "@/ui/controls";
 import { SyncStrip } from "@/ui/sync";
 import { MorphSheet } from "@/ui/morph-sheet";
 import { confirm } from "@/ui/confirm";
 import { printChallanPdf } from "@/lib/pdf";
-import { countLabel, fmtBoxes, fmtWt } from "@/lib/format";
+import { fmtBoxes, fmtWt } from "@/lib/format";
 import type { ChallanKind } from "@/lib/challan-kinds";
-import { MORPH, useReduceMotion } from "@/lib/motion";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import { useReduceMotion } from "@/lib/motion";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 const LIST_PAGE_SIZE = 25;
 
@@ -60,7 +55,7 @@ function SyncFlag({ challan }: { challan: Challan }) {
           backgroundColor: `${p.destructive}1a`,
         }}
       >
-        <Feather name="alert-triangle" size={11} color={p.destructive} />
+        <Feather name="alert-triangle" size={10} color={p.destructive} />
         <Text
           className="text-[11px] font-medium uppercase tracking-wider"
           style={{ color: p.destructive }}
@@ -76,7 +71,7 @@ function SyncFlag({ challan }: { challan: Challan }) {
         className="flex-row items-center gap-1 self-start rounded-sm border px-1.5 py-0.5"
         style={{ borderColor: p.border, backgroundColor: p.muted }}
       >
-        <Feather name="cloud-off" size={11} color={p.mutedForeground} />
+        <Feather name="cloud-off" size={10} color={p.mutedForeground} />
         <Text
           className="text-[11px] font-medium uppercase tracking-wider"
           style={{ color: p.mutedForeground }}
@@ -92,153 +87,129 @@ function SyncFlag({ challan }: { challan: Challan }) {
 function ListRow({
   item,
   onMore,
-  animate,
 }: {
   item: Challan;
   onMore: (challan: Challan) => void;
-  /** False for the list's first batch — those rows appear immediately so 25+
-   *  rows don't animate at once and jank the initial paint. */
-  animate: boolean;
 }) {
   const p = usePalette();
   const router = useRouter();
   const kind = item.type;
-  // Row entrance: fade + 14px rise on the morph spring (§5.6). Starting at 1
-  // (not 0) is what keeps the first batch from painting invisible for a frame.
-  const entering = useSharedValue(animate ? 0 : 1);
-  const reduce = useReduceMotion();
-  useEffect(() => {
-    if (!animate) return;
-    entering.value = reduce
-      ? withTiming(1, { duration: 1 })
-      : withSpring(1, MORPH);
-  }, [animate, entering, reduce]);
-  const enterStyle = useAnimatedStyle(() => ({
-    opacity: entering.value,
-    transform: [{ translateY: (1 - entering.value) * 14 }],
-  }));
   const party =
     kind === "sales" ? (item.customerName ?? "—") : (item.jobWorkerName ?? "—");
   return (
-    <Animated.View style={enterStyle}>
-      <View
-        className="flex-row items-start overflow-hidden rounded-lg border"
-        style={{ backgroundColor: p.card, borderColor: p.border }}
+    <View
+      className="flex-row items-start overflow-hidden rounded-lg border"
+      style={{ backgroundColor: p.card, borderColor: p.border }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${item.challanNumber}, ${party}`}
+        onPress={() =>
+          router.push({
+            pathname: "/challan-detail",
+            params: { id: item.id, kind },
+          })
+        }
+        className="min-w-0 flex-1 p-4"
+        style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
       >
+        <View className="flex-row flex-wrap items-center gap-1.5">
+          <Text
+            className="text-sm font-bold tracking-tight tabular-nums"
+            style={{ color: p.primary, fontFamily: "monospace" }}
+          >
+            {item.challanNumber}
+          </Text>
+          <Badge label={item.fyLabel} tone="secondary" />
+          <SyncFlag challan={item} />
+        </View>
+        <View className="mt-1 flex-row items-center gap-1.5">
+          <Feather name="calendar" size={12} color={p.mutedForeground} />
+          <Text
+            className="text-xs font-medium tabular-nums"
+            style={{ color: p.mutedForeground }}
+          >
+            {item.date}
+          </Text>
+          <View
+            className="h-1 w-1 rounded-full"
+            style={{ backgroundColor: p.border }}
+          />
+          <Text
+            className="flex-1 text-xs font-semibold"
+            style={{ color: p.foreground }}
+            numberOfLines={1}
+          >
+            {party}
+          </Text>
+        </View>
+        {item.type === "sales" && item.customerGstin ? (
+          <Text
+            className="mt-1 text-[11px] tabular-nums"
+            style={{ color: p.mutedForeground }}
+            numberOfLines={1}
+          >
+            GSTIN {item.customerGstin}
+          </Text>
+        ) : null}
+        <View className="mt-3 flex-row gap-2">
+          <View
+            className="flex-1 rounded-md px-3 py-2"
+            style={{ backgroundColor: p.muted }}
+          >
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-[0.06em]"
+              style={{ color: p.mutedForeground }}
+            >
+              Boxes
+            </Text>
+            <Text
+              className="mt-0.5 text-sm font-bold tabular-nums"
+              style={{ color: p.foreground }}
+            >
+              {fmtBoxes(item.totalBoxes)}
+            </Text>
+          </View>
+          <View
+            className="flex-1 rounded-md px-3 py-2"
+            style={{ backgroundColor: p.muted }}
+          >
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-[0.06em]"
+              style={{ color: p.mutedForeground }}
+            >
+              Net wt
+            </Text>
+            <Text
+              className="mt-0.5 text-sm font-bold tabular-nums"
+              style={{ color: p.primary }}
+            >
+              {fmtWt(item.totalNetWt)}{" "}
+              <Text
+                className="text-xs font-medium"
+                style={{ color: p.mutedForeground }}
+              >
+                kg
+              </Text>
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+      <View className="shrink-0 pb-2.5 pr-2.5 pt-2.5">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${item.challanNumber}, ${party}`}
-          onPress={() =>
-            router.push({
-              pathname: "/challan-detail",
-              params: { id: item.id, kind },
-            })
-          }
-          className="min-w-0 flex-1 p-4"
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          accessibilityLabel={`Actions for ${item.challanNumber}`}
+          onPress={() => onMore(item)}
+          hitSlop={8}
+          className="h-11 w-11 items-center justify-center rounded-full"
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? p.muted : "transparent",
+          })}
         >
-          <View className="flex-row flex-wrap items-center gap-1.5">
-            <Text
-              className="text-sm font-bold tracking-tight"
-              style={{ color: p.primary, fontFamily: "monospace" }}
-            >
-              {item.challanNumber}
-            </Text>
-            <Badge label={item.fyLabel} />
-            <SyncFlag challan={item} />
-          </View>
-          <View className="mt-1 flex-row items-center gap-1.5">
-            <Feather name="calendar" size={12} color={p.mutedForeground} />
-            <Text
-              className="text-xs font-medium tabular-nums"
-              style={{ color: p.mutedForeground }}
-            >
-              {item.date}
-            </Text>
-            <View
-              className="h-1 w-1 rounded-full"
-              style={{ backgroundColor: p.border }}
-            />
-            <Text
-              className="flex-1 text-xs font-semibold"
-              style={{ color: p.foreground }}
-              numberOfLines={1}
-            >
-              {party}
-            </Text>
-          </View>
-          {item.type === "sales" && item.customerGstin ? (
-            <Text
-              className="mt-1 text-[11px] tabular-nums"
-              style={{ color: p.mutedForeground }}
-              numberOfLines={1}
-            >
-              GSTIN {item.customerGstin}
-            </Text>
-          ) : null}
-          <View className="mt-3 flex-row gap-2">
-            <View
-              className="flex-1 rounded-md px-3 py-2"
-              style={{ backgroundColor: p.muted }}
-            >
-              <Text
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Boxes
-              </Text>
-              <Text
-                className="mt-0.5 text-sm font-bold tabular-nums"
-                style={{ color: p.foreground }}
-              >
-                {fmtBoxes(item.totalBoxes)}
-              </Text>
-            </View>
-            <View
-              className="flex-1 rounded-md px-3 py-2"
-              style={{ backgroundColor: p.muted }}
-            >
-              <Text
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Net wt
-              </Text>
-              <Text
-                className="mt-0.5 text-sm font-bold tabular-nums"
-                style={{ color: p.primary }}
-              >
-                {fmtWt(item.totalNetWt)}{" "}
-                <Text
-                  className="text-xs font-medium"
-                  style={{ color: p.mutedForeground }}
-                >
-                  kg
-                </Text>
-              </Text>
-            </View>
-          </View>
+          <Feather name="more-horizontal" size={16} color={p.mutedForeground} />
         </Pressable>
-        <View className="shrink-0 pb-2.5 pr-2.5 pt-2.5">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Actions for ${item.challanNumber}`}
-            onPress={() => onMore(item)}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full"
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? p.muted : "transparent",
-            })}
-          >
-            <Feather
-              name="more-horizontal"
-              size={18}
-              color={p.mutedForeground}
-            />
-          </Pressable>
-        </View>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -271,7 +242,7 @@ function ActionRow({
     >
       <Feather
         name={icon}
-        size={18}
+        size={16}
         color={destructive ? p.destructive : p.mutedForeground}
       />
       <Text
@@ -284,16 +255,18 @@ function ActionRow({
   );
 }
 
+/** Mirror of the web register's mobile skeleton blocks: title line, meta
+ *  line, then the two stat cells. */
 function RowSkeleton() {
   const p = usePalette();
   return (
-    <View className="rounded-lg border p-4" style={{ borderColor: p.border }}>
-      <View className="flex-row items-center gap-2">
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-4 w-14" />
-      </View>
-      <Skeleton className="mt-2 h-3 w-48" />
-      <View className="mt-3 flex-row gap-2">
+    <View
+      className="gap-3 rounded-lg border p-4"
+      style={{ borderColor: p.border }}
+    >
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-3 w-32" />
+      <View className="flex-row gap-2">
         <Skeleton className="h-12 flex-1 rounded-md" />
         <Skeleton className="h-12 flex-1 rounded-md" />
       </View>
@@ -320,14 +293,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
   const [deleting, setDeleting] = useState(false);
   const initializedFy = useRef(false);
   const seqRef = useRef(0);
-  // The first batch of rows appears immediately; rows mounted after that
-  // animate in (see ListRow). Flips once the first load has settled.
-  const [animateRows, setAnimateRows] = useState(false);
-  useEffect(() => {
-    if (busy) return;
-    const t = setTimeout(() => setAnimateRows(true), 0);
-    return () => clearTimeout(t);
-  }, [busy]);
+  const reduceMotion = useReduceMotion();
   const canCreate = can("create_challan");
   const canEdit = can("edit_challan");
   const canDelete = can("delete_challan");
@@ -397,8 +363,8 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
     try {
       await remove(challan.id);
       toastSuccess(`${challan.challanNumber} deleted.`);
-      setPage(1);
-      void loadPage(1, { fy, q });
+      // Stay on the current page, as the web register does after a delete.
+      void loadPage(page, { fy, q });
     } catch (err) {
       toastError(
         "Could not delete",
@@ -528,7 +494,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
                 onPress={() => setQ("")}
                 className="min-h-[44px] min-w-[44px] items-center justify-center"
               >
-                <Feather name="x" size={16} color={p.mutedForeground} />
+                <Feather name="x" size={14} color={p.mutedForeground} />
               </Pressable>
             ) : null}
           </View>
@@ -539,6 +505,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
               onChange={setFy}
               leadingIcon="calendar"
               placeholder="All FYs"
+              displayValue={fy ? `FY ${fy}` : "All FYs"}
               accessibilityLabel="Financial year"
             />
           </View>
@@ -576,7 +543,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
             </Text>
             <Button
               label="Retry"
-              variant="secondary"
+              variant="outline"
               onPress={() => void loadPage(page, { fy, q })}
             />
           </View>
@@ -592,7 +559,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
             style={{ borderColor: p.border, backgroundColor: p.muted }}
           >
             <Text
-              className="text-[11px] font-semibold uppercase tracking-wider"
+              className="text-[11px] font-semibold uppercase tracking-[0.06em]"
               style={{ color: p.mutedForeground }}
             >
               Issued • {rows.length > 0 ? `${rows.length} shown` : "register"}
@@ -606,11 +573,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
             data={rows}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <ListRow
-                item={item}
-                onMore={setActionChallan}
-                animate={animateRows}
-              />
+              <ListRow item={item} onMore={setActionChallan} />
             )}
             contentContainerStyle={{
               gap: 12,
@@ -625,14 +588,21 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
                   <RowSkeleton />
                 </View>
               ) : (
-                <View className="gap-3">
+                // The web Empty fades in over 200ms (empty.tsx); reduced
+                // motion collapses it away.
+                <Animated.View
+                  className="gap-3"
+                  entering={reduceMotion ? undefined : FadeIn.duration(200)}
+                >
                   <EmptyState
+                    icon="plus"
                     title={`${kind.emptyHint}${fy ? ` for FY ${fy}` : ""}.`}
                     message="Start a new challan to add it to this register."
                   />
                   {canCreate ? (
                     <Button
                       label="Create challan"
+                      trailingIcon="arrow-up-right"
                       onPress={() =>
                         router.push({
                           pathname: "/challan-editor",
@@ -641,7 +611,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
                       }
                     />
                   ) : null}
-                </View>
+                </Animated.View>
               )
             }
             refreshControl={
@@ -660,7 +630,8 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
               <View className="flex-1">
                 <Button
                   label="Prev"
-                  variant="secondary"
+                  variant="outline"
+                  icon="chevron-left"
                   disabled={page <= 1 || busy}
                   onPress={() => setPage((n) => Math.max(1, n - 1))}
                 />
@@ -674,7 +645,8 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
               <View className="flex-1">
                 <Button
                   label="Next"
-                  variant="secondary"
+                  variant="outline"
+                  trailingIcon="chevron-right"
                   disabled={page >= pageCount || busy}
                   onPress={() => setPage((n) => Math.min(pageCount, n + 1))}
                 />
@@ -685,7 +657,7 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
               style={{ color: p.mutedForeground }}
             >
               Page {page} of {pageCount.toLocaleString("en-IN")} ·{" "}
-              {countLabel(total, "record", "records")} total
+              {total.toLocaleString("en-IN")} total
             </Text>
           </View>
         ) : null}
@@ -724,13 +696,20 @@ export function ChallanList({ kind }: { kind: ChallanKind }) {
               onPress={() => void copyChallanId(actionChallan)}
             />
             {canDelete ? (
-              <ActionRow
-                icon="trash-2"
-                label="Delete"
-                destructive
-                disabled={deleting}
-                onPress={() => void deleteChallan(actionChallan)}
-              />
+              <>
+                {/* The web RowMenu separates Delete from the actions above. */}
+                <View
+                  className="my-1 h-px"
+                  style={{ backgroundColor: withAlpha(p.border, 0.6) }}
+                />
+                <ActionRow
+                  icon="trash-2"
+                  label="Delete"
+                  destructive
+                  disabled={deleting}
+                  onPress={() => void deleteChallan(actionChallan)}
+                />
+              </>
             ) : null}
           </View>
         ) : null}

@@ -10,7 +10,7 @@ import { Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import { api, useAuth, friendlyError } from "@kataria-syntex/app-core";
-import { usePalette, withAlpha } from "@/theme";
+import { usePalette } from "@/theme";
 import { Button, Card, Skeleton } from "@/ui/kit";
 
 type QrInfo = {
@@ -26,11 +26,11 @@ function ScanApproveSkeleton() {
       style={{ backgroundColor: p.background }}
     >
       <Card className="w-full max-w-sm">
-        <View className="gap-3">
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <Skeleton className="h-5 w-40" />
+        <View className="gap-4">
+          <Skeleton className="h-5 w-44" />
           <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-11 w-full rounded-md" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-10 w-full rounded-md" />
         </View>
       </Card>
     </View>
@@ -107,13 +107,11 @@ export default function ScanApproveRoute() {
         ? "Already approved"
         : "Approve this login?";
 
-  const body = approvedAs
-    ? `The other device is now logged in as ${approvedAs}.`
-    : expiredOrUsed
-      ? "Ask the other device to show a fresh QR code."
-      : alreadyApproved
-        ? "This code was already approved."
-        : "You scanned a login QR from another device.";
+  const body = expiredOrUsed
+    ? "Ask the other device to show a fresh QR code."
+    : alreadyApproved
+      ? "This code was already approved."
+      : "You scanned a login QR from another device.";
 
   return (
     <View
@@ -123,54 +121,63 @@ export default function ScanApproveRoute() {
       <Card className="w-full max-w-sm">
         <View className="gap-3">
           <View
-            className="h-10 w-10 items-center justify-center rounded-lg"
-            style={{
-              backgroundColor: approvedAs
-                ? withAlpha(p.success, 0.1)
-                : expiredOrUsed
-                  ? withAlpha(p.destructive, 0.1)
-                  : withAlpha(p.primary, 0.1),
-            }}
+            className="h-10 w-10 items-center justify-center rounded-md"
+            style={{ backgroundColor: p.accentSoft }}
           >
             <Feather
-              name={
-                approvedAs
-                  ? "check-circle"
-                  : expiredOrUsed
-                    ? "alert-triangle"
-                    : "shield"
-              }
+              name={approvedAs ? "check-circle" : "shield"}
               size={20}
-              color={
-                approvedAs
-                  ? p.success
-                  : expiredOrUsed
-                    ? p.destructive
-                    : p.primary
-              }
+              color={p.accentInk}
             />
           </View>
           <Text
-            className="text-[17px] font-semibold"
+            className="text-[16px] font-semibold leading-tight tracking-tight"
             style={{ color: p.foreground }}
           >
             {title}
           </Text>
-          <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-            {body}
-          </Text>
+          {approvedAs ? (
+            <Text
+              className="text-[14px] leading-normal"
+              style={{ color: p.mutedForeground }}
+            >
+              The other device is now logged in as{" "}
+              <Text className="font-medium" style={{ color: p.foreground }}>
+                {approvedAs}
+              </Text>
+              .
+            </Text>
+          ) : (
+            <Text
+              className="text-[14px] leading-normal"
+              style={{ color: p.mutedForeground }}
+            >
+              {body}
+            </Text>
+          )}
           {!approvedAs && !expiredOrUsed && !alreadyApproved && (
             <>
               <Text
-                className="text-[13px]"
+                className="text-[14px] leading-normal"
                 style={{ color: p.mutedForeground }}
               >
-                {info?.targetName
-                  ? `This will log that device in as ${info.targetName}.`
-                  : "This will log that device in as you."}
+                {info?.targetName ? (
+                  <>
+                    This will log that device in as{" "}
+                    <Text
+                      className="font-semibold"
+                      style={{ color: p.foreground }}
+                    >
+                      {info.targetName}
+                    </Text>
+                    .
+                  </>
+                ) : (
+                  "This will log that device in as you."
+                )}
               </Text>
               {error ? (
-                <Text className="text-[13px]" style={{ color: p.destructive }}>
+                <Text className="text-[14px]" style={{ color: p.destructive }}>
                   {error}
                 </Text>
               ) : null}
@@ -185,7 +192,7 @@ export default function ScanApproveRoute() {
           {approvedAs && (
             <Button
               label="Done"
-              variant="secondary"
+              variant="outline"
               onPress={() => router.replace("/(tabs)")}
             />
           )}

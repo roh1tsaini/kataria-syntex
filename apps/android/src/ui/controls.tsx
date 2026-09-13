@@ -76,17 +76,30 @@ export function Select({
   );
 }
 
-export function Textarea(props: React.ComponentProps<typeof TextInput>) {
+export function Textarea({
+  onFocus,
+  onBlur,
+  ...props
+}: React.ComponentProps<typeof TextInput>) {
   const p = usePalette();
+  const [focused, setFocused] = useState(false);
   return (
     <TextInput
       placeholderTextColor={p.mutedForeground}
       multiline
       textAlignVertical="top"
       className="min-h-[88px] rounded-md border px-3 py-2.5 text-[15px]"
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        setFocused(false);
+        onBlur?.(event);
+      }}
       style={{
         backgroundColor: p.card,
-        borderColor: p.input,
+        borderColor: focused ? p.primary : p.input,
         color: p.foreground,
       }}
       {...props}
@@ -120,7 +133,7 @@ export function IconButton({
       onPress={onPress}
       className="h-11 w-11 items-center justify-center rounded-full border"
       style={({ pressed }) => ({
-        borderColor: pressed ? "transparent" : p.border,
+        borderColor: p.border,
         backgroundColor: pressed ? p.muted : "transparent",
         opacity: disabled ? 0.5 : 1,
         transform: pressed && !disabled ? [{ scale: 0.9 }] : [{ scale: 1 }],
@@ -128,7 +141,7 @@ export function IconButton({
     >
       <Feather
         name={icon}
-        size={18}
+        size={20}
         color={destructive ? p.destructive : p.mutedForeground}
       />
     </Pressable>
@@ -146,6 +159,7 @@ export function MenuSelect({
   options,
   onChange,
   placeholder,
+  displayValue,
   leadingIcon,
   disabled,
   invalid,
@@ -155,6 +169,9 @@ export function MenuSelect({
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
   placeholder?: string;
+  /** Trigger text override — the FY filter shows `FY 2025-26` while its
+   *  options render the raw labels. Falls back to the matched option. */
+  displayValue?: string;
   leadingIcon?: FeatherIconName;
   disabled?: boolean;
   invalid?: boolean;
@@ -163,6 +180,7 @@ export function MenuSelect({
   const [open, setOpen] = useState(false);
   const p = usePalette();
   const current = options.find((o) => o.value === value);
+  const trigger = displayValue ?? current?.label;
   return (
     <>
       <Pressable
@@ -184,9 +202,9 @@ export function MenuSelect({
         <Text
           className="min-w-0 flex-1 text-[15px] font-medium"
           numberOfLines={1}
-          style={{ color: current ? p.foreground : p.mutedForeground }}
+          style={{ color: trigger ? p.foreground : p.mutedForeground }}
         >
-          {current ? current.label : placeholder}
+          {trigger ?? placeholder}
         </Text>
         <Feather name="chevron-down" size={16} color={p.mutedForeground} />
       </Pressable>
@@ -208,21 +226,23 @@ export function MenuSelect({
                 onChange(o.value);
                 setOpen(false);
               }}
-              className="min-h-[44px] flex-row items-center justify-between border-b px-4 py-3"
+              className="min-h-[44px] flex-row items-center border-b py-3 pr-4 pl-7"
               style={({ pressed }) => ({
                 borderColor: p.border,
                 opacity: pressed ? 0.7 : 1,
               })}
             >
+              {o.value === value ? (
+                <View className="absolute left-2">
+                  <Feather name="check" size={14} color={p.foreground} />
+                </View>
+              ) : null}
               <Text
                 className="flex-1 text-[15px]"
                 style={{ color: p.foreground }}
               >
                 {o.label}
               </Text>
-              {o.value === value ? (
-                <Feather name="check" size={18} color={p.primary} />
-              ) : null}
             </Pressable>
           ))}
         </ScrollView>

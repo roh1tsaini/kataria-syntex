@@ -3,11 +3,13 @@
  * catalog (grid → detail via ?report=), same server endpoints with from/to
  * filters, same column visibility model. Web's horizontal table becomes a
  * per-row card: the first visible column is the row headline, the rest are
- * label/value pairs (numeric columns right-aligned, ledger-style).
+ * label/value pairs (values right-aligned, ledger-style; numeric columns
+ * medium weight — web's numeric-column treatment).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
 import {
@@ -18,19 +20,14 @@ import {
   usePermission,
   useRealtimeEvent,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
-import {
-  Badge,
-  Button,
-  EmptyState,
-  Field,
-  Input,
-  PageTitle,
-  Skeleton,
-} from "@/ui/kit";
+import { usePalette, withAlpha } from "@/theme";
+import { Button, EmptyState, Field, PageTitle, Skeleton } from "@/ui/kit";
+import { DateField } from "@/ui/date-sheet";
 import { AppHeader } from "@/ui/app-header";
 import { SyncStrip } from "@/ui/sync";
 import { uiStorage } from "@/lib/core-adapter";
+import { cn } from "@/lib/cn";
+import { EASE_OUT, useReduceMotion } from "@/lib/motion";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 
 const REPORTS: {
@@ -117,15 +114,31 @@ function readHiddenCols(storageKey: string): Record<string, boolean> {
   return {};
 }
 
-/** Date-range inputs are entry keys (`YYYY-MM-DD`), never free text — a
- *  half-typed value must not reach the API as a range. */
-const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
-
 function columnLabel(key: string) {
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/_/g, " ")
     .replace(/^./, (s) => s.toUpperCase());
+}
+
+/** Web's row-count badge is a shadcn `secondary` badge: solid bg-secondary,
+ *  11px medium, tabular figures — not the tinted kit Badge. */
+function CountChip({ label }: { label: string }) {
+  const p = usePalette();
+  return (
+    <View
+      className="min-h-[20px] items-center justify-center rounded-sm px-1.5 py-0.5"
+      style={{ backgroundColor: p.secondary }}
+    >
+      <Text
+        className="text-[11px] font-medium tabular-nums"
+        style={{ color: p.secondaryForeground }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
 }
 
 export default function ReportsRoute() {
@@ -145,14 +158,12 @@ export default function ReportsRoute() {
 function ReportGrid() {
   const router = useRouter();
   const p = usePalette();
+  const reduce = useReduceMotion();
   return (
     <View className="flex-1" style={{ backgroundColor: p.background }}>
       <AppHeader label="Reports" />
       <SyncStrip />
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="px-4 pb-8 pt-5 gap-2.5"
-      >
+      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-8 pt-5">
         <Text
           className="text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: p.mutedForeground }}
@@ -161,50 +172,62 @@ function ReportGrid() {
         </Text>
         <PageTitle className="mt-1.5">Reports</PageTitle>
         <Text
-          className="mb-1 mt-1.5 text-[15px] leading-6"
+          className="mt-1.5 text-[15px] leading-6"
           style={{ color: p.mutedForeground }}
         >
           Totals by period, party and stock.
         </Text>
-        {REPORTS.map((r) => (
-          <Pressable
-            key={r.id}
-            accessibilityRole="button"
-            onPress={() => router.push(`/reports?report=${r.id}`)}
-            className="flex-row items-start gap-3 rounded-xl border p-4"
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.7 : 1,
-              backgroundColor: p.card,
-              borderColor: p.border,
-            })}
-          >
-            <View
-              className="h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: p.muted }}
+        {/* Web wraps the grid in `Reveal` — fade + 6px rise, 200ms EASE_OUT. */}
+        <Animated.View
+          className="mt-6 gap-3"
+          entering={
+            reduce
+              ? undefined
+              : FadeInUp.duration(200)
+                  .easing(EASE_OUT)
+                  .withInitialValues({ transform: [{ translateY: 6 }] })
+          }
+        >
+          {REPORTS.map((r) => (
+            <Pressable
+              key={r.id}
+              accessibilityRole="button"
+              onPress={() => router.push(`/reports?report=${r.id}`)}
+              className="flex-row items-start gap-3 rounded-lg border p-4"
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.7 : 1,
+                backgroundColor: p.card,
+                borderColor: p.border,
+              })}
             >
-              <Feather name={r.icon} size={18} color={p.mutedForeground} />
-            </View>
-            <View className="min-w-0 flex-1">
-              <Text
-                className="text-sm font-semibold tracking-tight"
-                style={{ color: p.foreground }}
+              <View
+                className="h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                style={{ backgroundColor: p.muted }}
               >
-                {r.label}
-              </Text>
-              <Text
-                className="mt-1 text-xs leading-relaxed"
-                style={{ color: p.mutedForeground }}
-              >
-                {r.description}
-              </Text>
-            </View>
-            <Feather
-              name="arrow-up-right"
-              size={16}
-              color={p.mutedForeground}
-            />
-          </Pressable>
-        ))}
+                <Feather name={r.icon} size={20} color={p.mutedForeground} />
+              </View>
+              <View className="min-w-0 flex-1">
+                <Text
+                  className="text-sm font-semibold tracking-tight"
+                  style={{ color: p.foreground }}
+                >
+                  {r.label}
+                </Text>
+                <Text
+                  className="mt-1 text-xs leading-relaxed"
+                  style={{ color: p.mutedForeground }}
+                >
+                  {r.description}
+                </Text>
+              </View>
+              <Feather
+                name="arrow-up-right"
+                size={16}
+                color={withAlpha(p.mutedForeground, 0.5)}
+              />
+            </Pressable>
+          ))}
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -233,19 +256,7 @@ function ReportView({ reportId }: { reportId: string }) {
   // clobber the newer one's rows.
   const loadSeq = useRef(0);
 
-  const fromError =
-    from !== "" && !DATE_KEY.test(from) ? "Use YYYY-MM-DD." : null;
-  const toError = to !== "" && !DATE_KEY.test(to) ? "Use YYYY-MM-DD." : null;
-  const rangeValid = !fromError && !toError;
-  const rangeSet = from !== "" || to !== "";
-
   const load = useCallback(async () => {
-    if (!rangeValid) {
-      // Keep whatever is on screen; querying a half-typed range would return
-      // nonsense and overwrite real rows.
-      setLoading(false);
-      return;
-    }
     const seq = ++loadSeq.current;
     const params = new URLSearchParams();
     if (from) params.set("from", from);
@@ -269,7 +280,7 @@ function ReportView({ reportId }: { reportId: string }) {
     } finally {
       if (seq === loadSeq.current) setLoading(false);
     }
-  }, [baseKey, reportId, from, to, rangeValid]);
+  }, [baseKey, reportId, from, to]);
 
   useEffect(() => {
     void load();
@@ -289,6 +300,18 @@ function ReportView({ reportId }: { reportId: string }) {
     [rows],
   );
   const visibleColumns = columns.filter((key) => !hiddenCols[key]);
+  // Web's numeric-column rule: a column is numeric when any row holds a
+  // number, and numeric cells render medium weight.
+  const numericColumns = useMemo(
+    () =>
+      new Set(
+        columns.filter((key) =>
+          rows.some((row) => typeof row[key] === "number"),
+        ),
+      ),
+    [columns, rows],
+  );
+  const reduce = useReduceMotion();
 
   // Drop visibility settings whose column no longer exists in this report.
   useEffect(() => {
@@ -337,14 +360,14 @@ function ReportView({ reportId }: { reportId: string }) {
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/reports")
           }
-          className="h-11 w-11 items-center justify-center rounded-lg"
+          className="h-11 w-11 items-center justify-center rounded-md"
           style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
         >
-          <Feather name="arrow-left" size={22} color={p.foreground} />
+          <Feather name="arrow-left" size={22} color={p.mutedForeground} />
         </Pressable>
         <View className="min-w-0 flex-1">
           <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
+            className="text-[11px] font-semibold uppercase tracking-wider"
             style={{ color: p.mutedForeground }}
           >
             Report
@@ -353,101 +376,67 @@ function ReportView({ reportId }: { reportId: string }) {
         </View>
       </View>
 
-      {/* Date range filters — same params the web sends. */}
-      <View className="flex-row gap-2 px-4 pt-4">
+      {/* Date range filters — web's `.filter-bar`: one bordered card holding
+          the From/To calendar sheets (web DatePicker pair, both clearable). */}
+      <View
+        className="mx-4 mt-6 flex-row gap-3 rounded-lg border p-3"
+        style={{ backgroundColor: p.card, borderColor: p.border }}
+      >
         <View className="flex-1">
-          <Field label="From" error={fromError}>
-            <Input
+          <Field label="From">
+            <DateField
               value={from}
-              onChangeText={setFrom}
-              placeholder="YYYY-MM-DD"
-              autoCapitalize="none"
-              keyboardType="numbers-and-punctuation"
+              placeholder="From date"
+              clearable
               accessibilityLabel="From date"
-              invalid={!!fromError}
+              onChange={setFrom}
             />
           </Field>
         </View>
         <View className="flex-1">
-          <Field label="To" error={toError}>
-            <Input
+          <Field label="To">
+            <DateField
               value={to}
-              onChangeText={setTo}
-              placeholder="YYYY-MM-DD"
-              autoCapitalize="none"
-              keyboardType="numbers-and-punctuation"
+              placeholder="To date"
+              clearable
               accessibilityLabel="To date"
-              invalid={!!toError}
+              onChange={setTo}
             />
           </Field>
         </View>
       </View>
 
       <View className="flex-1 pt-4">
-        {loading ? (
-          <ScrollView contentContainerClassName="px-4 gap-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <View
-                key={i}
-                className="flex-row items-center gap-3 rounded-xl border p-4"
-                style={{ backgroundColor: p.card, borderColor: p.border }}
+        <View
+          className="mx-4 flex-1 overflow-hidden rounded-lg border"
+          style={{ backgroundColor: p.card, borderColor: p.border }}
+        >
+          {/* Web's card strip, shown while loading and whenever rows exist;
+              its border-b is the top edge of whatever follows. */}
+          {loading || rows.length > 0 ? (
+            <View
+              className="flex-row items-center justify-between gap-2 border-b px-4 py-2.5"
+              style={{ borderColor: p.border, backgroundColor: p.muted }}
+            >
+              <Text
+                className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: p.mutedForeground }}
+                numberOfLines={1}
               >
-                <Skeleton className="h-4 flex-1" />
-                <Skeleton className="h-4 w-20" />
-              </View>
-            ))}
-          </ScrollView>
-        ) : loadError ? (
-          <ScrollView contentContainerClassName="px-4">
-            <EmptyState
-              title="Could not load the report."
-              message={loadError}
-            />
-            <Button
-              label="Retry"
-              variant="secondary"
-              onPress={() => void load()}
-            />
-          </ScrollView>
-        ) : rows.length === 0 ? (
-          <EmptyState
-            title="No data for this period"
-            message={
-              rangeSet
-                ? "Widen the date range, or clear it to see everything."
-                : "Check back after more entries are made."
-            }
-            action={
-              rangeSet ? (
-                <Button
-                  label="Clear dates"
-                  variant="secondary"
-                  onPress={() => {
-                    setFrom("");
-                    setTo("");
-                  }}
-                />
-              ) : undefined
-            }
-          />
-        ) : (
-          <FlatList
-            data={rows}
-            keyExtractor={(item, idx) =>
-              String((item as { id?: unknown }).id ?? idx)
-            }
-            contentContainerClassName="px-4 pb-8 gap-2"
-            ListHeaderComponent={
-              <View className="mb-1 gap-1">
-                <View className="flex-row items-center justify-between gap-2">
-                  <Badge
+                {title}
+              </Text>
+              {loading ? (
+                <Skeleton className="h-5 w-16 rounded-sm" />
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  <CountChip
                     label={`${rows.length.toLocaleString("en-IN")} ${rows.length === 1 ? "row" : "rows"}`}
                   />
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Toggle columns"
                     onPress={() => setColsOpen((o) => !o)}
-                    className="h-11 w-11 items-center justify-center rounded-lg"
+                    className="h-11 w-11 items-center justify-center rounded-md"
                     style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                   >
                     <Feather
@@ -457,128 +446,196 @@ function ReportView({ reportId }: { reportId: string }) {
                     />
                   </Pressable>
                 </View>
-                {data?.truncated ? (
-                  <Text
-                    className="text-[11px]"
-                    style={{ color: p.mutedForeground }}
+              )}
+            </View>
+          ) : null}
+          {rows.length > 0 && data?.truncated ? (
+            <View
+              className="border-b px-4 py-2"
+              style={{
+                borderColor: withAlpha(p.border, 0.6),
+                backgroundColor: withAlpha(p.muted, 0.4),
+              }}
+            >
+              <Text
+                className="text-[12px]"
+                style={{ color: p.mutedForeground }}
+              >
+                Showing the first {rows.length.toLocaleString("en-IN")} of{" "}
+                {(data.total ?? rows.length).toLocaleString("en-IN")} rows.
+                Narrow the date range to see the rest.
+              </Text>
+            </View>
+          ) : null}
+          {/* Web anchors the column popover to the sliders button; on the
+              phone the same checklist drops in beneath the strip. */}
+          {colsOpen && columns.length > 0 ? (
+            <View
+              className="gap-0.5 border-b p-1.5"
+              style={{ borderColor: p.border }}
+            >
+              <Text
+                className="px-2 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: p.mutedForeground }}
+              >
+                Show columns
+              </Text>
+              {columns.map((key) => {
+                const visible = !hiddenCols[key];
+                const lastVisible = visible && visibleColumns.length === 1;
+                return (
+                  <Pressable
+                    key={key}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{
+                      checked: visible,
+                      disabled: lastVisible,
+                    }}
+                    disabled={lastVisible}
+                    onPress={() => toggleHidden(key)}
+                    className="min-h-[44px] flex-row items-center gap-2.5 rounded-md px-2 py-1.5"
+                    style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                   >
-                    Showing the first {rows.length.toLocaleString("en-IN")} of{" "}
-                    {(data.total ?? rows.length).toLocaleString("en-IN")} rows.
-                    Narrow the date range to see the rest.
-                  </Text>
-                ) : null}
-              </View>
-            }
-            renderItem={({ item, index }) => {
-              const isFirst = index === 0;
-              const headlineKey = visibleColumns[0];
-              return (
-                <View
-                  className="rounded-xl border p-4"
-                  style={{ backgroundColor: p.card, borderColor: p.border }}
-                >
-                  {isFirst && colsOpen ? (
                     <View
-                      className="mb-3 gap-0.5 rounded-lg border p-1.5"
-                      style={{ borderColor: p.border }}
+                      className="h-5 w-5 items-center justify-center rounded border"
+                      style={{
+                        borderColor: p.input,
+                        backgroundColor: visible ? p.primary : "transparent",
+                      }}
                     >
-                      <Text
-                        className="px-2 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        Show columns
-                      </Text>
-                      {columns.map((key) => {
-                        const visible = !hiddenCols[key];
-                        const lastVisible =
-                          visible && visibleColumns.length === 1;
+                      {visible ? (
+                        <Feather
+                          name="check"
+                          size={14}
+                          color={p.primaryForeground}
+                        />
+                      ) : null}
+                    </View>
+                    <Text
+                      className="flex-1 text-sm"
+                      style={{ color: p.foreground }}
+                    >
+                      {columnLabel(key)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+          {loading ? (
+            <View className="gap-3 p-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View
+                  key={i}
+                  className="gap-3 rounded-lg border p-4"
+                  style={{ borderColor: p.border }}
+                >
+                  <View className="flex-row items-center justify-between gap-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-20" />
+                  </View>
+                  <View className="flex-row items-center justify-between gap-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-14" />
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : loadError ? (
+            // Web's Empty fades in over 200ms; reduced motion collapses it.
+            <Animated.View
+              className="p-4"
+              entering={reduce ? undefined : FadeIn.duration(200)}
+            >
+              <EmptyState
+                icon="alert-triangle"
+                title="Could not load the report."
+                message={loadError}
+                action={
+                  <Button
+                    label="Retry"
+                    variant="outline"
+                    icon="refresh-cw"
+                    onPress={() => void load()}
+                  />
+                }
+              />
+            </Animated.View>
+          ) : rows.length === 0 ? (
+            <Animated.View
+              className="p-4"
+              entering={reduce ? undefined : FadeIn.duration(200)}
+            >
+              <EmptyState
+                icon={report?.icon ?? "clipboard"}
+                title="No data for this period"
+                message="Adjust the date range or check back after more entries are made."
+              />
+            </Animated.View>
+          ) : (
+            <FlatList
+              data={rows}
+              keyExtractor={(item, idx) =>
+                String((item as { id?: unknown }).id ?? idx)
+              }
+              keyboardShouldPersistTaps="handled"
+              extraData={visibleColumns}
+              contentContainerStyle={{ padding: 12, gap: 12 }}
+              renderItem={({ item }) => {
+                const headlineKey = visibleColumns[0];
+                return (
+                  <View
+                    className="rounded-lg border p-4"
+                    style={{ backgroundColor: p.card, borderColor: p.border }}
+                  >
+                    {headlineKey ? (
+                      <View className="mb-2 flex-row items-baseline justify-between gap-3">
+                        <Text
+                          className="text-[11px] font-semibold uppercase tracking-wider"
+                          style={{ color: p.mutedForeground }}
+                        >
+                          {columnLabel(headlineKey)}
+                        </Text>
+                        <Text
+                          className="flex-1 text-right text-sm font-semibold tabular-nums"
+                          style={{ color: p.foreground }}
+                        >
+                          {cellText(item[headlineKey])}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <View className="gap-1.5">
+                      {visibleColumns.slice(1).map((key) => {
                         return (
-                          <Pressable
+                          <View
                             key={key}
-                            accessibilityRole="checkbox"
-                            accessibilityState={{
-                              checked: visible,
-                              disabled: lastVisible,
-                            }}
-                            disabled={lastVisible}
-                            onPress={() => toggleHidden(key)}
-                            className="min-h-[44px] flex-row items-center gap-2.5 rounded-md px-2 py-1.5"
-                            style={({ pressed }) => ({
-                              opacity: pressed ? 0.7 : 1,
-                            })}
+                            className="flex-row items-baseline justify-between gap-3"
                           >
-                            <View
-                              className="h-5 w-5 items-center justify-center rounded border"
-                              style={{
-                                borderColor: p.input,
-                                backgroundColor: visible
-                                  ? p.primary
-                                  : "transparent",
-                              }}
-                            >
-                              {visible ? (
-                                <Feather
-                                  name="check"
-                                  size={14}
-                                  color={p.primaryForeground}
-                                />
-                              ) : null}
-                            </View>
                             <Text
-                              className="flex-1 text-sm"
-                              style={{ color: p.foreground }}
+                              className="shrink-0 text-[13px]"
+                              style={{ color: p.mutedForeground }}
                             >
                               {columnLabel(key)}
                             </Text>
-                          </Pressable>
+                            <Text
+                              className={cn(
+                                "min-w-0 flex-1 text-right text-[13px] tabular-nums",
+                                numericColumns.has(key) && "font-medium",
+                              )}
+                              style={{ color: p.foreground }}
+                            >
+                              {cellText(item[key])}
+                            </Text>
+                          </View>
                         );
                       })}
                     </View>
-                  ) : null}
-                  {headlineKey ? (
-                    <View className="mb-2 flex-row items-baseline justify-between gap-3">
-                      <Text
-                        className="text-[11px] font-bold uppercase tracking-wider"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        {columnLabel(headlineKey)}
-                      </Text>
-                      <Text
-                        className="flex-1 text-right text-sm font-semibold tabular-nums"
-                        style={{ color: p.foreground }}
-                      >
-                        {cellText(item[headlineKey])}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <View className="gap-1.5">
-                    {visibleColumns.slice(1).map((key) => {
-                      return (
-                        <View
-                          key={key}
-                          className="flex-row items-baseline justify-between gap-3"
-                        >
-                          <Text
-                            className="shrink-0 text-[13px]"
-                            style={{ color: p.mutedForeground }}
-                          >
-                            {columnLabel(key)}
-                          </Text>
-                          <Text
-                            className="min-w-0 flex-1 text-right text-[13px] font-medium tabular-nums"
-                            style={{ color: p.foreground }}
-                          >
-                            {cellText(item[key])}
-                          </Text>
-                        </View>
-                      );
-                    })}
                   </View>
-                </View>
-              );
-            }}
-          />
-        )}
+                );
+              }}
+            />
+          )}
+        </View>
       </View>
     </View>
   );

@@ -281,7 +281,7 @@ placeholders, fallbacks) — never the app name.
 | Skeletons                                            | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (§3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Tables                                               | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Update banner (`update-surface.tsx`)                 | Full-width strip directly under the title bar, `border-b` + `bg-accent/10`, min-h 44px, 13px copy + 32px action button. Animates height+opacity (§5), mirrors on exit. Non-blocking availability only — web (service worker waiting, "Reload to update") and macOS ("Update"); Windows/Linux use a toast instead. The Android app renders its own update strip (apps/android `src/ui/update-surface.tsx`) against the same contract.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Update gate (`update-dialog.tsx`)                    | The one undismissable dialog: `hideClose`, no outside/Escape dismiss, icon + title + one-line description + single action button. While the update downloads it gains a centered 12px tabular readout (`formatUpdateProgress`: percent · size · ETA). Forced update only — never reuse this pattern for anything dismissable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Update gate (`update-dialog.tsx`)                    | The one undismissable dialog: `hideClose`, no outside/Escape dismiss, icon + title + one-line description + single action button. While the update downloads it gains a centered 12px tabular readout (`formatUpdateProgress`: percent · size · ETA). Forced update only — never reuse this pattern for anything dismissable. The Android app renders it as an undismissable bottom sheet against the same contract (§4.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Entry / download pages (`entry.tsx`, `download.tsx`) | Pre-auth surfaces sharing the auth header lockup (44px "K" tile + 17px semibold name) on the ambient wash (`.entry-stage` + `EntryWash`). Entry is bare and copy-free: centered lockup, `Sign in` default button, hairline "or" divider, `Install for {platform}` outline button (plain browsers only) — no card, no taglines, no helper text. Download keeps the same wash behind the version line + platform cards. Platform cards reuse Card + brand glyphs (`brand-icons.tsx`, currentColor fill, 20px) and float as frosted glass on the wash (`.glass-card`: translucent card + backdrop blur, solid under `prefers-reduced-transparency`); recommended card gets the accent border, never a solid fill. Detection is cosmetic — every card stays clickable. Install/download is plain-browser only (`isPlainBrowser()` in platform.ts): Electron and standalone PWAs ARE the app — entry never renders for them and /download redirects to /auth. |
 
 ### 3.1 Loading skeletons — every screen gets its own shape
@@ -378,6 +378,29 @@ variant. `Screen` (`src/ui/kit.tsx`) composes the whole page:
   trigger → bottom-sheet option list). Segmented controls stay for tiny
   fixed sets; tab groups that the web renders as underlined tabs keep that
   underline grammar.
+- **Pre-auth surfaces** sit outside `Screen`: auth carries the 44px "K" tile
+  and name lockup plus the six-cell OTP row (`otp-input.tsx`, the InputOTP
+  counterpart); scan-approve is a centered card.
+- **Date fields** use the sheet calendar (`date-sheet.tsx`, the DatePicker
+  counterpart): a 44px trigger showing `DD Mon YYYY` opens a bottom-sheet
+  month grid (MorphSheet surface) — today outlined, selected day filled,
+  min/max clamping, Today / Clear footer.
+- **Toasts** render the sonner grammar as a bottom-center card stack overlay
+  (`toast-overlay.tsx` + `lib/toasts.ts`, hosted in the root layout): card
+  surface, radius 12, overlay shadow, one-line title, newest at the bottom,
+  tap to dismiss — never the OS toast.
+- **Badges** use the one kit tone ladder (`Badge` in `kit.tsx`):
+  neutral/secondary/outline plus the success/warning/destructive status
+  tints — soft tint + ink text + hairline edge, 11px semibold, 8px radius.
+- **Icons** keep lucide glyph parity via custom SVGs (`feather.tsx`): the
+  Feather font plus verbatim lucide path data behind one `IconValue` prop,
+  rendered by `AppIcon` — nav rows included, with the animated sub-list and
+  150ms chevron rotate.
+- **Update gate** is an undismissable bottom sheet (radius 20 top, overlay
+  shadow, live progress readout) — never a centered dialog. Panels and
+  toasts carry the `SHADOWS` tokens (soft/lift/overlay).
+- **Screen transitions** fade (root Stack `animation: "fade"`), matching the
+  web page fade.
 
 ## 5. Motion grammar
 
@@ -397,7 +420,9 @@ Presets live in `src/main/ui/lib/motion.ts` — import them, never re-derive.
 Rules:
 
 1. **Animate transform + opacity only.** Never width/height/top/left/margin.
-   Size changes use `grid-template-rows` animation, never `height` tweens.
+   Size changes use `grid-template-rows` animation, never `height` tweens —
+   except measured height/layout under §5.6 (transform-corrected; the
+   Android counterpart animates measured height there).
    One exception: the desktop app rail may tween `width` (200ms
    `EASE_DRAWER`) when it expands on hover.
 2. **Enter and exit are the same path reversed.** Slide in from right → dismiss
@@ -494,5 +519,8 @@ change, in the same change:
    here first (owner approves), then use it.
 2. If a change made any section above untrue, rewrite that section to
    describe what IS now — current state only, no history narration.
-3. If code and this document disagree, the mismatch ships fixed in the
+3. A change to any section is a change to both shells: mirror it in
+   `apps/android` (§4.1), update `apps/android/APP.md` §8, and run the
+   verification protocol in `AGENTS.md` §2.3–§2.4.
+4. If code and this document disagree, the mismatch ships fixed in the
    same change, never deferred.

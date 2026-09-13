@@ -7,6 +7,8 @@
 import { useSyncExternalStore } from "react";
 import { ACCENT, TOKENS } from "./tokens";
 
+export { CHART } from "./tokens";
+
 export type Scheme = "light" | "dark";
 
 export type Palette = {
@@ -100,6 +102,16 @@ export function withAlpha(color: string, alpha: number): string {
 
 /** Overlay scrim behind dialogs and sheets — design.md §3 (40% black). */
 export const SCRIM = "rgba(0, 0, 0, 0.4)";
+
+/** Shadow ramp — globals.css `--shadow-*` with the black oklch alpha as
+ *  sRGB. oklch(0 0 0 / n%) is pure black, so the conversion is exact. RN
+ *  reads these through the `boxShadow` style prop; hairline borders stay. */
+export const SHADOWS = {
+  soft: "0 1px 2px rgba(0, 0, 0, 0.05)",
+  lift: "0 4px 12px -4px rgba(0, 0, 0, 0.1), 0 2px 6px -2px rgba(0, 0, 0, 0.06)",
+  overlay:
+    "0 8px 24px -8px rgba(0, 0, 0, 0.14), 0 4px 12px -4px rgba(0, 0, 0, 0.08)",
+} as const;
 
 // ── Theme store (useSyncExternalStore — no zustand dependency here) ─────────
 

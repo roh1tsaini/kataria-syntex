@@ -11,7 +11,10 @@ export default function TabsLayout() {
   return (
     <Tabs
       tabBar={() => null}
-      screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: "none" },
+      }}
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="challans" />

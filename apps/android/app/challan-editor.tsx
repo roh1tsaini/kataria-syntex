@@ -4,13 +4,12 @@
  * type is fixed at creation and never switchable (parity with the web routes
  * /challans/new and /outward/new).
  *
- * Behavior parity with apps/app/src/main/ui/pages/challans-editor.tsx:
- * edit-mode prefill from useChallans().load, the same validations and error
- * copy, totals over parsed rows via challanTotals, master-load failure
- * blocking save behind a Retry banner, the packing import sheet (sales), the
- * offline save path (the store falls back to createOfflineChallan internally
- * — this screen previews the device-issued number and toasts "will sync"),
- * and the pending_sync_edit guard. Selects/popovers become bottom sheets.
+ * Parity with apps/app/src/main/ui/pages/challans-editor.tsx at the mobile
+ * breakpoint: edit-mode prefill from useChallans().load, the same validations
+ * and error copy, totals over parsed rows, master-load failure blocking save
+ * behind a Retry banner, the packing import sheet (sales), the discard
+ * confirm, and the sticky Cancel/Save bar. Selects/popovers become bottom
+ * sheets; dates use the shared calendar sheet (ui/date-sheet.tsx).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +24,12 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, {
+  LinearTransition,
+  withSpring,
+  type EntryExitAnimationFunction,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { MorphSheet } from "@/ui/morph-sheet";
 import { useLocalSearchParams, useRouter, Redirect } from "expo-router";
@@ -35,26 +40,17 @@ import {
   usePermission,
   friendlyError,
   randomId,
-  readCompany,
-  nextSeq,
-  toastSuccess,
   api,
   type ChallanInput,
-  type ChallanType,
 } from "@kataria-syntex/app-core";
-import {
-  DEFAULT_NUMBERING,
-  challanTotals,
-  dateStringSchema,
-  fyLabelForDateString,
-  formatNumberForType,
-  round3,
-} from "@kataria-syntex/shared";
+import { challanTotals } from "@kataria-syntex/shared";
 import { usePalette, withAlpha, SCRIM } from "@/theme";
 import { Badge, Button, Field, Input, Screen } from "@/ui/kit";
+import { DateField } from "@/ui/date-sheet";
 import { SyncStrip } from "@/ui/sync";
 import { fmtBoxes, fmtWt, todayLocal } from "@/lib/format";
 import { kindFromParam } from "@/lib/challan-kinds";
+import { MORPH, MORPH_EXIT, useReduceMotion } from "@/lib/motion";
 import { useMastersLoad } from "@/lib/use-masters-load";
 
 // ── Item rows ───────────────────────────────────────────────────────────────
@@ -87,9 +83,48 @@ const emptyRow = (): ItemRow => ({
   remarks: "",
 });
 
+// Line-row motion — the same fade + 8px drop + 0.98 scale the web editor runs
+// through AnimatePresence (MORPH in, MORPH_EXIT out); layout shifts while
+// adding/removing rows animate with the same spring.
+const lineEnter: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: {
+      opacity: 0,
+      transform: [{ translateY: -8 }, { scale: 0.98 }],
+    },
+    animations: {
+      opacity: withSpring(1, MORPH),
+      transform: [
+        { translateY: withSpring(0, MORPH) },
+        { scale: withSpring(1, MORPH) },
+      ],
+    },
+  };
+};
+
+const lineExit: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: {
+      opacity: 1,
+      transform: [{ translateY: 0 }, { scale: 1 }],
+    },
+    animations: {
+      opacity: withSpring(0, MORPH_EXIT),
+      transform: [
+        { translateY: withSpring(-8, MORPH_EXIT) },
+        { scale: withSpring(0.98, MORPH_EXIT) },
+      ],
+    },
+  };
+};
+
+const ROW_LAYOUT = LinearTransition.springify().damping(21).stiffness(110);
+
 // ── Bottom-sheet picker (party, denier, colour) ─────────────────────────────
 
-type PickerOption = { id: string; label: string; subtitle?: string };
+type PickerOption = { id: string; label: string };
 
 function PickerSheet({
   visible,
@@ -113,114 +148,69 @@ function PickerSheet({
   onClose: () => void;
 }) {
   const p = usePalette();
-  const [q, setQ] = useState("");
-  useEffect(() => {
-    if (!visible) setQ("");
-  }, [visible]);
-
-  const needle = q.trim().toLowerCase();
-  const filtered = needle
-    ? options.filter((o) => o.label.toLowerCase().includes(needle))
-    : options;
 
   return (
-    <MorphSheet open={visible} onOpenChange={(v) => !v && onClose()}>
-      <View style={{ backgroundColor: p.background }}>
-        <View className="flex-row items-center justify-between px-4 pt-4">
-          <Text
-            className="flex-1 text-[17px] font-semibold"
-            style={{ color: p.foreground }}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            className="min-h-[44px] min-w-[44px] items-center justify-center"
-          >
-            <Feather name="x" size={20} color={p.mutedForeground} />
-          </Pressable>
-        </View>
-
-        <View className="px-4 pt-3">
-          <Input
-            value={q}
-            onChangeText={setQ}
-            placeholder="Search…"
-            accessibilityLabel={`Search ${title}`}
-            autoCorrect={false}
-          />
-        </View>
-
-        {loading ? (
-          <Text
-            className="px-4 py-4 text-sm"
-            style={{ color: p.mutedForeground }}
-          >
-            {loadingText}
-          </Text>
-        ) : filtered.length === 0 ? (
-          <Text
-            className="px-4 py-4 text-sm"
-            style={{ color: p.mutedForeground }}
-          >
-            {options.length === 0 ? emptyText : "No matches."}
-          </Text>
-        ) : (
-          <FlatList
-            className="mt-1 px-4"
-            style={{ maxHeight: 420 }}
-            keyboardShouldPersistTaps="handled"
-            data={filtered}
-            keyExtractor={(o) => o.id}
-            renderItem={({ item }) => {
-              const selected = item.id === selectedId;
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => {
-                    onSelect(item.id);
-                    onClose();
+    <MorphSheet
+      open={visible}
+      onOpenChange={(v) => !v && onClose()}
+      title={title}
+    >
+      {loading ? (
+        <Text
+          className="px-4 py-4 text-sm"
+          style={{ color: p.mutedForeground }}
+        >
+          {loadingText}
+        </Text>
+      ) : options.length === 0 ? (
+        <Text
+          className="px-4 py-4 text-sm"
+          style={{ color: p.mutedForeground }}
+        >
+          {emptyText}
+        </Text>
+      ) : (
+        <FlatList
+          className="mt-1"
+          style={{ maxHeight: 420 }}
+          keyboardShouldPersistTaps="handled"
+          data={options}
+          keyExtractor={(o) => o.id}
+          renderItem={({ item }) => {
+            const selected = item.id === selectedId;
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => {
+                  onSelect(item.id);
+                  onClose();
+                }}
+                className="min-h-[44px] flex-row items-center justify-between gap-3 border-b px-4 py-3"
+                style={({ pressed }) => ({
+                  borderColor: p.border,
+                  opacity: pressed ? 0.7 : 1,
+                  backgroundColor: selected ? p.accentSoft : "transparent",
+                })}
+              >
+                <Text
+                  className="min-w-0 flex-1 text-[15px]"
+                  style={{
+                    color: selected ? p.accentInk : p.foreground,
+                    fontWeight: selected ? "600" : "400",
                   }}
-                  className="min-h-[44px] flex-row items-center justify-between gap-3 rounded-lg px-3 py-2.5"
-                  style={({ pressed }) => ({
-                    opacity: pressed ? 0.7 : 1,
-                    backgroundColor: selected ? p.accentSoft : "transparent",
-                  })}
+                  numberOfLines={1}
                 >
-                  <View className="min-w-0 flex-1">
-                    <Text
-                      className="text-[15px]"
-                      style={{
-                        color: selected ? p.accentInk : p.foreground,
-                        fontWeight: selected ? "600" : "400",
-                      }}
-                      numberOfLines={1}
-                    >
-                      {item.label}
-                    </Text>
-                    {item.subtitle ? (
-                      <Text
-                        className="mt-0.5 text-[13px]"
-                        style={{ color: p.mutedForeground }}
-                        numberOfLines={1}
-                      >
-                        {item.subtitle}
-                      </Text>
-                    ) : null}
-                  </View>
-                  {selected ? (
-                    <Feather name="check" size={18} color={p.accentInk} />
-                  ) : null}
-                </Pressable>
-              );
-            }}
-          />
-        )}
-      </View>
+                  {item.label}
+                </Text>
+                {selected ? (
+                  <Feather name="check" size={18} color={p.accentInk} />
+                ) : null}
+              </Pressable>
+            );
+          }}
+        />
+      )}
     </MorphSheet>
   );
 }
@@ -293,10 +283,10 @@ function ConfirmModal({
             </View>
           </View>
           <View className="mt-4 flex-row justify-end gap-2">
-            <Button label="Cancel" variant="secondary" onPress={onCancel} />
+            <Button label="Cancel" variant="outline" onPress={onCancel} />
             <Button
               label={confirmLabel}
-              variant={destructive ? "destructive" : "primary"}
+              variant={destructive ? "destructive" : "default"}
               onPress={onConfirm}
             />
           </View>
@@ -399,154 +389,148 @@ function PackingImportSheet({
       onOpenChange={handleOpenChange}
       title="Import from Packing"
     >
-      <View style={{ backgroundColor: p.background }}>
-        <View className="px-4 pt-3">
+      <View className="px-4 pt-3">
+        <Text className="mt-1 text-[13px]" style={{ color: p.mutedForeground }}>
+          Select packed items to add as challan rows.
+        </Text>
+      </View>
+
+      <ScrollView
+        style={{ maxHeight: 480 }}
+        contentContainerClassName="px-4 py-4"
+      >
+        {loading ? (
+          <View className="gap-3">
+            {[0, 1, 2].map((i) => (
+              <View
+                key={i}
+                className="h-16 rounded-lg"
+                style={{ backgroundColor: p.muted }}
+              />
+            ))}
+          </View>
+        ) : loadError ? (
+          <View className="items-center gap-2 py-8">
+            <Text className="text-sm" style={{ color: p.destructive }}>
+              Couldn&apos;t load packing entries.
+            </Text>
+            <Button
+              label="Retry"
+              variant="outline"
+              onPress={() => setReloadNonce((n) => n + 1)}
+            />
+          </View>
+        ) : entries.length === 0 ? (
           <Text
-            className="mt-1 text-[13px]"
+            className="py-8 text-center text-sm"
             style={{ color: p.mutedForeground }}
           >
-            Select packed items to add as challan rows.
+            No packing entries available for import
           </Text>
-        </View>
-
-        <ScrollView
-          style={{ maxHeight: 480 }}
-          contentContainerClassName="px-4 py-4"
-        >
-          {loading ? (
-            <View className="gap-3">
-              {[0, 1, 2].map((i) => (
+        ) : (
+          <View className="gap-4">
+            {entries.map((entry) => (
+              <View
+                key={entry.id}
+                className="overflow-hidden rounded-lg border"
+                style={{ borderColor: p.border }}
+              >
                 <View
-                  key={i}
-                  className="h-16 rounded-lg"
-                  style={{ backgroundColor: p.muted }}
-                />
-              ))}
-            </View>
-          ) : loadError ? (
-            <View className="items-center gap-2 py-8">
-              <Text className="text-sm" style={{ color: p.destructive }}>
-                Couldn&apos;t load packing entries.
-              </Text>
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={() => setReloadNonce((n) => n + 1)}
-              />
-            </View>
-          ) : entries.length === 0 ? (
-            <Text
-              className="py-8 text-center text-sm"
-              style={{ color: p.mutedForeground }}
-            >
-              No packing entries available for import
-            </Text>
-          ) : (
-            <View className="gap-4">
-              {entries.map((entry) => (
-                <View
-                  key={entry.id}
-                  className="overflow-hidden rounded-lg border"
-                  style={{ borderColor: p.border }}
+                  className="flex-row items-center gap-2 border-b px-3 py-2"
+                  style={{
+                    borderColor: withAlpha(p.border, 0.4),
+                    backgroundColor: p.muted,
+                  }}
                 >
-                  <View
-                    className="flex-row items-center gap-2 border-b px-3 py-2"
-                    style={{
-                      borderColor: withAlpha(p.border, 0.4),
-                      backgroundColor: p.muted,
-                    }}
+                  <Text
+                    className="font-mono text-xs font-semibold"
+                    style={{ color: p.foreground }}
                   >
-                    <Text
-                      className="font-mono text-xs font-semibold"
-                      style={{ color: p.foreground }}
+                    {entry.entryNumber}
+                  </Text>
+                  <Text
+                    className="text-xs"
+                    style={{ color: p.mutedForeground }}
+                  >
+                    {entry.date}
+                  </Text>
+                </View>
+                {entry.items.map((item) => {
+                  const checked = selected.has(item.id);
+                  return (
+                    <Pressable
+                      key={item.id}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked }}
+                      onPress={() => toggle(item.id)}
+                      className="flex-row items-center gap-3 px-3 py-2.5"
+                      style={({ pressed }) => ({
+                        opacity: pressed ? 0.7 : 1,
+                        backgroundColor: checked ? p.accentSoft : "transparent",
+                      })}
                     >
-                      {entry.entryNumber}
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{ color: p.mutedForeground }}
-                    >
-                      {entry.date}
-                    </Text>
-                  </View>
-                  {entry.items.map((item) => {
-                    const checked = selected.has(item.id);
-                    return (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked }}
-                        onPress={() => toggle(item.id)}
-                        className="flex-row items-center gap-3 px-3 py-2.5"
-                        style={({ pressed }) => ({
-                          opacity: pressed ? 0.7 : 1,
-                          backgroundColor: checked
-                            ? p.accentSoft
-                            : "transparent",
-                        })}
+                      <View
+                        className="h-5 w-5 items-center justify-center rounded border"
+                        style={{
+                          borderColor: checked ? p.primary : p.input,
+                          backgroundColor: checked ? p.primary : "transparent",
+                        }}
                       >
-                        <View
-                          className="h-5 w-5 items-center justify-center rounded border"
-                          style={{
-                            borderColor: checked ? p.primary : p.input,
-                            backgroundColor: checked
-                              ? p.primary
-                              : "transparent",
-                          }}
-                        >
-                          {checked ? (
-                            <Feather
-                              name="check"
-                              size={14}
-                              color={p.primaryForeground}
-                            />
-                          ) : null}
-                        </View>
-                        <View className="min-w-0 flex-1">
-                          <View className="flex-row items-center gap-2">
-                            <Text
-                              className="text-sm font-medium"
-                              style={{ color: p.foreground }}
-                            >
-                              {item.denierName}
-                            </Text>
-                            <Text
-                              className="text-sm"
-                              style={{ color: p.mutedForeground }}
-                            >
-                              {item.colorName}
-                            </Text>
-                          </View>
+                        {checked ? (
+                          <Feather
+                            name="check"
+                            size={14}
+                            color={p.primaryForeground}
+                          />
+                        ) : null}
+                      </View>
+                      <View className="min-w-0 flex-1">
+                        <View className="flex-row items-center gap-2">
                           <Text
-                            className="text-xs"
+                            className="text-sm font-medium"
+                            style={{ color: p.foreground }}
+                          >
+                            {item.denierName}
+                          </Text>
+                          <Text
+                            className="text-sm"
                             style={{ color: p.mutedForeground }}
                           >
-                            {item.netWt.toFixed(3)} kg
-                            {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
-                            {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
+                            {item.colorName}
                           </Text>
                         </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+                        <Text
+                          className="text-xs"
+                          style={{ color: p.mutedForeground }}
+                        >
+                          {item.netWt.toFixed(3)} kg
+                          {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
+                          {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
-        <View className="flex-row justify-end gap-2 px-4 pb-4 pt-3">
-          <Button
-            label="Cancel"
-            variant="secondary"
-            onPress={() => onOpenChange(false)}
-          />
-          <Button
-            label={selected.size > 0 ? `Import (${selected.size})` : "Import"}
-            onPress={importSelected}
-            disabled={selected.size === 0}
-          />
-        </View>
+      <View
+        className="flex-row justify-end gap-2 border-t px-4 pb-4 pt-3"
+        style={{ borderColor: p.border }}
+      >
+        <Button
+          label="Cancel"
+          variant="outline"
+          onPress={() => onOpenChange(false)}
+        />
+        <Button
+          label={selected.size > 0 ? `Import (${selected.size})` : "Import"}
+          onPress={importSelected}
+          disabled={selected.size === 0}
+        />
       </View>
     </MorphSheet>
   );
@@ -571,10 +555,8 @@ function SelectTrigger({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: loading }}
       onPress={onPress}
-      disabled={loading}
-      className="min-h-[44px] flex-row items-center justify-between gap-2 rounded-lg border px-3"
+      className="min-h-[44px] flex-row items-center justify-between gap-2 rounded-md border px-3"
       style={({ pressed }) => ({
         opacity: pressed ? 0.8 : 1,
         backgroundColor: p.card,
@@ -647,6 +629,13 @@ export default function ChallanEditorScreen() {
   const [focusRowKey, setFocusRowKey] = useState<string | null>(null);
 
   const prefilled = useRef(false);
+  const reduceMotion = useReduceMotion();
+  /** Rows already on screen at first paint don't animate in (web's
+   *  AnimatePresence `initial={false}`). */
+  const skipEnter = useRef(true);
+  useEffect(() => {
+    skipEnter.current = false;
+  }, []);
 
   const parties = kind.type === "sales" ? customers : jobWorkers;
   const partyLoading =
@@ -712,21 +701,7 @@ export default function ChallanEditorScreen() {
 
   const updateRow = (i: number, patch: Partial<ItemRow>) => {
     setRows((prev) =>
-      prev.map((r, idx) => {
-        if (idx !== i) return r;
-        const next = { ...r, ...patch };
-        // Auto net weight = gross − tare; the field stays editable — later
-        // gross/tare edits recompute it.
-        if (patch.grossWt !== undefined || patch.tareWt !== undefined) {
-          const gross = parseFloat(next.grossWt);
-          const tare = parseFloat(next.tareWt);
-          if (Number.isFinite(gross) && Number.isFinite(tare)) {
-            const net = round3(gross - tare);
-            next.netWt = net > 0 ? String(net) : "";
-          }
-        }
-        return next;
-      }),
+      prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)),
     );
     setDirty(true);
   };
@@ -797,17 +772,6 @@ export default function ChallanEditorScreen() {
     return challanTotals(parsed);
   })();
 
-  // Offline number preview — what the store's createOfflineChallan fallback
-  // would issue from the cached FY counter and company numbering.
-  const offlinePreview = (() => {
-    if (isEdit) return null;
-    if (!dateStringSchema.safeParse(date).success) return null;
-    const fyLabel = fyLabelForDateString(date);
-    const numbering = readCompany()?.numbering ?? DEFAULT_NUMBERING;
-    const seq = nextSeq(fyLabel, kind.type);
-    return formatNumberForType(numbering, kind.type, seq, fyLabel);
-  })();
-
   const onSave = async () => {
     if (isEdit && loadFailed) {
       setError("Couldn't load the challan. Retry the load first.");
@@ -817,8 +781,8 @@ export default function ChallanEditorScreen() {
       setError("Couldn't load the master data. Retry the load first.");
       return;
     }
-    if (!dateStringSchema.safeParse(date).success) {
-      setError("Enter a real date in YYYY-MM-DD format.");
+    if (!date) {
+      setError("Select a date.");
       return;
     }
     if (!partyId) {
@@ -866,17 +830,8 @@ export default function ChallanEditorScreen() {
       const saved =
         isEdit && id ? await update(id, input) : await create(input);
       setDirty(false);
-      // The store's create() falls back to an offline challan on network
-      // failure, so a pendingSync result means "saved on this device".
-      if (saved.pendingSync) {
-        toastSuccess(
-          "Saved on this device",
-          "It will sync when the server is back.",
-        );
-      } else {
-        toastSuccess("Challan saved.");
-      }
-      // Web routes to the detail page after save — same flow here.
+      // Web routes to the detail page after save — same flow here; an
+      // offline-saved challan lands on its pending detail page.
       router.replace({
         pathname: "/challan-detail",
         params: { id: saved.id, kind: kind.type },
@@ -891,6 +846,7 @@ export default function ChallanEditorScreen() {
 
   const newLabel = kind.type === "sales" ? "sales challan" : "job-work challan";
   const p = usePalette();
+  const insets = useSafeAreaInsets();
 
   if (status === "loading") return null;
   if (status === "guest") return <Redirect href="/auth" />;
@@ -899,7 +855,6 @@ export default function ChallanEditorScreen() {
   const partyOptions: PickerOption[] = parties.map((party) => ({
     id: party.id,
     label: party.name,
-    subtitle: party.phone ?? undefined,
   }));
   const denierOptions: PickerOption[] = deniers.map((d) => ({
     id: d.id,
@@ -976,6 +931,7 @@ export default function ChallanEditorScreen() {
           >
             {error ? (
               <View
+                accessibilityRole="alert"
                 className="mt-4 rounded-lg border px-4 py-3"
                 style={{
                   borderColor: `${p.destructive}33`,
@@ -990,6 +946,7 @@ export default function ChallanEditorScreen() {
 
             {mastersFailed ? (
               <View
+                accessibilityRole="alert"
                 className="mt-4 flex-row flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
                 style={{
                   borderColor: `${p.destructive}33`,
@@ -1005,311 +962,342 @@ export default function ChallanEditorScreen() {
                 </Text>
                 <Button
                   label="Retry"
-                  variant="secondary"
+                  variant="outline"
                   onPress={retryMasters}
                 />
               </View>
             ) : null}
 
             {/* Step 1 — challan details */}
-            <Text
-              className="mt-6 text-[11px] font-bold uppercase tracking-wider"
-              style={{ color: p.mutedForeground }}
-            >
-              Step 1 · Challan details
-            </Text>
             <View
-              className="mt-3 gap-4 rounded-xl border p-4"
+              className="mt-6 overflow-hidden rounded-lg border"
               style={{ backgroundColor: p.card, borderColor: p.border }}
             >
-              <Field label="Date">
-                <Input
-                  value={date}
-                  onChangeText={(d) => {
-                    setDate(d);
-                    setDirty(true);
-                  }}
-                  placeholder="YYYY-MM-DD"
-                  maxLength={10}
-                  autoCorrect={false}
-                  accessibilityLabel="Challan date"
-                />
-              </Field>
-              {offlinePreview ? (
-                <View className="flex-row items-center gap-2">
-                  <Badge label="Offline save" tone="warning" />
-                  <Text
-                    className="min-w-0 flex-1 text-[13px]"
-                    style={{ color: p.mutedForeground }}
-                  >
-                    Next number if offline:{" "}
-                    <Text
-                      className="font-mono font-semibold"
-                      style={{ color: p.foreground }}
-                    >
-                      {offlinePreview}
-                    </Text>{" "}
-                    — it will sync automatically.
-                  </Text>
-                </View>
-              ) : null}
-              <Field label={kind.party}>
-                <SelectTrigger
-                  label={selectedParty?.name ?? null}
-                  loading={partyLoading}
-                  loadingText="Loading…"
-                  emptyText={`Select ${kind.party.toLowerCase()}…`}
-                  onPress={() => setPartyPickerOpen(true)}
-                />
-              </Field>
-              <Field label="Notes">
-                <Input
-                  value={notes}
-                  onChangeText={(n) => {
-                    setNotes(n);
-                    setDirty(true);
-                  }}
-                  placeholder="Optional remarks shown on the challan."
-                  multiline
-                  maxLength={500}
-                  accessibilityLabel="Notes"
-                />
-              </Field>
+              <View
+                className="gap-1.5 border-b px-4 py-3"
+                style={{ borderColor: p.border, backgroundColor: p.muted }}
+              >
+                <Text
+                  className="text-[11px] font-semibold uppercase tracking-wider"
+                  style={{ color: p.mutedForeground }}
+                >
+                  Step 1
+                </Text>
+                <Text
+                  className="text-[15px] font-semibold"
+                  style={{ color: p.foreground }}
+                >
+                  Challan details
+                </Text>
+                <Text className="text-xs" style={{ color: p.mutedForeground }}>
+                  Set the issue date and recipient.
+                </Text>
+              </View>
+              <View className="gap-4 px-5 pt-5 pb-5">
+                <Field label="Date">
+                  <DateField
+                    value={date}
+                    maxDate="2100-12-31"
+                    accessibilityLabel="Challan date"
+                    onChange={(d) => {
+                      setDate(d);
+                      setDirty(true);
+                    }}
+                  />
+                </Field>
+                <Field label={kind.party}>
+                  <SelectTrigger
+                    label={selectedParty?.name ?? null}
+                    loading={partyLoading}
+                    loadingText="Loading…"
+                    emptyText={`Select ${kind.party.toLowerCase()}…`}
+                    onPress={() => setPartyPickerOpen(true)}
+                  />
+                </Field>
+                <Field label="Notes">
+                  <Input
+                    value={notes}
+                    onChangeText={(n) => {
+                      setNotes(n);
+                      setDirty(true);
+                    }}
+                    placeholder="Optional remarks shown on the challan."
+                    multiline
+                    maxLength={500}
+                    accessibilityLabel="Notes"
+                  />
+                </Field>
+              </View>
             </View>
 
             {/* Step 2 — line items */}
-            <View className="mt-6 flex-row items-start justify-between gap-3">
-              <View className="min-w-0 flex-1">
-                <Text
-                  className="text-[11px] font-bold uppercase tracking-wider"
-                  style={{ color: p.mutedForeground }}
-                >
-                  Step 2 · Line items
-                </Text>
-                <Text
-                  className="mt-1 text-[13px]"
-                  style={{ color: p.mutedForeground }}
-                >
-                  One row per box with weights, yarn and lot.
-                </Text>
-              </View>
-              <View className="shrink-0 flex-row items-center gap-2">
-                {kind.type === "sales" ? (
-                  <Button
-                    label="Import"
-                    variant="secondary"
-                    onPress={() => setImportOpen(true)}
+            <View
+              className="mt-6 overflow-hidden rounded-lg border"
+              style={{ backgroundColor: p.card, borderColor: p.border }}
+            >
+              <View
+                className="gap-3 border-b px-4 py-3"
+                style={{ borderColor: p.border, backgroundColor: p.muted }}
+              >
+                <View className="gap-1.5">
+                  <Text
+                    className="text-[11px] font-semibold uppercase tracking-wider"
+                    style={{ color: p.mutedForeground }}
+                  >
+                    Step 2
+                  </Text>
+                  <Text
+                    className="text-[15px] font-semibold"
+                    style={{ color: p.foreground }}
+                  >
+                    Line items
+                  </Text>
+                  <Text
+                    className="text-xs"
+                    style={{ color: p.mutedForeground }}
+                  >
+                    One row per box with weights, yarn and lot.
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  {kind.type === "sales" ? (
+                    <Button
+                      label="Import"
+                      variant="outline"
+                      icon="download"
+                      onPress={() => setImportOpen(true)}
+                    />
+                  ) : null}
+                  <Badge
+                    label={`${rows.length} ${rows.length === 1 ? "line" : "lines"}`}
                   />
-                ) : null}
-                <Badge
-                  label={`${rows.length} ${rows.length === 1 ? "line" : "lines"}`}
+                </View>
+              </View>
+
+              <View className="px-5 pt-4 pb-4">
+                <View className="gap-3">
+                  {rows.map((r, i) => (
+                    <Animated.View
+                      key={r.key}
+                      entering={
+                        reduceMotion || skipEnter.current
+                          ? undefined
+                          : lineEnter
+                      }
+                      exiting={reduceMotion ? undefined : lineExit}
+                      layout={reduceMotion ? undefined : ROW_LAYOUT}
+                      className="rounded-lg border p-4"
+                      style={{ backgroundColor: p.card, borderColor: p.border }}
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center gap-2">
+                          <View
+                            className="h-7 w-7 items-center justify-center rounded-md"
+                            style={{ backgroundColor: p.muted }}
+                          >
+                            <Text
+                              className="text-xs font-bold"
+                              style={{ color: p.mutedForeground }}
+                            >
+                              {i + 1}
+                            </Text>
+                          </View>
+                          <Text
+                            className="text-xs"
+                            style={{ color: p.mutedForeground }}
+                          >
+                            Line {i + 1}
+                          </Text>
+                          {parseFloat(r.netWt) > 0 ? (
+                            <Badge
+                              label={`${r.netWt} kg`}
+                              tone="success-soft"
+                            />
+                          ) : null}
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove row ${i + 1}`}
+                          onPress={() => removeRow(i)}
+                          disabled={rows.length <= 1}
+                          className="min-h-[44px] min-w-[44px] items-center justify-center rounded-md"
+                          style={({ pressed }) => ({
+                            opacity: pressed ? 0.7 : rows.length <= 1 ? 0.4 : 1,
+                          })}
+                        >
+                          <Feather
+                            name="x"
+                            size={18}
+                            color={p.mutedForeground}
+                          />
+                        </Pressable>
+                      </View>
+
+                      <View className="mt-3 flex-row gap-2.5">
+                        <View className="flex-1">
+                          <Field
+                            label={
+                              kind.type === "outward" ? "Sack no." : "Box no."
+                            }
+                          >
+                            <Input
+                              value={r.boxNo}
+                              placeholder={
+                                kind.type === "outward" ? "S-001" : "B-001"
+                              }
+                              onChangeText={(v) => updateRow(i, { boxNo: v })}
+                              autoFocus={focusRowKey === r.key}
+                              accessibilityLabel={`Row ${i + 1} ${kind.type === "outward" ? "sack" : "box"} number`}
+                            />
+                          </Field>
+                        </View>
+                        <View className="flex-1">
+                          <Field
+                            label={kind.type === "outward" ? "Cones" : "Cheese"}
+                          >
+                            <Input
+                              value={r.cheese}
+                              placeholder="0"
+                              keyboardType="number-pad"
+                              onChangeText={(v) => updateRow(i, { cheese: v })}
+                              accessibilityLabel={`Row ${i + 1} ${kind.type === "outward" ? "cones" : "cheese"}`}
+                            />
+                          </Field>
+                        </View>
+                      </View>
+
+                      <View className="mt-2.5 flex-row gap-2.5">
+                        <View className="flex-1">
+                          <Field label="Gross wt.">
+                            <Input
+                              value={r.grossWt}
+                              placeholder="0.000"
+                              keyboardType="decimal-pad"
+                              onChangeText={(v) => updateRow(i, { grossWt: v })}
+                              accessibilityLabel={`Row ${i + 1} gross weight`}
+                            />
+                          </Field>
+                        </View>
+                        <View className="flex-1">
+                          <Field label="Tare wt.">
+                            <Input
+                              value={r.tareWt}
+                              placeholder="0.000"
+                              keyboardType="decimal-pad"
+                              onChangeText={(v) => updateRow(i, { tareWt: v })}
+                              accessibilityLabel={`Row ${i + 1} tare weight`}
+                            />
+                          </Field>
+                        </View>
+                      </View>
+
+                      <View className="mt-2.5 flex-row gap-2.5">
+                        <View className="flex-1">
+                          <Field label="Net wt. *">
+                            <Input
+                              value={r.netWt}
+                              placeholder="0.000"
+                              keyboardType="decimal-pad"
+                              onChangeText={(v) => updateRow(i, { netWt: v })}
+                              accessibilityLabel={`Row ${i + 1} net weight`}
+                            />
+                          </Field>
+                        </View>
+                        <View className="flex-1">
+                          <Field
+                            label={kind.type === "outward" ? "Sacks" : "Boxes"}
+                          >
+                            <Input
+                              value={r.boxes}
+                              placeholder="1"
+                              keyboardType="number-pad"
+                              onChangeText={(v) => updateRow(i, { boxes: v })}
+                              accessibilityLabel={`Row ${i + 1} boxes`}
+                            />
+                          </Field>
+                        </View>
+                      </View>
+
+                      <View className="mt-2.5 gap-2.5">
+                        <Field label="Denier *">
+                          <SelectTrigger
+                            label={
+                              deniers.find((d) => d.id === r.denierId)?.name ??
+                              null
+                            }
+                            loading={deniersLoading}
+                            loadingText="Loading…"
+                            emptyText="Denier…"
+                            onPress={() =>
+                              setRowPicker({ rowKey: r.key, field: "denier" })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label={
+                            kind.type === "outward"
+                              ? "Colour (optional)"
+                              : "Colour *"
+                          }
+                        >
+                          <SelectTrigger
+                            label={
+                              colorOptions.find((c) => c.id === r.colorId)
+                                ?.label ?? null
+                            }
+                            loading={colorsLoading}
+                            loadingText="Loading…"
+                            emptyText={
+                              kind.type === "outward"
+                                ? "Colour (optional)…"
+                                : "Colour…"
+                            }
+                            onPress={() =>
+                              setRowPicker({ rowKey: r.key, field: "color" })
+                            }
+                          />
+                        </Field>
+                      </View>
+
+                      <View className="mt-2.5 flex-row gap-2.5">
+                        <View className="flex-1">
+                          <Field label="Lot no.">
+                            <Input
+                              value={r.lotNo}
+                              placeholder="Lot"
+                              onChangeText={(v) => updateRow(i, { lotNo: v })}
+                              accessibilityLabel={`Row ${i + 1} lot number`}
+                            />
+                          </Field>
+                        </View>
+                        <View className="flex-1">
+                          <Field label="Remarks">
+                            <Input
+                              value={r.remarks}
+                              placeholder="Optional"
+                              onChangeText={(v) => updateRow(i, { remarks: v })}
+                              accessibilityLabel={`Row ${i + 1} remarks`}
+                            />
+                          </Field>
+                        </View>
+                      </View>
+                    </Animated.View>
+                  ))}
+                </View>
+
+                <Button
+                  label="Add item"
+                  variant="outline"
+                  icon="plus"
+                  onPress={addRow}
+                  className="mt-4 w-full border-dashed"
                 />
               </View>
             </View>
 
-            <View className="mt-3 gap-3">
-              {rows.map((r, i) => (
-                <View
-                  key={r.key}
-                  className="rounded-lg border p-4"
-                  style={{ backgroundColor: p.card, borderColor: p.border }}
-                >
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-2">
-                      <View
-                        className="h-7 w-7 items-center justify-center rounded-md"
-                        style={{ backgroundColor: p.muted }}
-                      >
-                        <Text
-                          className="text-xs font-bold"
-                          style={{ color: p.mutedForeground }}
-                        >
-                          {i + 1}
-                        </Text>
-                      </View>
-                      <Text
-                        className="text-xs"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        Line {i + 1}
-                      </Text>
-                      {parseFloat(r.netWt) > 0 ? (
-                        <Badge label={`${r.netWt} kg`} tone="success" />
-                      ) : null}
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove row ${i + 1}`}
-                      onPress={() => removeRow(i)}
-                      disabled={rows.length <= 1}
-                      className="min-h-[44px] min-w-[44px] items-center justify-center rounded-md"
-                      style={({ pressed }) => ({
-                        opacity: pressed ? 0.7 : rows.length <= 1 ? 0.4 : 1,
-                      })}
-                    >
-                      <Feather name="x" size={18} color={p.mutedForeground} />
-                    </Pressable>
-                  </View>
-
-                  <View className="mt-3 flex-row gap-2.5">
-                    <View className="flex-1">
-                      <Field
-                        label={kind.type === "outward" ? "Sack no." : "Box no."}
-                      >
-                        <Input
-                          value={r.boxNo}
-                          placeholder={
-                            kind.type === "outward" ? "S-001" : "B-001"
-                          }
-                          onChangeText={(v) => updateRow(i, { boxNo: v })}
-                          autoFocus={focusRowKey === r.key}
-                          accessibilityLabel={`Row ${i + 1} ${kind.type === "outward" ? "sack" : "box"} number`}
-                        />
-                      </Field>
-                    </View>
-                    <View className="flex-1">
-                      <Field
-                        label={kind.type === "outward" ? "Cones" : "Cheese"}
-                      >
-                        <Input
-                          value={r.cheese}
-                          placeholder="0"
-                          keyboardType="number-pad"
-                          onChangeText={(v) => updateRow(i, { cheese: v })}
-                          accessibilityLabel={`Row ${i + 1} ${kind.type === "outward" ? "cones" : "cheese"}`}
-                        />
-                      </Field>
-                    </View>
-                  </View>
-
-                  <View className="mt-2.5 flex-row gap-2.5">
-                    <View className="flex-1">
-                      <Field label="Gross wt.">
-                        <Input
-                          value={r.grossWt}
-                          placeholder="0.000"
-                          keyboardType="decimal-pad"
-                          onChangeText={(v) => updateRow(i, { grossWt: v })}
-                          accessibilityLabel={`Row ${i + 1} gross weight`}
-                        />
-                      </Field>
-                    </View>
-                    <View className="flex-1">
-                      <Field label="Tare wt.">
-                        <Input
-                          value={r.tareWt}
-                          placeholder="0.000"
-                          keyboardType="decimal-pad"
-                          onChangeText={(v) => updateRow(i, { tareWt: v })}
-                          accessibilityLabel={`Row ${i + 1} tare weight`}
-                        />
-                      </Field>
-                    </View>
-                  </View>
-
-                  <View className="mt-2.5 flex-row gap-2.5">
-                    <View className="flex-1">
-                      <Field label="Net wt. *">
-                        <Input
-                          value={r.netWt}
-                          placeholder="0.000"
-                          keyboardType="decimal-pad"
-                          onChangeText={(v) => updateRow(i, { netWt: v })}
-                          accessibilityLabel={`Row ${i + 1} net weight`}
-                        />
-                      </Field>
-                    </View>
-                    <View className="flex-1">
-                      <Field
-                        label={kind.type === "outward" ? "Sacks" : "Boxes"}
-                      >
-                        <Input
-                          value={r.boxes}
-                          placeholder="1"
-                          keyboardType="number-pad"
-                          onChangeText={(v) => updateRow(i, { boxes: v })}
-                          accessibilityLabel={`Row ${i + 1} boxes`}
-                        />
-                      </Field>
-                    </View>
-                  </View>
-
-                  <View className="mt-2.5 gap-2.5">
-                    <Field label="Denier *">
-                      <SelectTrigger
-                        label={
-                          deniers.find((d) => d.id === r.denierId)?.name ?? null
-                        }
-                        loading={deniersLoading}
-                        loadingText="Loading…"
-                        emptyText="Denier…"
-                        onPress={() =>
-                          setRowPicker({ rowKey: r.key, field: "denier" })
-                        }
-                      />
-                    </Field>
-                    <Field
-                      label={
-                        kind.type === "outward"
-                          ? "Colour (optional)"
-                          : "Colour *"
-                      }
-                    >
-                      <SelectTrigger
-                        label={
-                          colorOptions.find((c) => c.id === r.colorId)?.label ??
-                          null
-                        }
-                        loading={colorsLoading}
-                        loadingText="Loading…"
-                        emptyText={
-                          kind.type === "outward"
-                            ? "Colour (optional)…"
-                            : "Colour…"
-                        }
-                        onPress={() =>
-                          setRowPicker({ rowKey: r.key, field: "color" })
-                        }
-                      />
-                    </Field>
-                  </View>
-
-                  <View className="mt-2.5 flex-row gap-2.5">
-                    <View className="flex-1">
-                      <Field label="Lot no.">
-                        <Input
-                          value={r.lotNo}
-                          placeholder="Lot"
-                          onChangeText={(v) => updateRow(i, { lotNo: v })}
-                          accessibilityLabel={`Row ${i + 1} lot number`}
-                        />
-                      </Field>
-                    </View>
-                    <View className="flex-1">
-                      <Field label="Remarks">
-                        <Input
-                          value={r.remarks}
-                          placeholder="Optional"
-                          onChangeText={(v) => updateRow(i, { remarks: v })}
-                          accessibilityLabel={`Row ${i + 1} remarks`}
-                        />
-                      </Field>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-            <Button
-              label="Add item"
-              variant="secondary"
-              onPress={addRow}
-              className="mt-3 w-full"
-            />
-
             {/* Totals */}
             <View
-              className="mt-6 overflow-hidden rounded-xl border"
+              className="mt-6 overflow-hidden rounded-lg border"
               style={{ backgroundColor: p.card, borderColor: p.border }}
             >
               <View
@@ -1324,7 +1312,7 @@ export default function ChallanEditorScreen() {
                 </Text>
                 <Text
                   className="mt-1 text-[17px] font-semibold"
-                  style={{ color: p.foreground }}
+                  style={{ color: p.foreground, fontVariant: ["tabular-nums"] }}
                 >
                   {fmtBoxes(totals.totalBoxes)}
                 </Text>
@@ -1339,7 +1327,10 @@ export default function ChallanEditorScreen() {
                 <View className="mt-1 flex-row items-baseline gap-1">
                   <Text
                     className="text-[17px] font-semibold"
-                    style={{ color: p.foreground }}
+                    style={{
+                      color: p.foreground,
+                      fontVariant: ["tabular-nums"],
+                    }}
                   >
                     {fmtWt(totals.totalNetWt)}
                   </Text>
@@ -1363,19 +1354,25 @@ export default function ChallanEditorScreen() {
             </View>
           </ScrollView>
 
-          {/* Sticky action bar */}
+          {/* Sticky action bar — the web bar pads 12px over the safe-area
+              bottom inset (`.sticky-action-bar`). */}
           <View
-            className="flex-row gap-2 border-t px-4 py-3"
-            style={{ borderColor: p.border, backgroundColor: p.card }}
+            className="flex-row gap-2 border-t px-4 pt-3"
+            style={{
+              borderColor: p.border,
+              backgroundColor: p.card,
+              paddingBottom: 12 + insets.bottom,
+            }}
           >
             <Button
               label="Cancel"
-              variant="secondary"
+              variant="outline"
               onPress={onCancel}
               className="flex-1"
             />
             <Button
               label="Save"
+              icon="save"
               onPress={() => void onSave()}
               loading={saving}
               className="flex-1"

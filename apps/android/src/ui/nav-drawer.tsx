@@ -9,7 +9,13 @@
  * bottom tab bar — this drawer is the only mobile navigation, on both apps.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   BackHandler,
   Modal,
@@ -24,6 +30,7 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -44,11 +51,13 @@ import {
   DRAWER_ENTER_MS,
   DRAWER_EXIT_MS,
   EASE_DRAWER,
+  MORPH,
+  MORPH_EXIT,
   useReduceMotion,
 } from "@/lib/motion";
 import { useNavDrawer } from "@/lib/nav-drawer";
-import { Badge, Button } from "@/ui/kit";
-import { Feather } from "@/ui/feather";
+import { Badge, Button, ButtonCapsule, CircleButton } from "@/ui/kit";
+import { AppIcon, Crown, Feather, ShieldCheck } from "@/ui/feather";
 import { SyncSheet } from "@/ui/sync";
 import {
   PACKER_SECTIONS,
@@ -65,38 +74,94 @@ function RoleBadge({ isPrimaryAdmin }: { isPrimaryAdmin?: boolean }) {
     <Badge
       label={isPrimaryAdmin ? "Primary Admin" : "Member"}
       tone={isPrimaryAdmin ? "accent" : "warning"}
+      icon={isPrimaryAdmin ? Crown : ShieldCheck}
     />
   );
 }
 
-function CircleButton({
-  onPress,
-  label,
-  disabled,
+/** Animated sub-list — the drawer's counterpart of the web grid-rows collapse
+ *  (app-shell.tsx: grid-template-rows + opacity, 380ms --ease-morph). RN has
+ *  no grid-rows animation, so the measured content height drives a Reanimated
+ *  value on the MORPH/MORPH_EXIT springs (the §5.6 measured-height exception
+ *  to the transform-only rule); reduced motion snaps instantly. The list
+ *  stays mounted through its exit so the exit mirrors the entry. */
+function SubList({
+  expanded,
   children,
 }: {
-  onPress: () => void;
-  label: string;
-  disabled?: boolean;
-  children: React.ReactNode;
+  expanded: boolean;
+  children: ReactNode;
 }) {
-  const p = usePalette();
+  const reduce = useReduceMotion();
+  const [mounted, setMounted] = useState(expanded);
+  const reveal = useSharedValue(expanded ? 1 : 0);
+  const contentH = useSharedValue(0);
+
+  useEffect(() => {
+    if (expanded) {
+      setMounted(true);
+      reveal.value = reduce
+        ? withTiming(1, { duration: 0 })
+        : withSpring(1, MORPH);
+      return;
+    }
+    if (!mounted) return;
+    const done = (finished?: boolean) => {
+      if (finished) runOnJS(setMounted)(false);
+    };
+    reveal.value = reduce
+      ? withTiming(0, { duration: 0 }, done)
+      : withSpring(0, MORPH_EXIT, done);
+  }, [expanded, mounted, reduce, reveal]);
+
+  const shell = useAnimatedStyle(() => ({
+    height: reveal.value * contentH.value,
+    opacity: reveal.value,
+  }));
+
+  if (!mounted) return null;
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      className="h-11 w-11 shrink-0 items-center justify-center rounded-full border"
-      style={({ pressed }) => ({
-        borderColor: p.border,
-        backgroundColor: p.card,
-        opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
-      })}
-    >
-      {children}
-    </Pressable>
+    <Animated.View className="mt-0.5 overflow-hidden" style={shell}>
+      {/* Unconstrained so it always measures its natural height, even while
+          the shell clips to 0 — the list grows from nothing, never snaps. */}
+      <View
+        onLayout={(event) => {
+          contentH.value = event.nativeEvent.layout.height;
+        }}
+      >
+        {children}
+      </View>
+    </Animated.View>
+  );
+}
+
+/** Parent chevron — web app-shell.tsx rotates it 150ms on expand/collapse
+ *  (rotate-0 / -rotate-90); reduced motion snaps instantly. */
+function ExpandChevron({
+  expanded,
+  color,
+}: {
+  expanded: boolean;
+  color: string;
+}) {
+  const reduce = useReduceMotion();
+  const progress = useSharedValue(expanded ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(expanded ? 1 : 0, {
+      duration: reduce ? 0 : 150,
+    });
+  }, [expanded, reduce, progress]);
+
+  const spin = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${(1 - progress.value) * -90}deg` }],
+  }));
+
+  return (
+    <Animated.View style={spin}>
+      <Feather name="chevron-down" size={16} color={color} />
+    </Animated.View>
   );
 }
 
@@ -137,9 +202,10 @@ export function NavDrawer() {
     return () => sub.remove();
   }, [open, closeDrawer]);
 
+  // Slide only — the web drawer has no scrim and no fade, just the panel
+  // travelling the full screen width.
   const panelStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: (progress.value - 1) * width }],
-    opacity: 0.4 + progress.value * 0.6,
   }));
 
   const toggleGroup = useCallback((to: string) => {
@@ -269,7 +335,7 @@ function DrawerContent({
               </View>
             </View>
             <CircleButton onPress={onClose} label="Close navigation">
-              <Feather name="x" size={20} color={p.foreground} />
+              <Feather name="x" size={20} color={p.mutedForeground} />
             </CircleButton>
           </View>
 
@@ -337,7 +403,14 @@ function DrawerContent({
                       isSubActive(sub, pathname, params),
                     ) ?? false;
                   const isExpanded = expanded[item.to] ?? anySubActive;
-                  const emphasised = active || anySubActive;
+                  // §4: a parent with subs is a toggle, never a selection —
+                  // its active sub alone takes the tint; the parent just
+                  // brightens to foreground. Rest rows stay muted, like web.
+                  const labelColor = active
+                    ? p.accentInk
+                    : anySubActive
+                      ? p.foreground
+                      : p.mutedForeground;
                   return (
                     <View key={item.to}>
                       <Pressable
@@ -355,80 +428,81 @@ function DrawerContent({
                               : "transparent",
                         })}
                       >
-                        <Feather
+                        <AppIcon
                           name={item.icon}
                           size={20}
-                          color={emphasised ? p.accentInk : p.mutedForeground}
+                          color={labelColor}
                         />
                         <Text
                           className="min-w-0 flex-1 text-[15px]"
                           numberOfLines={1}
                           style={{
-                            color: emphasised ? p.accentInk : p.foreground,
-                            fontWeight: emphasised ? "500" : "400",
+                            color: labelColor,
+                            fontWeight: active || anySubActive ? "500" : "400",
                           }}
                         >
                           {item.label}
                         </Text>
                         {hasSubs ? (
-                          <Feather
-                            name={isExpanded ? "chevron-down" : "chevron-right"}
-                            size={16}
+                          <ExpandChevron
+                            expanded={isExpanded}
                             color={p.mutedForeground}
                           />
                         ) : null}
                       </Pressable>
 
-                      {hasSubs && isExpanded ? (
-                        <View
-                          className="ml-5 flex-col gap-0.5 border-l pl-3"
-                          style={{ borderColor: p.border }}
-                        >
-                          {item.subItems?.map((sub) => {
-                            const subActive = isSubActive(
-                              sub,
-                              pathname,
-                              params,
-                            );
-                            return (
-                              <Pressable
-                                key={sub.to}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected: subActive }}
-                                onPress={() => go(sub.to)}
-                                className="min-h-11 flex-row items-center gap-2.5 rounded-md px-3"
-                                style={({ pressed }) => ({
-                                  backgroundColor: subActive
-                                    ? p.accentSoft
-                                    : pressed
-                                      ? withAlpha(p.muted, 0.6)
-                                      : "transparent",
-                                })}
-                              >
-                                <View
-                                  className="h-1.5 w-1.5 shrink-0 rounded-full"
-                                  style={{
+                      {hasSubs ? (
+                        <SubList expanded={isExpanded}>
+                          <View
+                            className="ml-5 flex-col gap-0.5 border-l pl-3"
+                            style={{ borderColor: p.border }}
+                          >
+                            {item.subItems?.map((sub) => {
+                              const subActive = isSubActive(
+                                sub,
+                                pathname,
+                                params,
+                              );
+                              return (
+                                <Pressable
+                                  key={sub.to}
+                                  accessibilityRole="button"
+                                  accessibilityState={{ selected: subActive }}
+                                  onPress={() => go(sub.to)}
+                                  className="min-h-11 flex-row items-center gap-2.5 rounded-md px-3"
+                                  style={({ pressed }) => ({
                                     backgroundColor: subActive
-                                      ? p.accentInk
-                                      : withAlpha(p.mutedForeground, 0.4),
-                                  }}
-                                />
-                                <Text
-                                  className="truncate text-[13px]"
-                                  numberOfLines={1}
-                                  style={{
-                                    color: subActive
-                                      ? p.accentInk
-                                      : p.mutedForeground,
-                                    fontWeight: subActive ? "500" : "400",
-                                  }}
+                                      ? p.accentSoft
+                                      : pressed
+                                        ? withAlpha(p.muted, 0.6)
+                                        : "transparent",
+                                  })}
                                 >
-                                  {sub.label}
-                                </Text>
-                              </Pressable>
-                            );
-                          })}
-                        </View>
+                                  <View
+                                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                    style={{
+                                      backgroundColor: subActive
+                                        ? p.accentInk
+                                        : withAlpha(p.mutedForeground, 0.4),
+                                    }}
+                                  />
+                                  <Text
+                                    className="truncate text-[13px]"
+                                    numberOfLines={1}
+                                    style={{
+                                      color: subActive
+                                        ? p.accentInk
+                                        : p.mutedForeground,
+                                      fontWeight: subActive ? "500" : "400",
+                                    }}
+                                  >
+                                    {sub.label}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        </SubList>
                       ) : null}
                     </View>
                   );
@@ -440,7 +514,7 @@ function DrawerContent({
 
         {/* Footer */}
         <View
-          className="shrink-0 border-t px-4 pt-3"
+          className="shrink-0 border-t px-4 pt-3 pb-3.5"
           style={{ borderColor: p.border }}
         >
           <View className="flex-row items-center justify-between gap-3">
@@ -473,15 +547,15 @@ function DrawerContent({
                 </Text>
               </View>
             </View>
-            <View className="shrink-0 flex-row items-center gap-2">
+            <ButtonCapsule className="shrink-0">
               <CircleButton
                 onPress={toggleTheme}
                 label={scheme === "dark" ? "Light theme" : "Dark theme"}
               >
                 <Feather
                   name={scheme === "dark" ? "sun" : "moon"}
-                  size={18}
-                  color={p.foreground}
+                  size={20}
+                  color={p.mutedForeground}
                 />
               </CircleButton>
               <CircleButton
@@ -489,19 +563,16 @@ function DrawerContent({
                 label="Log out"
                 disabled={loggingOut}
               >
-                <Feather
-                  name="log-out"
-                  size={18}
-                  color={loggingOut ? p.mutedForeground : p.destructive}
-                />
+                <Feather name="log-out" size={20} color={p.mutedForeground} />
               </CircleButton>
-            </View>
+            </ButtonCapsule>
           </View>
           {can("create_challan") ? (
             <View className="mt-3">
               <Button
                 label="New challan"
                 icon="plus"
+                variant="accent"
                 onPress={() => {
                   onClose();
                   router.navigate({

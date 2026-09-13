@@ -15,7 +15,15 @@ import {
   View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Redirect, useLocalSearchParams } from "expo-router";
+import Animated, {
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  type EntryExitAnimationFunction,
+} from "react-native-reanimated";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { MorphSheet } from "@/ui/morph-sheet";
 import {
   registerDataCache,
@@ -32,6 +40,8 @@ import {
 import { round3Str } from "@kataria-syntex/shared";
 import { usePalette } from "@/theme";
 import { requestDiscard } from "@/ui/confirm";
+import { DateField } from "@/ui/date-sheet";
+import { EASE_OUT, MORPH, MORPH_EXIT, useReduceMotion } from "@/lib/motion";
 import {
   Button,
   Card,
@@ -39,13 +49,14 @@ import {
   EmptyState,
   Field,
   Input,
+  PageTitle,
   Screen,
   Skeleton,
 } from "@/ui/kit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SyncStrip } from "@/ui/sync";
 import { useMastersLoad } from "@/lib/use-masters-load";
-import { countLabel, fmtBoxes, fmtDate, fmtWt, todayLocal } from "@/lib/format";
+import { countLabel, fmtDate, fmtWt, todayLocal } from "@/lib/format";
 
 // ── Form helpers shared by the packing form ─────────────────────────────────
 
@@ -174,35 +185,6 @@ function PickerField({
   );
 }
 
-/** Date field — YYYY-MM-DD text entry validated at submit (no date-picker
- * package in the dependency set; the web calendar guarantees this shape). */
-function DateField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <Field label={label}>
-      <Input
-        value={value}
-        onChangeText={onChange}
-        placeholder="YYYY-MM-DD"
-        keyboardType="numbers-and-punctuation"
-        maxLength={10}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-    </Field>
-  );
-}
-
-const isValidDateKey = (v: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime());
-
 /** Loads master data for a form, collapsing failures into one retry state
  * (same contract as apps/app's use-masters-load hook). */
 /** Inline alert box for form-level errors (destructive banner). */
@@ -298,6 +280,100 @@ registerDataCache(() => {
 
 // ── Route ───────────────────────────────────────────────────────────────────
 
+/** Final/raw yarn tab strip — web's Tabs: one 44px row, 13px medium labels,
+ *  and the underline indicator sliding between tabs (200ms EASE_OUT, transform
+ *  only). Under reduced motion the indicator jumps instead of sliding. */
+function UnderlineTabs({
+  value,
+  onChange,
+}: {
+  value: PackingType;
+  onChange: (value: PackingType) => void;
+}) {
+  const p = usePalette();
+  const reduce = useReduceMotion();
+  const [stripWidth, setStripWidth] = useState(0);
+  const translateX = useSharedValue(0);
+  // First placement lands without a slide (web's indicator appears at the
+  // active tab on mount); later switches animate.
+  const placed = useRef(false);
+  const [ready, setReady] = useState(false);
+  const index = value === "sale" ? 0 : 1;
+
+  useEffect(() => {
+    if (!stripWidth) return;
+    const target = index * (stripWidth / 2) + 10;
+    if (!placed.current) {
+      placed.current = true;
+      translateX.value = target;
+      setReady(true);
+      return;
+    }
+    if (reduce) {
+      translateX.value = target;
+      return;
+    }
+    translateX.value = withTiming(target, { duration: 200, easing: EASE_OUT });
+  }, [index, stripWidth, reduce, translateX]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return (
+    <View
+      className="mx-4 flex-row border-b"
+      style={{ borderColor: p.border }}
+      onLayout={(e) => setStripWidth(e.nativeEvent.layout.width)}
+    >
+      {(
+        [
+          ["sale", "Final yarn"],
+          ["job_work", "Raw yarn"],
+        ] as const
+      ).map(([tab, label]) => {
+        const active = value === tab;
+        return (
+          <Pressable
+            key={tab}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            onPress={() => onChange(tab)}
+            className="h-11 flex-1 items-center justify-center px-2.5"
+          >
+            <Text
+              className="text-[13px] font-medium"
+              style={{ color: active ? p.foreground : p.mutedForeground }}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+      {stripWidth > 0 ? (
+        /* Web's inset-x-2.5 rounded-full underline, transform-positioned. */
+        <Animated.View
+          pointerEvents="none"
+          accessible={false}
+          style={[
+            {
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              width: stripWidth / 2 - 20,
+              height: 2,
+              borderRadius: 2,
+              backgroundColor: p.foreground,
+              opacity: ready ? 1 : 0,
+            },
+            indicatorStyle,
+          ]}
+        />
+      ) : null}
+    </View>
+  );
+}
+
 export default function PackingRoute() {
   // `?type=` from the nav drawer's Final/Raw yarn sub-items drives the tab.
   const searchParams = useLocalSearchParams<{ type?: string | string[] }>();
@@ -309,6 +385,7 @@ export default function PackingRoute() {
   const status = useAuth((s) => s.status);
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const can = usePermission();
+  const router = useRouter();
   const p = usePalette();
   const [items, setItems] = useState<PackingEntry[]>(
     () => packingCache[workspaceId]?.[activeTab] ?? [],
@@ -432,36 +509,15 @@ export default function PackingRoute() {
     >
       <View className="flex-1">
         {/* Final / raw yarn tabs — underline grammar, full width on mobile */}
-        <View
-          className="mx-4 flex-row border-b"
-          style={{ borderColor: p.border }}
-        >
-          {(
-            [
-              ["sale", "Final yarn"],
-              ["job_work", "Raw yarn"],
-            ] as const
-          ).map(([value, label]) => {
-            const active = activeTab === value;
-            return (
-              <Pressable
-                key={value}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                onPress={() => setActiveTab(value)}
-                className="h-11 flex-1 items-center justify-center border-b-2 px-2.5"
-                style={{ borderColor: active ? p.foreground : "transparent" }}
-              >
-                <Text
-                  className="text-[13px] font-medium"
-                  style={{ color: active ? p.foreground : p.mutedForeground }}
-                >
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <UnderlineTabs
+          value={activeTab}
+          onChange={(next) => {
+            // Web's tab press writes ?type=; the drawer sub-item highlight
+            // follows the URL, so keep the param in sync.
+            setActiveTab(next);
+            router.setParams({ type: next });
+          }}
+        />
 
         {/* Filter bar — one card holding search (design.md §3) */}
         <View
@@ -544,24 +600,34 @@ export default function PackingRoute() {
           ) : loadError ? (
             <View className="p-4">
               <EmptyState
+                icon="package"
                 title="Couldn't load packing entries"
                 message="The server didn't answer. Check your connection and retry."
-              />
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={() => void load()}
+                action={
+                  <Button
+                    label="Retry"
+                    variant="outline"
+                    onPress={() => void load()}
+                  />
+                }
               />
             </View>
           ) : filtered.length === 0 ? (
             <View className="p-4">
               <EmptyState
+                icon="package"
                 title="No packing entries yet"
                 message="Entries created by packers will appear here."
+                action={
+                  can("create_packing") ? (
+                    <Button
+                      label="Create entry"
+                      icon="plus"
+                      onPress={openNewEntry}
+                    />
+                  ) : undefined
+                }
               />
-              {can("create_packing") ? (
-                <Button label="Create entry" onPress={openNewEntry} />
-              ) : null}
             </View>
           ) : (
             <FlatList
@@ -579,7 +645,7 @@ export default function PackingRoute() {
                     <View className="flex-row items-start justify-between gap-2">
                       <View className="min-w-0 flex-1">
                         <Text
-                          className="text-sm font-bold tabular-nums"
+                          className="font-mono text-sm font-bold tabular-nums tracking-tight"
                           style={{ color: p.foreground }}
                         >
                           {item.entryNumber}
@@ -644,6 +710,45 @@ export default function PackingRoute() {
 
 // ── Form ────────────────────────────────────────────────────────────────────
 
+// Line-row motion — the fade + 8px drop + 0.98 scale the web form runs
+// through AnimatePresence (MORPH in, MORPH_EXIT out); layout shifts on
+// add/remove animate with the same spring.
+const lineEnter: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: {
+      opacity: 0,
+      transform: [{ translateY: -8 }, { scale: 0.98 }],
+    },
+    animations: {
+      opacity: withSpring(1, MORPH),
+      transform: [
+        { translateY: withSpring(0, MORPH) },
+        { scale: withSpring(1, MORPH) },
+      ],
+    },
+  };
+};
+
+const lineExit: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: {
+      opacity: 1,
+      transform: [{ translateY: 0 }, { scale: 1 }],
+    },
+    animations: {
+      opacity: withSpring(0, MORPH_EXIT),
+      transform: [
+        { translateY: withSpring(-8, MORPH_EXIT) },
+        { scale: withSpring(0.98, MORPH_EXIT) },
+      ],
+    },
+  };
+};
+
+const ROW_LAYOUT = LinearTransition.springify().damping(21).stiffness(110);
+
 function PackingForm({
   type,
   editId,
@@ -666,6 +771,10 @@ function PackingForm({
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  // Web's AnimatePresence `initial={false}`: prefilled edit rows mount without
+  // an entrance — only rows the user adds animate in.
+  const reduceMotion = useReduceMotion();
+  const animateIds = useRef<Set<string>>(new Set());
 
   // Web's useDirtyGuard warns before closing with uncommitted edits; on
   // native the discard confirm runs when leaving the form (back/cancel).
@@ -778,8 +887,8 @@ function PackingForm({
       setError("Couldn't load the master data. Retry the load first.");
       return;
     }
-    if (!isValidDateKey(date)) {
-      setError("Enter a date as YYYY-MM-DD");
+    if (!date) {
+      setError("Select a date.");
       return;
     }
     const rows = type === "sale" ? saleRows : jobRows;
@@ -875,7 +984,7 @@ function PackingForm({
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
@@ -887,22 +996,19 @@ function PackingForm({
             className="min-h-[44px] min-w-[44px] items-center justify-center"
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
-            <Feather name="chevron-left" size={22} color={p.foreground} />
+            <Feather name="arrow-left" size={22} color={p.foreground} />
           </Pressable>
           <View className="min-w-0 flex-1">
             <Text
-              className="text-[11px] font-bold uppercase tracking-wider"
+              className="text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: p.mutedForeground }}
             >
               {editId ? "Edit" : "New"} · {saleMode ? "Final yarn" : "Raw yarn"}
             </Text>
-            <Text
-              className="mt-1 text-[22px] font-bold"
-              style={{ color: p.foreground }}
-            >
+            <PageTitle className="mt-1.5">
               {editId ? "Edit" : "New"} {saleMode ? "final yarn" : "raw yarn"}{" "}
               packing
-            </Text>
+            </PageTitle>
           </View>
         </View>
 
@@ -922,11 +1028,7 @@ function PackingForm({
                 Couldn&apos;t load deniers and colours. Save is disabled until
                 they load.
               </Text>
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={retryMasters}
-              />
+              <Button label="Retry" variant="outline" onPress={retryMasters} />
             </View>
           ) : null}
 
@@ -951,17 +1053,19 @@ function PackingForm({
                   Date for this packing entry.
                 </Text>
               </View>
-              <Badge label={`${fmtWt(totalWt)} kg total`} tone="accent" />
+              <Badge label={`${fmtWt(totalWt)} kg total`} tone="secondary" />
             </View>
             <View className="mt-4">
-              <DateField
-                label="Date"
-                value={date}
-                onChange={(d) => {
-                  setDate(d);
-                  setDirty(true);
-                }}
-              />
+              <Field label="Date">
+                <DateField
+                  value={date}
+                  accessibilityLabel="Date"
+                  onChange={(d) => {
+                    setDate(d);
+                    setDirty(true);
+                  }}
+                />
+              </Field>
             </View>
           </Card>
 
@@ -986,7 +1090,7 @@ function PackingForm({
               </View>
               <Badge
                 label={`${rows.length} ${rows.length === 1 ? "line" : "lines"}`}
-                tone="accent"
+                tone="secondary"
               />
             </View>
 
@@ -997,6 +1101,8 @@ function PackingForm({
                       key={row.id}
                       idx={idx}
                       netWt={row.netWt}
+                      animate={animateIds.current.has(row.id)}
+                      reduced={reduceMotion}
                       removable={saleRows.length > 1}
                       onRemove={() => {
                         setSaleRows((pr) => pr.filter((_, i) => i !== idx));
@@ -1057,6 +1163,7 @@ function PackingForm({
                             <Field label="Net (kg)">
                               <Input
                                 keyboardType="decimal-pad"
+                                style={{ fontWeight: "600" }}
                                 value={row.netWt}
                                 onChangeText={(v) =>
                                   updateSaleRow(idx, "netWt", v)
@@ -1110,6 +1217,8 @@ function PackingForm({
                       key={row.id}
                       idx={idx}
                       netWt={row.netWt}
+                      animate={animateIds.current.has(row.id)}
+                      reduced={reduceMotion}
                       removable={jobRows.length > 1}
                       onRemove={() => {
                         setJobRows((pr) => pr.filter((_, i) => i !== idx));
@@ -1168,6 +1277,7 @@ function PackingForm({
                             <Field label="Net (kg)">
                               <Input
                                 keyboardType="decimal-pad"
+                                style={{ fontWeight: "600" }}
                                 value={row.netWt}
                                 onChangeText={(v) =>
                                   updateJobRow(idx, "netWt", v)
@@ -1221,32 +1331,51 @@ function PackingForm({
             <View className="mt-4">
               <Button
                 label="Add item"
-                variant="secondary"
+                icon="plus"
+                variant="outline"
+                className="border-dashed"
                 onPress={() => {
-                  if (saleMode) setSaleRows((pr) => [...pr, emptySaleRow()]);
-                  else setJobRows((pr) => [...pr, emptyJobRow()]);
+                  if (saleMode) {
+                    const row = emptySaleRow();
+                    animateIds.current.add(row.id);
+                    setSaleRows((pr) => [...pr, row]);
+                  } else {
+                    const row = emptyJobRow();
+                    animateIds.current.add(row.id);
+                    setJobRows((pr) => [...pr, row]);
+                  }
                   setDirty(true);
                 }}
               />
             </View>
           </Card>
-
-          {/* Actions */}
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button label="Cancel" variant="secondary" onPress={back} />
-            </View>
-            <View className="flex-1">
-              <Button
-                label={editId ? "Update entry" : "Create entry"}
-                onPress={() => void submit()}
-                disabled={busy}
-                loading={busy}
-              />
-            </View>
-          </View>
         </View>
       </ScrollView>
+
+      {/* Sticky action bar — web's mobile-only bottom bar, clearing the
+          gesture area (same contract as returns/challan editor). */}
+      <View
+        className="flex-row gap-2 border-t px-4 pt-3"
+        style={{
+          backgroundColor: p.card,
+          borderColor: p.border,
+          paddingBottom: 12 + insets.bottom,
+        }}
+      >
+        <Button
+          label="Cancel"
+          variant="outline"
+          onPress={back}
+          className="flex-1"
+        />
+        <Button
+          label={editId ? "Update entry" : "Create entry"}
+          onPress={() => void submit()}
+          disabled={busy}
+          loading={busy}
+          className="flex-1"
+        />
+      </View>
     </View>
   );
 }
@@ -1255,21 +1384,29 @@ function PackingForm({
 function ItemShell({
   idx,
   netWt,
+  animate,
+  reduced,
   removable,
   onRemove,
   children,
 }: {
   idx: number;
   netWt: string;
+  /** True only for rows the user added — web's AnimatePresence initial={false}. */
+  animate: boolean;
+  reduced: boolean;
   removable: boolean;
   onRemove: () => void;
   children: React.ReactNode;
 }) {
   const p = usePalette();
   return (
-    <View
+    <Animated.View
       className="rounded-lg border p-4"
-      style={{ borderColor: p.border, backgroundColor: p.background }}
+      entering={animate && !reduced ? lineEnter : undefined}
+      exiting={reduced ? undefined : lineExit}
+      layout={reduced ? undefined : ROW_LAYOUT}
+      style={{ borderColor: p.border, backgroundColor: p.card }}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
@@ -1309,11 +1446,11 @@ function ItemShell({
             className="min-h-[44px] min-w-[44px] items-center justify-center"
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
-            <Feather name="trash-2" size={16} color={p.destructive} />
+            <Feather name="trash-2" size={16} color={p.mutedForeground} />
           </Pressable>
         ) : null}
       </View>
       <View className="mt-3">{children}</View>
-    </View>
+    </Animated.View>
   );
 }

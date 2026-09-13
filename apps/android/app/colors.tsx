@@ -43,10 +43,10 @@ import {
   EmptyState,
   Field,
   Input,
-  PageTitle,
+  Screen,
   Skeleton,
 } from "@/ui/kit";
-import { AppHeader } from "@/ui/app-header";
+import { FlaskConical, Palette } from "@/ui/feather";
 import { SyncStrip } from "@/ui/sync";
 import { IconButton, Select, Textarea } from "@/ui/controls";
 import { confirm, requestDiscard } from "@/ui/confirm";
@@ -202,7 +202,7 @@ function ColorFormModal({
           <View className="mt-2 flex-row justify-end gap-2">
             <Button
               label="Cancel"
-              variant="secondary"
+              variant="outline"
               onPress={() => requestDiscard(dirty, busy, onClose)}
               disabled={busy}
             />
@@ -498,7 +498,9 @@ function RecipeEditorModal({
                 </Text>
                 <Button
                   label="Add ingredient"
-                  variant="secondary"
+                  icon="plus"
+                  variant="outline"
+                  size="sm"
                   onPress={() =>
                     setIngredients((rows) => [
                       ...rows,
@@ -593,7 +595,6 @@ function RecipeEditorModal({
                       icon="trash-2"
                       label={`Remove ${row.name || "ingredient"}`}
                       disabled={ingredients.length === 1}
-                      destructive
                       onPress={() =>
                         setIngredients((rows) =>
                           rows.filter((r) => r.key !== row.key),
@@ -640,7 +641,7 @@ function RecipeEditorModal({
             <View className="mt-2 flex-row justify-end gap-2">
               <Button
                 label="Cancel"
-                variant="secondary"
+                variant="outline"
                 onPress={() => requestDiscard(dirty, busy || loading, onClose)}
                 disabled={busy}
               />
@@ -903,7 +904,7 @@ function RecipeDetailModal({
                       {v.savedByName ? ` · ${v.savedByName}` : ""}
                     </Text>
                     {v.version === detail.recipe.version ? (
-                      <Badge label="current" tone="accent" />
+                      <Badge label="current" tone="secondary" />
                     ) : (
                       <View className="flex-row shrink-0 items-center gap-1">
                         <Button
@@ -1040,230 +1041,208 @@ export default function ColorsRoute() {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: p.background }}>
-      <AppHeader label="Colors" />
-      <SyncStrip />
-      <View className="px-4 pt-5">
-        <Text
-          className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ color: p.mutedForeground }}
+    <Screen
+      eyebrow="Reference data"
+      title="Color Organiser"
+      headerLabel="Colors & Recipes"
+      description="Colors and their dyeing recipes — one recipe per color and denier."
+      action={
+        canManage ? (
+          <Button label="Add color" icon="plus" onPress={openAddColor} />
+        ) : undefined
+      }
+      banner={<SyncStrip />}
+    >
+      <View className="flex-1">
+        {/* Colors register — web's colors card: search + count header, then rows */}
+        <View
+          className="mx-4 flex-1 overflow-hidden rounded-lg border"
+          style={{ backgroundColor: p.card, borderColor: p.border }}
         >
-          Reference data
-        </Text>
-        <PageTitle className="mt-1.5">Color Organiser</PageTitle>
-        <Text
-          className="mt-1.5 text-[15px] leading-6"
-          style={{ color: p.mutedForeground }}
-        >
-          Colors and their dyeing recipes — one recipe per color and denier.
-        </Text>
-        {canManage ? (
-          <View className="mt-4">
-            <Button label="Add color" icon="plus" onPress={openAddColor} />
+          <View
+            className="gap-2.5 border-b p-3"
+            style={{ borderColor: p.border }}
+          >
+            <View>
+              <Feather
+                name="search"
+                size={16}
+                color={p.mutedForeground}
+                style={{ position: "absolute", left: 12, top: 14 }}
+              />
+              <Input
+                value={q}
+                onChangeText={setQ}
+                placeholder="Search colors…"
+                accessibilityLabel="Search colors"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+                style={[
+                  { paddingLeft: 38, paddingRight: 40 },
+                  {
+                    backgroundColor: p.card,
+                    borderColor: p.input,
+                    color: p.foreground,
+                  },
+                ]}
+              />
+              {q ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                  onPress={() => setQ("")}
+                  className="absolute right-1 top-1 h-11 w-11 items-center justify-center rounded-full"
+                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                >
+                  <Feather name="x" size={14} color={p.mutedForeground} />
+                </Pressable>
+              ) : null}
+            </View>
+            <Badge
+              label={
+                colorsLoading && colors.length === 0
+                  ? "Loading…"
+                  : `${colors.length} ${colors.length === 1 ? "color" : "colors"}`
+              }
+              tone="secondary"
+            />
           </View>
-        ) : null}
-      </View>
 
-      {/* Colors list */}
-      <View className="gap-2.5 px-4 pt-4">
-        <Input
-          value={q}
-          onChangeText={setQ}
-          placeholder="Search colors…"
-          accessibilityLabel="Search colors"
-          autoCapitalize="none"
-        />
-        <Badge
-          label={
-            colorsLoading && colors.length === 0
-              ? "Loading…"
-              : `${colors.length} ${colors.length === 1 ? "color" : "colors"}`
-          }
-        />
-      </View>
-
-      <FlatList
-        className="flex-1 px-4 pt-2"
-        data={filteredColors}
-        keyExtractor={(c) => c.id}
-        keyboardShouldPersistTaps="handled"
-        contentContainerClassName="gap-2 pb-8"
-        ListEmptyComponent={
-          colorsLoading && colors.length === 0 ? (
-            <View className="gap-2 py-2">
+          {colorsLoading && colors.length === 0 ? (
+            <View className="gap-2 p-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </View>
           ) : colors.length === 0 ? (
-            <View className="gap-3">
-              {registryError ? (
-                <View
-                  className="gap-2 rounded-lg border px-4 py-3"
+            registryError ? (
+              <View className="gap-2 p-4">
+                <Text
+                  className="rounded-lg border px-4 py-3 text-sm"
                   style={{
+                    color: p.destructive,
                     borderColor: `${p.destructive}33`,
                     backgroundColor: `${p.destructive}14`,
                   }}
                 >
-                  <Text className="text-sm" style={{ color: p.destructive }}>
-                    {registryError}
-                  </Text>
-                  <Button
-                    label="Retry"
-                    variant="secondary"
-                    onPress={() => {
-                      setRegistryError(null);
-                      void Promise.all([
-                        refreshColors(),
-                        refreshDeniers(),
-                      ]).catch((err) => setRegistryError(friendlyError(err)));
-                    }}
-                  />
-                </View>
-              ) : (
-                <EmptyState
-                  title="No colors yet"
-                  message="Add your first color to start writing recipes."
-                />
-              )}
-              {canManage ? (
-                <Button label="Add color" onPress={openAddColor} />
-              ) : null}
-            </View>
-          ) : (
-            <EmptyState
-              title={`Nothing matches “${q}”`}
-              message="Try a different name or clear the search."
-            />
-          )
-        }
-        renderItem={({ item: color }) => (
-          <View
-            className="flex-row items-center gap-1 rounded-xl border p-2"
-            style={{
-              backgroundColor:
-                selectedColor?.id === color.id ? p.accentSoft : p.card,
-              borderColor: p.border,
-            }}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: selectedColor?.id === color.id }}
-              onPress={() => setSelectedColorId(color.id)}
-              className="min-h-[44px] min-w-0 flex-1 rounded-md px-2 py-1"
-            >
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: p.foreground }}
-                numberOfLines={1}
-              >
-                {color.name}
-              </Text>
-              {color.code ? (
-                <Text
-                  className="text-xs"
-                  style={{ color: p.mutedForeground }}
-                  numberOfLines={1}
-                >
-                  {color.code}
+                  {registryError}
                 </Text>
-              ) : null}
-            </Pressable>
-            {canManage ? (
-              <View className="flex-row shrink-0 items-center">
-                <IconButton
-                  icon="edit-2"
-                  label={`Edit ${color.name}`}
+                <Button
+                  label="Retry"
+                  variant="outline"
                   onPress={() => {
-                    setEditingColor(color);
-                    setColorModalOpen(true);
+                    setRegistryError(null);
+                    void Promise.all([refreshColors(), refreshDeniers()]).catch(
+                      (err) => setRegistryError(friendlyError(err)),
+                    );
                   }}
                 />
-                <IconButton
-                  icon="trash-2"
-                  label={`Delete ${color.name}`}
-                  disabled={deletingId === color.id}
-                  destructive
-                  onPress={() => void onDeleteColor(color)}
-                />
               </View>
-            ) : null}
-          </View>
-        )}
-      />
-
-      {/* Recipes for the selected color */}
-      <View
-        className="border-t px-4 pt-3"
-        style={{ borderColor: p.border, backgroundColor: p.card }}
-      >
-        <View className="flex-row items-center justify-between gap-2">
-          <Text
-            className="min-w-0 flex-1 text-[11px] font-bold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
-            numberOfLines={1}
-          >
-            {selectedColor ? `Recipes — ${selectedColor.name}` : "Recipes"}
-          </Text>
-          {selectedColor && canManage ? (
-            <Button
-              label="Add recipe"
-              variant="secondary"
-              onPress={() => {
-                setEditingRecipe(null);
-                setRecipeEditorOpen(true);
-              }}
-            />
-          ) : null}
-        </View>
-      </View>
-      <View
-        className="flex-1 border-t px-4 pt-2"
-        style={{ borderColor: p.border }}
-      >
-        {!selectedColor ? (
-          <EmptyState
-            title="Pick a color"
-            message="Select a color above to see its recipes."
-          />
-        ) : recipesLoading && recipes.length === 0 ? (
-          <View className="gap-2 py-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} className="gap-2 px-1 py-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-52" />
-              </View>
-            ))}
-          </View>
-        ) : recipesError ? (
-          <View className="py-2">
-            <Text
-              className="rounded-lg border px-4 py-3 text-sm"
-              style={{
-                color: p.destructive,
-                borderColor: `${p.destructive}33`,
-                backgroundColor: `${p.destructive}14`,
-              }}
-            >
-              {recipesError}
-            </Text>
-            <View className="mt-3">
-              <Button
-                label="Retry"
-                variant="secondary"
-                onPress={() => void refreshRecipes()}
+            ) : (
+              <EmptyState
+                icon={Palette}
+                title="No colors yet"
+                message="Add your first color to start writing recipes."
+                action={
+                  canManage ? (
+                    <Button
+                      label="Add color"
+                      icon="plus"
+                      onPress={openAddColor}
+                    />
+                  ) : undefined
+                }
               />
-            </View>
-          </View>
-        ) : colorRecipes.length === 0 ? (
-          <View className="gap-3">
-            <EmptyState
-              title="No recipes yet"
-              message="Record how this color is dyed, per denier."
+            )
+          ) : filteredColors.length === 0 ? (
+            <EmptyState title={`Nothing matches “${q}”`} />
+          ) : (
+            <FlatList
+              data={filteredColors}
+              keyExtractor={(c) => c.id}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 12, gap: 12 }}
+              renderItem={({ item: color }) => (
+                <View
+                  className="flex-row items-center gap-1 rounded-lg border p-2"
+                  style={{
+                    backgroundColor:
+                      selectedColor?.id === color.id ? p.accentSoft : p.card,
+                    borderColor: p.border,
+                  }}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{
+                      selected: selectedColor?.id === color.id,
+                    }}
+                    onPress={() => setSelectedColorId(color.id)}
+                    className="min-h-[44px] min-w-0 flex-1 rounded-md px-2 py-1"
+                  >
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: p.foreground }}
+                      numberOfLines={1}
+                    >
+                      {color.name}
+                    </Text>
+                    {color.code ? (
+                      <Text
+                        className="text-xs"
+                        style={{ color: p.mutedForeground }}
+                        numberOfLines={1}
+                      >
+                        {color.code}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                  {canManage ? (
+                    <View className="flex-row shrink-0 items-center">
+                      <IconButton
+                        icon="edit-2"
+                        label={`Edit ${color.name}`}
+                        onPress={() => {
+                          setEditingColor(color);
+                          setColorModalOpen(true);
+                        }}
+                      />
+                      <IconButton
+                        icon="trash-2"
+                        label={`Delete ${color.name}`}
+                        disabled={deletingId === color.id}
+                        destructive
+                        onPress={() => void onDeleteColor(color)}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+              )}
             />
-            {canManage ? (
+          )}
+        </View>
+
+        {/* Recipes register — web's recipes card: muted strip, then rows */}
+        <View
+          className="mx-4 mt-4 flex-1 overflow-hidden rounded-lg border"
+          style={{ backgroundColor: p.card, borderColor: p.border }}
+        >
+          <View
+            className="flex-row items-center justify-between gap-2 border-b px-4 py-2.5"
+            style={{ borderColor: p.border, backgroundColor: p.muted }}
+          >
+            <Text
+              className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-[0.06em]"
+              style={{ color: p.mutedForeground }}
+              numberOfLines={1}
+            >
+              {selectedColor ? `Recipes — ${selectedColor.name}` : "Recipes"}
+            </Text>
+            {selectedColor && canManage ? (
               <Button
                 label="Add recipe"
+                icon="plus"
+                size="sm"
                 onPress={() => {
                   setEditingRecipe(null);
                   setRecipeEditorOpen(true);
@@ -1271,66 +1250,122 @@ export default function ColorsRoute() {
               />
             ) : null}
           </View>
-        ) : (
-          <FlatList
-            data={colorRecipes}
-            keyExtractor={(r) => r.id}
-            contentContainerClassName="gap-2 pb-8"
-            renderItem={({ item: recipe }) => (
-              <View
-                className="flex-row items-center gap-1 rounded-xl border p-2"
-                style={{ backgroundColor: p.card, borderColor: p.border }}
+
+          {!selectedColor ? (
+            <EmptyState
+              icon={Palette}
+              title="Pick a color"
+              message="Select a color on the left to see its recipes."
+            />
+          ) : recipesLoading && recipes.length === 0 ? (
+            <View className="gap-3 p-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} className="gap-2 px-1 py-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-52" />
+                </View>
+              ))}
+            </View>
+          ) : recipesError ? (
+            <View className="gap-3 p-4">
+              <Text
+                className="rounded-lg border px-4 py-3 text-sm"
+                style={{
+                  color: p.destructive,
+                  borderColor: `${p.destructive}33`,
+                  backgroundColor: `${p.destructive}14`,
+                }}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open recipe for ${recipe.denierName}`}
-                  onPress={() => setDetailRecipeId(recipe.id)}
-                  className="min-h-[44px] min-w-0 flex-1 rounded-md px-2 py-1"
+                {recipesError}
+              </Text>
+              <Button
+                label="Retry"
+                variant="outline"
+                onPress={() => void refreshRecipes()}
+              />
+            </View>
+          ) : colorRecipes.length === 0 ? (
+            <EmptyState
+              icon={FlaskConical}
+              title="No recipes yet"
+              message="Record how this color is dyed, per denier."
+              action={
+                canManage ? (
+                  <Button
+                    label="Add recipe"
+                    icon="plus"
+                    onPress={() => {
+                      setEditingRecipe(null);
+                      setRecipeEditorOpen(true);
+                    }}
+                  />
+                ) : undefined
+              }
+            />
+          ) : (
+            <FlatList
+              data={colorRecipes}
+              keyExtractor={(r) => r.id}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 12, gap: 12 }}
+              renderItem={({ item: recipe }) => (
+                <View
+                  className="flex-row items-center gap-1 rounded-lg border p-2"
+                  style={{ backgroundColor: p.card, borderColor: p.border }}
                 >
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{ color: p.foreground }}
-                    numberOfLines={1}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open recipe for ${recipe.denierName}`}
+                    onPress={() => setDetailRecipeId(recipe.id)}
+                    className="min-h-[44px] min-w-0 flex-1 rounded-md px-2 py-1"
                   >
-                    {recipe.denierName}
-                  </Text>
-                  <Text
-                    className="mt-0.5 text-xs"
-                    style={{ color: p.mutedForeground }}
-                    numberOfLines={1}
-                  >
-                    v{recipe.version} · {recipe.ingredientCount}{" "}
-                    {recipe.ingredientCount === 1
-                      ? "ingredient"
-                      : "ingredients"}
-                    {processSummary(recipe)
-                      ? ` · ${processSummary(recipe)}`
-                      : ""}
-                  </Text>
-                </Pressable>
-                {canManage ? (
-                  <View className="flex-row shrink-0 items-center">
-                    <IconButton
-                      icon="edit-2"
-                      label={`Edit ${recipe.denierName} recipe`}
-                      onPress={() => {
-                        setEditingRecipe(recipe);
-                        setRecipeEditorOpen(true);
-                      }}
-                    />
-                    <IconButton
-                      icon="trash-2"
-                      label={`Delete ${recipe.denierName} recipe`}
-                      disabled={deletingId === recipe.id}
-                      destructive
-                      onPress={() => void onDeleteRecipe(recipe)}
-                    />
-                  </View>
-                ) : null}
-              </View>
-            )}
-          />
-        )}
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: p.foreground }}
+                      numberOfLines={1}
+                    >
+                      {recipe.denierName}
+                    </Text>
+                    <Text
+                      className="mt-0.5 text-xs"
+                      style={{ color: p.mutedForeground }}
+                      numberOfLines={1}
+                    >
+                      v{recipe.version} · {recipe.ingredientCount}{" "}
+                      {recipe.ingredientCount === 1
+                        ? "ingredient"
+                        : "ingredients"}
+                      {processSummary(recipe)
+                        ? ` · ${processSummary(recipe)}`
+                        : ""}
+                    </Text>
+                  </Pressable>
+                  {canManage ? (
+                    <View className="flex-row shrink-0 items-center">
+                      <Button
+                        label="Edit"
+                        icon="edit-2"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => {
+                          setEditingRecipe(recipe);
+                          setRecipeEditorOpen(true);
+                        }}
+                      />
+                      <IconButton
+                        icon="trash-2"
+                        label={`Delete ${recipe.denierName} recipe`}
+                        disabled={deletingId === recipe.id}
+                        destructive
+                        onPress={() => void onDeleteRecipe(recipe)}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            />
+          )}
+        </View>
       </View>
 
       <ColorFormModal
@@ -1356,7 +1391,7 @@ export default function ColorsRoute() {
         recipeId={detailRecipeId}
         onRestored={() => void refreshRecipes()}
       />
-    </View>
+    </Screen>
   );
 }
 
@@ -1405,7 +1440,7 @@ export function RecipeLinkButton({
         className="min-h-[44px] w-[44px] items-center justify-center rounded-lg"
         style={({ pressed }) => ({ opacity: pressed || busy ? 0.6 : 1 })}
       >
-        <Feather name="droplet" size={18} color={p.foreground} />
+        <FlaskConical size={18} color={p.foreground} />
       </Pressable>
       <RecipeDetailModal
         open={open}

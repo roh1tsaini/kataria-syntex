@@ -5,12 +5,19 @@
  * manage_settings gate (web: ProtectedRoute requirePermission="manage_settings").
  */
 
-import { useEffect, useState } from "react";
-import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { MorphSheet } from "@/ui/morph-sheet";
 import { Feather } from "@expo/vector-icons";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 import {
   useAuth,
   usePermission,
@@ -19,7 +26,8 @@ import {
   toastSuccess,
   type Device,
 } from "@kataria-syntex/app-core";
-import { usePalette } from "@/theme";
+import { usePalette, withAlpha } from "@/theme";
+import { useReduceMotion } from "@/lib/motion";
 import { confirm } from "@/ui/confirm";
 import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
 import { SyncStrip } from "@/ui/sync";
@@ -28,6 +36,36 @@ function platformIconName(platform: string) {
   if (platform === "android") return "smartphone" as const;
   if (platform === "web") return "globe" as const;
   return "monitor" as const;
+}
+
+/** Web Stagger item (lib/motion.ts): fade + 6px rise, 200ms EASE_OUT, 40ms
+ * apart — capped at five staggered items. Still under reduced motion. */
+const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
+
+function StaggerRow({
+  index,
+  children,
+}: {
+  index: number;
+  children: ReactNode;
+}) {
+  const reduce = useReduceMotion();
+  const progress = useSharedValue(reduce ? 1 : 0);
+  useEffect(() => {
+    if (reduce) {
+      progress.value = 1;
+      return;
+    }
+    progress.value = withDelay(
+      Math.min(index, 4) * 40,
+      withTiming(1, { duration: 200, easing: EASE_OUT }),
+    );
+  }, [index, reduce, progress]);
+  const style = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ translateY: (1 - progress.value) * 6 }],
+  }));
+  return <Animated.View style={style}>{children}</Animated.View>;
 }
 
 function DeviceRow({
@@ -51,7 +89,7 @@ function DeviceRow({
       >
         <Feather
           name={platformIconName(device.platform)}
-          size={14}
+          size={16}
           color={p.mutedForeground}
         />
       </View>
@@ -95,9 +133,9 @@ function DeviceRow({
           style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
         >
           <View className="flex-row items-center gap-1.5">
-            <Feather name="trash-2" size={14} color={p.destructive} />
+            <Feather name="trash-2" size={16} color={p.destructive} />
             <Text
-              className="text-[13px] font-semibold"
+              className="text-[13px] font-medium"
               style={{ color: p.destructive }}
             >
               Revoke
@@ -141,6 +179,7 @@ function ApproveDeviceSheet({
   const [error, setError] = useState<string | null>(null);
   const [approved, setApproved] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const p = usePalette();
 
@@ -150,6 +189,7 @@ function ApproveDeviceSheet({
       setError(null);
       setApproved(false);
       setScanning(false);
+      setScanError(null);
     }
   }, [open]);
 
@@ -195,7 +235,7 @@ function ApproveDeviceSheet({
           contentContainerClassName="gap-4 p-4"
         >
           {approved ? (
-            <View className="items-center gap-2 py-8">
+            <View className="items-center gap-3 py-6">
               <Feather name="check-circle" size={40} color={p.primary} />
               <Text
                 className="text-[14px] font-medium"
@@ -225,6 +265,10 @@ function ApproveDeviceSheet({
                   maxLength={19}
                   autoCapitalize="characters"
                   autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    if (canSubmit && !busy) void run(code);
+                  }}
                   accessibilityLabel="Login code"
                 />
                 <Text className="text-xs" style={{ color: p.mutedForeground }}>
@@ -243,32 +287,45 @@ function ApproveDeviceSheet({
 
               {scanning ? (
                 <View
-                  className="overflow-hidden rounded-lg border"
-                  style={{ borderColor: p.border }}
+                  className="relative overflow-hidden rounded-lg border"
+                  style={{
+                    borderColor: p.border,
+                    backgroundColor: p.foreground,
+                  }}
                 >
                   <CameraView
-                    style={{ width: "100%", aspectRatio: 1 }}
+                    style={{ width: "100%", aspectRatio: 16 / 9 }}
                     facing="back"
                     barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
                     onBarcodeScanned={onScan}
+                    onMountError={() =>
+                      setScanError(
+                        "Camera unavailable. Enter the code manually instead.",
+                      )
+                    }
                   />
                   <View
-                    className="items-center py-2"
-                    style={{ backgroundColor: p.muted }}
+                    pointerEvents="none"
+                    className="absolute inset-x-0 top-2 items-center"
                   >
                     <Text
                       className="text-xs"
-                      style={{ color: p.mutedForeground }}
+                      style={{ color: withAlpha(p.background, 0.8) }}
                     >
                       Point the camera at the QR code on the other device
                     </Text>
                   </View>
                 </View>
               ) : null}
+              {scanError ? (
+                <Text className="text-xs" style={{ color: p.mutedForeground }}>
+                  {scanError}
+                </Text>
+              ) : null}
               {scanning && cameraPermission && !cameraPermission.granted ? (
                 <Button
                   label="Allow camera access"
-                  variant="secondary"
+                  variant="outline"
                   onPress={() => void requestCameraPermission()}
                 />
               ) : null}
@@ -289,14 +346,14 @@ function ApproveDeviceSheet({
                   }
                   disabled={busy}
                   onPress={() => setScanning((s) => !s)}
-                  className="min-h-[44px] w-[44px] items-center justify-center rounded-lg border"
+                  className="h-11 w-11 items-center justify-center rounded-md border"
                   style={({ pressed }) => ({
                     opacity: pressed ? 0.7 : 1,
                     borderColor: p.border,
                   })}
                 >
                   <Feather
-                    name={scanning ? "x" : "search"}
+                    name={scanning ? "camera-off" : "camera"}
                     size={16}
                     color={p.foreground}
                   />
@@ -370,24 +427,22 @@ function DevicesPage() {
       }
       banner={<SyncStrip />}
     >
-      <FlatList
-        data={devices}
-        keyExtractor={(d) => d.id}
-        renderItem={({ item }) => (
-          <DeviceRow
-            device={item}
-            deleting={deletingId === item.id}
-            onDelete={() => void onDelete(item.id)}
-          />
-        )}
-        ItemSeparatorComponent={() => (
-          <View style={{ height: 1, backgroundColor: p.border }} />
-        )}
-        ListEmptyComponent={
-          loading && devices.length === 0 ? (
-            <View className="gap-2 px-4 py-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
+      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-8">
+        <View
+          className="rounded-lg border p-4"
+          style={{ backgroundColor: p.card, borderColor: p.border }}
+        >
+          {loading && devices.length === 0 ? (
+            <View className="gap-4">
+              {[0, 1].map((i) => (
+                <View key={i} className="flex-row items-center gap-3">
+                  <Skeleton className="h-7 w-7 rounded-md" />
+                  <View className="flex-1 gap-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </View>
+                </View>
+              ))}
             </View>
           ) : loadError && devices.length === 0 ? (
             <View className="items-center gap-3 py-10">
@@ -399,7 +454,7 @@ function DevicesPage() {
               </Text>
               <Button
                 label="Retry"
-                variant="secondary"
+                variant="outline"
                 onPress={() => {
                   setLoadError(null);
                   setLoading(true);
@@ -409,10 +464,19 @@ function DevicesPage() {
                 }}
               />
             </View>
-          ) : (
-            <View className="items-center gap-4 py-10">
-              <Feather name="smartphone" size={24} color={p.mutedForeground} />
-              <View className="items-center gap-1">
+          ) : devices.length === 0 ? (
+            <View className="items-center gap-6 py-10">
+              <View className="items-center gap-2">
+                <View
+                  className="h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: p.muted }}
+                >
+                  <Feather
+                    name="smartphone"
+                    size={20}
+                    color={p.mutedForeground}
+                  />
+                </View>
                 <Text
                   className="text-[15px] font-semibold"
                   style={{ color: p.foreground }}
@@ -420,7 +484,7 @@ function DevicesPage() {
                   No devices found
                 </Text>
                 <Text
-                  className="text-center text-[13px]"
+                  className="text-center text-[14px]"
                   style={{ color: p.mutedForeground }}
                 >
                   Pair a new device to sign in from it.
@@ -428,13 +492,32 @@ function DevicesPage() {
               </View>
               <Button
                 label="Approve a device"
+                icon="smartphone"
                 onPress={() => setQrApproveOpen(true)}
               />
             </View>
-          )
-        }
-        contentContainerClassName="px-4 pb-8"
-      />
+          ) : (
+            devices.map((d, i) => (
+              <View
+                key={d.id}
+                style={
+                  i > 0
+                    ? { borderTopWidth: 1, borderTopColor: p.border }
+                    : undefined
+                }
+              >
+                <StaggerRow index={i}>
+                  <DeviceRow
+                    device={d}
+                    deleting={deletingId === d.id}
+                    onDelete={() => void onDelete(d.id)}
+                  />
+                </StaggerRow>
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
       <ApproveDeviceSheet
         open={qrApproveOpen}
         onOpenChange={setQrApproveOpen}

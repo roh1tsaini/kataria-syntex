@@ -28,6 +28,7 @@ import { configureAndroidToasts } from "@/lib/toasts";
 import { initTheme } from "@/lib/theme";
 import { initUpdateChecks } from "@/lib/updates";
 import { UpdateBanner, UpdateBlockingDialog } from "@/ui/update-surface";
+import { ToastOverlay } from "@/ui/toast-overlay";
 import { NavDrawer } from "@/ui/nav-drawer";
 
 // Boot before first render — idempotent under StrictMode double-mount.
@@ -157,7 +158,10 @@ export default function RootLayout() {
           <Boot />
           <View className="flex-1">
             <UpdateBanner />
-            <Stack screenOptions={{ headerShown: false }}>
+            {/* Web page entrance is a short fade (design.md §5.5): native
+                fade is the closest Android transition — the platform default
+                slides from the bottom instead. */}
+            <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="auth" />
@@ -177,6 +181,7 @@ export default function RootLayout() {
           </View>
           <NavDrawer />
           <UpdateBlockingDialog />
+          <ToastOverlay />
         </BootBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
