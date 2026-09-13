@@ -22,6 +22,7 @@ import {
 import { usePalette } from "@/theme";
 import { confirm } from "@/ui/confirm";
 import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
+import { SyncStrip } from "@/ui/sync";
 
 function platformIconName(platform: string) {
   if (platform === "android") return "smartphone" as const;
@@ -357,17 +358,17 @@ function DevicesPage() {
 
   return (
     <Screen
+      eyebrow="Account"
       title="Devices"
-      subtitle="Revoke a session you do not recognize."
+      description="Revoke a session you do not recognize."
       action={
-        <View className="shrink-0">
-          <Button
-            label="Approve a device"
-            onPress={() => setQrApproveOpen(true)}
-            className="min-h-[44px] px-3"
-          />
-        </View>
+        <Button
+          label="Approve a device"
+          icon="smartphone"
+          onPress={() => setQrApproveOpen(true)}
+        />
       }
+      banner={<SyncStrip />}
     >
       <FlatList
         data={devices}

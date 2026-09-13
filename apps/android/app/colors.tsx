@@ -46,7 +46,8 @@ import {
   PageTitle,
   Skeleton,
 } from "@/ui/kit";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppHeader } from "@/ui/app-header";
+import { SyncStrip } from "@/ui/sync";
 import { IconButton, Select, Textarea } from "@/ui/controls";
 import { confirm, requestDiscard } from "@/ui/confirm";
 import { fmtDate } from "@/lib/format";
@@ -940,7 +941,6 @@ function RecipeDetailModal({
 
 export default function ColorsRoute() {
   const p = usePalette();
-  const insets = useSafeAreaInsets();
   const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
 
@@ -1040,24 +1040,28 @@ export default function ColorsRoute() {
   };
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: p.background, paddingTop: insets.top }}
-    >
-      <View className="flex-row items-end justify-between px-4 pt-4">
-        <View className="min-w-0 flex-1">
-          <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
-          >
-            Reference data
-          </Text>
-          <PageTitle>Color Organiser</PageTitle>
-          <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
-            Colors and their dyeing recipes — one recipe per color and denier.
-          </Text>
-        </View>
-        {canManage ? <Button label="Add color" onPress={openAddColor} /> : null}
+    <View className="flex-1" style={{ backgroundColor: p.background }}>
+      <AppHeader label="Colors" />
+      <SyncStrip />
+      <View className="px-4 pt-5">
+        <Text
+          className="text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: p.mutedForeground }}
+        >
+          Reference data
+        </Text>
+        <PageTitle className="mt-1.5">Color Organiser</PageTitle>
+        <Text
+          className="mt-1.5 text-[15px] leading-6"
+          style={{ color: p.mutedForeground }}
+        >
+          Colors and their dyeing recipes — one recipe per color and denier.
+        </Text>
+        {canManage ? (
+          <View className="mt-4">
+            <Button label="Add color" icon="plus" onPress={openAddColor} />
+          </View>
+        ) : null}
       </View>
 
       {/* Colors list */}

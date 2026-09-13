@@ -6,9 +6,16 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Redirect } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import { MorphSheet } from "@/ui/morph-sheet";
 import {
   registerDataCache,
@@ -36,7 +43,7 @@ import {
   Skeleton,
 } from "@/ui/kit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SyncBanner, SyncSheet } from "@/ui/sync";
+import { SyncStrip } from "@/ui/sync";
 import { useMastersLoad } from "@/lib/use-masters-load";
 import { countLabel, fmtBoxes, fmtDate, fmtWt, todayLocal } from "@/lib/format";
 
@@ -198,18 +205,6 @@ const isValidDateKey = (v: string) =>
 
 /** Loads master data for a form, collapsing failures into one retry state
  * (same contract as apps/app's use-masters-load hook). */
-/** Shell-level sync strip — web renders the banner above every page; the
- * Android shell has none, so each screen mounts its own. */
-function SyncStrip() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <SyncBanner onOpen={() => setOpen(true)} />
-      <SyncSheet open={open} onOpenChange={setOpen} />
-    </>
-  );
-}
-
 /** Inline alert box for form-level errors (destructive banner). */
 function ErrorBanner({ message }: { message: string }) {
   const p = usePalette();
@@ -304,7 +299,13 @@ registerDataCache(() => {
 // ── Route ───────────────────────────────────────────────────────────────────
 
 export default function PackingRoute() {
-  const [activeTab, setActiveTab] = useState<PackingType>("sale");
+  // `?type=` from the nav drawer's Final/Raw yarn sub-items drives the tab.
+  const searchParams = useLocalSearchParams<{ type?: string | string[] }>();
+  const rawType = Array.isArray(searchParams.type)
+    ? searchParams.type[0]
+    : searchParams.type;
+  const paramType: PackingType = rawType === "job_work" ? "job_work" : "sale";
+  const [activeTab, setActiveTab] = useState<PackingType>(paramType);
   const status = useAuth((s) => s.status);
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const can = usePermission();
@@ -376,6 +377,11 @@ export default function PackingRoute() {
     void load();
   }, [load, activeTab, workspaceId]);
 
+  // Drawer sub-nav switches the tab via `?type=`; keep state in sync.
+  useEffect(() => {
+    setActiveTab(paramType);
+  }, [paramType]);
+
   // Other devices' writes arrive live; own writes refresh via store paths.
   useRealtimeEvent(["packing", "stock"], load);
 
@@ -414,20 +420,21 @@ export default function PackingRoute() {
 
   return (
     <Screen
+      eyebrow="Dispatch"
       title="Packing"
-      subtitle="Weigh and record yarn before dispatch."
+      description="Weigh and record yarn before dispatch."
       action={
         can("create_packing") ? (
-          <Button label="New entry" onPress={openNewEntry} />
+          <Button label="New entry" icon="plus" onPress={openNewEntry} />
         ) : undefined
       }
+      banner={<SyncStrip />}
     >
-      <SyncStrip />
-      <View className="flex-1 px-4 pb-6">
-        {/* Final / raw yarn tabs */}
+      <View className="flex-1">
+        {/* Final / raw yarn tabs — underline grammar, full width on mobile */}
         <View
-          className="flex-row rounded-lg border p-1"
-          style={{ borderColor: p.border, backgroundColor: p.muted }}
+          className="mx-4 flex-row border-b"
+          style={{ borderColor: p.border }}
         >
           {(
             [
@@ -442,11 +449,11 @@ export default function PackingRoute() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
                 onPress={() => setActiveTab(value)}
-                className="min-h-[44px] flex-1 items-center justify-center rounded-md"
-                style={{ backgroundColor: active ? p.card : "transparent" }}
+                className="h-11 flex-1 items-center justify-center border-b-2 px-2.5"
+                style={{ borderColor: active ? p.foreground : "transparent" }}
               >
                 <Text
-                  className="text-[13px] font-semibold"
+                  className="text-[13px] font-medium"
                   style={{ color: active ? p.foreground : p.mutedForeground }}
                 >
                   {label}
@@ -456,154 +463,180 @@ export default function PackingRoute() {
           })}
         </View>
 
-        {/* Search */}
-        <View className="mt-4 flex-row items-center gap-2">
-          <View className="flex-1">
-            <Input
+        {/* Filter bar — one card holding search (design.md §3) */}
+        <View
+          className="mx-4 mt-4 rounded-lg border p-3"
+          style={{ borderColor: p.border, backgroundColor: p.card }}
+        >
+          <View
+            className="min-h-[44px] flex-row items-center rounded-md border px-1.5"
+            style={{ backgroundColor: p.card, borderColor: p.input }}
+          >
+            <Feather
+              name="search"
+              size={16}
+              color={p.mutedForeground}
+              style={{ marginHorizontal: 8 }}
+            />
+            <TextInput
               placeholder="Search by entry number…"
               accessibilityLabel="Search packing entries"
+              placeholderTextColor={p.mutedForeground}
               value={q}
               onChangeText={setQ}
               autoCapitalize="none"
               autoCorrect={false}
+              className="min-h-[44px] flex-1 text-[15px]"
+              style={{ color: p.foreground }}
             />
-          </View>
-          {q ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-              onPress={() => setQ("")}
-              className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border"
-              style={({ pressed }) => ({
-                borderColor: p.border,
-                opacity: pressed ? 0.7 : 1,
-              })}
-            >
-              <Feather name="x" size={16} color={p.mutedForeground} />
-            </Pressable>
-          ) : null}
-        </View>
-        <Text
-          className="mt-2 text-xs tabular-nums"
-          style={{ color: p.mutedForeground }}
-        >
-          {countText}
-        </Text>
-
-        <View className="mt-3 flex-row items-center justify-between px-1 pb-2">
-          <Text
-            className="text-[11px] font-bold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
-          >
-            {filtered.length > 0 ? `${filtered.length} shown` : "register"}
-          </Text>
-          <Text className="text-[11px]" style={{ color: p.mutedForeground }}>
-            {activeTab === "sale" ? "Final yarn" : "Raw yarn"}
-          </Text>
-        </View>
-
-        {loading ? (
-          <View className="gap-3">
-            {[0, 1, 2].map((i) => (
-              <Card key={i} className="gap-3">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-4 w-20" />
-              </Card>
-            ))}
-          </View>
-        ) : loadError ? (
-          <View>
-            <EmptyState
-              title="Couldn't load packing entries"
-              message="The server didn't answer. Check your connection and retry."
-            />
-            <Button
-              label="Retry"
-              variant="secondary"
-              onPress={() => void load()}
-            />
-          </View>
-        ) : filtered.length === 0 ? (
-          <View>
-            <EmptyState
-              title="No packing entries yet"
-              message="Entries created by packers will appear here."
-            />
-            {can("create_packing") ? (
-              <Button label="Create entry" onPress={openNewEntry} />
+            {q ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                onPress={() => setQ("")}
+                className="min-h-[44px] min-w-[44px] items-center justify-center"
+              >
+                <Feather name="x" size={16} color={p.mutedForeground} />
+              </Pressable>
             ) : null}
           </View>
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(e) => e.id}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 24, gap: 12 }}
-            renderItem={({ item }) => {
-              const totalWt = item.items.reduce((s, i) => s + i.netWt, 0);
-              return (
-                <Card>
-                  <View className="flex-row items-start justify-between gap-2">
-                    <View className="min-w-0 flex-1">
-                      <Text
-                        className="text-sm font-bold tabular-nums"
-                        style={{ color: p.foreground }}
-                      >
-                        {item.entryNumber}
-                      </Text>
-                      <Text
-                        className="mt-1 text-xs font-medium tabular-nums"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        {fmtDate(item.date)} · {item.items.length}{" "}
-                        {item.items.length === 1 ? "item" : "items"}
-                      </Text>
-                    </View>
-                    <View className="flex-row shrink-0 items-center gap-2">
-                      <View className="flex-row items-baseline gap-1">
+        </View>
+        <View className="mt-2 px-4">
+          <Text
+            className="text-xs tabular-nums"
+            style={{ color: p.mutedForeground }}
+          >
+            {countText}
+          </Text>
+        </View>
+
+        {/* Register card */}
+        <View
+          className="mx-4 mt-4 flex-1 overflow-hidden rounded-lg border"
+          style={{ borderColor: p.border, backgroundColor: p.card }}
+        >
+          <View
+            className="flex-row items-center justify-between border-b px-4 py-2.5"
+            style={{ borderColor: p.border, backgroundColor: p.muted }}
+          >
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: p.mutedForeground }}
+            >
+              Entries •{" "}
+              {filtered.length > 0 ? `${filtered.length} shown` : "register"}
+            </Text>
+            <Text className="text-[11px]" style={{ color: p.mutedForeground }}>
+              {activeTab === "sale" ? "Final yarn" : "Raw yarn"}
+            </Text>
+          </View>
+
+          {loading ? (
+            <View className="gap-3 p-3">
+              {[0, 1, 2].map((i) => (
+                <Card key={i} className="gap-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </Card>
+              ))}
+            </View>
+          ) : loadError ? (
+            <View className="p-4">
+              <EmptyState
+                title="Couldn't load packing entries"
+                message="The server didn't answer. Check your connection and retry."
+              />
+              <Button
+                label="Retry"
+                variant="secondary"
+                onPress={() => void load()}
+              />
+            </View>
+          ) : filtered.length === 0 ? (
+            <View className="p-4">
+              <EmptyState
+                title="No packing entries yet"
+                message="Entries created by packers will appear here."
+              />
+              {can("create_packing") ? (
+                <Button label="Create entry" onPress={openNewEntry} />
+              ) : null}
+            </View>
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(e) => e.id}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 12, gap: 12 }}
+              renderItem={({ item }) => {
+                const totalWt = item.items.reduce((s, i) => s + i.netWt, 0);
+                return (
+                  <View
+                    className="rounded-lg border p-4"
+                    style={{ borderColor: p.border, backgroundColor: p.card }}
+                  >
+                    <View className="flex-row items-start justify-between gap-2">
+                      <View className="min-w-0 flex-1">
                         <Text
                           className="text-sm font-bold tabular-nums"
                           style={{ color: p.foreground }}
                         >
-                          {fmtWt(totalWt)}
+                          {item.entryNumber}
                         </Text>
                         <Text
-                          className="text-xs font-medium"
+                          className="mt-1 text-xs font-medium tabular-nums"
                           style={{ color: p.mutedForeground }}
                         >
-                          kg
+                          {fmtDate(item.date)} · {item.items.length}{" "}
+                          {item.items.length === 1 ? "item" : "items"}
                         </Text>
                       </View>
-                      {can("edit_packing") ? (
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Edit entry ${item.entryNumber}`}
-                          onPress={() => {
-                            setFormTab(
-                              item.type === "job_work" ? "job_work" : "sale",
-                            );
-                            setEditingId(item.id);
-                          }}
-                          className="min-h-[44px] min-w-[44px] items-center justify-center"
-                          style={({ pressed }) => ({
-                            opacity: pressed ? 0.7 : 1,
-                          })}
-                        >
-                          <Feather
-                            name="edit-2"
-                            size={16}
-                            color={p.mutedForeground}
-                          />
-                        </Pressable>
-                      ) : null}
+                      <View className="flex-row shrink-0 items-center gap-2">
+                        <View className="flex-row items-baseline gap-1">
+                          <Text
+                            className="text-sm font-bold tabular-nums"
+                            style={{ color: p.foreground }}
+                          >
+                            {fmtWt(totalWt)}
+                          </Text>
+                          <Text
+                            className="text-xs font-medium"
+                            style={{ color: p.mutedForeground }}
+                          >
+                            kg
+                          </Text>
+                        </View>
+                        {can("edit_packing") ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Edit entry ${item.entryNumber}`}
+                            onPress={() => {
+                              setFormTab(
+                                item.type === "job_work" ? "job_work" : "sale",
+                              );
+                              setEditingId(item.id);
+                            }}
+                            className="min-h-[44px] min-w-[44px] items-center justify-center"
+                            style={({ pressed }) => ({
+                              opacity: pressed ? 0.7 : 1,
+                            })}
+                          >
+                            <Feather
+                              name="edit-2"
+                              size={16}
+                              color={p.mutedForeground}
+                            />
+                          </Pressable>
+                        ) : null}
+                      </View>
                     </View>
                   </View>
-                </Card>
-              );
-            }}
-          />
-        )}
+                );
+              }}
+            />
+          )}
+        </View>
       </View>
     </Screen>
   );

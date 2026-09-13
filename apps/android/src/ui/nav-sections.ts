@@ -1,53 +1,48 @@
-import { useCallback } from "react";
-import {
-  AlertTriangle,
-  BookOpen,
-  Boxes,
-  ClipboardList,
-  Factory,
-  FileText,
-  Layers,
-  LayoutDashboard,
-  ListTree,
-  MonitorSmartphone,
-  Package,
-  PackageOpen,
-  Palette,
-  Receipt,
-  Scale,
-  Settings,
-  Users,
-  Warehouse,
-  type LucideIcon,
-} from "lucide-react";
-import { useAuth, type Permission } from "@kataria-syntex/app-core";
+/**
+ * Android navigation config — the phone counterpart of apps/app's
+ * `nav-config.tsx`. Same section titles, item labels, sub-item labels and
+ * permission sets, mapped onto the Android route table. One table feeds the
+ * drawer, so gating and copy can't drift from the web sidebar.
+ */
+
+import type { Permission } from "@kataria-syntex/app-core";
+import type { FeatherIconName } from "@/ui/feather";
+
 export type SubNavItem = { to: string; label: string };
 export type NavItem = {
   to: string;
   label: string;
-  icon: LucideIcon;
+  icon: FeatherIconName;
+  /** Any-of semantics, exactly as the web config. Empty = always shown. */
   permissions: Permission[];
+  /** Route matches exactly (no child routes), e.g. the dashboard. */
   end?: boolean;
   subItems?: SubNavItem[];
 };
 export type NavSection = { title: string; items: NavItem[] };
+
+const CHALLAN_PERMS: Permission[] = [
+  "create_challan",
+  "edit_challan",
+  "delete_challan",
+];
 
 export const SECTIONS: NavSection[] = [
   {
     title: "Operations",
     items: [
       {
-        to: "/",
+        to: "/(tabs)",
         label: "Dashboard",
-        icon: LayoutDashboard,
+        icon: "home",
         permissions: ["view_reports", "view_stock"],
         end: true,
       },
       {
         to: "/challans",
         label: "Challans",
-        icon: FileText,
-        permissions: ["create_challan", "edit_challan", "delete_challan"],
+        icon: "file-text",
+        permissions: CHALLAN_PERMS,
         subItems: [
           { to: "/challans", label: "Sales Challans" },
           { to: "/outward", label: "Job-Work Challans" },
@@ -56,13 +51,13 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/returns",
         label: "Returns",
-        icon: PackageOpen,
+        icon: "corner-down-left",
         permissions: ["create_return", "edit_return"],
       },
       {
         to: "/raw-material",
         label: "Raw Material",
-        icon: Boxes,
+        icon: "box",
         permissions: ["create_raw_material", "edit_raw_material"],
       },
     ],
@@ -71,21 +66,21 @@ export const SECTIONS: NavSection[] = [
     title: "Stock",
     items: [
       {
-        to: "/stock/raw",
+        to: "/stock?kind=raw",
         label: "Raw Stock",
-        icon: Warehouse,
+        icon: "database",
         permissions: ["view_stock"],
       },
       {
-        to: "/stock/dyed",
+        to: "/stock?kind=dyed",
         label: "Dyed Stock",
-        icon: Layers,
+        icon: "layers",
         permissions: ["view_stock"],
       },
       {
         to: "/packing",
         label: "Packing",
-        icon: Package,
+        icon: "package",
         permissions: ["create_packing", "edit_packing"],
         subItems: [
           { to: "/packing?type=sale", label: "Final Yarn" },
@@ -98,45 +93,45 @@ export const SECTIONS: NavSection[] = [
     title: "Reports",
     items: [
       {
-        to: "/reports/job-work-balance",
+        to: "/reports?report=job-work-balance",
         label: "Job-Work Balance",
-        icon: Scale,
+        icon: "bar-chart-2",
         permissions: ["view_reports"],
       },
       {
-        to: "/reports/over-receipts",
+        to: "/reports?report=over-receipts",
         label: "Over-Receipts",
-        icon: AlertTriangle,
+        icon: "alert-triangle",
         permissions: ["view_reports"],
       },
       {
-        to: "/reports/stock-summary",
+        to: "/reports?report=stock-summary",
         label: "Stock Summary",
-        icon: ClipboardList,
+        icon: "clipboard",
         permissions: ["view_reports"],
       },
       {
-        to: "/reports/sales-register",
+        to: "/reports?report=sales-register",
         label: "Sales Register",
-        icon: Receipt,
+        icon: "file-text",
         permissions: ["view_reports"],
       },
       {
-        to: "/reports/job-work-register",
+        to: "/reports?report=job-work-register",
         label: "Job-Work Register",
-        icon: Factory,
+        icon: "settings",
         permissions: ["view_reports"],
       },
       {
-        to: "/reports/transaction-log",
+        to: "/reports?report=transaction-log",
         label: "Transaction Log",
-        icon: ListTree,
+        icon: "git-branch",
         permissions: ["view_reports"],
       },
       {
-        to: "/reports/party-summary",
+        to: "/reports?report=party-summary",
         label: "Party Summary",
-        icon: Users,
+        icon: "users",
         permissions: ["view_reports"],
       },
     ],
@@ -147,7 +142,7 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/colors",
         label: "Colors & Recipes",
-        icon: Palette,
+        icon: "droplet",
         permissions: ["manage_masters"],
       },
     ],
@@ -158,7 +153,7 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/masters",
         label: "Master Data",
-        icon: BookOpen,
+        icon: "book-open",
         permissions: ["manage_masters"],
         subItems: [
           { to: "/masters?tab=customers", label: "Customers" },
@@ -175,19 +170,19 @@ export const SECTIONS: NavSection[] = [
       {
         to: "/members",
         label: "Team & Members",
-        icon: Users,
+        icon: "users",
         permissions: ["manage_members"],
       },
       {
         to: "/devices",
         label: "Connected Devices",
-        icon: MonitorSmartphone,
+        icon: "smartphone",
         permissions: ["manage_settings"],
       },
       {
         to: "/settings",
         label: "Company Settings",
-        icon: Settings,
+        icon: "settings",
         permissions: ["manage_settings"],
       },
     ],
@@ -201,7 +196,7 @@ export const PACKER_SECTIONS: NavSection[] = [
       {
         to: "/packing",
         label: "Packing Mode",
-        icon: Package,
+        icon: "package",
         permissions: ["create_packing"],
         end: true,
         subItems: [
@@ -213,9 +208,29 @@ export const PACKER_SECTIONS: NavSection[] = [
   },
 ];
 
-export const SIDEBAR_STORAGE_KEY = "kataria-sidebar-collapsed";
+/** Search params as expo-router hands them over — values may repeat. */
+export type NavParams = Record<string, string | string[] | undefined>;
 
-export function isItemActive(item: NavItem, pathname: string): boolean {
+function matchQuery(to: string, pathname: string, params: NavParams): boolean {
+  const [path, query] = to.split("?");
+  if (pathname !== path) return false;
+  for (const [key, value] of new URLSearchParams(query)) {
+    const actual = params[key];
+    const flat = Array.isArray(actual) ? actual[0] : actual;
+    if (flat !== value) return false;
+  }
+  return true;
+}
+
+export function isItemActive(
+  item: NavItem,
+  pathname: string,
+  params: NavParams,
+): boolean {
+  // Items with children are toggle buttons on both apps — never the active row.
+  if (item.subItems?.length) return false;
+  if (item.to === "/(tabs)") return pathname === "/" || pathname === "/(tabs)";
+  if (item.to.includes("?")) return matchQuery(item.to, pathname, params);
   return item.end
     ? pathname === item.to
     : pathname === item.to || pathname.startsWith(`${item.to}/`);
@@ -224,24 +239,8 @@ export function isItemActive(item: NavItem, pathname: string): boolean {
 export function isSubActive(
   sub: SubNavItem,
   pathname: string,
-  search: string,
+  params: NavParams,
 ): boolean {
-  const [path, query] = sub.to.split("?");
-  if (query) return pathname === path && search === `?${query}`;
-  return pathname === path || pathname.startsWith(`${path}/`);
-}
-
-/** Whether the signed-in workspace may see a nav item gated on `permissions`.
- * Nav must never advertise routes the member can't open. */
-export function useCanSee(): (permissions?: Permission[]) => boolean {
-  const workspace = useAuth((s) => s.workspace);
-  return useCallback(
-    (permissions) => {
-      if (!workspace) return false;
-      if (workspace.isPrimaryAdmin) return true;
-      if (!permissions) return true;
-      return permissions.some((p) => workspace.permissions.includes(p));
-    },
-    [workspace],
-  );
+  if (sub.to.includes("?")) return matchQuery(sub.to, pathname, params);
+  return pathname === sub.to || pathname.startsWith(`${sub.to}/`);
 }

@@ -26,7 +26,7 @@ import {
 } from "@kataria-syntex/app-core";
 import { usePalette, SCRIM } from "@/theme";
 import { Badge, Button, EmptyState, Screen, Skeleton } from "@/ui/kit";
-import { SyncBanner, SyncSheet } from "@/ui/sync";
+import { SyncStrip } from "@/ui/sync";
 import { shareChallanPdf, printChallanPdf } from "@/lib/pdf";
 import { kindFromParam } from "@/lib/challan-kinds";
 import { fmtBoxes, fmtWt, fmtDate } from "@/lib/format";
@@ -170,7 +170,6 @@ export default function ChallanDetailScreen() {
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [syncOpen, setSyncOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -322,12 +321,13 @@ export default function ChallanDetailScreen() {
 
   return (
     <Screen
+      headerLabel={kind.title}
+      eyebrow={kind.type === "sales" ? "Dispatch register" : "Dyeing movement"}
       title={challan.challanNumber}
-      subtitle={`${challan.date} · ${company?.name ?? "This device"}`}
+      description={`${challan.date} · ${company?.name ?? "This device"}`}
+      banner={<SyncStrip />}
     >
       <View className="flex-1">
-        <SyncBanner onOpen={() => setSyncOpen(true)} />
-
         <ScrollView contentContainerClassName="px-4 pb-8">
           <View className="flex-row flex-wrap items-center gap-2">
             <Badge label={`FY ${challan.fyLabel}`} />
@@ -625,8 +625,6 @@ export default function ChallanDetailScreen() {
           </View>
         </View>
       </Modal>
-
-      <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} />
     </Screen>
   );
 }

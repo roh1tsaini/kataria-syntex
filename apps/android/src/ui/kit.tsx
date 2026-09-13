@@ -12,7 +12,6 @@
 
 import { useEffect, type ReactNode } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -23,6 +22,7 @@ import Animated, {
 import { cn } from "@/lib/cn";
 import { useReduceMotion } from "@/lib/motion";
 import { usePalette, withAlpha } from "@/theme";
+import { AppHeader } from "@/ui/app-header";
 import { Feather, type FeatherIconName } from "@/ui/feather";
 
 // ── Card ────────────────────────────────────────────────────────────────────
@@ -55,6 +55,7 @@ export function Button({
   variant = "primary",
   disabled,
   loading,
+  icon,
   className,
 }: {
   label: string;
@@ -62,6 +63,8 @@ export function Button({
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
+  /** Optional leading glyph, matching apps/app's icon+label buttons. */
+  icon?: FeatherIconName;
   className?: string;
 }) {
   const p = usePalette();
@@ -93,6 +96,20 @@ export function Button({
     >
       {/* design.md §3: loading dims the button and nothing is injected — the
           label never changes and spinners are banned. */}
+      {icon ? (
+        <Feather
+          name={icon}
+          size={16}
+          color={
+            variant === "primary"
+              ? p.primaryForeground
+              : variant === "destructive"
+                ? p.destructiveForeground
+                : p.foreground
+          }
+          style={{ marginRight: 6 }}
+        />
+      ) : null}
       <Text
         className="text-[15px] font-semibold"
         style={{
@@ -303,45 +320,56 @@ export function EmptyState({
 // ── Screen (page container) ─────────────────────────────────────────────────
 
 export function Screen({
+  eyebrow,
   title,
-  subtitle,
+  headerLabel,
+  description,
   action,
+  banner,
   children,
-  safeTop = true,
 }: {
+  /** Uppercase micro-label above the title (apps/app PageHeader eyebrow). */
+  eyebrow?: string;
   title: string;
-  subtitle?: string;
+  /** Center label in the header bar. Defaults to the title — set it when the
+   *  title is a record (challan number) and the shell would name the section. */
+  headerLabel?: string;
+  description?: string;
+  /** Full-width primary action below the description on mobile, exactly as
+   *  apps/app renders PageHeader actions at the mobile breakpoint. */
   action?: ReactNode;
+  /** Shell strip between the header and the page title (sync banner). */
+  banner?: ReactNode;
   children: ReactNode;
-  /** Clears the status bar. Off only for tab screens that already inset
-   *  themselves (they put a banner above the title). */
-  safeTop?: boolean;
 }) {
   const p = usePalette();
-  const insets = useSafeAreaInsets();
   return (
-    <View
-      className="flex-1"
-      style={{
-        backgroundColor: p.background,
-        paddingTop: safeTop ? insets.top : 0,
-      }}
-    >
-      <View className="flex-row items-end justify-between px-4 pt-4">
-        <View className="flex-1">
-          <PageTitle>{title}</PageTitle>
-          {subtitle ? (
+    <View className="flex-1" style={{ backgroundColor: p.background }}>
+      <AppHeader label={headerLabel ?? title} />
+      {banner}
+      <View className="flex-1">
+        <View className="px-4 pt-5">
+          {eyebrow ? (
             <Text
-              className="mt-0.5 text-[13px]"
+              className="text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: p.mutedForeground }}
             >
-              {subtitle}
+              {eyebrow}
             </Text>
           ) : null}
+          <PageTitle className="mt-1.5">{title}</PageTitle>
+          {description ? (
+            <Text
+              className="mt-1.5 text-[15px] leading-6"
+              style={{ color: p.mutedForeground }}
+            >
+              {description}
+            </Text>
+          ) : null}
+          {action ? <View className="mt-4">{action}</View> : null}
         </View>
-        {action}
+        <View className="flex-1 pt-4">{children}</View>
       </View>
-      <View className="flex-1 pt-4">{children}</View>
     </View>
   );
 }

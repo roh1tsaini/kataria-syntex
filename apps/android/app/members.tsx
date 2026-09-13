@@ -24,6 +24,7 @@ import { usePalette, withAlpha } from "@/theme";
 import { cn } from "@/lib/cn";
 import { confirm } from "@/ui/confirm";
 import { Badge, Button, Card, Input, Screen, Skeleton } from "@/ui/kit";
+import { SyncStrip } from "@/ui/sync";
 
 const PERMISSION_GROUPS: { label: string; perms: Permission[] }[] = [
   {
@@ -576,12 +577,14 @@ function MembersPage() {
 
   return (
     <Screen
+      eyebrow="Workspace & permissions"
       title="Members"
-      subtitle={
+      description={
         canManage
           ? "Add your team and set what each member can do."
           : "Your workspace team."
       }
+      banner={<SyncStrip />}
     >
       <ScrollView
         className="flex-1"

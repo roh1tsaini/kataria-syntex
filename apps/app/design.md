@@ -167,7 +167,7 @@ no text-transform on body copy.
   (floating). `--shadow-lift` is `0 4px 12px -4px oklch(0 0 0 / 10%),
 0 2px 6px -2px oklch(0 0 0 / 6%)`.
   Cards rest flat with hairline borders; lift max −1px on hover.
-- Floating chrome (app header, mobile tab bar, sticky action bars): translucent
+- Floating chrome (app header, sticky action bars): translucent
   `color-mix` background + `backdrop-blur` + hairline edge. Content scrolls
   under it. `prefers-reduced-transparency` falls back to solid.
 
@@ -183,7 +183,7 @@ controls, and actions that sit together share one grouped background.
   container, `bg-muted/60`, `p-1`, `gap-1`; every button inside stays a
   circle. Vertical stacks (icon rail) use a vertical capsule.
 - Never mix a circle and a squared button in one cluster. Nav selection rows
-  (sidebar items, rail items, tab bar) keep `rounded-md` — circles are for
+  (sidebar items, rail items) keep `rounded-md` — circles are for
   actions, not navigation.
 - Applies on desktop AND mobile, everywhere in the shell (sidebar toggle,
   drawer close, footer theme/logout, header).
@@ -243,9 +243,10 @@ appears on any platform.
   window management over the bare page.
 - Web/PWA render nothing (no strip, no controls, no reservation —
   `--wc-w`/`--tl-inset` stay 0px); the title bar is an Electron-only
-  surface. The Android app draws its own native shell. The only
-  window-control IPC path is `platform.ts` → `desktopWindow()`; UI never
-  calls `window.desktop` directly.
+  surface. The Android app draws its own native shell in the same grammar
+  at phone scale (§4.1). The only window-control IPC path is
+  `platform.ts` → `desktopWindow()`; UI never calls `window.desktop`
+  directly.
 - Desktop-native behaviour: the window restores its last size, position and
   maximized state (validated against the connected displays), the shell paints
   its background in the user's resolved theme before the bundle boots,
@@ -318,11 +319,9 @@ layout — never one generic shape for all pages.
   same concept. One primary action top-right; secondary inside.
 - Mobile: single column, cards; ≥sm: grids (`minmax(0,1fr)`); ≥xl: data grids
   up to 4 columns. Card grids keep equal heights (`grid` + stretch).
-- Mobile nav: bottom tab bar (translucent material, safe-area padding) for
-  the four primary destinations, plus a **full-screen nav sheet** for
-  everything else. Desktop: left sidebar. Same items, same order, same icons
-  on all three surfaces.
-- Full-screen nav sheet (opens from the header avatar / "More" tab): covers
+- Mobile nav: one full-screen nav drawer, opened from the header avatar.
+  Desktop: left sidebar. Same items, same order, same icons on both surfaces.
+- Full-screen nav drawer: covers
   the viewport (`inset-0`, `bg-background`), slides from the left 280ms
   `EASE_DRAWER`, exits 20% faster, no scrim (nothing remains visible to tap).
   Closed by X, Escape or navigation. Layout top→bottom: brand title
@@ -330,7 +329,8 @@ layout — never one generic shape for all pages.
   touch close circle top-right, an FY + sync
   status strip (hairline border, `bg-card`, tap opens sync), the roomy nav
   list, and a pinned footer: identity (avatar 36px + name + workspace) left,
-  one primary action (`New challan`, accent) right. Nav rows in the sheet use
+  a theme-toggle + log-out circle capsule right, and the `New challan`
+  primary action full-width below. Nav rows in the drawer use
   the roomy ladder: `min-h-12`, 15px labels, `size-5` icons, `gap-3`,
   `rounded-md` selection (never circles), subs `min-h-11`/13px under an
   `ml-5` rule. Reduced-motion collapses to opacity.
@@ -344,6 +344,40 @@ text-foreground` while a sub is active. The collapsed rail keeps the
   pill on the parent icon (its subs aren't visible there).
 - Every screen answers: Where am I? (header) Where can I go? (nav)
   How do I get out? (back/close) — wayfinding is never optional.
+
+### 4.1 Android shell (apps/android) — the web mobile layout at phone scale
+
+The Android app implements the web mobile chrome, not a platform-native
+variant. `Screen` (`src/ui/kit.tsx`) composes the whole page:
+
+- **Header bar** (`src/ui/app-header.tsx`) mirrors `HeaderBar`: 56px, card
+  surface, hairline bottom edge, safe-area top. Account avatar left (opens
+  the full-screen nav drawer) with the online/offline dot
+  bottom-right; the current page label centered, 13px medium; the company
+  chip right (briefcase glyph + name, max 140px).
+- **Sync strip** (shared `SyncStrip`) sits between header and page title,
+  matching the web sync banner's position under the header.
+- **Page header**: 11px uppercase eyebrow, 28px/700 title, 15px description,
+  then the action as a full-width control below — exactly how `PageHeader`
+  actions collapse at the mobile breakpoint. Stack screens whose title is a
+  record pass `headerLabel` so the header names the section (e.g. "Sales
+  challans"), not the number.
+- **Nav drawer** (`src/ui/nav-drawer.tsx`) is the only navigation — no bottom
+  tab bar. Full-screen panel sliding from the left with `EASE_DRAWER` (280ms
+  in / 200ms out), the exact web drawer content: brand header + role badge,
+  FY/sync strip (tap opens the sync sheet), the roomy permission-gated nav
+  tree (`src/ui/nav-sections.ts`, same sections/items/subs as the web
+  `nav-config`), and the footer identity with theme + log-out and the
+  full-width `New challan` action.
+- **Registers** mirror the web mobile list: filter bars are one bordered card
+  (search control + FY `MenuSelect`), the list is a card with a muted
+  "… • N shown" header strip, each row is a 12px card, and paging is
+  Prev/Next + "Page X of Y · N total" — never a floating action button; the
+  primary action lives in the page header.
+- **Menus**: `MenuSelect` is the phone counterpart of the web Select (44px
+  trigger → bottom-sheet option list). Segmented controls stay for tiny
+  fixed sets; tab groups that the web renders as underlined tabs keep that
+  underline grammar.
 
 ## 5. Motion grammar
 
@@ -431,7 +465,8 @@ the same element at both sizes, never a close-then-open swap.
 | Shared table skeleton                   | `src/main/ui/components/table-skeleton.tsx`         |
 | Primitives (shadcn-style)               | `src/main/ui/components/ui/*`                       |
 | Circular icon buttons & capsules (§2.7) | `src/main/ui/components/ui/circle-button.tsx`       |
-| App frame (sidebar/tab bar/header)      | `src/main/ui/components/app-shell.tsx`              |
+| App frame (sidebar/header/nav drawer)   | `src/main/ui/components/app-shell.tsx`              |
+| Nav tree (sections/items/subs)          | `src/main/ui/components/nav-config.tsx`             |
 | Page scaffold                           | `src/main/ui/components/page-header.tsx`            |
 | Update surface (banner/gate/toast)      | `src/main/ui/components/update-surface.tsx`         |
 | OS brand glyphs (download/entry)        | `src/main/ui/components/brand-icons.tsx`            |

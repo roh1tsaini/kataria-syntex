@@ -38,7 +38,8 @@ import {
   PageTitle,
   Skeleton,
 } from "@/ui/kit";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppHeader } from "@/ui/app-header";
+import { SyncStrip } from "@/ui/sync";
 import { confirm, requestDiscard } from "@/ui/confirm";
 
 const TABS = [
@@ -380,7 +381,6 @@ function MasterTab<I extends { id: string; name: string }, In>({
 
 export default function MastersRoute() {
   const p = usePalette();
-  const insets = useSafeAreaInsets();
   const status = useAuth((s) => s.status);
   const canManage = usePermission()("manage_masters");
   const router = useRouter();
@@ -596,18 +596,17 @@ export default function MastersRoute() {
   if (!canManage) return <Redirect href="/" />;
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: p.background, paddingTop: insets.top }}
-    >
-      <View className="px-4 pt-4">
+    <View className="flex-1" style={{ backgroundColor: p.background }}>
+      <AppHeader label="Masters" />
+      <SyncStrip />
+      <View className="px-4 pt-5">
         <Text
-          className="text-[11px] font-bold uppercase tracking-wider"
+          className="text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: p.mutedForeground }}
         >
           Reference data
         </Text>
-        <PageTitle>Masters</PageTitle>
+        <PageTitle className="mt-1.5">Masters</PageTitle>
         <Text className="text-[13px]" style={{ color: p.mutedForeground }}>
           Customers, job workers, suppliers and deniers used across challans.
         </Text>

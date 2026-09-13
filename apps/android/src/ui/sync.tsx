@@ -28,6 +28,19 @@ import { usePalette } from "@/theme";
 import { Button, Input, EmptyState } from "@/ui/kit";
 import { MorphSheet } from "@/ui/morph-sheet";
 
+/** Banner + its sheet, self-contained — the shell strip every screen mounts
+ *  above its page header (apps/app renders the same pair globally under the
+ *  HeaderBar). */
+export function SyncStrip() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <SyncBanner onOpen={() => setOpen(true)} />
+      <SyncSheet open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
 export function SyncBanner({ onOpen }: { onOpen: () => void }) {
   const { online, syncing, pendingCount, conflictCount, errorCount } =
     useSync();

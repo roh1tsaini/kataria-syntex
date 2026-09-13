@@ -8,7 +8,15 @@
 
 import { useEffect, useState } from "react";
 import { AccessibilityInfo } from "react-native";
+import { Easing } from "react-native-reanimated";
 import type { WithSpringConfig } from "react-native-reanimated";
+
+/** Drawer easing — Apple's spatial curve, matching apps/app EASE_DRAWER.
+ *  Spatial motion uses a bezier, not a spring (design.md §5). */
+export const EASE_DRAWER = Easing.bezier(0.32, 0.72, 0, 1);
+/** Full-screen nav drawer entrances are 280ms; exits mirror ~30% faster. */
+export const DRAWER_ENTER_MS = 280;
+export const DRAWER_EXIT_MS = 200;
 
 /** Default spring for anything that moves: ~0.38s, no bounce. */
 export const SPRING: WithSpringConfig = {

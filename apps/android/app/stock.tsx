@@ -22,6 +22,7 @@ import {
 import { usePalette } from "@/theme";
 import { countLabel, fmtWt } from "@/lib/format";
 import { Badge, Button, Input, Screen, Skeleton } from "@/ui/kit";
+import { SyncStrip } from "@/ui/sync";
 
 type StockGroup = {
   denierId: string | null;
@@ -308,7 +309,7 @@ function StockPage({
       </View>
 
       <View
-        className="mt-3 flex-row items-center justify-between rounded-t-xl border-b px-4 py-2.5"
+        className="mt-3 flex-row items-center justify-between rounded-t-lg border-b px-4 py-2.5"
         style={{
           borderColor: p.border,
           backgroundColor: p.muted,
@@ -339,8 +340,9 @@ function StockPage({
 
   return (
     <Screen
+      eyebrow={stockType === "raw" ? "Grey yarn" : "Dyed yarn"}
       title={stockType === "raw" ? "Raw stock" : "Dyed stock"}
-      subtitle={stockType === "raw" ? "Grey yarn" : "Dyed yarn"}
+      banner={<SyncStrip />}
     >
       <FlatList
         data={loading || loadError || filtered.length === 0 ? [] : filtered}

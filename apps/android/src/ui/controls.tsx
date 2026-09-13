@@ -5,8 +5,10 @@
  * list-row action. Colors come from usePalette(); layout via className only.
  */
 
-import { Pressable, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Feather, type FeatherIconName } from "@/ui/feather";
+import { MorphSheet } from "@/ui/morph-sheet";
 import { usePalette } from "@/theme";
 
 export function Select({
@@ -130,5 +132,101 @@ export function IconButton({
         color={destructive ? p.destructive : p.mutedForeground}
       />
     </Pressable>
+  );
+}
+
+/**
+ * MenuSelect — the RN counterpart of web's shadcn Select for open-ended
+ * option sets: a 44px trigger that opens a bottom-sheet list. This is the
+ * control used for filters and long option sets; the inline `Select` above
+ * stays for tiny fixed sets (stock type, etc.).
+ */
+export function MenuSelect({
+  value,
+  options,
+  onChange,
+  placeholder,
+  leadingIcon,
+  disabled,
+  invalid,
+  accessibilityLabel,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  leadingIcon?: FeatherIconName;
+  disabled?: boolean;
+  invalid?: boolean;
+  accessibilityLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const p = usePalette();
+  const current = options.find((o) => o.value === value);
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled === true, expanded: open }}
+        accessibilityLabel={accessibilityLabel ?? placeholder}
+        disabled={disabled}
+        onPress={() => setOpen(true)}
+        className="min-h-[44px] flex-row items-center gap-1.5 rounded-md border px-3"
+        style={({ pressed }) => ({
+          backgroundColor: p.card,
+          borderColor: invalid ? p.destructive : p.input,
+          opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+        })}
+      >
+        {leadingIcon ? (
+          <Feather name={leadingIcon} size={16} color={p.mutedForeground} />
+        ) : null}
+        <Text
+          className="min-w-0 flex-1 text-[15px] font-medium"
+          numberOfLines={1}
+          style={{ color: current ? p.foreground : p.mutedForeground }}
+        >
+          {current ? current.label : placeholder}
+        </Text>
+        <Feather name="chevron-down" size={16} color={p.mutedForeground} />
+      </Pressable>
+      <MorphSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={accessibilityLabel ?? placeholder}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          style={{ maxHeight: 420 }}
+        >
+          {options.map((o) => (
+            <Pressable
+              key={o.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: o.value === value }}
+              onPress={() => {
+                onChange(o.value);
+                setOpen(false);
+              }}
+              className="min-h-[44px] flex-row items-center justify-between border-b px-4 py-3"
+              style={({ pressed }) => ({
+                borderColor: p.border,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text
+                className="flex-1 text-[15px]"
+                style={{ color: p.foreground }}
+              >
+                {o.label}
+              </Text>
+              {o.value === value ? (
+                <Feather name="check" size={18} color={p.primary} />
+              ) : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </MorphSheet>
+    </>
   );
 }

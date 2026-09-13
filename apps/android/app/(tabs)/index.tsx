@@ -11,7 +11,6 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useAuth,
   useChallans,
@@ -28,7 +27,7 @@ import {
 import { usePalette, type Palette } from "@/theme";
 import { Button, Card, EmptyState, Screen, Skeleton } from "@/ui/kit";
 import { CountUp } from "@/ui/count-up";
-import { SyncBanner, SyncSheet } from "@/ui/sync";
+import { SyncStrip } from "@/ui/sync";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 import {
   aggregate,
@@ -573,9 +572,7 @@ export default function DashboardTab() {
   const summary = useChallans((s) => s.summary);
   const can = usePermission();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const p = usePalette();
-  const [syncOpen, setSyncOpen] = useState(false);
   const summarySeq = useRef(0);
 
   const cacheKey = `${workspace?.id ?? ""}:${currentFy?.label ?? ""}`;
@@ -714,369 +711,355 @@ export default function DashboardTab() {
   );
 
   return (
-    <View
-      className="flex-1"
-      style={{ paddingTop: insets.top, backgroundColor: p.background }}
+    <Screen
+      eyebrow={todayLabel}
+      title="Overview"
+      description={`${company?.name ?? workspace?.name ?? "—"} · Financial year ${currentFy?.label ?? "—"}`}
+      action={
+        canCreate ? (
+          <View className="flex-row" style={{ gap: 10 }}>
+            <View className="flex-1">
+              <Button
+                label="New sales challan"
+                icon="plus"
+                onPress={() =>
+                  router.push({
+                    pathname: "/challan-editor",
+                    params: { kind: "sales" },
+                  })
+                }
+              />
+            </View>
+            <View className="flex-1">
+              <Button
+                label="New job-work"
+                icon="tool"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: "/challan-editor",
+                    params: { kind: "outward" },
+                  })
+                }
+              />
+            </View>
+          </View>
+        ) : undefined
+      }
+      banner={<SyncStrip />}
     >
-      <SyncBanner onOpen={() => setSyncOpen(true)} />
-      <Screen
-        title="Overview"
-        subtitle={`${company?.name ?? workspace?.name ?? "—"} · Financial year ${currentFy?.label ?? "—"}`}
-        safeTop={false}
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: 48,
+          gap: 16,
+          paddingHorizontal: 16,
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={{
-            paddingBottom: 48,
-            gap: 16,
-            paddingHorizontal: 16,
-          }}
-          showsVerticalScrollIndicator={false}
+        <FlowCards wsId={workspace?.id} can={can} />
+
+        <View
+          className="flex-row self-start rounded-md p-1"
+          style={{ backgroundColor: p.muted, gap: 2 }}
         >
-          <Text
-            className="text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: p.mutedForeground }}
-          >
-            {todayLabel}
-          </Text>
-
-          {canCreate ? (
-            <View className="flex-row" style={{ gap: 10 }}>
-              <View className="flex-1">
-                <Button
-                  label="New sales challan"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/challan-editor",
-                      params: { kind: "sales" },
-                    })
-                  }
-                />
-              </View>
-              <View className="flex-1">
-                <Button
-                  label="New job-work"
-                  variant="secondary"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/challan-editor",
-                      params: { kind: "outward" },
-                    })
-                  }
-                />
-              </View>
-            </View>
-          ) : null}
-
-          <FlowCards wsId={workspace?.id} can={can} />
-
-          <View
-            className="flex-row self-start rounded-lg p-1"
-            style={{ backgroundColor: p.muted, gap: 2 }}
-          >
-            {PERIODS.map((option) => {
-              const active = period === option.value;
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="button"
-                  onPress={() => setPeriod(option.value)}
-                  className="rounded-md px-3"
-                  style={({ pressed }) => ({
-                    minHeight: 44,
-                    justifyContent: "center",
-                    backgroundColor: active ? p.card : "transparent",
-                    opacity: pressed ? 0.8 : 1,
-                  })}
-                >
-                  <Text
-                    className="text-[13px] font-semibold"
-                    style={{ color: active ? p.foreground : p.mutedForeground }}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-            <StatCard
-              icon="file-text"
-              label="Challans issued"
-              value={stats.count}
-              delta={stats.delta.count}
-              sub={`${stats.salesCount} sales · ${stats.outwardCount} job work`}
-              loading={loading}
-            />
-            <StatCard
-              icon="box"
-              label="Total packages"
-              value={stats.totalBoxes}
-              delta={stats.delta.boxes}
-              format={fmtBoxes}
-              sub="Boxes & sacks"
-              loading={loading}
-            />
-          </View>
-          <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-            <StatCard
-              icon="anchor"
-              label="Net weight"
-              value={stats.totalNetWt}
-              delta={stats.delta.netWt}
-              format={fmtWt}
-              sub="Kilograms"
-              loading={loading}
-            />
-            <StatCard
-              icon="send"
-              label="Job-work sendings"
-              value={stats.outwardCount}
-              delta={stats.outwardDelta}
-              sub="Challans sent for dyeing"
-              loading={loading}
-            />
-          </View>
-
-          <Card>
-            <View className="flex-row items-center justify-between">
-              <Text
-                className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Job-work volume over time
-              </Text>
-              <Text className="text-xs" style={{ color: p.mutedForeground }}>
-                Kilograms
-              </Text>
-            </View>
-            <View className="mt-3">
-              {loading ? (
-                <Skeleton className="h-52 w-full rounded-md" />
-              ) : (
-                <VolumeChart buckets={volumeBuckets} />
-              )}
-            </View>
-          </Card>
-
-          <Card>
-            <View className="flex-row items-center justify-between">
-              <Text
-                className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Dispatch by customer
-              </Text>
-            </View>
-            <View className="mt-3">
-              {loading ? (
-                <Skeleton className="h-52 w-full rounded-md" />
-              ) : (
-                <CustomerDonut
-                  list={salesWindow}
-                  canViewCustomers={canViewCustomers}
-                />
-              )}
-            </View>
-          </Card>
-
-          <Card>
-            <View className="flex-row items-center justify-between">
-              <Text
-                className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
-              >
-                Recent challans
-              </Text>
+          {PERIODS.map((option) => {
+            const active = period === option.value;
+            return (
               <Pressable
+                key={option.value}
                 accessibilityRole="button"
-                onPress={() => router.push("/(tabs)/challans")}
-                className="flex-row items-center"
-                style={{ gap: 4 }}
+                onPress={() => setPeriod(option.value)}
+                className="rounded-md px-3"
+                style={({ pressed }) => ({
+                  minHeight: 44,
+                  justifyContent: "center",
+                  backgroundColor: active ? p.card : "transparent",
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
                 <Text
-                  className="text-xs font-semibold"
-                  style={{ color: p.primary }}
+                  className="text-[13px] font-semibold"
+                  style={{ color: active ? p.foreground : p.mutedForeground }}
                 >
-                  View all
+                  {option.label}
                 </Text>
-                <Feather name="arrow-up-right" size={12} color={p.primary} />
               </Pressable>
-            </View>
-            <View className="mt-1">
-              {loading ? (
-                <View className="gap-3 py-3">
-                  {[0, 1, 2, 3].map((i) => (
-                    <View
-                      key={i}
-                      className="flex-row items-center"
-                      style={{ gap: 12 }}
-                    >
-                      <Skeleton className="h-10 w-10 rounded-md" />
-                      <View className="flex-1 gap-2">
-                        <Skeleton className="h-4 w-2/3" />
-                        <Skeleton className="h-3 w-1/3" />
-                      </View>
-                      <Skeleton className="h-4 w-16" />
-                    </View>
-                  ))}
-                </View>
-              ) : recent.length === 0 ? (
-                <EmptyState
-                  icon="file-text"
-                  title={`No challans yet for FY ${currentFy?.label ?? ""}`}
-                  message="Create your first challan to see it here."
-                  action={
-                    canCreate ? (
-                      <Button
-                        label="Create challan"
-                        onPress={() =>
-                          router.push({
-                            pathname: "/challan-editor",
-                            params: { kind: "sales" },
-                          })
-                        }
-                      />
-                    ) : undefined
-                  }
-                />
-              ) : (
-                recent.map((r, i) => (
-                  <Pressable
-                    key={`${r.type}-${r.id}`}
-                    accessibilityRole="button"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/challan-detail",
-                        params: { id: r.id, kind: r.type },
-                      })
-                    }
-                    className="flex-row items-center py-3"
-                    style={({ pressed }) => ({
-                      gap: 12,
-                      opacity: pressed ? 0.7 : 1,
-                      borderBottomWidth: i < recent.length - 1 ? 1 : 0,
-                      borderBottomColor: p.border,
-                    })}
-                  >
-                    <View
-                      className="h-7 w-7 items-center justify-center rounded-md"
-                      style={{
-                        backgroundColor:
-                          r.type === "sales" ? p.accentSoft : `${p.warning}1a`,
-                      }}
-                    >
-                      <Feather
-                        name={r.type === "sales" ? "file-text" : "send"}
-                        size={14}
-                        color={r.type === "sales" ? p.accentInk : p.warning}
-                      />
-                    </View>
-                    <View className="min-w-0 flex-1">
-                      <View
-                        className="flex-row items-center"
-                        style={{ gap: 8 }}
-                      >
-                        <Text
-                          className="text-[13px] font-bold"
-                          style={{ color: p.primary, fontFamily: "monospace" }}
-                          numberOfLines={1}
-                        >
-                          {r.number}
-                        </Text>
-                        <TypeChip type={r.type} />
-                      </View>
-                      <Text
-                        className="mt-0.5 text-xs"
-                        style={{ color: p.mutedForeground }}
-                        numberOfLines={1}
-                      >
-                        {r.party} · {r.date}
-                      </Text>
-                    </View>
-                    <View className="shrink-0 items-end">
-                      <Text
-                        className="text-sm font-semibold"
-                        style={{ color: p.foreground }}
-                      >
-                        {fmtBoxes(r.boxes)}{" "}
-                        <Text
-                          className="text-xs font-normal"
-                          style={{ color: p.mutedForeground }}
-                        >
-                          {r.type === "sales" ? "boxes" : "sacks"}
-                        </Text>
-                      </Text>
-                      <Text
-                        className="text-xs"
-                        style={{ color: p.mutedForeground }}
-                      >
-                        {fmtWt(r.netWt)} kg
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))
-              )}
-            </View>
-          </Card>
+            );
+          })}
+        </View>
 
-          {visibleQuickLinks.length > 0 ? (
-            <Card>
+        <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+          <StatCard
+            icon="file-text"
+            label="Challans issued"
+            value={stats.count}
+            delta={stats.delta.count}
+            sub={`${stats.salesCount} sales · ${stats.outwardCount} job work`}
+            loading={loading}
+          />
+          <StatCard
+            icon="box"
+            label="Total packages"
+            value={stats.totalBoxes}
+            delta={stats.delta.boxes}
+            format={fmtBoxes}
+            sub="Boxes & sacks"
+            loading={loading}
+          />
+        </View>
+        <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+          <StatCard
+            icon="anchor"
+            label="Net weight"
+            value={stats.totalNetWt}
+            delta={stats.delta.netWt}
+            format={fmtWt}
+            sub="Kilograms"
+            loading={loading}
+          />
+          <StatCard
+            icon="send"
+            label="Job-work sendings"
+            value={stats.outwardCount}
+            delta={stats.outwardDelta}
+            sub="Challans sent for dyeing"
+            loading={loading}
+          />
+        </View>
+
+        <Card>
+          <View className="flex-row items-center justify-between">
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: p.mutedForeground }}
+            >
+              Job-work volume over time
+            </Text>
+            <Text className="text-xs" style={{ color: p.mutedForeground }}>
+              Kilograms
+            </Text>
+          </View>
+          <View className="mt-3">
+            {loading ? (
+              <Skeleton className="h-52 w-full rounded-md" />
+            ) : (
+              <VolumeChart buckets={volumeBuckets} />
+            )}
+          </View>
+        </Card>
+
+        <Card>
+          <View className="flex-row items-center justify-between">
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: p.mutedForeground }}
+            >
+              Dispatch by customer
+            </Text>
+          </View>
+          <View className="mt-3">
+            {loading ? (
+              <Skeleton className="h-52 w-full rounded-md" />
+            ) : (
+              <CustomerDonut
+                list={salesWindow}
+                canViewCustomers={canViewCustomers}
+              />
+            )}
+          </View>
+        </Card>
+
+        <Card>
+          <View className="flex-row items-center justify-between">
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: p.mutedForeground }}
+            >
+              Recent challans
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/(tabs)/challans")}
+              className="flex-row items-center"
+              style={{ gap: 4 }}
+            >
               <Text
-                className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: p.mutedForeground }}
+                className="text-xs font-semibold"
+                style={{ color: p.primary }}
               >
-                Quick links
+                View all
               </Text>
-              <View className="mt-2">
-                {visibleQuickLinks.map((link, i) => (
-                  <Pressable
-                    key={link.to}
-                    accessibilityRole="button"
-                    onPress={() => router.push(link.to)}
-                    className="flex-row items-center rounded-md px-2 py-3"
-                    style={({ pressed }) => ({
-                      gap: 12,
-                      opacity: pressed ? 0.7 : 1,
-                      borderBottomWidth:
-                        i < visibleQuickLinks.length - 1 ? 1 : 0,
-                      borderBottomColor: p.border,
-                    })}
+              <Feather name="arrow-up-right" size={12} color={p.primary} />
+            </Pressable>
+          </View>
+          <View className="mt-1">
+            {loading ? (
+              <View className="gap-3 py-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <View
+                    key={i}
+                    className="flex-row items-center"
+                    style={{ gap: 12 }}
                   >
-                    <View
-                      className="h-7 w-7 items-center justify-center rounded-md"
-                      style={{ backgroundColor: p.accentSoft }}
-                    >
-                      <Feather name={link.icon} size={14} color={p.accentInk} />
+                    <Skeleton className="h-10 w-10 rounded-md" />
+                    <View className="flex-1 gap-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-3 w-1/3" />
                     </View>
-                    <View className="min-w-0 flex-1">
-                      <Text
-                        className="text-sm font-semibold"
-                        style={{ color: p.foreground }}
-                      >
-                        {link.title}
-                      </Text>
-                      <Text
-                        className="text-xs"
-                        style={{ color: p.mutedForeground }}
-                        numberOfLines={1}
-                      >
-                        {link.desc}
-                      </Text>
-                    </View>
-                    <Feather
-                      name="arrow-up-right"
-                      size={14}
-                      color={p.mutedForeground}
-                    />
-                  </Pressable>
+                    <Skeleton className="h-4 w-16" />
+                  </View>
                 ))}
               </View>
-            </Card>
-          ) : null}
-        </ScrollView>
-      </Screen>
-      <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} />
-    </View>
+            ) : recent.length === 0 ? (
+              <EmptyState
+                icon="file-text"
+                title={`No challans yet for FY ${currentFy?.label ?? ""}`}
+                message="Create your first challan to see it here."
+                action={
+                  canCreate ? (
+                    <Button
+                      label="Create challan"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/challan-editor",
+                          params: { kind: "sales" },
+                        })
+                      }
+                    />
+                  ) : undefined
+                }
+              />
+            ) : (
+              recent.map((r, i) => (
+                <Pressable
+                  key={`${r.type}-${r.id}`}
+                  accessibilityRole="button"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/challan-detail",
+                      params: { id: r.id, kind: r.type },
+                    })
+                  }
+                  className="flex-row items-center py-3"
+                  style={({ pressed }) => ({
+                    gap: 12,
+                    opacity: pressed ? 0.7 : 1,
+                    borderBottomWidth: i < recent.length - 1 ? 1 : 0,
+                    borderBottomColor: p.border,
+                  })}
+                >
+                  <View
+                    className="h-7 w-7 items-center justify-center rounded-md"
+                    style={{
+                      backgroundColor:
+                        r.type === "sales" ? p.accentSoft : `${p.warning}1a`,
+                    }}
+                  >
+                    <Feather
+                      name={r.type === "sales" ? "file-text" : "send"}
+                      size={14}
+                      color={r.type === "sales" ? p.accentInk : p.warning}
+                    />
+                  </View>
+                  <View className="min-w-0 flex-1">
+                    <View className="flex-row items-center" style={{ gap: 8 }}>
+                      <Text
+                        className="text-[13px] font-bold"
+                        style={{ color: p.primary, fontFamily: "monospace" }}
+                        numberOfLines={1}
+                      >
+                        {r.number}
+                      </Text>
+                      <TypeChip type={r.type} />
+                    </View>
+                    <Text
+                      className="mt-0.5 text-xs"
+                      style={{ color: p.mutedForeground }}
+                      numberOfLines={1}
+                    >
+                      {r.party} · {r.date}
+                    </Text>
+                  </View>
+                  <View className="shrink-0 items-end">
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: p.foreground }}
+                    >
+                      {fmtBoxes(r.boxes)}{" "}
+                      <Text
+                        className="text-xs font-normal"
+                        style={{ color: p.mutedForeground }}
+                      >
+                        {r.type === "sales" ? "boxes" : "sacks"}
+                      </Text>
+                    </Text>
+                    <Text
+                      className="text-xs"
+                      style={{ color: p.mutedForeground }}
+                    >
+                      {fmtWt(r.netWt)} kg
+                    </Text>
+                  </View>
+                </Pressable>
+              ))
+            )}
+          </View>
+        </Card>
+
+        {visibleQuickLinks.length > 0 ? (
+          <Card>
+            <Text
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: p.mutedForeground }}
+            >
+              Quick links
+            </Text>
+            <View className="mt-2">
+              {visibleQuickLinks.map((link, i) => (
+                <Pressable
+                  key={link.to}
+                  accessibilityRole="button"
+                  onPress={() => router.push(link.to)}
+                  className="flex-row items-center rounded-md px-2 py-3"
+                  style={({ pressed }) => ({
+                    gap: 12,
+                    opacity: pressed ? 0.7 : 1,
+                    borderBottomWidth: i < visibleQuickLinks.length - 1 ? 1 : 0,
+                    borderBottomColor: p.border,
+                  })}
+                >
+                  <View
+                    className="h-7 w-7 items-center justify-center rounded-md"
+                    style={{ backgroundColor: p.accentSoft }}
+                  >
+                    <Feather name={link.icon} size={14} color={p.accentInk} />
+                  </View>
+                  <View className="min-w-0 flex-1">
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: p.foreground }}
+                    >
+                      {link.title}
+                    </Text>
+                    <Text
+                      className="text-xs"
+                      style={{ color: p.mutedForeground }}
+                      numberOfLines={1}
+                    >
+                      {link.desc}
+                    </Text>
+                  </View>
+                  <Feather
+                    name="arrow-up-right"
+                    size={14}
+                    color={p.mutedForeground}
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </Card>
+        ) : null}
+      </ScrollView>
+    </Screen>
   );
 }

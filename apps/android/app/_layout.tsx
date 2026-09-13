@@ -28,6 +28,7 @@ import { configureAndroidToasts } from "@/lib/toasts";
 import { initTheme } from "@/lib/theme";
 import { initUpdateChecks } from "@/lib/updates";
 import { UpdateBanner, UpdateBlockingDialog } from "@/ui/update-surface";
+import { NavDrawer } from "@/ui/nav-drawer";
 
 // Boot before first render — idempotent under StrictMode double-mount.
 configureAndroidCore();
@@ -174,6 +175,7 @@ export default function RootLayout() {
               <Stack.Screen name="reports" />
             </Stack>
           </View>
+          <NavDrawer />
           <UpdateBlockingDialog />
         </BootBoundary>
       </SafeAreaProvider>

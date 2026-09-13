@@ -31,7 +31,6 @@ import {
   Wifi,
   WifiOff,
   X,
-  MoreHorizontal,
 } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { Button } from "@/ui/components/ui/button";
@@ -49,7 +48,6 @@ import {
   useSync,
 } from "@kataria-syntex/app-core";
 import {
-  BOTTOM_ITEMS,
   isItemActive,
   isSubActive,
   PACKER_SECTIONS,
@@ -428,10 +426,26 @@ function MobileDrawerContent({
   const currentFy = useAuth((s) => s.currentFy);
   const online = useSync((s) => s.online);
   const pendingCount = useSync((s) => s.pendingCount);
+  const logout = useAuth((s) => s.logout);
+  const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const can = useCanSee();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loggingOut, setLoggingOut] = useState(false);
   const toggleGroup = (to: string) =>
     setExpanded((prev) => ({ ...prev, [to]: !prev[to] }));
+
+  const onLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate("/auth", { replace: true });
+    } catch {
+      // Local session state is already torn down by the store; stay put.
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
@@ -512,75 +526,35 @@ function MobileDrawerContent({
               </div>
             </div>
           </div>
-          {can(["create_challan"]) && (
-            <Button asChild variant="accent" className="shrink-0">
-              <Link to="/challans/new" onClick={onClose}>
-                <Plus className="size-4" aria-hidden />
-                New challan
-              </Link>
-            </Button>
-          )}
+          <ButtonCapsule className="shrink-0">
+            <CircleButton
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Light theme" : "Dark theme"}
+              aria-label={theme === "dark" ? "Light theme" : "Dark theme"}
+            >
+              {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+            </CircleButton>
+            <CircleButton
+              onClick={() => void onLogout()}
+              disabled={loggingOut}
+              aria-label="Log out"
+              title="Log out"
+              className="[@media(hover:hover)]:hover:text-destructive"
+            >
+              <LogOut aria-hidden />
+            </CircleButton>
+          </ButtonCapsule>
         </div>
+        {can(["create_challan"]) && (
+          <Button asChild variant="accent" className="mt-3 w-full">
+            <Link to="/challans/new" onClick={onClose}>
+              <Plus className="size-4" aria-hidden />
+              New challan
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
-  );
-}
-
-function MobileBottomNav({
-  onOpenDrawer,
-  pendingBadge,
-}: {
-  onOpenDrawer: () => void;
-  pendingBadge?: number;
-}) {
-  const { pathname } = useLocation();
-  const can = useCanSee();
-  return (
-    <nav
-      aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/80 backdrop-blur-xl md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-    >
-      <div className="mx-auto flex max-w-[480px] items-stretch justify-around gap-1 px-2 py-1.5">
-        {BOTTOM_ITEMS.filter((item) => can(item.permissions)).map((item) => {
-          const active = item.end
-            ? pathname === item.to
-            : pathname.startsWith(item.to);
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={cn(
-                "flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] transition-colors",
-                active
-                  ? "bg-accent font-medium text-accent-foreground"
-                  : "font-medium text-muted-foreground active:bg-muted/60",
-              )}
-            >
-              <item.icon className="size-4" aria-hidden />
-              <span className="leading-none tracking-tight">{item.label}</span>
-            </NavLink>
-          );
-        })}
-        <button
-          type="button"
-          onClick={onOpenDrawer}
-          className="flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 text-[11px] font-medium text-muted-foreground transition-colors active:bg-muted/60"
-          aria-label="Open menu"
-        >
-          <span className="relative grid place-items-center">
-            <MoreHorizontal className="size-4" aria-hidden />
-            {pendingBadge != null && pendingBadge > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-destructive text-[11px] font-medium leading-none text-destructive-foreground">
-                {pendingBadge > 9 ? "9+" : pendingBadge}
-              </span>
-            )}
-          </span>
-          <span className="leading-none">More</span>
-        </button>
-      </div>
-    </nav>
   );
 }
 
@@ -696,7 +670,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
   const reduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
-  const pendingCount = useSync((s) => s.pendingCount);
   const [railCollapsed, setRailCollapsed] = useState(() => {
     try {
       return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
@@ -1001,11 +974,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
             </main>
           </div>
         </div>
-
-        <MobileBottomNav
-          onOpenDrawer={() => setMobileOpen(true)}
-          pendingBadge={pendingCount}
-        />
 
         {/* Mobile nav — full-screen sheet. Opened by buttons, closed by X,
             Escape or navigation. No scrim: the sheet covers the viewport. */}

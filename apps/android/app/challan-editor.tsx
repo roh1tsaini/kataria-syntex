@@ -52,7 +52,7 @@ import {
 } from "@kataria-syntex/shared";
 import { usePalette, withAlpha, SCRIM } from "@/theme";
 import { Badge, Button, Field, Input, Screen } from "@/ui/kit";
-import { SyncBanner, SyncSheet } from "@/ui/sync";
+import { SyncStrip } from "@/ui/sync";
 import { fmtBoxes, fmtWt, todayLocal } from "@/lib/format";
 import { kindFromParam } from "@/lib/challan-kinds";
 import { useMastersLoad } from "@/lib/use-masters-load";
@@ -636,7 +636,7 @@ export default function ChallanEditorScreen() {
   const [importOpen, setImportOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
-  const [syncOpen, setSyncOpen] = useState(false);
+
   const [partyPickerOpen, setPartyPickerOpen] = useState(false);
   /** Row key + field ("denier" | "color") whose picker sheet is open. */
   const [rowPicker, setRowPicker] = useState<{
@@ -942,13 +942,14 @@ export default function ChallanEditorScreen() {
 
   return (
     <Screen
+      headerLabel={kind.title}
+      eyebrow={isEdit ? "Update record" : "Create dispatch note"}
       title={isEdit ? `Edit ${newLabel}` : `New ${newLabel}`}
-      subtitle={`${company?.name ?? "Company"} · number assigned when saved`}
+      description={`${company?.name ?? "Company"} · number assigned when saved`}
+      banner={<SyncStrip />}
     >
       <KeyboardAvoidingView behavior={undefined} className="flex-1">
         <View className="flex-1">
-          <SyncBanner onOpen={() => setSyncOpen(true)} />
-
           <ScrollView
             className="flex-1"
             contentContainerClassName="px-4 pb-6"
@@ -1446,8 +1447,6 @@ export default function ChallanEditorScreen() {
         onConfirm={onDiscard}
         onCancel={() => setDiscardOpen(false)}
       />
-
-      <SyncSheet open={syncOpen} onOpenChange={setSyncOpen} />
     </Screen>
   );
 }

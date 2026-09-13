@@ -25,6 +25,7 @@ import { setScheme } from "@/lib/theme";
 import { cn } from "@/lib/cn";
 import { fmtDate } from "@/lib/format";
 import { Badge, Button, Card, Input, Screen, Skeleton } from "@/ui/kit";
+import { SyncStrip } from "@/ui/sync";
 import { appVersion } from "@/lib/core-adapter";
 import { useUpdates } from "@/lib/updates";
 
@@ -469,12 +470,14 @@ function SettingsPage() {
 
   return (
     <Screen
+      eyebrow="Company profile"
       title="Company settings"
-      subtitle={
+      description={
         canEdit
           ? "Your company details and how challan numbers are generated."
           : "Read-only — only the owner can change these settings."
       }
+      banner={<SyncStrip />}
     >
       <ScrollView
         className="flex-1"

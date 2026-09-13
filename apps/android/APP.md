@@ -64,7 +64,7 @@ Latest stable majors; never downgrade to escape a break.
 | Layer     | Tech                                                                        |
 | --------- | --------------------------------------------------------------------------- |
 | Runtime   | React Native 0.86 · React 19 · Expo SDK 57                                  |
-| Routing   | expo-router (file-based, Stack + bottom Tabs)                               |
+| Routing   | expo-router (file-based, Stack + Tabs route container)                      |
 | Styling   | NativeWind 4.2 (Tailwind 3.4 classes → RN styles) + theme tokens (§8)       |
 | State     | zustand 5 — the shared `packages/app-core` stores                           |
 | Storage   | MMKV (`react-native-mmkv`) — synchronous KV for the offline engine          |
@@ -84,8 +84,8 @@ apps/android/
 │   ├── index.tsx              # auth gate
 │   ├── auth.tsx               # login (identifier → OTP/password), QR panel
 │   ├── login/scan/[code].tsx  # QR approve screen (camera)
-│   ├── (tabs)/                # bottom tabs: Dashboard · Challans · Job work · Packing · More
-│   │                          #   (each hidden unless the role holds its permission)
+│   ├── (tabs)/                # route container (no visible bar): Dashboard · Challans · Job work · Packing
+│   │                          #   Navigation is the full-screen NavDrawer, opened from the header avatar
 │   ├── challan-editor.tsx     # full-screen challan editor
 │   ├── challan-detail.tsx
 │   ├── returns.tsx · raw-material.tsx · packing.tsx · stock.tsx
@@ -102,8 +102,9 @@ apps/android/
 │   │   ├── use-masters-load.ts # load → block save → nonce-retry (editor forms)
 │   │   ├── challan-kinds.ts   # one kind table: registers, detail, editor
 │   │   ├── format.ts          # single home for number/date/count formatting
-│   │   ├── dashboard-math.ts · motion.ts · cn.ts
-│   ├── ui/                    # kit.tsx primitives, count-up.tsx (rolling digits),
+│   │   ├── dashboard-math.ts · motion.ts · cn.ts · nav-drawer.ts
+│   ├── ui/                    # kit.tsx primitives, app-header.tsx, nav-drawer.tsx,
+│   │                          # nav-sections.ts (drawer tree), count-up.tsx (rolling digits),
 │   │                          # sync.tsx, update-surface.tsx, qr-login-panel.tsx,
 │   │                          # feather.tsx icons, confirm.ts
 │   └── theme/

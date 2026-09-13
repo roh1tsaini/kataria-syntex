@@ -28,7 +28,8 @@ import {
   PageTitle,
   Skeleton,
 } from "@/ui/kit";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppHeader } from "@/ui/app-header";
+import { SyncStrip } from "@/ui/sync";
 import { uiStorage } from "@/lib/core-adapter";
 import { fmtBoxes, fmtWt } from "@/lib/format";
 
@@ -144,66 +145,74 @@ export default function ReportsRoute() {
 function ReportGrid() {
   const router = useRouter();
   const p = usePalette();
-  const insets = useSafeAreaInsets();
   return (
-    <ScrollView
-      className="flex-1"
-      contentContainerClassName="px-4 pb-8 gap-2.5"
-      style={{ backgroundColor: p.background }}
-    >
-      <Text
-        className="text-[11px] font-bold uppercase tracking-wider"
-        style={{ color: p.mutedForeground }}
+    <View className="flex-1" style={{ backgroundColor: p.background }}>
+      <AppHeader label="Reports" />
+      <SyncStrip />
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 pb-8 pt-5 gap-2.5"
       >
-        Insights
-      </Text>
-      <PageTitle>Reports</PageTitle>
-      <Text className="mb-1 text-[13px]" style={{ color: p.mutedForeground }}>
-        Totals by period, party and stock.
-      </Text>
-      {REPORTS.map((r) => (
-        <Pressable
-          key={r.id}
-          accessibilityRole="button"
-          onPress={() => router.push(`/reports?report=${r.id}`)}
-          className="flex-row items-start gap-3 rounded-xl border p-4"
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.7 : 1,
-            backgroundColor: p.card,
-            borderColor: p.border,
-          })}
+        <Text
+          className="text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: p.mutedForeground }}
         >
-          <View
-            className="h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-            style={{ backgroundColor: p.muted }}
+          Insights
+        </Text>
+        <PageTitle className="mt-1.5">Reports</PageTitle>
+        <Text
+          className="mb-1 mt-1.5 text-[15px] leading-6"
+          style={{ color: p.mutedForeground }}
+        >
+          Totals by period, party and stock.
+        </Text>
+        {REPORTS.map((r) => (
+          <Pressable
+            key={r.id}
+            accessibilityRole="button"
+            onPress={() => router.push(`/reports?report=${r.id}`)}
+            className="flex-row items-start gap-3 rounded-xl border p-4"
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
+              backgroundColor: p.card,
+              borderColor: p.border,
+            })}
           >
-            <Feather name={r.icon} size={18} color={p.mutedForeground} />
-          </View>
-          <View className="min-w-0 flex-1">
-            <Text
-              className="text-sm font-semibold tracking-tight"
-              style={{ color: p.foreground }}
+            <View
+              className="h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              style={{ backgroundColor: p.muted }}
             >
-              {r.label}
-            </Text>
-            <Text
-              className="mt-1 text-xs leading-relaxed"
-              style={{ color: p.mutedForeground }}
-            >
-              {r.description}
-            </Text>
-          </View>
-          <Feather name="arrow-up-right" size={16} color={p.mutedForeground} />
-        </Pressable>
-      ))}
-    </ScrollView>
+              <Feather name={r.icon} size={18} color={p.mutedForeground} />
+            </View>
+            <View className="min-w-0 flex-1">
+              <Text
+                className="text-sm font-semibold tracking-tight"
+                style={{ color: p.foreground }}
+              >
+                {r.label}
+              </Text>
+              <Text
+                className="mt-1 text-xs leading-relaxed"
+                style={{ color: p.mutedForeground }}
+              >
+                {r.description}
+              </Text>
+            </View>
+            <Feather
+              name="arrow-up-right"
+              size={16}
+              color={p.mutedForeground}
+            />
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 function ReportView({ reportId }: { reportId: string }) {
   const router = useRouter();
   const p = usePalette();
-  const insets = useSafeAreaInsets();
   const workspaceId = useAuth((s) => s.workspace?.id ?? "");
   const baseKey = `${workspaceId}:${reportId}`;
   const [data, setData] = useState<ReportResponse | null>(
@@ -318,11 +327,10 @@ function ReportView({ reportId }: { reportId: string }) {
   };
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: p.background, paddingTop: insets.top }}
-    >
-      <View className="flex-row items-center gap-1 px-4 pt-4">
+    <View className="flex-1" style={{ backgroundColor: p.background }}>
+      <AppHeader label="Reports" />
+      <SyncStrip />
+      <View className="flex-row items-center gap-1 px-3 pt-3">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Back to reports"
