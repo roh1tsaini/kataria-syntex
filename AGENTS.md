@@ -13,6 +13,13 @@ Before doing anything, ask the user **one** question:
 Then work ONLY on that target until told otherwise. Never change the other
 workspace "while you're in there".
 
+**Business-app exception — parity is always in scope.** The business app is
+two shells: `apps/app` (web/PWA + Electron) and `apps/android` (phone). A
+feature, UI, copy, motion, or business-flow change belongs to BOTH, in the
+same session (§2.3). The question picks where to start — it is never
+permission to skip the mirror. Only the owner can scope a change to one
+shell, in writing.
+
 ## 1. Communication style (mandatory)
 
 - Talk short. Write less — but fully.
@@ -82,6 +89,92 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   admin demo. If a screen looks dated next to macOS System Settings, Linear
   or Luma, it's not done.
 
+## 2.3 Web ↔ Android parity (mandatory for every business-app change)
+
+The business app is ONE product with two shells: `apps/app` (web/PWA +
+Electron) and `apps/android` (phone). **Web mobile is the source of truth** —
+Android is the same product at phone scale, not a native variant. A change
+that lands on one shell only is unfinished; never report it as done.
+
+### What "same" means
+
+- **Visual:** same structure, spacing, radii, control heights, colors, copy,
+  icons, empty/loading/error states as `apps/app` at the `≤sm` breakpoint.
+  `apps/app/design.md` is the contract; §4.1 maps the web mobile grammar onto
+  Android.
+- **Behavior:** same validation, navigation targets, confirmations, toasts
+  (copy via `friendlyError`), permission gates, pagination and paging copy.
+- **Data:** same fields, sorting, totals math; formatting from the shared
+  homes (`apps/app/src/main/ui/lib/format.ts` ↔
+  `apps/android/src/lib/format.ts`): en-IN grouping, weights to 3 decimals,
+  `DD Mon YYYY`.
+- **Motion:** same presets and grammar (`lib/motion.ts` mirrors web);
+  enter/exit mirror, exits ~20% faster, reduced motion collapses.
+- **Logic:** one home. Business logic, stores, offline/sync, error copy live
+  in `packages/app-core` / `packages/shared`; platform differences live ONLY
+  in the two adapter files (`apps/app/src/main/lib/platform.ts`,
+  `apps/android/src/lib/core-adapter.ts`). Never fork logic per shell.
+
+### Counterpart map (open the pair before editing either side)
+
+| Web (`apps/app`)                               | Android (`apps/android`)                         |
+| ---------------------------------------------- | ------------------------------------------------ |
+| `ui/pages/*.tsx`                               | `app/*.tsx` routes (+ `app/(tabs)/`)             |
+| `ui/components/app-shell.tsx` (mobile)         | `src/ui/app-header.tsx`, `src/ui/nav-drawer.tsx` |
+| `ui/components/nav-config.tsx`                 | `src/ui/nav-sections.ts`                         |
+| `ui/components/ui/*` primitives                | `src/ui/kit.tsx`, `src/ui/controls.tsx`          |
+| `ui/components/ui/dialog.tsx` (mobile sheet)   | `src/ui/morph-sheet.tsx`                         |
+| `ui/components/ui/date-picker.tsx` + calendar  | `src/ui/date-sheet.tsx`                          |
+| `ui/components/toast.tsx` (sonner)             | `src/lib/toasts.ts` + `src/ui/toast-overlay.tsx` |
+| `ui/components/motion.tsx`, `ui/lib/motion.ts` | `src/lib/motion.ts`, `src/ui/count-up.tsx`       |
+| `ui/components/update-surface.tsx`             | `src/ui/update-surface.tsx`                      |
+| `ui/components/sync-dialog.tsx`                | `src/ui/sync.tsx`                                |
+| `ui/components/page-skeletons.tsx` shapes      | the screen's own in-file skeleton                |
+
+### How to execute
+
+1. Read `design.md` and the web implementation first — web is truth.
+2. Change web (`apps/app`); business-logic changes go in `packages/*` so both
+   shells consume them.
+3. Mirror in `apps/android` against the web **mobile** rendering (base
+   Tailwind classes, `≤sm` branches) — open both files and port line by
+   line; never port from memory.
+4. New value or pattern? Add it to `design.md` first; palette changes
+   regenerate Android tokens (`apps/android/scripts/convert-tokens.ts`),
+   then code.
+5. Update docs in the same change: `design.md` (§4.1 + any untrue section),
+   `apps/android/APP.md` (§4/§8), `BACKLOG.md` for anything deferred.
+6. Platform limits (blur without a dep, OS pickers, share sheet): surface the
+   exact gap to the owner. Never silently diverge, and never copy a web bug —
+   report it and log it in `BACKLOG.md`.
+
+## 2.4 Verification protocol (continuous — not a final step)
+
+Verify while you work, and report exactly what ran. The agent that wrote the
+code never certifies it.
+
+1. **After each file/step:** `cd apps/android && bunx tsc --noEmit` (or the
+   touched app's typecheck) — fix before moving on.
+2. **Line-by-line before "done":** for every touched screen, read the
+   Android file against its web counterpart in the map above — copy,
+   structure, controls, data, motion. The report states which pairs were
+   compared.
+3. **Independent pass:** for UI/business changes, hand the working diff to a
+   separate verification agent (fresh context, no edit rights). It reads
+   `git diff` plus the web references and lists mismatches/regressions; the
+   author fixes, the verifier re-checks.
+4. **Gates (repo root):** `bun run typecheck`, `bun run lint`,
+   `bun run build`, `bun run format:check` (Windows CRLF noise is
+   pre-existing — at minimum every changed file passes
+   `bunx prettier --check`). Android: `bunx tsc --noEmit` +
+   `bunx expo export -p android` (Metro bundle).
+5. **Device checks belong to the owner:** motion feel, camera, install,
+   real-pixel layout. List them as "owner-verified pending" — never claim
+   them.
+6. **Report shape:** files changed (file:line), exact commands + results,
+   what was compared against what, unresolved/needs-owner, doc + backlog
+   impact.
+
 ## 3. Commands
 
 ```bash
@@ -132,6 +225,10 @@ bun run prebuild     # regenerate android/ from app.config.ts (CI does this)
    `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
    (builder hoisting), react-native (Expo SDK pairing), nitro (mmkv proven
    pair), drizzle v1 RC (ahead of stable), expo `~` (SDK pins).
+10. **Both shells or not done.** Every feature, UI, copy, motion, or
+    business-flow change lands in `apps/app` AND `apps/android` in the same
+    session (§2.3) — docs updated in the same change, verification run per
+    §2.4. Only the owner can scope a change to one shell, in writing.
 
 ## 4.0.1 Updates & versioning (owner-mandated, apps/app)
 
@@ -194,6 +291,8 @@ code and the owner's word are the truth.
   isn't written anywhere: ask the owner, then code it.
 - Ask questions ONE at a time. Fix/build ONE thing at a time.
 - Owner's spoken word beats code, docs, and past decisions.
+- A feature/UI request on the business app is a two-shell request (§2.3).
+  Never scope one shell out on your own.
 - No shortcuts, no placeholders, no template code. Best practices + latest
   stable tech. Hard work over hacks.
 - Dead code dies instantly. Old code is reference until a feature matches
@@ -273,3 +372,6 @@ build` all green from repo root, AND the feature verified by actually
   running it. The web renderer (web/PWA + Electron) must still compile as
   one bundle, and the Android app (apps/android) must still typecheck and
   Metro-bundle (`bunx expo export -p android`) — CI builds the signed APK.
+- A UI change is verified line-by-line against the web mobile rendering
+  (§2.3–§2.4); a business-logic change is done only when both shells
+  consume the same `packages/*` code.
