@@ -42,41 +42,145 @@ Every item below was confirmed against the actual code. Fix targets
       armed the undismissable dialog on web and Android alike. Fixed
       2026-09-15: the floor is ignored unless it is a non-zero semver, and
       `update-dialog.tsx` now also refuses to render a zero floor.
-- [ ] **A2 · `resolveMember` can serve the wrong workspace.**
-      `src/server/auth/perms.ts:47` takes `memRows[0]` with no `ORDER BY`;
-      `memberships` carries only the composite `(userId, workspaceId)` PK —
-      no unique index on `userId`. `routes/members.ts:64` enforces "one
-      workspace per account" in app logic alone. A user holding two
-      memberships is scoped to whichever row D1 returns first: silent
-      cross-workspace data access with no error.
-- [ ] **A3 · `printPage()` fires `window.print()` on Android.**
-      `src/main/lib/platform.ts:125` — its docstring says it is a no-op in
-      the Android WebView (challan pages route through the share sheet), but
-      the body does not implement the guard. `ui/pages/challans-print.tsx:69`
-      auto-fires it 350ms after the sheet renders.
+- [x] **A2 · `resolveMember` can serve the wrong workspace.** FIXED 2026-09-15.
+      Three layers, in the order they matter: 1. **Schema** — `uq_memberships_user` (unique index on `memberships.user_id`)
+      in `drizzle/20260914193209_mute_magneto`. The DB itself now rejects a
+      second membership; the violation is impossible rather than merely
+      unlikely. All three insert sites are safe to constrain
+      (`members.ts:64` and `auth-otp.ts:186` already gate it). 2. **Resolver** — `perms.ts` queries with `.limit(2)` and returns the new
+      `multiple_memberships` 409 if two rows land anyway, instead of
+      silently picking one. Same guard at the twin site `auth-qr.ts`. 3. **Error code** — registered in `shared/errors.ts` + a user message in
+      `app-core/errors.ts` (the `Record<ApiCode, string>` drift check makes
+      both sides mandatory).
+      Verified against local D1: first membership inserts, the second is
+      rejected with `UNIQUE constraint failed: memberships.user_id`. All 10
+      migrations apply clean. Gates: typecheck (incl. android) ✓, lint ✓,
+      build ✓. Version 0.12.1 → 0.12.2. NOTE: the migration runs against prod
+      in CI before deploy — if prod already holds a duplicate user the deploy
+      fails loudly at `wrangler d1 migrations apply`, which is the right
+      outcome but is the one thing I could not pre-verify from this machine.
+- [x] **A3 · `printPage()` fires `window.print()` on Android.** FIXED 2026-09-15.
+      Per the owner: Android must print the PDF _file_ through the native
+      print system, not the webpage. Done in both shells in one session (§2.3): - **Native** — `PrinterPlugin.java` + `PdfPageCount.java`. The plugin
+      decodes the PDF, reports its page count, and streams the bytes into the
+      framework's `ParcelFileDescriptor` via a `PrintDocumentAdapter`
+      subclass — Android's own UI then offers printer, copies, page range
+      and Save as PDF. The document is a real file, never the WebView page,
+      so nothing is re-rendered or re-typeset. Single-flight like
+      InstallerPlugin; no new permission; no Gradle change (`PrintManager`
+      is platform API; `minSdk 24` is the floor it needs).
+      Design note: the first draft used `IntentPrintDocumentAdapter`, which
+      is a framework-**internal** class with no public reference page — it
+      would not have compiled. The public path is subclassing
+      `PrintDocumentAdapter` and copying bytes in `onWrite`. - **TS** — `printPdfOnAndroid` in platform.ts (declared-local plugin
+      type + lazy `registerPlugin("Printer")`, matching the Installer
+      pattern); `printPage`'s docstring now matches its body. - **UI** — `challans-print.tsx` routes both call sites through one
+      `printChallan`: Android fetches the server PDF via `apiBlob` and prints
+      it; web/desktop keep `window.print()`. The auto-fire now skips Android
+      (a native dialog on page load would ambush the user); Android starts
+      from the button, which shows a busy state.
+      `safeFilename` exported from challan-pdf.ts so print and download agree.
+      Gates: typecheck (all 5, incl. android) ✓, lint ✓, build ✓.
+      **Java compiled** with javac 21 against stubs of the public
+      `android.print` + Capacitor APIs (exit 0) — this caught two real bugs
+      (a comment closing the block early, and `onWriteFinished` taking
+      `PageRange[]`, not a wrapper array). Still NOT a Gradle build: no Android
+      SDK on this machine, so `minSdk`/desugaring and the actual print dialog
+      need a device run to confirm. Version 0.12.2 → 0.12.3.
 
 ### High
 
-- [ ] **A4 · Deep links never wired + HTTPS filter missing.**
-      `src/main/lib/platform.ts:414` exports `initAndroidDeepLinks` — no
-      caller anywhere. `AndroidManifest.xml:26` registers only `kataria://`,
-      not the release origin `https` `/login/scan/<code>` filter that
-      `apps/android/APP.md:118` documents. Production QR-approve links land
-      on a blank screen.
-- [ ] **A5 · `colors.stockType` is mutable, corrupting the stock ledger.**
-      `routes/masters.ts:241` allows the `raw`/`dyed` flip; `lib/stock.ts:60`
-      freezes the type into each `stock_entries` row at write time. After a
-      flip the same physical yarn sits in two buckets with contradictory
-      totals. No validation blocks it.
-- [ ] **A6 · Deleting a color/denier can strand stock and document rows.**
-      `routes/masters.ts:140` only catches `FOREIGN KEY constraint failed`,
-      but `lib/db.ts:9` sets no `PRAGMA foreign_keys=ON` and its comment
-      claiming D1 enforces FKs itself is wrong (SQLite defaults to off). If
-      the check never fires, deleting a color still referenced by
-      `stock_entries` orphans rows or deletes a color a ledger points at.
+- [x] **A4 · Deep links never wired + HTTPS filter missing.** FIXED 2026-09-15.
+      Both shells, one session (§2.3): - **Listener was dead code** — `initAndroidDeepLinks` had zero callers.
+      Now wired at boot from `main.tsx` (Android branch only, before first
+      render so a cold-start link sets the initial location). Its callback
+      was replaced with a real router: `routeDeepLink` parses the URL and
+      navigates via `history.pushState` + `popstate`, the same seam the
+      notification-tap path already uses. - **Manifest claimed the wrong scheme** — QR payloads are https
+      (`auth-qr.ts:98` builds `<origin>/login/scan/<code>`), but only
+      `kataria://` was registered. Added a second intent filter claiming
+      `https` + `pathPrefix=/login/scan/` on the release host. `pathPrefix`
+      (not `/`) keeps the browser the handler for everything else. - **Host is build-injected** — `manifestPlaceholders.APP_HOST` in
+      app/build.gradle from `findProperty('APP_HOST')`, and CI passes the
+      same `vars.APP_URL` the web bundle bakes as `VITE_API_URL` via
+      `-PAPP_HOST`. Local builds default to `localhost` so the manifest
+      still merges. - **Parser** — `parseScanUrl` exported and unit-checked across 8 cases
+      (https payload, custom scheme with and without authority, lowercase
+      normalisation, query/fragment suffix, and 3 non-scan URLs that must
+      return null so a link can't navigate the app arbitrarily). ALL GREEN.
+      The test caught a real bug: `new URL()` reads the first segment of a
+      scheme-only `kataria://login/scan/X` as the host, so pathname started
+      at `/scan` and the match failed. Dropped `URL` for a direct path
+      regex, which handles every shape.
+      **Not App Links**: `autoVerify="false"`. Verifying would need
+      `.well-known/assetlinks.json` hosted on the web origin, which does not
+      exist and is a deploy-side change outside this repo. Until it ships,
+      Android may show a chooser for a login link — acceptable for one path.
+      Gates: typecheck (5) ✓, lint ✓, build ✓, android tsc ✓; manifest
+      re-parsed with xml2js (3 intent filters, valid). Version 0.12.3 → 0.12.4.
+- [x] **A5 · `colors.stockType` is mutable, corrupting the stock ledger.**
+      FIXED 2026-09-15.
+      `stockType` is not an editable attribute — it is the partition key
+      between the two stock ledgers. `lib/stock.ts` freezes it into every
+      `stock_entries` row at write time and `summarizeStockLedger` groups by
+      that frozen value, so flipping a colour after yarn is booked moves the
+      master while its history stays in the old bucket: one colour's yarn
+      split across two ledgers with contradictory totals. - **Server** — `masters.ts` declares a colors-specific
+      `PUT /masters/colors/:id` that re-validates with `colorBody`,
+      fetches the existing row, and only when the requested `stockType`
+      differs from the stored one does it probe `stock_entries` for any
+      row of that colour, limited to 1. A hit returns
+      `color_type_locked` 409. Name/code edits and same-type saves pass
+      through untouched — the guard never runs for them. - **Client** — the generic `registerMaster` PUT had no hook for
+      master-specific validation, which is why the override route exists
+      rather than a parameter. The store awaits the PUT before refreshing,
+      so a 409 mutates nothing local; the existing `friendlyError` path
+      surfaces the message as both a field error and a toast in the colour
+      dialog. `color_type_locked` is registered on both sides of the typed
+      contract (`shared/errors.ts` ↔ `app-core/errors.ts`), which is what
+      makes the drift check fail typecheck if either side drops it.
+      Gates: typecheck, lint, build. No migration — the guard is read-only
+      against `stock_entries`. Version 0.12.4 → 0.12.5.
+      **Correction found while building A6**: Hono dispatches the FIRST
+      matching handler, so an override registered after the generic
+      `registerMaster` routes is dead code. This A5 route was first
+      appended at the file tail and never ran — `PUT /colors/:id` hit the
+      generic handler with no lock check. Both overrides now live in
+      `registerMasterOverrides()`, called before any `registerMaster(...)`.
+- [x] **A6 · Deleting a color/denier can strand stock and document rows.**
+      FIXED 2026-09-15. Per the owner's direction: **archive instead of
+      refuse** — a master with history should be removed from pickers, not
+      blocked with an error. - **Schema** — nullable `archivedAt` on `colors` and `deniers`
+      (`20260914203136_archive_marrow`: two `ALTER TABLE … ADD archived_at`).
+      Applied clean against local D1. Null = live; a timestamp = archived. - **DELETE** — `archiveOrDelete(c, kind)` is registered on literal
+      `/colors/:id` and `/deniers/:id` in `registerMasterOverrides()`,
+      before the generic routes (Hono: first match wins). It probes the
+      full reference graph by id **and by copied name** — recipes and the
+      four `*_items` tables (challan, job-work return, raw-material,
+      packing) on both, plus `stock_entries` on name only since the ledger
+      carries no color/denier FK at all. One hit → `archivedAt = now`,
+      published, `{ ok: true, archived: true }`. No hits → the ordinary
+      delete, still guarded by the FK catch. - **Reads filter archived out** — `registerMaster`'s GET (masters list
+      and every picker), `validateMasters` (challan save validation),
+      `recipes.ts` recipe create, and `lib/stock.ts`'s stockType lookup.
+      Archived masters can no longer be selected for new work; existing
+      documents keep rendering from their own snapshot columns. - **Client** — the store's `remove` reads the `archived` flag and
+      throws `ArchiveInsteadOfDeleteError`, exported from app-core. Both
+      delete sites (`colors.tsx`, `masters.tsx`) report _"X archived —
+      It has stock or challan history, so it's hidden from pickers — that
+      history keeps its name."_ rather than claiming a delete that didn't
+      happen. The post-delete refresh drops the row from the list. - **Item tables carry no `workspace_id`** (they scope through their
+      parent document), so the probe on them is by id+name only. It is
+      conservative rather than precisely scoped: a _name_ collision with
+      another workspace's document would archive a row that could have
+      been deleted. That errs toward preserving history, which is the
+      point of the fix; a future pass can join through the parent table
+      if the false-positive rate matters.
+      Gates: typecheck (5) ✓, lint ✓, build ✓, android tsc ✓; local D1
+      migration ✓. Version 0.12.5 → 0.12.6.
 - [ ] **A7 · Sync-dialog Retry swallows failures.**
       `ui/components/sync-dialog.tsx:217` — `try { await retryErrored(...)
-    } finally { setBusy(false) }` with no `catch`. The button re-enables
+  } finally { setBusy(false) }` with no `catch`. The button re-enables
       with no error text, no toast, and a floating unhandled rejection — on
       the one screen whose job is to report queue state.
 - [ ] **A8 · Every `<Select>` opens ~2× slower than its own contract.**
@@ -87,7 +191,7 @@ Every item below was confirmed against the actual code. Fix targets
       notification-banner dwell — the wrong grammar on every menu.
 - [ ] **A9 · Offline challan numbering converts a clash into a raw 500.**
       `lib/document-pipeline.ts:1001` — the batch catch shapes `UNIQUE
-    constraint failed` into a 409 only when `input.offline` is set, and
+  constraint failed` into a 409 only when `input.offline` is set, and
       the clash pre-check is TOCTOU. Two devices issuing offline numbers can
       both pass it; one then gets an unexplained 500.
 - [ ] **A10 · Raw `YYYY-MM-DD` dates on the two most-used screens.**
@@ -138,7 +242,7 @@ Every item below was confirmed against the actual code. Fix targets
 - [ ] **A18 · `POST /api/members/invite` has no rate-limit budget.**
       `routes/members.ts:36` — returns three distinguishable outcomes
       (`phone_already_registered` 409 / `attached: true` / `attached:
-    false`), an enumeration oracle, but unlike `/lookup` it never calls
+  false`), an enumeration oracle, but unlike `/lookup` it never calls
       `consumeBudget`.
 - [ ] **A19 · `POST /api/challans/:id/pdf` has no permission gate.**
       `routes/challans.ts:314` — `requireAuth` + `resolveMember()` only; a
@@ -158,7 +262,7 @@ Every item below was confirmed against the actual code. Fix targets
 - [ ] **A22 · `UpdateDialog` on web can become an undismissable dead end.**
       `ui/components/update-dialog.tsx:93` → `store/updates.ts:239` —
       `installUpdate()` on web now does only `if (requiredMinVersion)
-    window.location.reload()`. If the 426 floor fires before the SW has
+  window.location.reload()`. If the 426 floor fires before the SW has
       precached the new build (install failed, deploy too fresh), the reload
       re-serves the old shell, 426s again, and the button can never work —
       with no error shown.
