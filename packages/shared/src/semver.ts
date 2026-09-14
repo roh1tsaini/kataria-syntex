@@ -16,6 +16,25 @@ export function compareSemver(a: string, b: string): number {
   return 0;
 }
 
+/**
+ * `minAppVersion` when no breaking change has shipped — the package.json
+ * default. `0.0.0` is falsy-looking but a TRUTHY string, so any code that
+ * tests the raw value (rather than this predicate) treats "no floor" as a
+ * real one and arms the blocking update dialog on every client.
+ */
+export const NO_UPDATE_FLOOR = "0.0.0";
+
+/**
+ * True only when a minVersion value actually forces an update. Anything
+ * absent or equal to the sentinel means "no floor": the caller must ignore
+ * it rather than raise the undismissable update dialog.
+ */
+export function hasUpdateFloor(minVersion: string | null | undefined): boolean {
+  if (typeof minVersion !== "string") return false;
+  if (minVersion.trim() === "") return false;
+  return compareSemver(minVersion, NO_UPDATE_FLOOR) > 0;
+}
+
 function parse(v: string): [number, number, number] {
   const parts = v.trim().replace(/^v/, "").split(".");
   const num = (s: string | undefined) => {

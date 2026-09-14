@@ -5,6 +5,7 @@
  * Bearer token). Auth and error-code rules are identical on every shell.
  */
 
+import { hasUpdateFloor } from "@kataria-syntex/shared";
 import { core } from "./adapter";
 import { randomId } from "./offline/core";
 
@@ -43,14 +44,16 @@ export function setUpdateRequiredHandler(
   onUpdateRequired = fn;
 }
 
-/** Extracts the force-update floor from a 426 body and raises the dialog. */
+/** Extracts the force-update floor from a 426 body and raises the dialog.
+ * The sentinel (no breaking change shipped) is truthy as a string — filter
+ * it here too, so a malformed body can never raise the dialog. */
 function raiseUpdateRequired(data: unknown): void {
   if (!onUpdateRequired) return;
-  const min =
+  const raw =
     data !== null && typeof data === "object" && "minVersion" in data
       ? (data as { minVersion: unknown }).minVersion
       : undefined;
-  if (typeof min === "string" && min) onUpdateRequired(min);
+  if (typeof raw === "string" && hasUpdateFloor(raw)) onUpdateRequired(raw);
 }
 
 /** Absolute API origin — "" means same-origin (web dev proxy). */

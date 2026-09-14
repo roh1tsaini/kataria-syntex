@@ -24,7 +24,7 @@
  * ships instead of nagging on every load.
  */
 import { create } from "zustand";
-import { compareSemver } from "@kataria-syntex/shared";
+import { compareSemver, hasUpdateFloor } from "@kataria-syntex/shared";
 import {
   apiOrigin,
   createEtaEstimator,
@@ -170,6 +170,8 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       // read only fills the Settings version line and the 426 floor.)
       const manifest = await fetchManifest();
       if (!manifest) return "error";
+      // The sentinel ("no breaking change shipped") is dropped inside
+      // markRequired — see hasUpdateFloor.
       if (manifest.minVersion) get().markRequired(manifest.minVersion);
       set({
         latestVersion: manifest.version,
@@ -249,6 +251,10 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   markRequired: (minVersion) => {
+    // The only setter of the floor — guard here, not at every consumer. A
+    // published manifest carries the sentinel when no breaking change has
+    // shipped; storing it would arm the undismissable dialog for nothing.
+    if (!hasUpdateFloor(minVersion)) return;
     const current = get().requiredMinVersion;
     // Keep the highest floor ever seen this session.
     if (!current || compareSemver(minVersion, current) > 0) {

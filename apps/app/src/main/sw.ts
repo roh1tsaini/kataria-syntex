@@ -7,9 +7,9 @@
  * - install caches every manifest entry SEQUENTIALLY, skipping files already
  *   cached by the previous version, and broadcasts byte progress to the app
  *   (ks:sw-progress messages) so Settings can show
- *   "34% · 12.8 of 38.1 MB · ~20s left" while a deploy downloads. The banner
- *   stays silent during the download — it only appears once the build is
- *   ready to apply.
+ *   "34% · 12.8 of 38.1 MB · ~20s left" while a deploy downloads. A routine
+ *   deploy renders no surface at all — the readout is the only place this
+ *   progress appears.
  * - fetch serves precached assets cache-first, network-first for navigations
  *   (fresh shell on every load, precached index.html as the offline
  *   fallback) — never for /api/* or /releases/* — and caches the Inter TTFs

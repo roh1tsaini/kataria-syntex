@@ -26,10 +26,12 @@
  *   app/desktop/linux/<*.AppImage>         + latest-linux.yml
  *   app/desktop/mac/<*.dmg>                (no yml — unsigned, no updater)
  *   app/android/<*.apk>
- *   app/android/latest.json                — version + minVersion + paths
+ *   app/android/latest.json                — version + minVersion (only when
+ *                                            a breaking change shipped) + paths
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
+import { hasUpdateFloor } from "@kataria-syntex/shared";
 
 const ACCOUNT = process.env.CF_ACCOUNT_ID ?? "";
 const TOKEN = process.env.CF_API_TOKEN ?? "";
@@ -255,9 +257,16 @@ for (const { key, file } of uploads) {
 
 // 2) The unified manifest — Android + macOS Electron + /download page read it.
 // Paths are the public /releases/* URLs every client resolves directly.
+// minVersion is omitted entirely when no breaking change has shipped:
+// "0.0.0" is a truthy string, so a client reading it as a floor raises the
+// undismissable update dialog for nothing (apps/app#A0). Absence is the
+// unambiguous "no floor".
+const publishedMinVersion = readMinVersion();
 const manifest = {
   version: VERSION,
-  minVersion: readMinVersion(),
+  ...(hasUpdateFloor(publishedMinVersion)
+    ? { minVersion: publishedMinVersion }
+    : {}),
   releasedAt: new Date().toISOString(),
   android: apk ? { apk: `/releases/${keyFor(apk, "android")}` } : {},
   desktop: {

@@ -74,9 +74,9 @@ export default defineConfig({
     VitePWA({
       // Custom service worker (src/main/sw.ts) — owns the precache install
       // loop so the app can show real download progress during a deploy, and
-      // owns the prompt-mode apply flow (SKIP_WAITING on click, never an
-      // automatic reload). Updates are user-applied; a tab is never
-      // force-reloaded mid-edit.
+      // applies itself (skipWaiting after the precache, clients.claim on
+      // activate). A routine deploy needs no prompt and no reload: the
+      // running tab picks the fresh shell up on its next navigation.
       strategies: "injectManifest",
       srcDir: "src/main",
       filename: "sw.ts",
