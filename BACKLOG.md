@@ -180,7 +180,7 @@ Every item below was confirmed against the actual code. Fix targets
       migration ✓. Version 0.12.5 → 0.12.6.
 - [ ] **A7 · Sync-dialog Retry swallows failures.**
       `ui/components/sync-dialog.tsx:217` — `try { await retryErrored(...)
-  } finally { setBusy(false) }` with no `catch`. The button re-enables
+} finally { setBusy(false) }` with no `catch`. The button re-enables
       with no error text, no toast, and a floating unhandled rejection — on
       the one screen whose job is to report queue state.
 - [ ] **A8 · Every `<Select>` opens ~2× slower than its own contract.**
@@ -191,7 +191,7 @@ Every item below was confirmed against the actual code. Fix targets
       notification-banner dwell — the wrong grammar on every menu.
 - [ ] **A9 · Offline challan numbering converts a clash into a raw 500.**
       `lib/document-pipeline.ts:1001` — the batch catch shapes `UNIQUE
-  constraint failed` into a 409 only when `input.offline` is set, and
+constraint failed` into a 409 only when `input.offline` is set, and
       the clash pre-check is TOCTOU. Two devices issuing offline numbers can
       both pass it; one then gets an unexplained 500.
 - [ ] **A10 · Raw `YYYY-MM-DD` dates on the two most-used screens.**
@@ -242,7 +242,7 @@ Every item below was confirmed against the actual code. Fix targets
 - [ ] **A18 · `POST /api/members/invite` has no rate-limit budget.**
       `routes/members.ts:36` — returns three distinguishable outcomes
       (`phone_already_registered` 409 / `attached: true` / `attached:
-  false`), an enumeration oracle, but unlike `/lookup` it never calls
+false`), an enumeration oracle, but unlike `/lookup` it never calls
       `consumeBudget`.
 - [ ] **A19 · `POST /api/challans/:id/pdf` has no permission gate.**
       `routes/challans.ts:314` — `requireAuth` + `resolveMember()` only; a
@@ -262,7 +262,7 @@ Every item below was confirmed against the actual code. Fix targets
 - [ ] **A22 · `UpdateDialog` on web can become an undismissable dead end.**
       `ui/components/update-dialog.tsx:93` → `store/updates.ts:239` —
       `installUpdate()` on web now does only `if (requiredMinVersion)
-  window.location.reload()`. If the 426 floor fires before the SW has
+window.location.reload()`. If the 426 floor fires before the SW has
       precached the new build (install failed, deploy too fresh), the reload
       re-serves the old shell, 426s again, and the button can never work —
       with no error shown.
