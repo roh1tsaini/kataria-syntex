@@ -44,8 +44,9 @@ Bun workspaces + Turborepo. Bun is the only package manager.
 
 ```bash
 # inside apps/android
-bun run build:web    # apps/app Vite build → ../app/dist
-bun run sync         # build:web + cap sync android (copies bundle + plugins)
+bun run build:web    # apps/app Vite build → ../app/dist (preview only — no origin baked,
+                         # so the WebView can never reach the API)
+bun run sync         # build:web:apk + cap sync android (bakes the API origin, copies bundle + plugins)
 bun run open         # open the native project in Android Studio
 bun run build:apk    # sync + gradle assembleRelease
 bun run typecheck    # gate
@@ -62,7 +63,7 @@ internet" on a device with a perfect connection. Export it first:
 VITE_API_URL=app.katariasyntex.workers.dev bun run build:apk
 ```
 
-`scripts/require-api-origin.ts` fails the build before an APK that can never
+`scripts/build-web.ts` fails the build before an APK that can never
 reach the server exists; `platform.ts` throws a second time at boot if a
 bundle without the origin somehow reaches a device.
 
@@ -228,7 +229,7 @@ plugin wiring current.
 - `android/app/build.gradle` — signing from `keystore.properties`, version
   from `apps/app/package.json`, ARM-only via `abiFilters 'armeabi-v7a',
 'arm64-v8a'`.
-- CI (`pipeline.yml` android job): Bun install → `bun run build:web` →
+- CI (`pipeline.yml` android job): Bun install → `bun run build:web:apk` →
   `bunx cap sync android` → decode keystore → write
   `android/keystore.properties` → `gradle assembleRelease` → artifact
   `ks-biz-app-android` → release + `publish-r2` jobs (unchanged paths).

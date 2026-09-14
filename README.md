@@ -40,7 +40,7 @@ Inside `apps/android`:
 
 ```bash
 bun run build:web    # apps/app Vite build → ../app/dist
-bun run sync         # build:web + cap sync android
+bun run sync         # build:web:apk + cap sync android (bakes the API origin)
 bun run open         # open android/ in Android Studio
 bun run build:apk    # sync + gradle assembleRelease (needs the Android SDK)
 bun run typecheck

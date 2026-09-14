@@ -296,8 +296,8 @@ function localStorageStorage(): CoreStorage {
  * a bare FQDN — a scheme-less value would make every fetch URL RELATIVE
  * (requests land on <page>/app.example.com/api/… → SPA HTML → the app reads
  * "offline"), so a bare host is always upgraded to https. Native shells'
- * build steps do the same normalization (electron/build.ts, the Android
- *  EXTRA_API_BASE step). Android has no same-origin to fall back to — its page
+ * build steps do the same normalization (electron/build.ts,
+ *  apps/android/scripts/build-web.ts). Android has no same-origin to fall back to — its page
  *  origin is the local bundle — so an empty value there is a build
  *  misconfiguration: the sync step must bake VITE_API_URL, and realtime stays
  *  disabled rather than dialing the bundle (see realtimeOrigin).
@@ -314,7 +314,7 @@ function bakedApiOrigin(): string {
     // a build that can never reach the server.
     if (detectHost() !== "web") {
       throw new Error(
-        `VITE_API_URL is not baked into this ${detectHost()} build — the app cannot reach the API. Rebuild with VITE_API_URL set (the Android step is bun run build:web with the env exported; see apps/android/APP.md).`,
+        `VITE_API_URL is not baked into this ${detectHost()} build — the app cannot reach the API. Rebuild with VITE_API_URL set (the Android step is bun run build:web:apk with the env exported; see apps/android/APP.md).`,
       );
     }
     return "";

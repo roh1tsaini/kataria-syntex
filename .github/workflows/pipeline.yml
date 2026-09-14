@@ -305,9 +305,12 @@ jobs:
       - name: Build web bundle + sync Capacitor
         # cap sync runs from apps/android — it owns capacitor.config.ts (which
         # points webDir at ../app/dist) and the Capacitor CLI dependency.
+        # build:web:apk (not the plain web build) bakes VITE_API_URL and fails
+        # without it — the WebView origin is not the API, so an unbaked bundle
+        # reads as offline forever on a connected device.
         working-directory: apps/android
         run: |
-          bun run build:web
+          bun run build:web:apk
           bunx cap sync android
 
       - name: Decode signing keystore from secrets

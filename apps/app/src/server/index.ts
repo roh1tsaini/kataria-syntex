@@ -32,12 +32,36 @@ app.use(
   logger((message) => console.log(message.replace(/\?[^\s]*/g, ""))),
 );
 app.use("*", secureHeaders());
+/**
+ * Origins of the app's own native shells. The Capacitor Android WebView
+ * serves the bundle from a fixed synthetic origin — apps/android's
+ * capacitor.config.ts sets server.androidScheme "https" and Capacitor's
+ * hostname default is "localhost", so the origin is https://localhost. That
+ * is a first-party app shell, not a third-party site: it is fixed by our own
+ * native config, so it is allowed here unconditionally and never via
+ * CORS_ORIGIN (an optional, manually-maintained env var — depending on it
+ * for a structural origin silently bricks the whole app as "offline").
+ *
+ * Every request from the WebView is cross-origin to this Worker and carries
+ * custom headers (X-App-Version and friends), so it needs a passing
+ * preflight before it even leaves the device. CORS is not an auth boundary —
+ * each route still requires a valid session — it only stops other sites'
+ * pages from reading our responses, and an origin no other app can claim
+ * is not one.
+ */
+const SHELL_ORIGINS = ["https://localhost"];
+
 app.use(
   "*",
   cors({
     origin: (origin, c) => {
       if (!origin) return null;
+      // An opaque "null" origin (sandboxed frame, file://) is never
+      // trusted — any page can present it, so it stays out of every
+      // allowlist.
       if (origin === "null") return null;
+      if (SHELL_ORIGINS.includes(origin)) return origin;
+      // Third-party origins (the public website) stay opt-in per env.
       const allowed = (c.env as Env).CORS_ORIGIN;
       if (!allowed) return null;
       return allowed

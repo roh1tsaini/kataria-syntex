@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build:web": "cd ../app && bunx vite build",
-    "build:web:apk": "bun scripts/require-api-origin.ts && cd ../app && VITE_API_URL=$VITE_API_URL bunx vite build",
+    "build:web:apk": "bun scripts/build-web.ts",
     "sync": "bun run build:web:apk && bunx cap sync android",
     "open": "bunx cap open android",
     "build:apk": "bun run sync && cd android && ./gradlew assembleRelease",

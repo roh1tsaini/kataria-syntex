@@ -37,7 +37,7 @@ no ids to paste.
 Add a repository **variable** `APP_URL` = the app worker FQDN
 (`https://app.katariasyntex.workers.dev`). Native builds read it: the
 Electron build injects it into the packaged bundle; the Android APK bakes
-it as `EXTRA_API_BASE`.
+it as `VITE_API_URL` (a bare FQDN is normalized to https).
 
 ### 3. Deploy
 

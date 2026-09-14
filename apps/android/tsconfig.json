@@ -9,6 +9,14 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "capacitor.config.ts", "*.ts", "*.js", "*.mjs", "*.d.ts"],
+  "include": [
+    "src",
+    "scripts",
+    "capacitor.config.ts",
+    "*.ts",
+    "*.js",
+    "*.mjs",
+    "*.d.ts"
+  ],
   "exclude": ["node_modules", "android", "dist"]
 }

@@ -263,7 +263,7 @@ frontends map codes → copy in ONE file (`packages/app-core/src/errors.ts`,
 `APP_ENV=development`).
 
 Middleware: query-stripped logger (tokens ride URLs) · secureHeaders ·
-CORS allow-list (`CORS_ORIGIN` env, comma-separated — credentials on) ·
+CORS allow-list — the native shells' fixed origin (`https://localhost`, the Capacitor WebView origin) is allowed in code; `CORS_ORIGIN` env adds third-party origins such as the website (comma-separated — credentials on) ·
 client IP from `CF-Connecting-IP` (or rightmost XFF when `TRUST_PROXY=1`).
 
 | Route                                           | Gate                                                         |
@@ -496,19 +496,18 @@ this baseline needs an explicit owner question first.
 **Secrets & vars** — `.env*` / `.dev.vars` are owner-only. Never read, echo,
 copy, or commit them. Secrets enter only as env read at use site.
 
-| Binding / var       | What                                         |
-| ------------------- | -------------------------------------------- |
-| `DB`                | D1 binding                                   |
-| `ASSETS`            | Worker static assets (fonts for PDF render)  |
-| `RELEASES`          | R2 release bucket (`/releases/*` serving)    |
-| `CORS_ORIGIN`       | comma-separated extra origins (website)      |
-| `APP_ENV`           | `development` → error detail in responses    |
-| `PINGRAM_API_KEY`   | OTP sender (secret)                          |
-| `OTP_DAILY_BUDGET`  | global daily OTP send ceiling (default 300)  |
-| `TRUST_PROXY`       | `1` → trust rightmost XFF (behind a proxy)   |
-| `VITE_API_URL`      | Electron build → deployed API origin         |
-| `EXTRA_API_BASE`    | Android APK build → deployed API origin (CI) |
-| `VITE_PROXY_TARGET` | dev proxy target (default `localhost:3000`)  |
+| Binding / var       | What                                                   |
+| ------------------- | ------------------------------------------------------ |
+| `DB`                | D1 binding                                             |
+| `ASSETS`            | Worker static assets (fonts for PDF render)            |
+| `RELEASES`          | R2 release bucket (`/releases/*` serving)              |
+| `CORS_ORIGIN`       | extra third-party origins (native shells are built in) |
+| `APP_ENV`           | `development` → error detail in responses              |
+| `PINGRAM_API_KEY`   | OTP sender (secret)                                    |
+| `OTP_DAILY_BUDGET`  | global daily OTP send ceiling (default 300)            |
+| `TRUST_PROXY`       | `1` → trust rightmost XFF (behind a proxy)             |
+| `VITE_API_URL`      | Electron build → deployed API origin                   |
+| `VITE_PROXY_TARGET` | dev proxy target (default `localhost:3000`)            |
 
 **Workflows**
 

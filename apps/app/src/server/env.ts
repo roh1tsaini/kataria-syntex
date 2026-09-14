@@ -11,7 +11,9 @@ export type Env = {
   RELEASES: R2Bucket;
   /** Realtime rooms — one Durable Object per workspace (see realtime/room.ts). */
   REALTIME: DurableObjectNamespace;
-  /** Comma-separated extra CORS origins (website). Optional. */
+  /** Comma-separated extra CORS origins for third-party clients (the public
+   * website). Optional. The app's own native shells are first-party clients
+   * with fixed origins, allowed in code — see SHELL_ORIGINS in index.ts. */
   CORS_ORIGIN?: string;
   /** Only "development" exposes error detail in responses. */
   APP_ENV?: string;
