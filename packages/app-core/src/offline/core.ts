@@ -1,16 +1,20 @@
 /**
- * Offline core: local caches + the pending challan list.
+ * Offline core: the local read caches.
  *
  * Everything persists in the adapter's synchronous KV store — localStorage
  * on web/PWA/Electron, MMKV on Android — so one implementation serves all
  * targets. Sizes are tiny (JSON records).
+ *
+ * This is a *read* cache only: masters, company config, and the session
+ * profile hydrate from disk so pickers and an offline-restarted device aren't
+ * blank on a flaky connection. Saving is online-only — a blocked save keeps
+ * the form and tells the user to go online (`store/challans.ts`).
  *
  * Challan numbering and the Indian FY window (Apr 1 – Mar 31, UTC) come
  * from `@kataria-syntex/shared` — the single source for both client and
  * server.
  */
 
-import type { Challan, ChallanInput, ChallanItem } from "../store/challans";
 import type {
   Customer,
   JobWorker,
@@ -20,6 +24,7 @@ import type {
 } from "../store/masters";
 import type { Numbering } from "@kataria-syntex/shared";
 import { core } from "../adapter";
+import { randomId } from "../id";
 
 // ── Keys ────────────────────────────────────────────────────────────────────
 
@@ -27,26 +32,6 @@ const K_DEVICE = "offline.device.v1";
 const K_MASTERS = "offline.masters.v1";
 const K_COMPANY = "offline.company.v1";
 const K_SESSION = "offline.session.v1";
-const K_PENDING = "offline.pending.v1";
-
-// ── IDs ─────────────────────────────────────────────────────────────────────
-
-/** UUID-shaped id that works outside secure contexts (plain-http LAN).
- * Never Math.random — low entropy invites collisions in sync keys. */
-export function randomId(): string {
-  const c = globalThis.crypto;
-  if (typeof c.randomUUID === "function") return c.randomUUID();
-  const bytes = new Uint8Array(16);
-  c.getRandomValues(bytes);
-  // set version 4 bits
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  return Array.from(bytes, (b, i) =>
-    [4, 6, 8, 10].includes(i)
-      ? `-${b.toString(16).padStart(2, "0")}`
-      : b.toString(16).padStart(2, "0"),
-  ).join("");
-}
 
 /** Parse a stored value only when it matches the expected shape — corrupt
  * JSON drops to null instead of poisoning callers. */
@@ -162,31 +147,6 @@ export function readCompany(): CompanyCache | null {
   return readJson(K_COMPANY, isCompanyCache);
 }
 
-/** Next seq to issue offline for a FY + type (1 when nothing cached). */
-export function nextSeq(
-  fyLabel: string,
-  type: "sales" | "outward" | "packing_s" | "packing_j" | "raw",
-): number {
-  return readCompany()?.counters[fyLabel]?.[type] ?? 1;
-}
-
-/** Raises the cached counter so the next offline issue doesn't repeat a seq. */
-export function bumpCounter(
-  fyLabel: string,
-  type: "sales" | "outward" | "packing_s" | "packing_j" | "raw",
-  usedSeq: number,
-): void {
-  const cache = readCompany();
-  if (!cache) return;
-  const current = cache.counters[fyLabel]?.[type] ?? 1;
-  if (usedSeq + 1 <= current) return;
-  cache.counters[fyLabel] = {
-    ...(cache.counters[fyLabel] ?? {}),
-    [type]: usedSeq + 1,
-  };
-  cacheCompany(cache);
-}
-
 // ── Session profile cache (offline restart keeps the device usable) ─────────
 
 export type SessionCache = {
@@ -227,78 +187,14 @@ export function clearSessionCache(): void {
   }
 }
 
-/** Wipes everything account-scoped: the pending outbox, masters and company
- * caches. Called on logout / session death / fresh login so one account's
- * queued challans can never sync under another account's session. */
+/** Wipes everything account-scoped: the masters and company caches. Called on
+ * logout / session death / fresh login so one account's cached data can never
+ * surface under another account's session. */
 export function clearAccountCache(): void {
   try {
-    core().storage.delete(K_PENDING);
     core().storage.delete(K_MASTERS);
     core().storage.delete(K_COMPANY);
   } catch {
     // ignore
   }
-}
-
-// ── Pending challans (the offline outbox) ───────────────────────────────────
-
-type PendingStatus = "pending" | "conflict" | "error";
-
-export type PendingChallan = {
-  clientRef: string;
-  status: PendingStatus;
-  /** Server's next-free number, set when a sync hit a number clash (409). */
-  suggestion?: string;
-  /** Error code from a rejected sync (status "error"). */
-  errorCode?: string;
-  createdAt: string;
-  /** Exact create body the device will re-send on sync. */
-  input: ChallanInput;
-  challanNumber: string;
-  seq: number;
-  fyLabel: string;
-  /** Local projection used until the server accepts the challan. */
-  local: Challan;
-  items: ChallanItem[];
-};
-
-const isPendingList = (v: unknown): v is PendingChallan[] =>
-  Array.isArray(v) &&
-  v.every(
-    (p) =>
-      isObject(p) &&
-      typeof p.clientRef === "string" &&
-      typeof p.status === "string" &&
-      typeof p.challanNumber === "string",
-  );
-
-export function listPending(): PendingChallan[] {
-  return readJson(K_PENDING, isPendingList) ?? [];
-}
-
-function savePendingList(list: PendingChallan[]): void {
-  try {
-    core().storage.set(K_PENDING, JSON.stringify(list));
-  } catch {
-    // ignore — stays in memory via the zustand mirror
-  }
-}
-
-export function addPending(p: PendingChallan): void {
-  savePendingList([...listPending(), p]);
-}
-
-export function updatePending(
-  clientRef: string,
-  patch: Partial<PendingChallan>,
-): void {
-  savePendingList(
-    listPending().map((p) =>
-      p.clientRef === clientRef ? { ...p, ...patch } : p,
-    ),
-  );
-}
-
-export function removePending(clientRef: string): void {
-  savePendingList(listPending().filter((p) => p.clientRef !== clientRef));
 }

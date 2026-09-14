@@ -1,39 +1,24 @@
 /**
- * Sync connectivity state: store, counts, reachability probe.
- * Split from sync.ts — state lives here, orchestration stays there.
+ * Network reachability state.
+ *
+ * Saving is online-only, so this store's one job is answering "can we reach
+ * the server right now?" — the sidebar indicator and the go-online message on
+ * a blocked save both read `online`.
+ *
+ * Writers: `probeServer()` (mounted from `useNetworkState`), the network-change
+ * subscription, and `api()`'s failure path in `store/challans.ts`.
  */
 import { create } from "zustand";
 import { api, ApiError } from "../api";
-import { listPending } from "./core";
 
 type SyncState = {
   /** Server reachable (last probe / API result). */
   online: boolean;
-  syncing: boolean;
-  pendingCount: number;
-  conflictCount: number;
-  errorCount: number;
-  lastSyncedAt: string | null;
 };
 
 export const useSync = create<SyncState>()(() => ({
   online: true,
-  syncing: false,
-  pendingCount: 0,
-  conflictCount: 0,
-  errorCount: 0,
-  lastSyncedAt: null,
 }));
-
-/** Recomputes the pending/conflict/error counts from the stored list. */
-export function recountPending(): void {
-  const list = listPending();
-  useSync.setState({
-    pendingCount: list.filter((p) => p.status === "pending").length,
-    conflictCount: list.filter((p) => p.status === "conflict").length,
-    errorCount: list.filter((p) => p.status === "error").length,
-  });
-}
 
 export function setOnline(online: boolean): void {
   useSync.setState({ online });
@@ -47,8 +32,8 @@ export async function probeServer(): Promise<boolean> {
     setOnline(true);
     return true;
   } catch (err) {
-    // An HTTP error still means "reachable" — a 5xx on /health must not stop
-    // the sync tick. Only network failures flip us offline.
+    // An HTTP error still means "reachable" — a 5xx on /health must not flip
+    // us offline. Only network failures do.
     if (err instanceof ApiError && err.isNetworkError) {
       setOnline(false);
       return false;

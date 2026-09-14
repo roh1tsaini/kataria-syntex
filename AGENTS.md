@@ -31,14 +31,14 @@ shell, in writing.
 
 ## 2. Repo map
 
-| Path                | What                                                                                                             | Stack                                                                                                |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `apps/app`          | Internal business app — web/PWA + Electron desktop (challans, job work, stock, packing, reports)                 | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
-| `apps/android`      | Internal business app — Android shell around the `apps/app` bundle                                               | Capacitor 8 + the `apps/app` React 19/Vite bundle · shares `packages/app-core`                       |
-| `apps/web`          | Public showcase website                                                                                          | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                      |
-| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                      | TypeScript                                                                                           |
-| `packages/app-core` | Shared business core for both apps: API client, zustand stores, offline/sync engine (`@kataria-syntex/app-core`) | TypeScript + React                                                                                   |
-| `packages/tsconfig` | Shared TS config presets                                                                                         | —                                                                                                    |
+| Path                | What                                                                                                                                   | Stack                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `apps/app`          | Internal business app — web/PWA + Electron desktop (challans, job work, stock, packing, reports)                                       | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
+| `apps/android`      | Internal business app — Android shell around the `apps/app` bundle                                                                     | Capacitor 8 + the `apps/app` React 19/Vite bundle · shares `packages/app-core`                       |
+| `apps/web`          | Public showcase website                                                                                                                | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                      |
+| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                                            | TypeScript                                                                                           |
+| `packages/app-core` | Shared business core for both apps: API client, zustand stores, offline read cache + network reachability (`@kataria-syntex/app-core`) | TypeScript + React                                                                                   |
+| `packages/tsconfig` | Shared TS config presets                                                                                                               | —                                                                                                    |
 
 ## 2.1 Platforms
 
@@ -53,7 +53,8 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
 **iOS is skipped completely — never build or scaffold for it.**
 
 - `packages/app-core` holds the shared business core (API client, zustand
-  stores, offline/sync engine, error copy). Both apps configure it at boot
+  stores, offline read cache + network reachability, error copy). Both apps
+  configure it at boot
   through its `PlatformAdapter` seam. All three shells share one file —
   `apps/app/src/main/lib/platform.ts` — because the Android app runs the
   same built bundle inside a Capacitor WebView; the adapter branches on
@@ -110,7 +111,7 @@ that lands on one shell only is unfinished; never report it as done.
   decimals, `DD Mon YYYY`.
 - **Motion:** same presets and grammar (`apps/app/src/main/ui/lib/motion.ts`);
   enter/exit mirror, exits ~20% faster, reduced motion collapses.
-- **Logic:** one home. Business logic, stores, offline/sync, error copy live
+- **Logic:** one home. Business logic, stores, offline read cache + reachability, error copy live
   in `packages/app-core` / `packages/shared`; platform differences live ONLY
   in the one adapter file (`apps/app/src/main/lib/platform.ts`). Never fork
   logic per shell.

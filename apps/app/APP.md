@@ -22,7 +22,8 @@ packing, stock ledger, reports, color recipes.
 One SPA bundle for web/PWA, Electron desktop and Android. The Android app is
 a Capacitor shell (`apps/android` — see its APP.md) that loads this same
 bundle. All shells share the business core (`packages/app-core`): API client,
-stores, offline engine. Backend = Hono on Cloudflare Workers + D1 (SQLite).
+stores, offline read cache + network reachability. Backend = Hono on
+Cloudflare Workers + D1 (SQLite).
 
 ```
 purchase → job-work OUT (dyeing) → return → packing → sales challan
@@ -83,20 +84,20 @@ against the same `packages/app-core`.
 
 Latest stable majors; never downgrade to escape a break.
 
-| Layer       | Tech                                                                                                                     |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Frontend    | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)                                                 |
-| Styling     | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2                                                   |
-| PWA         | vite-plugin-pwa (background waiting-worker flow, Workbox)                                                                |
-| API         | Hono 4 · zod 4 at every boundary                                                                                         |
-| Data        | Drizzle ORM + drizzle-kit · Cloudflare D1                                                                                |
-| Realtime    | Durable Objects (SQLite class, no storage used) — WebSocket fan-out per workspace                                        |
-| PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                             |
-| Desktop     | Electron 43 · electron-builder 26                                                                                        |
-| Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline engine (web + Electron here, Android in `apps/android`) |
-| Android     | `apps/android` — Capacitor 8 shell loading this bundle (official `@capacitor/*` plugins)                                 |
-| QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                       |
-| CI          | GitHub Actions (`pipeline.yml`: gate → deploy + desktop + android → R2)                                                  |
+| Layer       | Tech                                                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend    | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)                                                                            |
+| Styling     | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2                                                                              |
+| PWA         | vite-plugin-pwa (background waiting-worker flow, Workbox)                                                                                           |
+| API         | Hono 4 · zod 4 at every boundary                                                                                                                    |
+| Data        | Drizzle ORM + drizzle-kit · Cloudflare D1                                                                                                           |
+| Realtime    | Durable Objects (SQLite class, no storage used) — WebSocket fan-out per workspace                                                                   |
+| PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                                                        |
+| Desktop     | Electron 43 · electron-builder 26                                                                                                                   |
+| Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline read cache + network reachability (web + Electron here, Android in `apps/android`) |
+| Android     | `apps/android` — Capacitor 8 shell loading this bundle (official `@capacitor/*` plugins)                                                            |
+| QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                                                  |
+| CI          | GitHub Actions (`pipeline.yml`: gate → deploy + desktop + android → R2)                                                                             |
 
 ## 4 · Source map
 
@@ -128,7 +129,8 @@ packages/app-core/               # shared business core (all shells)
 ├── src/api.ts                   # api(), ApiError, apiBlob, deviceHeaders, clientId
 ├── src/realtime.ts              # WebSocket change bus — useRealtime, useRealtimeEvent
 ├── src/store/                   # zustand: auth, challans, masters, recipes
-├── src/offline/                 # caches + outbox + sync engine
+├── src/offline/                 # read caches + network reachability state
+├── src/network.ts               # useNetworkState — online/offline signal
 ├── src/errors.ts                # friendlyError
 ├── src/toast.ts                 # configureToasts sink
 └── src/data-caches.ts           # registerDataCache / invalidateDataCaches
@@ -142,7 +144,7 @@ SPA → same-origin `/api/*` (Vite proxy in dev) → Worker → Hono
 
 Platform differences live in each shell's `PlatformAdapter`
 (`packages/app-core/src/adapter.ts` — the seam where the business core
-meets its host: API base, token storage, sync KV, network events,
+meets its host: API base, token storage, cache KV, network events,
 realtime origin, foreground events, optional Electron transport). This
 app configures it via `configureWebCore()` in `src/main/lib/platform.ts`
 (wired in `main.tsx`); the Android branch of the same file
@@ -353,28 +355,37 @@ manage_members manage_settings
 - Nav hides what the user can't open (`useCanSee()`); every route is
   permission-gated server-side too.
 
-## 11 · Offline & sync
+## 11 · Offline & online-only saving
 
-Offline targets: challans (sales + outward) only. The engine lives in
+**Saving is online-only.** There is no write queue: a save goes straight to the
+server, and when the server is unreachable the app says "go online" and keeps
+the form the user was filling — input intact, nothing silently discarded. The
+user retries once the connection returns.
+
+What _does_ survive offline is the **read cache**, so a flaky connection never
+blanks the pickers or an offline-restarted device. It lives in
 `packages/app-core/src/offline/` and persists through the shell adapter's
 synchronous KV storage — localStorage on web/Electron (`offline.*.v1`
-keys), MMKV on Android. Same engine, same behavior everywhere.
+keys), MMKV on Android. Same cache, same behavior everywhere.
 
 - Cached: masters (customers, job workers, suppliers, deniers, colors),
   company + numbering + per-FY counters, session profile, device identity.
-- Outbox (`offline.pending.v1`): pending | conflict | error, each holding the
-  exact create body + local projection.
-- Offline numbering uses the cached counter; `bumpCounter` prevents repeats.
+- Reachability: `useNetworkState()` probes on mount and subscribes to the
+  platform network event; `api()`'s classifier also flips the flag on a real
+  failure. Only true network failures (incl. 502/504, captive portals) flip
+  offline; HTTP errors stay online.
+- Blocked save: the network error propagates as `network_error`, surfaced by
+  `friendlyError` as "Could not reach the server". The editor keeps the form.
 - Idempotency: `clientRef` (unique per workspace) + `originDevice` — no
-  double-create when a response is lost.
-- Sync triggers: app boot, `online` event, 30 s interval, manual retry.
-  Single-flight, 3-pass loop, re-reads each item before delivering.
-- 409 on number clash → conflict state + server's suggested next number →
-  user adopts/edits → resync. Rejected items show the error code.
-- Logout/session death wipes the outbox + caches (`clearAccountCache`) —
-  one account's queue can never sync under another's session.
-- Network classifier: only true network failures (incl. 502/504, captive
-  portals) flip offline; HTTP errors stay online.
+  double-create when a response is lost after the server committed.
+- Number clashes (409) are an online path: the server suggests the next free
+  number and the list marks the row "Clash".
+- Logout/session death wipes the caches (`clearAccountCache`) — one account's
+  data can never surface under another's session.
+
+The PWA service worker (`src/main/sw.ts`) is a separate concern: it precaches
+the app _shell_ and never caches `/api/*`, which is why an offline user sees
+the go-online message at all instead of a browser error page.
 
 ### 11.1 · Realtime
 
@@ -396,7 +407,7 @@ refetch-on-mount.
   `{"e":"<entity>","by":"<clientId>"}` via `publishChanges()` on
   `waitUntil` — best-effort, never blocks or fails the write.
 - Client (`packages/app-core/src/realtime.ts`): `useRealtime()` mounts once
-  per shell next to `useOfflineSync()`; exponential-backoff reconnect,
+  per shell next to `useNetworkState()`; exponential-backoff reconnect,
   immediate on network return + app foreground (`onActivityChange`).
   Echo suppression via the stable install id in `X-Client-Id`
   (`clientId()` in api.ts) — a client skips events it caused itself.
@@ -585,9 +596,10 @@ Rules that keep this from regressing:
    installs on quit; the macOS dmg banner is the only non-blocking announce.
    Only a server `426` floor may block (`update-dialog.tsx`). Never instruct
    users to clear caches or browsing data.
-4. **API responses are never cached client-side or edge-side.** Offline
-   queuing (`packages/app-core/src/offline`) is the only freshness-storing
-   mechanism, and it replaces stale summary rows rather than mixing them.
+4. **API responses are never cached client-side or edge-side.** The offline
+   read cache (`packages/app-core/src/offline`) hydrates pickers and company
+   state but stores no list freshness — a failed refresh keeps the last rows
+   rather than mixing in stale ones.
 5. **A deploy must never require a manual reload.** `sw.ts` finishes the
    precache, then `skipWaiting()` + `clients.claim()`; the running tab keeps
    its code until its next navigation. Lazy chunks invalidated by a deploy are

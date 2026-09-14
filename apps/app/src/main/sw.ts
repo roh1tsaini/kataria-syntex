@@ -37,10 +37,11 @@ const PRECACHE = "ks-precache-v1";
 const RUNTIME = "ks-runtime-v1";
 const RUNTIME_MAX_ENTRIES = 8;
 const REVISION_PARAM = "__KS_REVISION__";
-// API calls are never cached — offline queuing is handled in-app (lib/offline)
-// against explicit user intent, not a stale SW cache. /releases/* must bypass
-// the SPA fallback too: the fallback would answer installer/APK downloads
-// with cached index.html (users get an .htm file instead of the app).
+// API calls are never cached — saving is online-only, so an unreachable
+// server is surfaced in-app as a "go online" message rather than served from a
+// stale SW cache. /releases/* must bypass the SPA fallback too: the fallback
+// would answer installer/APK downloads with cached index.html (users get an
+// .htm file instead of the app).
 const NETWORK_ONLY = [/^\/api\//, /^\/releases\//];
 
 const manifest = self.__WB_MANIFEST;

@@ -52,6 +52,20 @@ bun run typecheck    # gate
 bun run lint         # gate
 ```
 
+**`sync` requires an API origin.** The WebView serves the bundle from
+`https://localhost`, which is not the API: without a baked origin every fetch
+resolves against the bundle origin — `/api/health` answers the SPA shell, the
+client classifies it as a network failure, and the app reads "offline / no
+internet" on a device with a perfect connection. Export it first:
+
+```bash
+VITE_API_URL=app.katariasyntex.workers.dev bun run build:apk
+```
+
+`scripts/require-api-origin.ts` fails the build before an APK that can never
+reach the server exists; `platform.ts` throws a second time at boot if a
+bundle without the origin somehow reaches a device.
+
 Root gates unchanged: `bun run typecheck && bun run lint &&
 bun run format:check && bun run build` from the repo root.
 
@@ -68,7 +82,7 @@ Latest stable majors; never downgrade to escape a break.
 | Shell     | Capacitor 8 (`@capacitor/core`, `@capacitor/android`, `@capacitor/cli`) |
 | Renderer  | the `apps/app` React 19 + Vite + Tailwind v4 bundle                     |
 | Storage   | `@capacitor/preferences` — token + offline KV (`localStorage` contract) |
-| Network   | `@capacitor/network` — connectivity events for the sync engine          |
+| Network   | `@capacitor/network` — connectivity events for reachability             |
 | Camera    | `@capacitor/camera` — QR login + device approval scanning               |
 | Files/PDF | `@capacitor/filesystem` + `@capacitor/share` — PDF save/share           |
 | Chrome    | `@capacitor/status-bar`, `@capacitor/splash-screen`                     |
@@ -106,16 +120,16 @@ host branch), wired at boot by `apps/app/src/main/main.tsx`, which awaits
 `hydrateAndroidStorage()` before render so the offline store is warm on
 first paint.
 
-| Adapter field     | Android implementation                                                                                                                                |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiBaseUrl`      | baked `import.meta.env.VITE_API_URL` (CI normalizes `vars.APP_URL` to `https://`); a bundle built without it has no API origin and realtime stays off |
-| `appVersion`      | `__APP_VERSION__` — the same value the web build stamps from `apps/app/package.json`                                                                  |
-| `storage`         | `@capacitor/preferences` map, hydrated at boot, synchronous reads/writes after that                                                                   |
-| token read/write  | `@capacitor/preferences` key `auth.sessionToken`                                                                                                      |
-| `deviceLabel`     | `"Android"`                                                                                                                                           |
-| `onNetworkChange` | `@capacitor/network` status events                                                                                                                    |
-| lifecycle         | `@capacitor/app` foreground/background events                                                                                                         |
-| deep links        | `@capacitor/app` `appUrlOpen` — `kataria://` and the release origin's `/login/scan/<code>`                                                            |
+| Adapter field     | Android implementation                                                                                                                                                             |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apiBaseUrl`      | baked `import.meta.env.VITE_API_URL` (CI normalizes `vars.APP_URL` to `https://`); an unbaked bundle fails the build — the WebView origin isn't the API (see the build note above) |
+| `appVersion`      | `__APP_VERSION__` — the same value the web build stamps from `apps/app/package.json`                                                                                               |
+| `storage`         | `@capacitor/preferences` map, hydrated at boot, synchronous reads/writes after that                                                                                                |
+| token read/write  | `@capacitor/preferences` key `auth.sessionToken`                                                                                                                                   |
+| `deviceLabel`     | `"Android"`                                                                                                                                                                        |
+| `onNetworkChange` | `@capacitor/network` status events                                                                                                                                                 |
+| lifecycle         | `@capacitor/app` foreground/background events                                                                                                                                      |
+| deep links        | `@capacitor/app` `appUrlOpen` — `kataria://` and the release origin's `/login/scan/<code>`                                                                                         |
 
 Capacitor plugins are **dynamically imported** inside the branch — the web
 bundle never loads `@capacitor/*` on a browser. Rollup emits them as
@@ -231,9 +245,8 @@ means uninstall/reinstall on every device — keep it durable outside GitHub.
 | `CAMERA`                   | QR login + device approval scanning (Camera plugin) |
 | `REQUEST_INSTALL_PACKAGES` | in-app APK self-update via the system installer     |
 
-`android.allowBackup` is `false`: offline challans, masters and the company
-profile are business data and must not ride Android's cloud or
-device-transfer backups.
+`android.allowBackup` is `false`: the cached masters and company profile are
+business data and must not ride Android's cloud or device-transfer backups.
 
 ## 11 · PDFs & printing
 
@@ -248,15 +261,16 @@ print-view path.
 No local HTML rendering — offline PDF needs the server, like web/PWA
 (Electron is the only shell that renders locally).
 
-## 12 · Offline & sync
+## 12 · Offline & online-only saving
 
-Same engine as every shell: `packages/app-core/src/offline/` — cached
-masters + counters, outbox (`pending | conflict | error`), `clientRef`
-idempotency, single-flight 3-pass sync (boot, `online` event via the
-Network plugin, 30 s interval, manual retry), conflict resolution with the
-server's suggested number, logout wipe. Persistence rides the adapter's
-Preferences-backed storage, hydrated at boot. Full contract:
-`apps/app/APP.md` §11.
+Same behavior as every shell: saving is **online-only**, and
+`packages/app-core/src/offline/` is now a read cache — masters, company +
+counters, session profile. No outbox, no sync engine: a blocked save keeps
+the form and shows "go online", and the user retries once the connection
+returns. `clientRef` idempotency still guards a POST that died after the
+server committed. Reachability rides the Network plugin's connectivity events
+into `useNetworkState()`. Persistence rides the adapter's Preferences-backed
+storage, hydrated at boot. Full contract: `apps/app/APP.md` §11.
 
 ## 13 · Pointers
 

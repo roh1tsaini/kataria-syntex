@@ -87,15 +87,9 @@ export {
   type RecipeVersionPayload,
 } from "./store/recipes";
 
-// Offline engine
-export {
-  randomId,
-  nextSeq,
-  readCompany,
-  listPending,
-  type PendingChallan,
-} from "./offline/core";
+// Offline read cache + network reachability. Saving is online-only: a blocked
+// save keeps the form and tells the user to go online.
+export { readCompany } from "./offline/core";
 
-export { useOfflineSync } from "./offline/sync";
 export { useSync } from "./offline/sync-state";
-export { resubmitWithNumber, retryErrored } from "./offline/conflict";
+export { useNetworkState } from "./network";

@@ -7,7 +7,7 @@
 
 import { hasUpdateFloor } from "@kataria-syntex/shared";
 import { core } from "./adapter";
-import { randomId } from "./offline/core";
+import { randomId } from "./id";
 
 export class ApiError extends Error {
   constructor(
@@ -151,8 +151,8 @@ function classify<T>(status: number, body: unknown): T {
   }
   if (status === 204 || body === undefined) return undefined as T;
   // A 2xx with an empty/HTML body (captive portal, truncated response) must
-  // classify as a network error so callers queue/retry instead of crashing
-  // or poisoning the sync queue with permanent "rejected" rows.
+  // classify as a network error so a blocked save surfaces as "go online" and
+  // the user retries, rather than crashing on an unexpected null body.
   if (body === null) throw networkError();
   return body as T;
 }
@@ -219,9 +219,9 @@ export async function api<T>(
     resBody = await res.json();
   } catch {
     // Unparseable body: on a 2xx that's a captive portal / truncated
-    // response — classify as a network error so callers queue and retry
-    // instead of poisoning the sync queue. On an error status it's just a
-    // non-JSON error body; classify keeps the http_ fallback code.
+    // response — classify as a network error so the save is retried when the
+    // connection is real. On an error status it's just a non-JSON error body;
+    // classify keeps the http_ fallback code.
     if (res.ok) throw networkError();
     return classify<T>(res.status, undefined);
   }

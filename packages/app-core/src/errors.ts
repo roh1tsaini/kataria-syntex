@@ -2,14 +2,11 @@ import type { ApiCode } from "@kataria-syntex/shared";
 import { ApiError } from "./api";
 
 /** Codes this layer generates itself — never emitted by the server. */
-type ClientCode =
-  "network_error" | "pending_sync_edit" | "http_500" | "http_502";
+type ClientCode = "network_error" | "http_500" | "http_502";
 
 const CLIENT_MESSAGES = {
   network_error:
     "Could not reach the server. Check your connection and try again.",
-  pending_sync_edit:
-    "This challan is still waiting to sync. Edit it after it reaches the server.",
   http_500: "Something went wrong on our side. Try again in a moment.",
   http_502: "The server is temporarily unavailable. Try again in a moment.",
 } satisfies Record<ClientCode, string>;

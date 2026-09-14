@@ -174,11 +174,10 @@ Every item below was confirmed against the actual code. Fix targets
       if the false-positive rate matters.
       Gates: typecheck (5) ✓, lint ✓, build ✓, android tsc ✓; local D1
       migration ✓. Version 0.12.5 → 0.12.6.
-- [ ] **A7 · Sync-dialog Retry swallows failures.**
-      `ui/components/sync-dialog.tsx:217` — `try { await retryErrored(...)
-} finally { setBusy(false) }` with no `catch`. The button re-enables
-      with no error text, no toast, and a floating unhandled rejection — on
-      the one screen whose job is to report queue state.
+- [x] **A7 · Sync-dialog Retry swallows failures.** Resolved by removal —
+      the offline write queue is gone (see the online-only saving change);
+      `sync-dialog.tsx` no longer exists, so the unhandled-rejection path
+      went with it.
 - [ ] **A8 · Every `<Select>` opens ~2× slower than its own contract.**
       `ui/components/ui/select.tsx:74` — `duration-[380ms]` open /
       `duration-300ms` close with the morph spring curve. `design.md` §3
@@ -338,10 +337,9 @@ window.location.reload()`. If the 426 floor fires before the SW has
       playback is blocked the rejection is unhandled and `scanError` is
       never set: a live-looking loop that silently never decodes, with no
       manual-entry fallback.
-- [ ] **A39 · `sync-dialog.tsx:240` calls `listPending()` in render with no
-      subscription.** The comment claims background sync changes appear
-      without reopening, but re-renders only come from `useSync()` or a
-      local `setTick`; a conflict resolved on another device sits stale.
+- [x] **A39 · `sync-dialog.tsx:240` calls `listPending()` in render with no
+      subscription.** Resolved by removal — the queue and dialog are gone
+      (online-only saving); nothing reads a pending list anymore.
 - [ ] **A40 · Small control-size misses vs the contract.**
       `update-surface.tsx:67` dismiss button is `size-7` (28px) on desktop
       against §2.7's 32px floor (the coarse-pointer 44px case is right);
@@ -385,8 +383,8 @@ window.location.reload()`. If the 426 floor fires before the SW has
 - **Invariant enforcement is one-layered in three places** (A2, A5, A6):
   a rule assumed by the consumer but enforced only by one producer. That
   is the shape that breaks when a new caller skips the guarded path.
-- **`finally` without `catch` appears twice** (A7, A21) — same silent
-  failure, same fix.
+- **`finally` without `catch` appears once** (A21) — same silent failure as
+  the late A7, whose instance died with the removed sync dialog.
 - **Verified clean, do not re-audit:** no SQL injection (all Drizzle, raw
   SQL parameterized); constant-time OTP/password compares with dummy-hash
   enumeration defense; every workspace-scoped read filtered by

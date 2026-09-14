@@ -1,14 +1,7 @@
 import { create } from "zustand";
 import { api, ApiError } from "../api";
-import {
-  listPending,
-  randomId,
-  readMasters,
-  removePending,
-} from "../offline/core";
+import { randomId } from "../id";
 import { setOnline } from "../offline/sync-state";
-import { createOfflineChallan } from "../offline/create";
-import { recountPending } from "../offline/sync-state";
 import type { Customer, JobWorker } from "./masters";
 import type {
   ChallanBody,
@@ -18,13 +11,13 @@ import type {
 
 export type ChallanType = "sales" | "outward";
 
-// Server DTO shapes live in @kataria-syntex/shared — one truth for routes,
-// offline sync, and this store.
+// Server DTO shapes live in @kataria-syntex/shared — one truth for routes and
+// this store.
 export type ChallanItem = ChallanItemDto;
 
 export type Challan = Omit<ChallanDto, "workspaceId"> & {
-  /** Offline markers (locally-issued, not yet accepted by the server). */
-  pendingSync?: boolean;
+  /** Set when the server reports a challan-number clash (409) — two users took
+   * the same number at once. `suggestion` carries the next-free number. */
   conflict?: boolean;
   suggestion?: string;
 };
@@ -81,31 +74,6 @@ type ChallansState = {
   remove: (id: string) => Promise<void>;
 };
 
-/** Pending projections matching the given filter (type/fy/q applied locally).
- * Paginated lists show pending rows on page 1 only — prepending them to every
- * page would duplicate the same records across pages. */
-function pendingProjections(filter?: ChallanListFilter): Challan[] {
-  if (filter?.page && filter.page > 1) return [];
-  return listPending()
-    .map((p) => ({
-      ...p.local,
-      conflict: p.status === "conflict" || p.status === "error",
-      suggestion: p.suggestion,
-    }))
-    .filter((c) => {
-      if (filter?.type && c.type !== filter.type) return false;
-      if (filter?.fy && c.fyLabel !== filter.fy) return false;
-      if (filter?.q) {
-        const q = filter.q.toLowerCase();
-        const hay =
-          `${c.customerName ?? ""} ${c.jobWorkerName ?? ""} ${c.challanNumber}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    })
-    .sort(byCreatedDesc);
-}
-
 /** Newest first. A comparator that never returns 0 leaves equal rows in an
  *  arbitrary order — the id tie-break keeps the order identical everywhere. */
 function byCreatedDesc(a: Challan, b: Challan): number {
@@ -113,14 +81,10 @@ function byCreatedDesc(a: Challan, b: Challan): number {
   return a.id < b.id ? 1 : a.id === b.id ? 0 : -1;
 }
 
-/** Server rows + pending projections, newest first (pending carry their flags). */
-function mergePending(
-  server: Challan[],
-  filter?: ChallanListFilter,
-): Challan[] {
-  const byDate = (a: Challan, b: Challan) =>
-    a.date === b.date ? byCreatedDesc(a, b) : a.date < b.date ? 1 : -1;
-  return [...pendingProjections(filter), ...server].sort(byDate);
+/** Server rows newest first; equal dates fall back to the created/id order so
+ * list and summary pages agree. */
+function byDateDesc(a: Challan, b: Challan): number {
+  return a.date === b.date ? byCreatedDesc(a, b) : a.date < b.date ? 1 : -1;
 }
 
 export const useChallans = create<ChallansState>()((set, get) => {
@@ -167,21 +131,15 @@ export const useChallans = create<ChallansState>()((set, get) => {
         );
         if (seq !== refreshSeq) return;
         set({
-          challans: mergePending(res.items, active),
+          challans: [...res.items].sort(byDateDesc),
           total: res.total ?? res.items.length,
         });
       } catch (err) {
         if (seq !== refreshSeq) return;
         if (err instanceof ApiError && err.isNetworkError) {
+          // Offline: keep whatever the last successful load showed rather than
+          // blanking the list. The flag flips so the shell says go online.
           setOnline(false);
-          const local = pendingProjections(active);
-          // Keep stale synced rows visible offline; only when nothing has been
-          // loaded yet does the pending list stand in as the whole list.
-          const keep = get().challans.length > 0;
-          set({
-            challans: keep ? get().challans : local,
-            total: keep ? get().total : local.length,
-          });
         } else {
           set({
             error: err instanceof ApiError ? err.code : "Something went wrong.",
@@ -198,23 +156,6 @@ export const useChallans = create<ChallansState>()((set, get) => {
       // challan while this one is still in flight (C2).
       set({ detail: null });
       const seq = ++loadSeq;
-      const pending = listPending().find((p) => p.clientRef === id);
-      if (pending) {
-        const masters = readMasters();
-        const detail: ChallanDetail = {
-          challan: pending.local,
-          items: pending.items,
-          customer:
-            masters?.customers.find((c) => c.id === pending.local.customerId) ??
-            null,
-          jobWorker:
-            masters?.jobWorkers.find(
-              (w) => w.id === pending.local.jobWorkerId,
-            ) ?? null,
-        };
-        set({ detail });
-        return detail;
-      }
       const res = await api<ChallanDetail>(`/challans/${id}`);
       if (seq !== loadSeq) return res;
       set({ detail: res });
@@ -235,8 +176,8 @@ export const useChallans = create<ChallansState>()((set, get) => {
           api<{ items: Challan[] }>(`/challans?type=outward${fyParam}`),
         ]);
         const res = {
-          sales: mergePending(salesRes.items, { type: "sales", fy }),
-          outward: mergePending(outwardRes.items, { type: "outward", fy }),
+          sales: [...salesRes.items].sort(byDateDesc),
+          outward: [...outwardRes.items].sort(byDateDesc),
         };
         if (isCurrent()) {
           set((s) => ({
@@ -246,21 +187,11 @@ export const useChallans = create<ChallansState>()((set, get) => {
         return res;
       } catch (err) {
         if (err instanceof ApiError && err.isNetworkError) {
-          // Offline: pending-only projections instead of stale server rows
-          // that would silently predate queued work. Replace (don't merge
-          // with) the cached server rows — mixing them would show pre-queue
-          // totals as if current.
-          const local = pendingProjections({ fy });
-          const res = {
-            sales: local.filter((c) => c.type === "sales"),
-            outward: local.filter((c) => c.type === "outward"),
-          };
-          if (isCurrent()) {
-            set((s) => ({
-              summaryCache: { ...s.summaryCache, [cacheKey]: res },
-            }));
-          }
-          return res;
+          // Offline: leave the cached rows in place rather than showing a
+          // stale mix, and flip the flag so the shell says go online.
+          setOnline(false);
+          const cached = get().summaryCache[cacheKey];
+          if (cached) return cached;
         }
         throw err;
       }
@@ -281,34 +212,20 @@ export const useChallans = create<ChallansState>()((set, get) => {
     },
 
     create: async (input) => {
-      // Idempotency key: if the request dies after the server committed, the
-      // offline fallback re-sends the SAME clientRef and the server dedupes.
+      // Idempotency key: if the request dies after the server committed, a
+      // retry re-sends the SAME clientRef and the server dedupes it.
       const clientRef = randomId();
-      try {
-        const res = await api<{ challan: Challan }>("/challans", {
-          method: "POST",
-          body: { ...input, offline: { clientRef } },
-        });
-        void get().refresh();
-        return res.challan;
-      } catch (err) {
-        if (err instanceof ApiError && err.isNetworkError) {
-          const local = createOfflineChallan(input, clientRef);
-          recountPending();
-          set((s) => ({
-            challans: [local, ...s.challans],
-            total: s.total + 1,
-          }));
-          return local;
-        }
-        throw err;
-      }
+      // Online-only: a network failure propagates as a network_error, which
+      // the editor surfaces as a go-online message while keeping the form.
+      const res = await api<{ challan: Challan }>("/challans", {
+        method: "POST",
+        body: { ...input, offline: { clientRef } },
+      });
+      void get().refresh();
+      return res.challan;
     },
 
     update: async (id, input) => {
-      // A queued (offline) challan can't be edited until the server has it.
-      if (listPending().some((p) => p.clientRef === id))
-        throw new ApiError(0, "pending_sync_edit");
       const res = await api<{ challan: Challan }>(`/challans/${id}`, {
         method: "PUT",
         body: input,
@@ -318,16 +235,6 @@ export const useChallans = create<ChallansState>()((set, get) => {
     },
 
     remove: async (id) => {
-      // Discarding a never-synced offline challan is purely local.
-      if (listPending().some((p) => p.clientRef === id)) {
-        removePending(id);
-        recountPending();
-        set((s) => ({
-          challans: s.challans.filter((c) => c.id !== id),
-          total: Math.max(0, s.total - 1),
-        }));
-        return;
-      }
       await api(`/challans/${id}`, { method: "DELETE" });
       void get().refresh();
     },

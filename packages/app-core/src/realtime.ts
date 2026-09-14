@@ -129,8 +129,9 @@ async function connect(): Promise<void> {
       return;
     }
     if (!ticket) {
-      // Server unreachable or session gone — the sync engine surfaces state;
-      // here we just back off. The next network/activity event retries sooner.
+      // Server unreachable or session gone — the network state is surfaced by
+      // useNetworkState; here we just back off. The next network/activity
+      // event retries sooner.
       scheduleReconnect();
       return;
     }
@@ -245,7 +246,7 @@ export function useRealtimeEvent(
 
 /**
  * Wires the realtime connection for the app lifetime — mount once next to
- * useOfflineSync() in each shell's root. Joins the authed workspace's room;
+ * useNetworkState() in the app shell. Joins the authed workspace's room;
  * reconnects on workspace change, network return, and foreground. A shell
  * whose adapter has no realtimeOrigin() keeps everything poll-only.
  */

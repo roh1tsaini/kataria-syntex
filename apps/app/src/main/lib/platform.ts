@@ -304,7 +304,21 @@ function localStorageStorage(): CoreStorage {
  */
 function bakedApiOrigin(): string {
   const raw = import.meta.env.VITE_API_URL?.trim();
-  if (!raw) return "";
+  if (!raw) {
+    // Web/PWA is same-origin — an empty base is correct there. Android and
+    // Electron serve a local bundle whose origin is NOT the API, so an empty
+    // base makes every fetch resolve against the WebView/Electron origin:
+    // /api/health returns the SPA shell (or nothing), the classifier reads it
+    // as a network failure, and the app shows "offline / no internet" while
+    // the device has a perfect connection. Fail at boot instead of shipping
+    // a build that can never reach the server.
+    if (detectHost() !== "web") {
+      throw new Error(
+        `VITE_API_URL is not baked into this ${detectHost()} build — the app cannot reach the API. Rebuild with VITE_API_URL set (the Android step is bun run build:web with the env exported; see apps/android/APP.md).`,
+      );
+    }
+    return "";
+  }
   if (/^https?:\/\//i.test(raw)) return raw.replace(/\/+$/, "");
   return `https://${raw.replace(/^https?:\/\//i, "").replace(/\/+$/, "")}`;
 }

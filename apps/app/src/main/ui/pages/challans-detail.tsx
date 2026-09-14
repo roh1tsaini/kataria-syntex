@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   CalendarDays,
-  CloudOff,
   Download,
   Pencil,
   Printer,
@@ -204,11 +203,6 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
                   <AlertTriangle className="size-3" aria-hidden />
                   Clash
                 </Badge>
-              ) : challan.pendingSync ? (
-                <Badge variant="outline" className="gap-1">
-                  <CloudOff className="size-3" aria-hidden />
-                  Waiting to sync
-                </Badge>
               ) : null}
             </div>
             <p className="page-desc mt-2 flex flex-wrap items-center gap-1.5">
@@ -250,14 +244,12 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
               <span className="hidden sm:inline">Print</span>
             </Link>
           </Button>
-          {!challan.pendingSync && (
-            <Button asChild variant="outline" className="flex-1 sm:flex-none">
-              <Link to={`${kind.listPath}/${challan.id}/edit`}>
-                <Pencil aria-hidden />
-                <span className="hidden sm:inline">Edit</span>
-              </Link>
-            </Button>
-          )}
+          <Button asChild variant="outline" className="flex-1 sm:flex-none">
+            <Link to={`${kind.listPath}/${challan.id}/edit`}>
+              <Pencil aria-hidden />
+              <span className="hidden sm:inline">Edit</span>
+            </Link>
+          </Button>
           <Button
             variant="destructive"
             onClick={() => void onDelete()}

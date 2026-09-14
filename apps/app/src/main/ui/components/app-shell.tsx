@@ -38,12 +38,12 @@ import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
 import { PageTransition } from "@/ui/components/motion";
 import { PackingSkeleton, routeSkeleton } from "@/ui/components/page-skeletons";
-import { SyncBanner, SyncDialog } from "@/ui/components/sync-dialog";
+import { OfflineBanner } from "@/ui/components/offline-banner";
 import { useTheme } from "@/ui/hooks/use-theme";
 import {
   useAuth,
   isPackerOnlyWorkspace,
-  useOfflineSync,
+  useNetworkState,
   useRealtime,
   useSync,
 } from "@kataria-syntex/app-core";
@@ -412,20 +412,17 @@ function MobileDrawerContent({
   pathname,
   search,
   onClose,
-  onOpenSync,
 }: {
   sections: NavSection[];
   pathname: string;
   search: string;
   onClose: () => void;
-  onOpenSync: () => void;
 }) {
   const user = useAuth((s) => s.user);
   const workspace = useAuth((s) => s.workspace);
   const company = useAuth((s) => s.company);
   const currentFy = useAuth((s) => s.currentFy);
   const online = useSync((s) => s.online);
-  const pendingCount = useSync((s) => s.pendingCount);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -477,17 +474,11 @@ function MobileDrawerContent({
             <CalendarDays className="size-3.5" aria-hidden />
             <span>FY {currentFy?.label ?? "—"}</span>
           </span>
-          <button
-            type="button"
-            onClick={onOpenSync}
-            className="flex min-h-11 items-center gap-1.5 font-semibold text-primary"
-          >
+          <span className="flex min-h-11 items-center gap-1.5 font-semibold text-primary">
             {online ? (
               <>
                 <Wifi className="size-3.5 text-success" aria-hidden />
-                <span>
-                  {pendingCount > 0 ? `${pendingCount} pending` : "Synced"}
-                </span>
+                <span>Online</span>
               </>
             ) : (
               <>
@@ -495,7 +486,7 @@ function MobileDrawerContent({
                 <span>Offline</span>
               </>
             )}
-          </button>
+          </span>
         </div>
       </div>
 
@@ -669,7 +660,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [syncOpen, setSyncOpen] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(() => {
     try {
       return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
@@ -732,7 +722,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
   }, [railCollapsed]);
   const railOpen = !railCollapsed || railHot;
 
-  useOfflineSync();
+  useNetworkState();
   useRealtime();
 
   useEffect(() => {
@@ -946,8 +936,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
             sections={sections}
             onOpenMobile={() => setMobileOpen(true)}
           />
-          <SyncBanner onOpen={() => setSyncOpen(true)} />
-          <SyncDialog open={syncOpen} onOpenChange={setSyncOpen} />
+          <OfflineBanner />
 
           <div ref={scrollRef} className="shell-scroll">
             <main id="main-content" className="min-w-0" tabIndex={-1}>
@@ -1005,10 +994,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                 pathname={location.pathname}
                 search={location.search}
                 onClose={() => setMobileOpen(false)}
-                onOpenSync={() => {
-                  setMobileOpen(false);
-                  setSyncOpen(true);
-                }}
               />
             </motion.div>
           )}

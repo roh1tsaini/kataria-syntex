@@ -10,7 +10,6 @@ import {
   readSession,
 } from "../offline/core";
 import { invalidateDataCaches } from "../data-caches";
-import { recountPending } from "../offline/sync-state";
 import {
   ALL_PERMISSIONS as SHARED_ALL_PERMISSIONS,
   type Permission as SharedPermission,
@@ -376,7 +375,6 @@ export const useAuth = create<AuthState>()((set, get) => ({
       // account (see data-caches).
       invalidateDataCaches();
       await resetPageStores();
-      recountPending();
       set({
         status: "guest",
         user: null,
@@ -514,13 +512,9 @@ export const useAuth = create<AuthState>()((set, get) => ({
       currentFy: res.currentFy,
       financialYears: res.financialYears,
     });
-    // Offline cache: numbering config + per-FY next counters for offline
-    // challan numbering. Merge with cached counters — the server doesn't know
-    // about locally-issued (still unsynced) numbers, so taking raw server
-    // values would regress a counter below an already-used seq and cause
-    // duplicate-number clashes on the next offline create.
-    const { readCompany } = await import("../offline/core");
-    const prev = readCompany()?.counters ?? {};
+    // Read cache: company + numbering config + per-FY next counters, so a
+    // device that restarts offline still shows its company details. Numbers
+    // are issued by the server now, so its counters are taken as-is.
     const counters: Record<
       string,
       {
@@ -532,13 +526,12 @@ export const useAuth = create<AuthState>()((set, get) => ({
       }
     > = {};
     for (const fy of res.financialYears) {
-      const p = prev[fy.label];
       counters[fy.label] = {
-        sales: Math.max(fy.salesNext ?? 1, p?.sales ?? 0),
-        outward: Math.max(fy.outwardNext ?? 1, p?.outward ?? 0),
-        packing_s: Math.max(fy.packingSaleNext ?? 1, p?.packing_s ?? 0),
-        packing_j: Math.max(fy.packingJobNext ?? 1, p?.packing_j ?? 0),
-        raw: Math.max(fy.rawNext ?? 1, p?.raw ?? 0),
+        sales: fy.salesNext ?? 1,
+        outward: fy.outwardNext ?? 1,
+        packing_s: fy.packingSaleNext ?? 1,
+        packing_j: fy.packingJobNext ?? 1,
+        raw: fy.rawNext ?? 1,
       };
     }
     cacheCompany({

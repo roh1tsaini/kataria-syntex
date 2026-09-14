@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CloudOff,
   Copy,
   Ellipsis,
   Eye,
@@ -138,14 +137,12 @@ function RowMenu({ kind, challan }: { kind: ChallanKind; challan: Challan }) {
                 Print
               </Link>
             </DropdownMenuItem>
-            {!challan.pendingSync && (
-              <DropdownMenuItem asChild>
-                <Link to={`${kind.listPath}/${challan.id}/edit`}>
-                  <Pencil className="size-4" aria-hidden />
-                  Edit
-                </Link>
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem asChild>
+              <Link to={`${kind.listPath}/${challan.id}/edit`}>
+                <Pencil className="size-4" aria-hidden />
+                Edit
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => void onCopyId()}>
               <Copy className="size-4" aria-hidden />
               Copy ID
@@ -460,12 +457,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                           {c.conflict ? (
                             <span className="ml-1.5 inline-flex items-center gap-1 rounded-sm border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-destructive">
                               <AlertTriangle className="size-2.5" aria-hidden />
-                              {c.suggestion ? "Clash" : "Failed"}
-                            </span>
-                          ) : c.pendingSync ? (
-                            <span className="ml-1.5 inline-flex items-center gap-1 rounded-sm border border-border bg-muted px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              <CloudOff className="size-2.5" aria-hidden />
-                              To sync
+                              Clash
                             </span>
                           ) : null}
                         </td>
@@ -537,11 +529,6 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                                   aria-hidden
                                 />{" "}
                                 Clash
-                              </span>
-                            ) : c.pendingSync ? (
-                              <span className="inline-flex items-center gap-1 rounded-sm border border-border bg-muted px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                                <CloudOff className="size-2.5" aria-hidden /> To
-                                sync
                               </span>
                             ) : null}
                           </div>
