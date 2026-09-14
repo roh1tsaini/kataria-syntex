@@ -1,10 +1,22 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ArrowLeft, Printer } from "lucide-react";
-import { useAuth, useChallans } from "@kataria-syntex/app-core";
-import { printPage } from "@/lib/platform";
-import { loadChallanFonts } from "@/lib/challan-pdf";
+import {
+  apiBlob,
+  useAuth,
+  useChallans,
+  friendlyError,
+  toastError,
+} from "@kataria-syntex/app-core";
+import { isAndroidShell, printPage, printPdfOnAndroid } from "@/lib/platform";
+import { loadChallanFonts, safeFilename } from "@/lib/challan-pdf";
 import {
   SHEET_H_MM,
   SHEET_W_MM,
@@ -62,12 +74,44 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
   const { detail } = useChallans();
   const { markup, failed } = useChallanSheets(id, kind.type);
   const printed = useRef(false);
+  const [printing, setPrinting] = useState(false);
+
+  const printChallan = useCallback(() => {
+    if (!id || !detail) return;
+    if (isAndroidShell()) {
+      // The WebView can't print the page — hand the already-rendered server
+      // PDF to the native PrintManager so Android prints the FILE. Busy state
+      // is the button; a native dialog on page load would ambush the user.
+      setPrinting(true);
+      void apiBlob(`/challans/${id}/pdf`)
+        .then(async (blob) => {
+          await printPdfOnAndroid(
+            new Uint8Array(await blob.arrayBuffer()),
+            safeFilename(detail.challan.challanNumber),
+          );
+        })
+        .catch((err: unknown) => {
+          toastError(
+            "Could not print",
+            friendlyError(err, "Something went wrong."),
+          );
+        })
+        .finally(() => setPrinting(false));
+      return;
+    }
+    void printPage(kind.singular);
+  }, [id, detail, kind.singular]);
 
   useEffect(() => {
     if (markup && !printed.current) {
       printed.current = true;
-      const t = setTimeout(() => void printPage(kind.singular), 350);
-      return () => clearTimeout(t);
+      // Web/desktop: open the print preview immediately. Android is skipped —
+      // its print flow starts from the button, not from an auto-opened native
+      // dialog.
+      if (!isAndroidShell()) {
+        const t = setTimeout(() => void printPage(kind.singular), 350);
+        return () => clearTimeout(t);
+      }
     }
   }, [markup, kind.singular]);
 
@@ -116,9 +160,9 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
           <ArrowLeft className="size-4" aria-hidden />
           Back
         </Link>
-        <Button onClick={() => void printPage(kind.singular)}>
+        <Button onClick={printChallan} disabled={printing} loading={printing}>
           <Printer className="size-4" aria-hidden />
-          Print / Save as PDF
+          {printing ? "Opening print…" : "Print / Save as PDF"}
         </Button>
       </div>
 

@@ -120,8 +120,9 @@ export function detectPlatformLabel(): string {
 
 /** Opens the browser print dialog. Prints the current view after the page
  * fonts are ready so the embedded Inter font is typeset, not substituted,
- * in the printed page. No-op inside the Android WebView — the challan pages
- * route Android through the share sheet instead (see downloadChallanPdf). */
+ * in the printed page. Web and desktop only — Android cannot print the live
+ * page, so callers route it through printPdfOnAndroid instead, which hands
+ * the rendered PDF to the native PrintManager (see challans-print.tsx). */
 export async function printPage(name = "Document"): Promise<void> {
   void name;
   try {
@@ -406,21 +407,67 @@ export function configureWebCore(appVersion: string): void {
   configureCore(adapter);
 }
 
-// ── Android deep links (scaffold) ─────────────────────────────────────────────
+// ── Android deep links ────────────────────────────────────────────────────────
 
-/** Subscribes to native URL-open events for later routing (QR approve
- *  links). Returns the unsubscribe. Routing is wired separately — this only
- *  delivers the URL. */
-export async function initAndroidDeepLinks(
-  onUrl: (url: string) => void,
-): Promise<() => void> {
-  const { App } = await import("@capacitor/app");
-  const handle = await App.addListener("appUrlOpen", (event) =>
-    onUrl(event.url),
-  );
-  return () => {
-    void handle.remove();
-  };
+/**
+ * The QR-login payload is a URL whose last path segment is the code (see
+ * use-camera-scanner.ts: the scan side accepts the same shape). Both the
+ * custom scheme and the release origin's https form carry it, so this parses
+ * either. Returns null for anything that isn't a scan route — the link must
+ * not route the app off somewhere unrelated.
+ */
+export function parseScanUrl(url: string): string | null {
+  // A custom-scheme URL with no authority ("kataria://login/scan/AB12CD") is
+  // still parseable by URL, but the scheme's first segment reads as the host
+  // and the pathname starts at /scan — so match the full path, not just the
+  // parsed pathname. Accepting both that and the https form keeps the parse
+  // honest for every shape the manifest can claim.
+  const m = url.match(/\/login\/scan\/([^/?#\s]+)/);
+  if (!m) return null;
+  return decodeURIComponent(m[1]).toUpperCase();
+}
+
+/**
+ * Routes a URL Android handed the app. Only the QR-login scan route is
+ * claimed; anything else is ignored so a link can't navigate the app to an
+ * arbitrary page. Navigation mirrors the notification-tap path: push the path
+ * and let the router's popstate listener pick it up.
+ */
+function routeDeepLink(url: string): void {
+  const code = parseScanUrl(url);
+  if (!code) return;
+  try {
+    window.history.pushState(null, "", `/login/scan/${code}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  } catch {
+    // Navigation failed — the code can still be typed on the scan page.
+  }
+}
+
+let deepLinksWired = false;
+
+/**
+ * Subscribes to native URL-open events and routes them. Android delivers
+ * appUrlOpen when the app was launched (or resumed) by an intent filter the
+ * manifest claims: the kataria:// scheme and the release origin's
+ * /login/scan/<code> path (see AndroidManifest.xml). Wired once at boot by
+ * main.tsx; returns the unsubscribe, which the app never calls — the
+ * subscription lives as long as the process.
+ */
+export async function initAndroidDeepLinks(): Promise<void> {
+  if (detectHost() !== "android" || deepLinksWired) return;
+  deepLinksWired = true;
+  try {
+    const { App } = await import("@capacitor/app");
+    // A cold start hands the launch URL immediately; a warm resume fires it
+    // when the user taps a link from another app. Both route the same way.
+    await App.addListener("appUrlOpen", (event) => {
+      if (typeof event?.url === "string") routeDeepLink(event.url);
+    });
+  } catch {
+    // Plugin unavailable (bundle previewed in a browser) — deep links simply
+    // don't route, the app still opens on its last route.
+  }
 }
 
 // ── Android PDF share (Capacitor Filesystem + Share) ─────────────────────────
@@ -674,6 +721,36 @@ export async function downloadAndInstallApk(
       // listener already gone — the download result stands on its own
     });
   }
+}
+
+// ── Android native printing (PrinterPlugin) ─────────────────────────────────
+
+/** Minimal shape of the app's Printer plugin (registered in MainActivity,
+ *  not an npm package). Declared locally so browsers never import
+ *  @capacitor/core eagerly. */
+type PrinterPlugin = {
+  printPdf(options: { base64: string; filename: string }): Promise<void>;
+};
+
+/**
+ * Prints the already-rendered challan PDF through Android's print framework.
+ * The WebView's window.print() has no document to hand the system, only the
+ * live page; this stages the same PDF bytes the download path saves and lets
+ * the PrintManager print the FILE — so the user gets Android's own print UI
+ * (printer, copies, page range, Save as PDF) over a real document.
+ *
+ * Android-only: throws "android_only" elsewhere. Rejects with
+ * "pdf_missing" / "pdf_invalid" / "storage_unavailable" / "print_unavailable"
+ * / "already_in_progress".
+ */
+export async function printPdfOnAndroid(
+  bytes: Uint8Array,
+  filename: string,
+): Promise<void> {
+  if (detectHost() !== "android") throw new Error("android_only");
+  const { registerPlugin } = await import("@capacitor/core");
+  const printer = registerPlugin<PrinterPlugin>("Printer");
+  await printer.printPdf({ base64: bytesToBase64(bytes), filename });
 }
 
 // ── Electron window chrome (used by title-bar.tsx) ──────────────────────────

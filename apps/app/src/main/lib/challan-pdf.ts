@@ -42,7 +42,9 @@ export const loadChallanFonts: () => Promise<ChallanFonts> = createCached(
   },
 );
 
-function safeFilename(challanNumber: string): string {
+/** The filename both the download and the native-print paths use — one
+ *  sanitizer so a print job and a saved file can never disagree. */
+export function safeFilename(challanNumber: string): string {
   return `challan-${challanNumber.replace(/[^\w.-]/g, "_")}.pdf`;
 }
 
