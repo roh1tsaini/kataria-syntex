@@ -1,5 +1,5 @@
 import type { ApiCode } from "@kataria-syntex/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { Queryable } from "./db";
 import { deniers, colors } from "../db/schema";
 
@@ -19,7 +19,11 @@ export async function validateMasters(
     .select()
     .from(deniers)
     .where(
-      and(eq(deniers.workspaceId, workspaceId), inArray(deniers.id, denierIds)),
+      and(
+        eq(deniers.workspaceId, workspaceId),
+        inArray(deniers.id, denierIds),
+        isNull(deniers.archivedAt),
+      ),
     );
   if (denierRows.length !== denierIds.length)
     return { error: "invalid_denier" };
@@ -33,6 +37,7 @@ export async function validateMasters(
             and(
               eq(colors.workspaceId, workspaceId),
               inArray(colors.id, colorIds),
+              isNull(colors.archivedAt),
             ),
           )
       : [];

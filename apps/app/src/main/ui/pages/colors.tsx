@@ -7,6 +7,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { ArchiveInsteadOfDeleteError } from "@kataria-syntex/app-core";
 import {
   usePermission,
   useMasters,
@@ -725,8 +726,12 @@ export function ColorsPage() {
     setDeletingId(color.id);
     try {
       await deleteColor(color.id);
-      toastSuccess(`${color.name} deleted`);
+      toastSuccess(
+        `${color.name} archived`,
+        "It has stock or challan history, so it's hidden from pickers — that history keeps its name.",
+      );
     } catch (err) {
+      if (err instanceof ArchiveInsteadOfDeleteError) return;
       toastError("Could not delete", friendlyError(err));
     } finally {
       setDeletingId(null);

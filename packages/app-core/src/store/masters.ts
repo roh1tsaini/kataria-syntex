@@ -61,6 +61,18 @@ export type JobWorkerInput = { name: string; phone: string; address: string };
 export type DenierInput = { name: string; description: string };
 export type ColorInput = { name: string; code: string; stockType?: string };
 
+/**
+ * Thrown when the server archived a master instead of deleting it — the row
+ * had document or ledger history it could not lose. Callers catch this to say
+ * "archived" rather than reporting a delete that didn't happen (A6).
+ */
+export class ArchiveInsteadOfDeleteError extends Error {
+  constructor() {
+    super("archived");
+    this.name = "ArchiveInsteadOfDeleteError";
+  }
+}
+
 type MastersState = {
   customers: Customer[];
   customersLoading: boolean;
@@ -143,8 +155,14 @@ export const useMasters = create<MastersState>()((set, get) => {
         await refresh();
       },
       remove: async (id: string) => {
-        await api(`/masters/${path}/${id}`, { method: "DELETE" });
+        const res = await api<{ archived?: boolean }>(
+          `/masters/${path}/${id}`,
+          { method: "DELETE" },
+        );
         await refresh();
+        // Colors and deniers with history are archived rather than deleted
+        // (A6) — the server says so, callers report it.
+        if (res.archived) throw new ArchiveInsteadOfDeleteError();
       },
     };
   };

@@ -76,6 +76,7 @@ export {
   type DenierInput,
   type ColorInput,
   type SupplierInput,
+  ArchiveInsteadOfDeleteError,
 } from "./store/masters";
 
 export {

@@ -25,6 +25,7 @@ import {
   friendlyError,
   toastError,
   toastSuccess,
+  ArchiveInsteadOfDeleteError,
 } from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
@@ -287,8 +288,12 @@ function MasterTab<I extends { id: string; name: string }, In>({
     setDeletingId(item.id);
     try {
       await config.remove(item.id);
-      toastSuccess(`${item.name} deleted`);
+      toastSuccess(
+        `${item.name} archived`,
+        "It has stock or challan history, so it's hidden from pickers — that history keeps its name.",
+      );
     } catch (err) {
+      if (err instanceof ArchiveInsteadOfDeleteError) return;
       const msg = friendlyError(err);
       setError(msg);
       toastError("Could not delete", msg);

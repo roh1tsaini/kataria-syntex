@@ -1,6 +1,6 @@
 import type { Queryable } from "./db";
 import { colors, stockEntries } from "../db/schema";
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { generateId } from "./token";
 import { round3 } from "@kataria-syntex/shared";
 
@@ -51,6 +51,7 @@ export async function buildChallanStockStatements(
           and(
             eq(colors.workspaceId, workspaceId),
             inArray(colors.id, colorIds),
+            isNull(colors.archivedAt),
           ),
         )
     : [];

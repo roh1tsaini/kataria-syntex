@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import type { Env } from "../env";
 import { toIso } from "../lib/datetime";
@@ -178,7 +178,11 @@ recipesRoute.post("/", requirePermission("manage_masters"), async (c) => {
     .select({ id: colors.id })
     .from(colors)
     .where(
-      and(eq(colors.id, body.colorId), eq(colors.workspaceId, workspaceId)),
+      and(
+        eq(colors.id, body.colorId),
+        eq(colors.workspaceId, workspaceId),
+        isNull(colors.archivedAt),
+      ),
     )
     .limit(1);
   if (!colorRow) return apiError(c, "invalid_color", 400);
@@ -186,7 +190,11 @@ recipesRoute.post("/", requirePermission("manage_masters"), async (c) => {
     .select({ id: deniers.id })
     .from(deniers)
     .where(
-      and(eq(deniers.id, body.denierId), eq(deniers.workspaceId, workspaceId)),
+      and(
+        eq(deniers.id, body.denierId),
+        eq(deniers.workspaceId, workspaceId),
+        isNull(deniers.archivedAt),
+      ),
     )
     .limit(1);
   if (!denierRow) return apiError(c, "invalid_denier", 400);
