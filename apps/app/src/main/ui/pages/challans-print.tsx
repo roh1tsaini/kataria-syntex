@@ -15,7 +15,11 @@ import {
   friendlyError,
   toastError,
 } from "@kataria-syntex/app-core";
-import { isAndroidShell, printPage, printPdfOnAndroid } from "@/lib/platform";
+import {
+  isAndroidShell,
+  printPage,
+  shareChallanPdfOnAndroid,
+} from "@/lib/platform";
 import { loadChallanFonts, safeFilename } from "@/lib/challan-pdf";
 import {
   SHEET_H_MM,
@@ -79,20 +83,21 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
   const printChallan = useCallback(() => {
     if (!id || !detail) return;
     if (isAndroidShell()) {
-      // The WebView can't print the page — hand the already-rendered server
-      // PDF to the native PrintManager so Android prints the FILE. Busy state
-      // is the button; a native dialog on page load would ambush the user.
+      // The WebView can't print the page, and no maintained Capacitor plugin
+      // prints a file — so Android gets the share sheet over the same server
+      // PDF the download path uses. The user picks Drive, a print app, or
+      // Save from there.
       setPrinting(true);
       void apiBlob(`/challans/${id}/pdf`)
         .then(async (blob) => {
-          await printPdfOnAndroid(
+          await shareChallanPdfOnAndroid(
             new Uint8Array(await blob.arrayBuffer()),
             safeFilename(detail.challan.challanNumber),
           );
         })
         .catch((err: unknown) => {
           toastError(
-            "Could not print",
+            "Could not share",
             friendlyError(err, "Something went wrong."),
           );
         })
@@ -106,8 +111,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
     if (markup && !printed.current) {
       printed.current = true;
       // Web/desktop: open the print preview immediately. Android is skipped —
-      // its print flow starts from the button, not from an auto-opened native
-      // dialog.
+      // its flow starts from the button, not from a sheet opened on load.
       if (!isAndroidShell()) {
         const t = setTimeout(() => void printPage(kind.singular), 350);
         return () => clearTimeout(t);
@@ -162,7 +166,13 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
         </Link>
         <Button onClick={printChallan} disabled={printing} loading={printing}>
           <Printer className="size-4" aria-hidden />
-          {printing ? "Opening print…" : "Print / Save as PDF"}
+          {isAndroidShell()
+            ? printing
+              ? "Opening share…"
+              : "Share / Save PDF"
+            : printing
+              ? "Opening print…"
+              : "Print / Save as PDF"}
         </Button>
       </div>
 

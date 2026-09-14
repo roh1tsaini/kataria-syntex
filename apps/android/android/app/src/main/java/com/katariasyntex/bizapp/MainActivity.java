@@ -8,10 +8,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         // App-specific native code ships as registered plugin classes — no
-        // separate npm package for one screen's worth of installer and print
-        // logic.
+        // separate npm package for one screen's installer logic.
         registerPlugin(InstallerPlugin.class);
-        registerPlugin(PrinterPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

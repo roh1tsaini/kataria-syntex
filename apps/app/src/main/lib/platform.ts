@@ -121,7 +121,7 @@ export function detectPlatformLabel(): string {
 /** Opens the browser print dialog. Prints the current view after the page
  * fonts are ready so the embedded Inter font is typeset, not substituted,
  * in the printed page. Web and desktop only — Android cannot print the live
- * page, so callers route it through printPdfOnAndroid instead, which hands
+ * page, so callers route it through shareChallanPdfOnAndroid instead, which hands
  * the rendered PDF to the native PrintManager (see challans-print.tsx). */
 export async function printPage(name = "Document"): Promise<void> {
   void name;
@@ -723,34 +723,23 @@ export async function downloadAndInstallApk(
   }
 }
 
-// ── Android native printing (PrinterPlugin) ─────────────────────────────────
-
-/** Minimal shape of the app's Printer plugin (registered in MainActivity,
- *  not an npm package). Declared locally so browsers never import
- *  @capacitor/core eagerly. */
-type PrinterPlugin = {
-  printPdf(options: { base64: string; filename: string }): Promise<void>;
-};
+// ── Android PDF share ────────────────────────────────────────────────────────
 
 /**
- * Prints the already-rendered challan PDF through Android's print framework.
- * The WebView's window.print() has no document to hand the system, only the
- * live page; this stages the same PDF bytes the download path saves and lets
- * the PrintManager print the FILE — so the user gets Android's own print UI
- * (printer, copies, page range, Save as PDF) over a real document.
+ * Shares the already-rendered challan PDF on Android. window.print() in the
+ * WebView has no document to hand the system, only the live page, and there is
+ * no maintained Capacitor plugin that prints a file — so Android gets the same
+ * share sheet the download path uses (Drive, WhatsApp, a print app, or Save),
+ * and printing stays a web/desktop capability.
  *
- * Android-only: throws "android_only" elsewhere. Rejects with
- * "pdf_missing" / "pdf_invalid" / "storage_unavailable" / "print_unavailable"
- * / "already_in_progress".
+ * Android-only: throws "android_only" elsewhere.
  */
-export async function printPdfOnAndroid(
+export async function shareChallanPdfOnAndroid(
   bytes: Uint8Array,
   filename: string,
-): Promise<void> {
+): Promise<boolean> {
   if (detectHost() !== "android") throw new Error("android_only");
-  const { registerPlugin } = await import("@capacitor/core");
-  const printer = registerPlugin<PrinterPlugin>("Printer");
-  await printer.printPdf({ base64: bytesToBase64(bytes), filename });
+  return sharePdfOnAndroid(bytes, filename);
 }
 
 // ── Electron window chrome (used by title-bar.tsx) ──────────────────────────

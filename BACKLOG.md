@@ -59,34 +59,30 @@ Every item below was confirmed against the actual code. Fix targets
       in CI before deploy — if prod already holds a duplicate user the deploy
       fails loudly at `wrangler d1 migrations apply`, which is the right
       outcome but is the one thing I could not pre-verify from this machine.
-- [x] **A3 · `printPage()` fires `window.print()` on Android.** FIXED 2026-09-15.
-      Per the owner: Android must print the PDF _file_ through the native
-      print system, not the webpage. Done in both shells in one session (§2.3): - **Native** — `PrinterPlugin.java` + `PdfPageCount.java`. The plugin
-      decodes the PDF, reports its page count, and streams the bytes into the
-      framework's `ParcelFileDescriptor` via a `PrintDocumentAdapter`
-      subclass — Android's own UI then offers printer, copies, page range
-      and Save as PDF. The document is a real file, never the WebView page,
-      so nothing is re-rendered or re-typeset. Single-flight like
-      InstallerPlugin; no new permission; no Gradle change (`PrintManager`
-      is platform API; `minSdk 24` is the floor it needs).
-      Design note: the first draft used `IntentPrintDocumentAdapter`, which
-      is a framework-**internal** class with no public reference page — it
-      would not have compiled. The public path is subclassing
-      `PrintDocumentAdapter` and copying bytes in `onWrite`. - **TS** — `printPdfOnAndroid` in platform.ts (declared-local plugin
-      type + lazy `registerPlugin("Printer")`, matching the Installer
-      pattern); `printPage`'s docstring now matches its body. - **UI** — `challans-print.tsx` routes both call sites through one
-      `printChallan`: Android fetches the server PDF via `apiBlob` and prints
-      it; web/desktop keep `window.print()`. The auto-fire now skips Android
-      (a native dialog on page load would ambush the user); Android starts
-      from the button, which shows a busy state.
-      `safeFilename` exported from challan-pdf.ts so print and download agree.
+- [x] **A3 · `printPage()` fires `window.print()` on Android.** FIXED
+      2026-09-15, then **REVISED 2026-09-15** by the owner's call.
+      **The shipped behaviour: Android shares the PDF, it does not print.**
+      `window.print()` in the WebView is a silent no-op or a broken attempt to
+      print a page the WebView doesn't own, and the page auto-fired it 350ms
+      after load with no user tap. Both are fixed. But the owner decided
+      against native printing: **there is no maintained Capacitor plugin that
+      prints a file**, and the only path to Android's `PrintManager` is
+      hand-written Java — the one thing in this repo that needs a native
+      compile. That was built and then removed: - **Removed** — `PrinterPlugin.java`, `PdfPageCount.java`, their
+      `MainActivity` registration and the `printPdfOnAndroid` TS surface.
+      Printing is a web/desktop capability; Android no longer pretends. - **Shipped instead** — `shareChallanPdfOnAndroid` in platform.ts wraps
+      the existing Filesystem + Share path (already used by the download
+      button). `challans-print.tsx` routes both call sites through one
+      `printChallan`: Android fetches the server PDF via `apiBlob` and opens
+      the share sheet; web/desktop keep `window.print()`. The button reads
+      "Share / Save PDF" on Android and "Print / Save as PDF" elsewhere. - **Auto-fire** now skips Android on either design — a sheet or a print
+      dialog opened on page load would ambush the user. Android starts from
+      the button, which shows a busy state. `safeFilename` exported from
+      challan-pdf.ts so share and download agree on the name.
+      Trade-off stated plainly: the user picks Drive, a print app, or Save from
+      the sheet. There is no printer/copies/range UI from the app itself.
       Gates: typecheck (all 5, incl. android) ✓, lint ✓, build ✓.
-      **Java compiled** with javac 21 against stubs of the public
-      `android.print` + Capacitor APIs (exit 0) — this caught two real bugs
-      (a comment closing the block early, and `onWriteFinished` taking
-      `PageRange[]`, not a wrapper array). Still NOT a Gradle build: no Android
-      SDK on this machine, so `minSdk`/desugaring and the actual print dialog
-      need a device run to confirm. Version 0.12.2 → 0.12.3.
+      Version 0.12.2 → 0.12.3.
 
 ### High
 
