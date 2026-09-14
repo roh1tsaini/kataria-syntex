@@ -43,7 +43,7 @@ Bun workspaces + Turborepo. Bun is the only package manager (`bun@1.3.14`).
 | `apps/app`          | Business app — web/PWA + Electron (this doc)                    |
 | `apps/android`      | Android app — Capacitor shell over this bundle (its own APP.md) |
 | `apps/web`          | Public website — Next.js + Vinext on Workers                    |
-| `packages/app-core` | Shared business core — API client, stores, offline              |
+| `packages/app-core` | Shared business core — API client, stores, read cache           |
 | `packages/shared`   | Domain types, permissions, errors, numbering, FY                |
 | `packages/tsconfig` | Shared TS presets                                               |
 
