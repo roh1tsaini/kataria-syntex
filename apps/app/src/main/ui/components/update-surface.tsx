@@ -1,18 +1,19 @@
 /**
- * Update surface — mounted once in App alongside the Toaster. Renders:
+ * Update surface — mounted once in App alongside the Toaster. Renders only the
+ * two surfaces a routine deploy must never need:
  * - the blocking update dialog when the server (426) or the published
  *   minVersion floors this client;
- * - the banner strip under the title bar for the macOS dmg prompt, with a
- *   dismiss that defers the notice until the next version ships;
- * - the Windows/Linux "restart to update" toast when electron-updater has
- *   staged the installer.
+ * - the banner strip under the title bar for the macOS dmg prompt (unsigned
+ *   builds cannot self-install), with a dismiss that defers the notice until
+ *   the next version ships.
+ *
+ * Web/PWA and Android have no surface at all: the service worker applies the
+ * deploy itself, and Android's APK install is a deliberate action in Settings.
  */
-import { useEffect, useRef, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { toast } from "sonner";
 import { X } from "lucide-react";
 import { useUpdates, showUpdateBanner } from "@/store/updates";
-import { desktopBridge, detectHost } from "@/lib/platform";
 import { UpdateDialog } from "@/ui/components/update-dialog";
 import { Button } from "@/ui/components/ui/button";
 import { EASE_OUT } from "@/ui/lib/motion";
@@ -20,38 +21,6 @@ import { EASE_OUT } from "@/ui/lib/motion";
 // Electron's invisible drag strip covers the top of the window; subtract the
 // banner row from it so the Update button stays clickable.
 const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
-
-function UpdateReadyToast() {
-  const status = useUpdates((s) => s.status);
-  const latestVersion = useUpdates((s) => s.latestVersion);
-  const required = useUpdates((s) => s.requiredMinVersion);
-  const installUpdate = useUpdates((s) => s.installUpdate);
-  const toastedFor = useRef<string | null>(null);
-
-  useEffect(() => {
-    // Windows/Linux only: macOS has the banner; web and Android update in
-    // the background and expose their deliberate actions in Settings.
-    if (
-      desktopBridge()?.platform === "darwin" ||
-      detectHost() === "android" ||
-      required
-    )
-      return;
-    if (status !== "ready" || !latestVersion) return;
-    if (toastedFor.current === latestVersion) return;
-    toastedFor.current = latestVersion;
-    toast.success("Update ready", {
-      description: `Version ${latestVersion} installs the next time the app restarts.`,
-      duration: 8000,
-      action: {
-        label: "Restart now",
-        onClick: () => void installUpdate(),
-      },
-    });
-  }, [status, latestVersion, required, installUpdate]);
-
-  return null;
-}
 
 function UpdateBanner() {
   const show = useUpdates(showUpdateBanner);
@@ -111,7 +80,6 @@ function UpdateBanner() {
 export function UpdateSurface() {
   return (
     <>
-      <UpdateReadyToast />
       <UpdateBanner />
       <UpdateDialog />
     </>

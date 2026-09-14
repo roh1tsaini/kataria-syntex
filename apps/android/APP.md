@@ -172,7 +172,28 @@ install asks once for "install unknown apps" (`REQUEST_INSTALL_PACKAGES`;
 denial surfaces the allow-in-settings copy in the blocking dialog).
 
 Routine manifest checks stay in the background; Settings is the deliberate
-APK update entry point. Only a server-required version blocks the app.
+APK update entry point. A newer release also raises a system notification
+once per version (`@capacitor/local-notifications`, fired from the shared
+store's Android branch) — the Android 13+ permission prompt appears only at
+that moment, and tapping the notification opens Updates. Denial simply keeps
+updates in Settings. Only a server-required version blocks the app.
+
+The "install unknown apps" permission and the Play Protect scan are the same
+OS gates every sideloaded app gets — asked once, remembered, identical to
+what file managers and third-party stores show their users. Nothing in the
+app suppresses or repeats them; the update dialog's copy explains them
+honestly instead.
+
+**Bundle/APK self-heal.** The WebView serves the bundle from the APK's own
+assets through synthetic `https://localhost` responses, and an APK install
+does not invalidate the WebView's cached copy — so the app can start up still
+running the build that was just replaced, which also breaks the
+`X-App-Version` handshake against the server. `reloadOnStaleAndroidBundle()`
+(`apps/app/src/main/lib/platform.ts`, called from the store's Android branch)
+compares the native `versionName` (`App.getInfo()`) with the `__APP_VERSION__`
+baked into the executing bundle and reloads once, with a version query, when
+they differ. One attempt per WebView session (`sessionStorage`), so a
+mismatch that survives the reload surfaces as an error instead of a loop.
 
 ## 8 · Design tokens
 

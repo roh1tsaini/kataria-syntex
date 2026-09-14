@@ -84,7 +84,7 @@ export function UpdateDialog() {
         {status === "error" && (
           <p className="text-center text-xs text-muted-foreground">
             {detectHost() === "android"
-              ? "If Android opened install settings, allow installs from this app, then try again. Otherwise check your connection."
+              ? "If Android opened install settings, allow installs from this app, then try again. The first install also runs a Play Protect scan — this APK is the official Kataria Syntex release; choose Install anyway. Otherwise check your connection."
               : "Check your connection, then try again."}
           </p>
         )}

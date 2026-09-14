@@ -3,13 +3,13 @@
  * version out?". ONE state shape and ONE surface set (banner for
  * non-blocking, blocking dialog for the 426 floor) for every host.
  *
- * - Web/PWA: the custom service worker (src/main/sw.ts) installs a new
- *   deploy sequentially and posts ks:sw-progress messages — this store
- *   turns them into live download progress (percent, size, ETA) for the
- *   Settings row. A waiting worker stays background-only until the user
- *   deliberately reloads from Settings. The worker never activates itself
- *   and a tab is never force-reloaded. A hidden update check runs hourly so
- *   long-lived tabs find deploys.
+ * - Web/PWA: the custom service worker (src/main/sw.ts) installs a new deploy
+ *   sequentially, posts ks:sw-progress messages (turned into the Settings
+ *   progress readout) and applies itself — precache, then skipWaiting() and
+ *   clients.claim(). A routine deploy therefore needs no user action at all
+ *   and renders no surface: the running tab picks the fresh shell up on its
+ *   next navigation. A hidden update check runs hourly so long-lived tabs
+ *   find deploys.
  * - Electron Windows/Linux: status is pushed over the kc:update:* IPC bridge
  *   (electron/updater.ts) — silent background download with byte progress,
  *   "restart to update" when staged.
@@ -35,6 +35,9 @@ import {
   desktopBridge,
   detectHost,
   downloadAndInstallApk,
+  initAndroidUpdateNotifications,
+  notifyAndroidUpdateAvailable,
+  reloadOnStaleAndroidBundle,
 } from "@/lib/platform";
 
 export type { UpdateProgress };
@@ -52,11 +55,6 @@ export type UpdateState = {
   checking: boolean;
   /** Host-specific artifact URL from the manifest (macOS dmg). */
   downloadUrl: string | null;
-  /**
-   * Web/PWA only — truthy once a new service worker is WAITING (new build
-   * fully cached, not yet controlling).
-   */
-  swWaiting: boolean;
   /** Version deferred via the banner's dismiss — hides the banner until a
    * different version ships. */
   dismissedVersion: string | null;
@@ -145,7 +143,6 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   progress: null,
   checking: false,
   downloadUrl: null,
-  swWaiting: false,
   dismissedVersion: readDismissedVersion(),
   dismissedThisSession: false,
 
@@ -169,8 +166,8 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         return res.kind === "error" ? "error" : "up-to-date";
       }
       // Web and macOS Electron read the same published manifest. (Web
-      // additionally learns about deploys via the SW waiting event — this
-      // manifest read is the version number shown in the banner.)
+      // additionally learns about deploys from the SW itself — the manifest
+      // read only fills the Settings version line and the 426 floor.)
       const manifest = await fetchManifest();
       if (!manifest) return "error";
       if (manifest.minVersion) get().markRequired(manifest.minVersion);
@@ -179,10 +176,19 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         downloadUrl: artifactFor(manifest),
       });
       if (compareSemver(manifest.version, __APP_VERSION__) > 0) {
-        set({ status: "ready" });
+        // "ready" arms the deliberate Settings action on Android (APK) and
+        // the banner on macOS (dmg). On web there is nothing to download and
+        // nothing to prompt — the deploy applies itself, so the state stays
+        // idle and no surface can misfire.
+        if (detectHost() !== "web") set({ status: "ready" });
+        // Android announces each release once via a system notification
+        // (deduped inside) so the user knows an APK is waiting without
+        // opening Settings.
+        if (detectHost() === "android") {
+          void notifyAndroidUpdateAvailable(manifest.version);
+        }
         return "available";
       }
-      // A waiting worker (deploy mid-install) is surfaced by the SW events.
       return "up-to-date";
     } finally {
       set({ checking: false });
@@ -234,11 +240,12 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       await desktop.restartToUpdate();
       return;
     }
-    // Web/PWA: skip-waiting → the new worker takes control → the
-    // controllerchange listener reloads. Only meaningful once the new build
-    // is fully cached (waiting) — mid-install there is nothing to apply.
-    if (!get().swWaiting) return;
-    await applyWebUpdate();
+    // Web/PWA: routine deploys apply on their own — sw.ts self-activates and
+    // the next navigation is network-first, so it serves the fresh shell with
+    // no prompt and no forced reload. The only case left is a server-required
+    // (426) floor, where the shell on screen cannot reach the API at all: one
+    // clean reload picks up the deployed build and re-arms the gate.
+    if (get().requiredMinVersion) window.location.reload();
   },
 
   markRequired: (minVersion) => {
@@ -293,27 +300,21 @@ function isSwProgressEvent(value: unknown): value is SwProgressEvent {
 
 function handleSwProgress(event: SwProgressEvent): void {
   if (event.stage === "error") {
-    // Install failed — the old version keeps working; the hourly probe
-    // retries. No UI state: the banner simply never appears.
-    etaFrom.reset();
-    useUpdates.setState({ status: "idle", progress: null });
+    // Install failed — the running build keeps working and the hourly probe
+    // retries. The readout simply never appears.
+    clearInstallProgress();
     return;
   }
-  // The new build is fully cached — install-phase messages (which can arrive
-  // straggling after the worker reached "installed") must never override the
-  // ready state or re-disable the apply button.
-  if (useUpdates.getState().swWaiting) return;
   if (event.stage === "done") {
-    void observeRegistration();
+    clearInstallProgress();
     return;
   }
-  // Fill the banner's version number from the published manifest once, and
-  // attach to the installing worker (updatefound may have fired before the
-  // page attached its listeners — installs start during navigation).
+  // Install phase: the deploy streams into the precache in the background.
+  // The Settings readout is the only surface it ever gets — a routine deploy
+  // never prompts, banners, or claims the tab.
   if (!useUpdates.getState().latestVersion) {
     void useUpdates.getState().checkNow();
   }
-  void observeRegistration();
   const percent =
     event.totalBytes > 0
       ? (event.bytes / event.totalBytes) * 100
@@ -329,115 +330,28 @@ function handleSwProgress(event: SwProgressEvent): void {
   });
 }
 
-/** Set only by installUpdate() — the controllerchange listener reloads the
- * page ONLY for a user-requested apply, never for a first install/claim. */
-let applyRequested = false;
-
 async function registerServiceWorker(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (applyRequested) window.location.reload();
-  });
+  // Progress only: the worker owns the whole apply flow (precache →
+  // skipWaiting → claim), so the page never posts SKIP_WAITING and never
+  // reloads on controllerchange.
   navigator.serviceWorker.addEventListener("message", (event) => {
     const data: unknown = event.data;
     if (isSwProgressEvent(data)) handleSwProgress(data);
   });
   try {
-    const reg = await navigator.serviceWorker.register("/sw.js");
-    watchForWaiting(reg);
-    // Installs start at the navigation-time update check — they can begin
-    // (and even finish) before this page's listeners exist, and no message
-    // will have arrived to re-arm the watch. Re-check the registration a
-    // few times after load; observeRegistration is idempotent.
-    for (const delay of [1_000, 4_000, 15_000]) {
-      setTimeout(() => void observeRegistration(), delay);
-    }
+    await navigator.serviceWorker.register("/sw.js");
   } catch {
     // Registration blocked/unsupported — the app still works online; the
     // manifest check keeps arming the 426 floor.
   }
 }
 
-/** Install finished or died without producing a waiting update — the
- * banner's progress readout must never freeze on a stale percent. */
+/** The install readout must never freeze on a stale percent — finished,
+ * failed or superseded installs all clear it. */
 function clearInstallProgress(): void {
   etaFrom.reset();
   useUpdates.setState({ progress: null, status: "idle" });
-}
-
-/** A worker that finished installing while an old one still controls the
- * page is a WAITING update — announce it to the banner. On a fresh origin
- * (no old controller) the page IS the new version: drop the install banner. */
-function announceWaiting(): void {
-  if (!navigator.serviceWorker.controller) {
-    clearInstallProgress();
-    return;
-  }
-  if (useUpdates.getState().swWaiting) return;
-  etaFrom.reset();
-  void useUpdates.getState().checkNow();
-  useUpdates.setState({ swWaiting: true, progress: null, status: "ready" });
-}
-
-function watchForWaiting(reg: ServiceWorkerRegistration): void {
-  // An update may already be waiting from before this page load.
-  if (reg.waiting) announceWaiting();
-  reg.addEventListener("updatefound", () => {
-    const installing = reg.installing;
-    if (!installing) return;
-    installing.addEventListener("statechange", () => {
-      if (installing.state === "installed") announceWaiting();
-      // A failed install (network flap mid-deploy) retires as "redundant"
-      // without ever reaching "installed" — clear the frozen readout.
-      else if (installing.state === "redundant") clearInstallProgress();
-    });
-  });
-}
-
-/** (Re)attaches waiting/installing observation to the current registration —
- * safe to call repeatedly; installs can start before the page's listeners
- * exist, so progress messages re-arm the watch mid-flight. */
-async function observeRegistration(): Promise<void> {
-  const reg = await navigator.serviceWorker
-    ?.getRegistration()
-    .catch(() => undefined);
-  if (!reg) return;
-  if (reg.waiting) {
-    announceWaiting();
-    return;
-  }
-  const worker = reg.installing;
-  if (worker) {
-    worker.addEventListener("statechange", () => {
-      if (worker.state === "installed") announceWaiting();
-      else if (worker.state === "redundant") clearInstallProgress();
-    });
-  } else if (useUpdates.getState().progress !== null) {
-    // Nothing is installing or waiting anymore (broadcasts lost, install
-    // finished between observations) — never keep a dead progress readout.
-    clearInstallProgress();
-  }
-}
-
-async function applyWebUpdate(): Promise<void> {
-  const reg = await navigator.serviceWorker
-    ?.getRegistration()
-    .catch(() => undefined);
-  const waiting = reg?.waiting;
-  if (!waiting || !navigator.serviceWorker.controller) {
-    // Nothing to hand over to — a plain reload re-fetches the fresh shell
-    // (index.html is no-cache) and re-arms the 426 gate.
-    window.location.reload();
-    return;
-  }
-  applyRequested = true;
-  waiting.postMessage({ type: "SKIP_WAITING" });
-  // The controllerchange listener (wired at registration) reloads as soon as
-  // the new worker controls the page. If activation stalls, force the
-  // handover after a generous window — an early reload would just re-serve
-  // the old precached shell and never converge.
-  await new Promise((resolve) => setTimeout(resolve, 10_000));
-  if (useUpdates.getState().swWaiting) window.location.reload();
 }
 
 /** Launch-time wiring: SW registration (web), the macOS poller, IPC events.
@@ -453,15 +367,23 @@ export function initUpdateChecks(): void {
   // macOS flow instead.
   if (desktopBridge() === null && detectHost() !== "android") {
     void registerServiceWorker();
-    // Long-lived tabs: SWs are checked by the browser on navigation only, so
+    // Long-lived tabs: browsers only check for a new worker on navigation, so
     // a standalone PWA window left open for days would never see a deploy.
-    // The hourly probe covers that.
+    // The hourly probe covers that — silently: a deploy applies itself.
     setInterval(() => {
       void navigator.serviceWorker?.getRegistrations().then((regs) => {
         for (const reg of regs) void reg.update();
       });
     }, SW_CHECK_INTERVAL_MS);
     return;
+  }
+  if (detectHost() === "android") {
+    // The WebView can still be running the bundle from the APK that was
+    // replaced (its cached copy is not invalidated by an install) — self-heal
+    // before the manifest poll, since a bundle/APK mismatch also breaks the
+    // 426 handshake. The release-announcement listener wires alongside it.
+    void reloadOnStaleAndroidBundle();
+    void initAndroidUpdateNotifications();
   }
   void useUpdates.getState().checkNow();
   setInterval(() => void useUpdates.getState().checkNow(), CHECK_INTERVAL_MS);
@@ -505,10 +427,9 @@ export function showUpdateBanner(): boolean {
   if (s.requiredMinVersion) return false;
   if (s.dismissedThisSession) return false;
   // Deferred via the banner's dismiss — hidden until a different version.
-  // latestVersion arrives async after the waiting flag, so a dismissed
-  // version with the manifest still in flight counts as dismissed: the
-  // common case is the same build re-announced on a fresh load, and a
-  // genuinely new build re-shows the banner once its version arrives.
+  // latestVersion can still be in flight when the user dismisses, so a
+  // dismissed version with no manifest yet counts as dismissed; a genuinely
+  // new build re-shows the banner once its version arrives.
   if (
     s.dismissedVersion &&
     (s.latestVersion === null || s.latestVersion === s.dismissedVersion)

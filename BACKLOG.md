@@ -23,11 +23,6 @@ when it ships; history lives in git.
       lives only in a surface that disappears. Decide: add inline
       confirmation at the highest-traffic triggers (saves, deletes, sync),
       or accept the banner as the only signal.
-- [ ] **B8 · The update banner auto-dismisses despite carrying an action.**
-      `ui/components/update-surface.tsx` raises "Update ready" with a
-      "Restart now" button and an 8000ms dwell. Material 3: a message with
-      an action shouldn't auto-dismiss. Decide: make it persist until
-      dismissed, or accept the timeout.
 
 ## 2. Web bugs found during the parity audit (fix in `apps/app`, then mirror)
 

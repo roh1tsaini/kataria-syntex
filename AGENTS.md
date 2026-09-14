@@ -357,15 +357,26 @@ code and the owner's word are the truth.
 - Client caches (module-level, store, SW runtime) are keyed by account/
   workspace and wiped on logout/401/account switch (`lib/data-caches.ts` in
   apps/app). Stale-while-revalidate UIs must still refetch on mount.
-- The service worker never force-reloads a tab and never caches `/api/*`;
-  routine updates apply on normal navigation or through Settings, while a
-  blocking dialog is reserved for a required version floor.
-- **Routine updates are background work.** Browser/PWA deploys cache in the
-  background and reach the next normal navigation; Android manifest checks
-  stay silent and expose the APK action in Settings. Only a server `426
+- The service worker never force-reloads a tab and never caches `/api/*`. A
+  deploy applies itself (`skipWaiting` + `clients.claim`) and reaches a tab on
+  its next navigation; a blocking dialog is reserved for a required version
+  floor.
+- **Routine updates are background work, with no surface.** Browser/PWA and
+  Windows/Linux deploys apply on the next navigation (desktop installs on
+  quit); Android manifest checks stay silent and expose the APK action in
+  Settings, with one system notification per release pointing at it; only the
+  macOS dmg prompt announces. Only a server `426
 update_required` floor may block work. Keep HTML and `/sw.js` revalidated,
   cache only content-hashed assets as immutable, and never make users clear
   browser data to receive a normal release.
+- **A stale chunk is a reload, not an error.** Route chunks are hashed, so a
+  tab open across a deploy can request a chunk URL that no longer exists —
+  reload once (`lib/lazy-route.ts`), then let the ErrorBoundary take a second
+  failure.
+- **Native shells carry their own cache invalidation.** Electron's `app://`
+  handler sets cache headers explicitly (custom protocols are cached against
+  the URL otherwise); Android compares the native versionName with the
+  executing bundle at boot (`reloadOnStaleAndroidBundle`).
 
 **Style**
 

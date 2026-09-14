@@ -42,9 +42,11 @@ win:
   artifactName: Kataria-Syntex-Biz-App-Setup-${version}.${ext}
   icon: resources/icon.png
 
+# One-click (per-user, silent): the updated installer runs without any UI, so
+# the auto-update applies invisibly on quit. An assisted installer
+# (oneClick: false) would raise a setup wizard every update.
 nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+  oneClick: true
 
 mac:
   target:

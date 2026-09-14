@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import {
   useAuth,
@@ -6,6 +6,7 @@ import {
   hydrateMastersCache,
 } from "@kataria-syntex/app-core";
 import { initUpdateChecks } from "@/store/updates";
+import { lazyRoute } from "@/lib/lazy-route";
 import { isNative, isPlainBrowser } from "@/lib/platform";
 import { ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
@@ -20,85 +21,85 @@ import {
 } from "@/ui/components/page-skeletons";
 import { NotFoundPage } from "@/ui/pages/not-found";
 
-const AuthPage = lazy(() =>
+const AuthPage = lazyRoute(() =>
   import("@/ui/pages/auth").then((m) => ({ default: m.AuthPage })),
 );
-const EntryPage = lazy(() =>
+const EntryPage = lazyRoute(() =>
   import("@/ui/pages/entry").then((m) => ({ default: m.EntryPage })),
 );
-const DownloadPage = lazy(() =>
+const DownloadPage = lazyRoute(() =>
   import("@/ui/pages/download").then((m) => ({ default: m.DownloadPage })),
 );
-const ScanApprovePage = lazy(() =>
+const ScanApprovePage = lazyRoute(() =>
   import("@/ui/pages/scan-approve").then((m) => ({
     default: m.ScanApprovePage,
   })),
 );
-const Dashboard = lazy(() =>
+const Dashboard = lazyRoute(() =>
   import("@/ui/pages/dashboard").then((m) => ({ default: m.Dashboard })),
 );
-const DevicesPage = lazy(() =>
+const DevicesPage = lazyRoute(() =>
   import("@/ui/pages/devices").then((m) => ({ default: m.DevicesPage })),
 );
-const MembersPage = lazy(() =>
+const MembersPage = lazyRoute(() =>
   import("@/ui/pages/members").then((m) => ({ default: m.MembersPage })),
 );
-const SettingsPage = lazy(() =>
+const SettingsPage = lazyRoute(() =>
   import("@/ui/pages/settings").then((m) => ({ default: m.SettingsPage })),
 );
-const MastersPage = lazy(() =>
+const MastersPage = lazyRoute(() =>
   import("@/ui/pages/masters").then((m) => ({ default: m.MastersPage })),
 );
-const ColorsPage = lazy(() =>
+const ColorsPage = lazyRoute(() =>
   import("@/ui/pages/colors").then((m) => ({ default: m.ColorsPage })),
 );
-const ChallansPage = lazy(() =>
+const ChallansPage = lazyRoute(() =>
   import("@/ui/pages/challans").then((m) => ({ default: m.ChallansPage })),
 );
-const ChallanEditorPage = lazy(() =>
+const ChallanEditorPage = lazyRoute(() =>
   import("@/ui/pages/challans").then((m) => ({ default: m.ChallanEditorPage })),
 );
-const ChallanDetailPage = lazy(() =>
+const ChallanDetailPage = lazyRoute(() =>
   import("@/ui/pages/challans").then((m) => ({ default: m.ChallanDetailPage })),
 );
-const ChallanPrintPage = lazy(() =>
+const ChallanPrintPage = lazyRoute(() =>
   import("@/ui/pages/challans").then((m) => ({ default: m.ChallanPrintPage })),
 );
-const OutwardChallansPage = lazy(() =>
+const OutwardChallansPage = lazyRoute(() =>
   import("@/ui/pages/outward").then((m) => ({
     default: m.OutwardChallansPage,
   })),
 );
-const OutwardChallanEditorPage = lazy(() =>
+const OutwardChallanEditorPage = lazyRoute(() =>
   import("@/ui/pages/outward").then((m) => ({
     default: m.OutwardChallanEditorPage,
   })),
 );
-const OutwardChallanDetailPage = lazy(() =>
+const OutwardChallanDetailPage = lazyRoute(() =>
   import("@/ui/pages/outward").then((m) => ({
     default: m.OutwardChallanDetailPage,
   })),
 );
-const OutwardChallanPrintPage = lazy(() =>
+const OutwardChallanPrintPage = lazyRoute(() =>
   import("@/ui/pages/outward").then((m) => ({
     default: m.OutwardChallanPrintPage,
   })),
 );
-const ReturnsPage = lazy(() =>
+const ReturnsPage = lazyRoute(() =>
   import("@/ui/pages/returns").then((m) => ({ default: m.ReturnsPage })),
 );
-const RawMaterialPage = lazy(() =>
+const RawMaterialPage = lazyRoute(() =>
   import("@/ui/pages/raw-material").then((m) => ({
     default: m.RawMaterialPage,
   })),
 );
-const StockPage = lazy(() =>
+const StockPage = lazyRoute(() =>
   import("@/ui/pages/stock").then((m) => ({ default: m.StockPage })),
 );
-const PackingPage = lazy(() =>
+const PackingPage = lazyRoute(() =>
   import("@/ui/pages/packing").then((m) => ({ default: m.PackingPage })),
 );
-const ReportsPage = lazy(() =>
+const ReportsPage = lazyRoute(() =>
   import("@/ui/pages/reports").then((m) => ({ default: m.ReportsPage })),
 );
 
@@ -147,8 +148,9 @@ export function App() {
     // resolves — the live fetch overwrites whatever the cache holds.
     hydrateMastersCache();
     void bootstrap();
-    // Update wiring for every host: web registers the service worker (prompt
-    // mode) + hourly probe; native pollers and Electron events start here.
+    // Update wiring for every host: web registers the service worker and its
+    // hourly probe (a deploy applies itself — no surface, no reload); the
+    // Android bundle check, native pollers and Electron events start here.
     initUpdateChecks();
   }, [bootstrap]);
 

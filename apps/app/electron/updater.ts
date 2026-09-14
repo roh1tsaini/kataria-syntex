@@ -111,7 +111,11 @@ export function initUpdater(getWin: () => BrowserWindow | null): void {
   });
   ipcMain.handle("kc:update:restart", () => autoUpdater.quitAndInstall());
 
-  void autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+  // Silent check. checkForUpdatesAndNotify() would raise an OS notification —
+  // the desktop shell never interrupts: the download is background work and
+  // the installer applies on the user's next quit (autoInstallOnAppQuit).
+  // Settings exposes the deliberate "restart now" action.
+  void autoUpdater.checkForUpdates().catch(() => {});
   setInterval(
     () => void autoUpdater.checkForUpdates().catch(() => {}),
     CHECK_INTERVAL_MS,

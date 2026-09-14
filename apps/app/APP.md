@@ -115,7 +115,7 @@ apps/app/
 │   ├── main/                    # SPA (web + electron share it)
 │   │   ├── lib/platform.ts      # host detection + configureWebCore (app-core seam)
 │   │   ├── lib/challan-pdf.ts   # challan PDF fonts + save/print
-│   │   ├── store/updates.ts     # update banner / blocking dialog state
+│   │   ├── store/updates.ts     # update state (deploys, 426 gate, progress)
 │   │   └── ui/                  # App.tsx routes, pages/, components/, globals.css
 │   └── shared/                  # challan-html template + Inter TTFs
 ├── electron/                    # main.ts (keychain, net bridge, printToPDF), preload, build
@@ -529,17 +529,18 @@ stay reachable so the update UI can explain itself. The manifest
 and per-platform paths; the /download page, Android poller and macOS check
 all read it.
 
-| Shell          | Update mechanism                                                                                                                                                                                                                                                                                                                                                              |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web/PWA        | Service worker (`vite-plugin-pwa` prompt mode) — a new deploy precaches in the background with no routine prompt or reload. Navigations are network-first with the precached shell as the offline fallback, so the fresh build reaches the tab on its next load. Settings exposes a deliberate reload once a worker is waiting. Hourly hidden SW check covers long-lived tabs |
-| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — check at launch + every 4h, silent download, install on quit ("Restart now" action)                                                                                                                                                                                                                             |
-| Electron Mac   | Unsigned builds can't self-install — manifest poll + "Download new dmg" dialog (`openReleaseUrl` → OS browser)                                                                                                                                                                                                                                                                |
-| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                         |
-| Android        | Manifest poll (launch + every 4h) stays in the background; Settings exposes the in-app APK install intent. A required server floor remains blocking — see BACKLOG C1                                                                                                                                                                                                          |
+| Shell          | Update mechanism                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web/PWA        | Service worker (`vite-plugin-pwa` injectManifest) — a new deploy precaches in the background with no prompt and no reload, then applies itself (`skipWaiting` → `clients.claim`). Navigations are network-first with the precached shell as the offline fallback, so a tab is running the fresh build on its next load. Hourly hidden SW check covers long-lived tabs                             |
+| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — silent check at launch + every 4h, silent download, one-click NSIS installs invisibly on quit (`autoInstallOnAppQuit`). No OS notification, no setup UI, no in-app prompt; Settings carries the deliberate restart. Closing the window is the quit that applies it                                                                  |
+| Electron Mac   | Unsigned builds can't self-install — manifest poll; a dismissible title-bar banner (deferred until the next version) offers the dmg, opened via the OS browser (`openReleaseUrl`)                                                                                                                                                                                                                 |
+| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                                             |
+| Android        | Manifest poll (launch + every 4h) stays in the background; a system notification announces each newer APK once (tap → Updates); Settings exposes the in-app APK install intent. A required server floor remains blocking — see BACKLOG C1. Boot compares the native versionName with the executing bundle (`reloadOnStaleAndroidBundle`) so a replaced APK can never leave a stale bundle running |
 
-Settings → About carries the manual "Check for updates" row. Force updates
-render the blocking `update-dialog.tsx` (undismissable, host-appropriate
-action). Breaking-change protocol lives in AGENTS.md §4.0.1: bump
+Settings → About carries the manual "Check for updates" row; on web that row
+is a readout plus the manual check, with no install action at all. Only the
+blocking `update-dialog.tsx` (undismissable, host-appropriate action) acts on
+a forced update. Breaking-change protocol lives in AGENTS.md §4.0.1: bump
 `version` + `minAppVersion` together, never keep old API shapes alive.
 
 **Free-tier limits** (Cloudflare — re-verify before claiming; limits change)
@@ -563,12 +564,12 @@ Four layers cache in apps/app. Each has one owner and one contract — never
 let a cache outlive the data it mirrors, and never add a new cache without
 stating its invalidation story here.
 
-| Layer                    | Owner / file                                         | Policy                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| HTTP — static assets     | `public/_headers` (deployed into `dist/` by Vite)    | `index.html` + unhashed files (icons, `theme-init.js`, manifest, fonts): `max-age=0, must-revalidate`. `/sw.js`: `no-cache, must-revalidate` (explicit — the SW script must revalidate every load). Hashed `/assets/*`: `max-age=31536000, immutable`. Only content-hashed URLs may be `immutable`. Deploys are atomic (Workers publishes every file together), so HTML never references missing or mixed-revision assets. |
-| HTTP — API + releases    | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                                                                                                                                                  |
-| Service worker (web/PWA) | Custom `injectManifest` SW (`src/main/sw.ts`)        | Precache all JS/CSS chunks (offline is a feature — see §11). Inter TTFs ride outside the precache and cache on first use (`ks-runtime-v1`, max 8 entries). Navigations are network-first with the precached `index.html` as the offline fallback. A waiting worker stays background-only; a deliberate Settings action activates it. Old precache revisions and unknown caches are dropped on activate.                    |
-| Client data              | app-core: zustand stores + `src/data-caches.ts`      | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), MMKV (Android).                                                                                                                         |
+| Layer                    | Owner / file                                         | Policy                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP — static assets     | `public/_headers` (deployed into `dist/` by Vite)    | `index.html` + unhashed files (icons, `theme-init.js`, manifest, fonts): `max-age=0, must-revalidate`. `/sw.js`: `no-cache, must-revalidate` (explicit — the SW script must revalidate every load). Hashed `/assets/*`: `max-age=31536000, immutable`. Only content-hashed URLs may be `immutable`. Deploys are atomic (Workers publishes every file together), so HTML never references missing or mixed-revision assets.                    |
+| HTTP — API + releases    | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                                                                                                                                                                     |
+| Service worker (web/PWA) | Custom `injectManifest` SW (`src/main/sw.ts`)        | Precache all JS/CSS chunks (offline is a feature — see §11). Inter TTFs ride outside the precache and cache on first use (`ks-runtime-v1`, max 8 entries). Navigations are network-first with the precached `index.html` as the offline fallback. The worker applies itself (`skipWaiting` after the precache, `clients.claim` on activate) — no prompt, no forced reload. Old precache revisions and unknown caches are dropped on activate. |
+| Client data              | app-core: zustand stores + `src/data-caches.ts`      | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), MMKV (Android).                                                                                                                                            |
 
 Rules that keep this from regressing:
 
@@ -578,16 +579,21 @@ Rules that keep this from regressing:
    under a stable URL (`theme-init.js`, manifests) is either revalidated
    every time or carries a revision in the SW manifest. Content-hashed files
    are the only things allowed `immutable`.
-3. **The service worker never force-reloads or interrupts a tab.** Routine
-   updates apply on the next navigation or through the deliberate Settings
-   action; only a 426 floor opens the blocking dialog. `registerType` stays
-   `"prompt"`; do not reintroduce `autoUpdate`.
+3. **No routine update surface anywhere.** Web/PWA and Android never prompt,
+   banner or dialog for a deploy — the worker applies itself and the APK
+   install is a Settings action. Desktop (Windows/Linux) stages silently and
+   installs on quit; the macOS dmg banner is the only non-blocking announce.
+   Only a server `426` floor may block (`update-dialog.tsx`). Never instruct
+   users to clear caches or browsing data.
 4. **API responses are never cached client-side or edge-side.** Offline
    queuing (`packages/app-core/src/offline`) is the only freshness-storing
    mechanism, and it replaces stale summary rows rather than mixing them.
-5. **Update installs wait for the SW.** The web reload happens only after
-   the waiting worker controls the page (`store/updates.ts`) — a blind
-   reload re-serves the old precached shell and can loop on a 426.
+5. **A deploy must never require a manual reload.** `sw.ts` finishes the
+   precache, then `skipWaiting()` + `clients.claim()`; the running tab keeps
+   its code until its next navigation. Lazy chunks invalidated by a deploy are
+   handled by one reload (`lib/lazy-route.ts`). Electron's `app://` handler
+   sets its own cache headers — custom protocols are cached against the
+   request URL otherwise.
 
 ## 15 · Dev & test
 

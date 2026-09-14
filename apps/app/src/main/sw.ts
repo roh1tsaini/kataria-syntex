@@ -14,9 +14,12 @@
  *   (fresh shell on every load, precached index.html as the offline
  *   fallback) — never for /api/* or /releases/* — and caches the Inter TTFs
  *   on first use (they only matter when rendering a challan PDF).
- * - prompt mode: the worker NEVER activates itself — a waiting build stays
- *   background-only until a deliberate Settings reload posts SKIP_WAITING.
- *   A tab is never force-reloaded mid-edit.
+ * - self-applying: install finishes the precache, then the worker calls
+ *   skipWaiting() and claims its clients on activate. A deploy therefore
+ *   takes effect on its own — no prompt, no banner, no forced reload. The
+ *   running tab keeps its code until its next navigation (network-first, so
+ *   it serves the fresh shell); the worker only aligns the offline precache
+ *   with the build that is already running.
  */
 
 type PrecacheEntry = { url: string; revision: string | null };
@@ -63,7 +66,10 @@ async function broadcast(message: unknown): Promise<void> {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(installPrecache());
+  // skipWaiting only after the precache is complete: activating mid-install
+  // would leave the offline fallback pointing at a half-filled cache, and a
+  // failed install must leave the old worker in charge.
+  event.waitUntil(installPrecache().then(() => self.skipWaiting()));
 });
 
 async function installPrecache(): Promise<void> {
@@ -132,6 +138,10 @@ self.addEventListener("activate", (event) => {
       for (const name of await caches.keys()) {
         if (name !== PRECACHE && name !== RUNTIME) await caches.delete(name);
       }
+      // Claim the open tabs: their next navigation is served by this worker,
+      // with the fresh precache behind it. Client code is never swapped
+      // underfoot — claiming changes who serves requests, not what is running.
+      await self.clients.claim();
     })(),
   );
 });
@@ -202,14 +212,3 @@ async function pruneRuntime(cache: Cache): Promise<void> {
     await cache.delete(keys[i]);
   }
 }
-
-self.addEventListener("message", (event) => {
-  const data: unknown = event.data;
-  if (
-    data !== null &&
-    typeof data === "object" &&
-    (data as { type?: unknown }).type === "SKIP_WAITING"
-  ) {
-    self.skipWaiting();
-  }
-});

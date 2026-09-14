@@ -643,9 +643,21 @@ async function onReady(): Promise<void> {
     const isFile = await stat(file)
       .then((s) => s.isFile())
       .catch(() => false);
-    return net.fetch(
-      pathToFileURL(isFile ? file : join(distRoot, "index.html")).toString(),
+    const target = isFile ? file : join(distRoot, "index.html");
+    const res = await net.fetch(pathToFileURL(target).toString());
+    // Custom protocols are cached by Chromium against the request URL, and an
+    // installed update reuses the same app://bundle/ URLs — so the shell would
+    // keep serving the previous release's HTML (microsoft/vscode#148541).
+    // Mirror the deployed policy (public/_headers): hashed assets are
+    // immutable, everything unhashed is revalidated.
+    const headers = new Headers(res.headers);
+    headers.set(
+      "Cache-Control",
+      rel.startsWith("assets/")
+        ? "public, max-age=31536000, immutable"
+        : "no-store",
     );
+    return new Response(res.body, { status: res.status, headers });
   });
 
   registerIpc();

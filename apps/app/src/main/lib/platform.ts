@@ -461,6 +461,146 @@ export async function sharePdfOnAndroid(
   return true;
 }
 
+// ── Android bundle self-heal ─────────────────────────────────────────────────
+
+/** One reload attempt per WebView session — the swapped bundle must match the
+ *  installed APK after that, so a second attempt only means something else is
+ *  wrong (rolled-back APK, patched build) and must never become a loop. */
+const ANDROID_HEAL_KEY = "android.bundleHealVersion";
+
+function healAlreadyAttempted(nativeVersion: string): boolean {
+  try {
+    return sessionStorage.getItem(ANDROID_HEAL_KEY) === nativeVersion;
+  } catch {
+    // Storage unavailable — the loop that a session flag exists to stop
+    // cannot be ruled out, so bail out of the heal entirely. A stale bundle
+    // then surfaces as an app error instead of reloading unguarded.
+    return true;
+  }
+}
+
+function markHealAttempted(nativeVersion: string): void {
+  try {
+    sessionStorage.setItem(ANDROID_HEAL_KEY, nativeVersion);
+  } catch {
+    // Best effort — see healAlreadyAttempted.
+  }
+}
+
+/**
+ * Android serves the bundle from the APK's assets through synthetic
+ * https://localhost responses, and the WebView keeps a cached copy that an APK
+ * install does not invalidate — so the app can start up running the build that
+ * was just replaced, which also breaks the X-App-Version handshake. Compare
+ * the native versionName with the version baked into the bundle that is
+ * actually executing; on a mismatch reload once with a version query so the
+ * WebView re-reads the new APK's assets.
+ */
+export async function reloadOnStaleAndroidBundle(): Promise<void> {
+  if (detectHost() !== "android") return;
+  try {
+    const { App } = await import("@capacitor/app");
+    const info = await App.getInfo();
+    if (!info.version || info.version === __APP_VERSION__) return;
+    if (healAlreadyAttempted(info.version)) return;
+    markHealAttempted(info.version);
+    const url = new URL(window.location.href);
+    url.searchParams.set("v", info.version);
+    window.location.replace(url.toString());
+  } catch {
+    // Bridge unavailable (bundle previewed in a browser) — nothing to check.
+  }
+}
+
+// ── Android release announcement (LocalNotifications) ────────────────────────
+
+/** Version last announced via a system notification (per-release dedupe). */
+const NOTIFIED_KEY = "android.updateNotifiedVersion";
+
+function alreadyNotified(version: string): boolean {
+  try {
+    return localStorage.getItem(NOTIFIED_KEY) === version;
+  } catch {
+    return false;
+  }
+}
+
+function markNotified(version: string): void {
+  try {
+    localStorage.setItem(NOTIFIED_KEY, version);
+  } catch {
+    // Storage unavailable — worst case is one repeat per launch, which the
+    // Settings row already makes harmless.
+  }
+}
+
+/**
+ * Announces a newer release with a system notification, once per version.
+ * Fires from a poll that actually found a newer APK, so the Android 13+
+ * permission prompt is contextual — never at boot. Denial only silences the
+ * announcement; the Updates row in Settings keeps the install path.
+ */
+export async function notifyAndroidUpdateAvailable(
+  version: string,
+): Promise<void> {
+  if (detectHost() !== "android") return;
+  if (alreadyNotified(version)) return;
+  try {
+    const { LocalNotifications } =
+      await import("@capacitor/local-notifications");
+    const perm = await LocalNotifications.requestPermissions();
+    if (perm.display !== "granted") return;
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 1, // one slot — a newer release replaces the pending announce
+          title: `Kataria Syntex v${version} available`,
+          body: "Tap to open Updates — it installs in place.",
+          extra: { version },
+          schedule: { at: new Date(Date.now() + 1_000) },
+        },
+      ],
+    });
+    markNotified(version);
+  } catch {
+    // Bridge missing or plugin not synced — the Settings row still carries
+    // the update.
+  }
+}
+
+let notificationTapWired = false;
+
+/**
+ * Wires the announcement's tap to the Updates screen, once per app lifetime.
+ * A tap while the app is backgrounded (or killed) re-launches it and this
+ * listener receives the same `localNotificationActionPerformed` event, so
+ * navigation happens after boot either way.
+ */
+export async function initAndroidUpdateNotifications(): Promise<void> {
+  if (detectHost() !== "android" || notificationTapWired) return;
+  notificationTapWired = true;
+  try {
+    const { LocalNotifications } =
+      await import("@capacitor/local-notifications");
+    await LocalNotifications.addListener(
+      "localNotificationActionPerformed",
+      () => {
+        // Client-side navigation inside the WebView: push the Updates route
+        // and let the router's popstate listener pick it up. The app's own
+        // deep-link seam (kataria://) is reserved for the QR flows.
+        try {
+          window.history.pushState(null, "", "/settings");
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        } catch {
+          // Navigation failed — the update still shows in Settings manually.
+        }
+      },
+    );
+  } catch {
+    // Plugin unavailable — announcements stay in the Settings row.
+  }
+}
+
 // ── Android APK self-update (InstallerPlugin) ─────────────────────────────────
 
 export type ApkProgress = { bytes: number; total: number };

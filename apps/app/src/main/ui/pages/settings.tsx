@@ -456,8 +456,10 @@ export function SettingsPage() {
   );
 }
 
-/** "Check for updates" row — manual check + install action. The banner and
- * the blocking gate cover automatic flow; this is the deliberate one. */
+/** "Check for updates" row — manual check, plus the deliberate install action
+ * only on hosts that need one (macOS dmg, Android APK, Windows/Linux restart).
+ * Web needs no action at all: the service worker applies the deploy itself and
+ * the fresh shell arrives on the next navigation. */
 function UpdateRow() {
   const checkNow = useUpdates((s) => s.checkNow);
   const installUpdate = useUpdates((s) => s.installUpdate);
@@ -465,14 +467,14 @@ function UpdateRow() {
   const checking = useUpdates((s) => s.checking);
   const status = useUpdates((s) => s.status);
   const progress = useUpdates((s) => s.progress);
-  const swWaiting = useUpdates((s) => s.swWaiting);
   const [result, setResult] = useState<string | null>(null);
 
   const web = detectHost() === "web";
-  const updateAvailable = web
-    ? swWaiting
-    : latestVersion !== null && status === "ready";
+  const installable = !web && latestVersion !== null && status === "ready";
   const downloading = status === "downloading";
+  // A deploy streaming on web is a readout, not an action — there is nothing
+  // to install.
+  const showAction = installable || (downloading && !web);
 
   const check = async () => {
     setResult(null);
@@ -482,8 +484,8 @@ function UpdateRow() {
         ? "You're on the latest version."
         : outcome === "error"
           ? "Couldn't reach the update service."
-          : web && !swWaiting
-            ? "The latest web version will apply when you next open the app."
+          : web
+            ? "A new version is ready — it applies the next time you open the app."
             : null,
     );
   };
@@ -495,12 +497,12 @@ function UpdateRow() {
           <span className="text-xs tabular-nums text-muted-foreground">
             {formatUpdateProgress(progress)}
           </span>
-        ) : updateAvailable ? (
+        ) : installable ? (
           <span className="text-xs tabular-nums text-muted-foreground">
             v{latestVersion} available
           </span>
         ) : null}
-        {updateAvailable || downloading ? (
+        {showAction ? (
           <Button
             size="sm"
             className="h-8"
@@ -508,7 +510,7 @@ function UpdateRow() {
             disabled={downloading}
             loading={downloading}
           >
-            {downloading ? "Downloading…" : web ? "Reload" : "Update"}
+            {downloading ? "Downloading…" : "Update"}
           </Button>
         ) : (
           <Button
