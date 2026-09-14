@@ -135,7 +135,11 @@ authQrRoute.post("/qr/approve", requireAuth, async (c) => {
       isPrimaryAdmin: memberships.isPrimaryAdmin,
     })
     .from(memberships)
-    .where(eq(memberships.userId, auth.userId));
+    .where(eq(memberships.userId, auth.userId))
+    .limit(2);
+  // uq_memberships_user makes a second row impossible (A2); refuse rather than
+  // guess which workspace this approval should bind to.
+  if (memRows.length > 1) return apiError(c, "multiple_memberships", 409);
   const membership = memRows[0];
 
   const result = await approveQrLogin(db, parsed.data.code, {

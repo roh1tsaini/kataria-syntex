@@ -60,7 +60,16 @@ export const memberships = sqliteTable(
       .default(false),
     joinedAt: text("joined_at").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.workspaceId] })],
+  (t) => [
+    primaryKey({ columns: [t.userId, t.workspaceId] }),
+    // The product is one workspace per account. Without this constraint the
+    // pairing is enforced only by a count-then-attach check in routes/members.ts,
+    // which two concurrent invites can both pass — and resolveMember below then
+    // has to pick one row with no ordering to break the tie. A second
+    // membership would silently route the caller's reads and writes into the
+    // other workspace, so the database must reject it (A2).
+    uniqueIndex("uq_memberships_user").on(t.userId),
+  ],
 );
 
 export const memberPermissions = sqliteTable(
@@ -298,6 +307,11 @@ export const deniers = sqliteTable(
       .references(() => workspaces.id),
     name: text("name", { length: 200 }).notNull(),
     description: text("description"),
+    // Null while in use. A denier referenced by challans, the stock ledger or
+    // a recipe is archived instead of deleted — those rows copied its name and
+    // have no FK back, so a hard delete orphans history that can never resolve
+    // again (A6). Set by DELETE, filtered out of every read below.
+    archivedAt: text("archived_at"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
@@ -314,6 +328,9 @@ export const colors = sqliteTable(
     name: text("name", { length: 200 }).notNull(),
     code: text("code", { length: 100 }),
     stockType: text("stock_type", { length: 4 }).notNull().default("dyed"),
+    // Same contract as deniers.archivedAt — the ledger freezes colourName and
+    // colourCode as text, so archived keeps the row resolvable (A6).
+    archivedAt: text("archived_at"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },

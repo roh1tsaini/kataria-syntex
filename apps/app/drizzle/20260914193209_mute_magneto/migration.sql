@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `uq_memberships_user` ON `memberships` (`user_id`);

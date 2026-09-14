@@ -23,6 +23,10 @@ const API_CODES = [
   "invite_invalid",
   "workspace_name_required",
   "no_workspace",
+  // One account may only belong to one workspace. Reachable only if the
+  // uq_memberships_user index is somehow missing or bypassed — the resolver
+  // refuses to guess which row is the real one (A2).
+  "multiple_memberships",
   // otp
   "otp_expired",
   "otp_attempts_exhausted",
@@ -47,6 +51,9 @@ const API_CODES = [
   "invalid_job_worker",
   "invalid_supplier",
   "color_not_raw",
+  // A colour's stockType partitions the two ledgers; history is frozen with
+  // the type it was written under. Flip refused once yarn is booked (A5).
+  "color_type_locked",
   "challan_number_conflict",
   "challan_has_returns",
   "challan_job_worker_mismatch",

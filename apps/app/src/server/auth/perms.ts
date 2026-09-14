@@ -43,9 +43,16 @@ export function resolveMember() {
         isPrimaryAdmin: memberships.isPrimaryAdmin,
       })
       .from(memberships)
-      .where(eq(memberships.userId, auth.userId));
+      .where(eq(memberships.userId, auth.userId))
+      .limit(2);
     const mem = memRows[0];
     if (!mem) return apiError(c, "no_workspace", 403);
+    // uq_memberships_user makes a second row impossible, and limit(2) above
+    // keeps this query from scanning the table on its way to proving that. If
+    // a duplicate ever lands anyway (a migration run against data the index
+    // couldn't accept), refuse instead of guessing which workspace is theirs —
+    // picking a row with no ordering would silently cross tenant boundaries.
+    if (memRows.length > 1) return apiError(c, "multiple_memberships", 409);
 
     // Primary admin gets all permissions implicitly
     let perms: Set<Permission>;

@@ -22,6 +22,8 @@ const SERVER_MESSAGES = {
   forbidden: "You don't have permission to do this.",
   unauthorized: "Your session expired. Log in again.",
   no_workspace: "You're not part of a workspace yet.",
+  multiple_memberships:
+    "Something's wrong with this account's workspace membership. Contact support.",
   invalid_permissions: "Your access changed. Re-open this page.",
   phone_already_registered: "This phone/email is already part of a workspace.",
   already_pending: "That person is already waiting to join a workspace.",
@@ -66,6 +68,8 @@ const SERVER_MESSAGES = {
   invalid_supplier: "Choose a valid supplier.",
   invalid_challan: "Choose a valid challan for every row.",
   color_not_raw: "Only raw-material colours can be used here.",
+  color_type_locked:
+    "This colour already has stock recorded, so its stock type can't change — the earlier entries stay in the ledger they were booked to.",
   challan_number_conflict:
     "Couldn't reserve a challan number. Try saving again.",
   challan_has_returns:
