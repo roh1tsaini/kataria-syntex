@@ -31,7 +31,6 @@
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
-import { hasUpdateFloor } from "@kataria-syntex/shared";
 
 const ACCOUNT = process.env.CF_ACCOUNT_ID ?? "";
 const TOKEN = process.env.CF_API_TOKEN ?? "";
@@ -253,6 +252,36 @@ for (const { key, file } of uploads) {
     contentTypeFor(basename(key)),
     basename(key).endsWith(".yml") ? "public, max-age=60" : ARTIFACT_CACHE,
   );
+}
+
+/**
+ * True only when a minVersion value actually forces an update. Inlined here
+ * rather than imported from @kataria-syntex/shared: this script runs from
+ * apps/app via a bare `bun scripts/...` in CI, where the workspace root is
+ * not on the resolution path, so a cross-package import fails at module
+ * load. The shared copy stays the source of truth for the app itself.
+ * Mirrors packages/shared/src/semver.ts — keep them in step.
+ */
+function hasUpdateFloor(minVersion: string | null | undefined): boolean {
+  if (typeof minVersion !== "string") return false;
+  if (minVersion.trim() === "") return false;
+  return compareSemver(minVersion, "0.0.0") > 0;
+}
+
+function parseSemver(v: string): [number, number, number] {
+  const parts = v.trim().replace(/^v/, "").split(".");
+  const num = (s: string | undefined) => {
+    const n = Number.parseInt(s ?? "", 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  };
+  return [num(parts[0]), num(parts[1]), num(parts[2])];
+}
+
+/** Same tri-major ordering as the app's semver compare. */
+function compareSemver(a: string, b: string): number {
+  const [ax, ay, az] = parseSemver(a);
+  const [bx, by, bz] = parseSemver(b);
+  return ax - bx || ay - by || az - bz;
 }
 
 // 2) The unified manifest — Android + macOS Electron + /download page read it.
