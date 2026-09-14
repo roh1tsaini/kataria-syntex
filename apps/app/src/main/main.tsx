@@ -56,9 +56,9 @@ if (desktop) {
   }
 }
 
-// PWA service worker registration lives in store/updates.ts (initUpdateChecks
-// — it owns the prompt-mode update flow). The app:// scheme in Electron has
-// no service-worker privilege, so nothing registers there.
+// PWA service worker registration lives in store/updates.ts. The app://
+// scheme in Electron has no service-worker privilege, so nothing registers
+// there.
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");

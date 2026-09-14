@@ -14,9 +14,9 @@
  *   (fresh shell on every load, precached index.html as the offline
  *   fallback) — never for /api/* or /releases/* — and caches the Inter TTFs
  *   on first use (they only matter when rendering a challan PDF).
- * - prompt mode: the worker NEVER activates itself — the app posts
- *   SKIP_WAITING when the user clicks "Reload to update", and reloads on the
- *   resulting controllerchange. A tab is never force-reloaded mid-edit.
+ * - prompt mode: the worker NEVER activates itself — a waiting build stays
+ *   background-only until a deliberate Settings reload posts SKIP_WAITING.
+ *   A tab is never force-reloaded mid-edit.
  */
 
 type PrecacheEntry = { url: string; revision: string | null };

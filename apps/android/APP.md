@@ -171,6 +171,9 @@ the plugin fires the installer via the FileProvider content URI. First
 install asks once for "install unknown apps" (`REQUEST_INSTALL_PACKAGES`;
 denial surfaces the allow-in-settings copy in the blocking dialog).
 
+Routine manifest checks stay in the background; Settings is the deliberate
+APK update entry point. Only a server-required version blocks the app.
+
 ## 8 · Design tokens
 
 `apps/app/design.md` is the design system — single source of truth for

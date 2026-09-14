@@ -2,11 +2,8 @@
  * Update surface — mounted once in App alongside the Toaster. Renders:
  * - the blocking update dialog when the server (426) or the published
  *   minVersion floors this client;
- * - the banner strip under the title bar for non-blocking availability:
- *   "reload to apply" (web, once the service worker has the build cached)
- *   or the macOS dmg prompt, with a dismiss that defers the notice until
- *   the next version ships (the download itself stays silent; Settings
- *   shows its progress);
+ * - the banner strip under the title bar for the macOS dmg prompt, with a
+ *   dismiss that defers the notice until the next version ships;
  * - the Windows/Linux "restart to update" toast when electron-updater has
  *   staged the installer.
  */
@@ -32,7 +29,8 @@ function UpdateReadyToast() {
   const toastedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    // Windows/Linux only: macOS, web and Android use the banner.
+    // Windows/Linux only: macOS has the banner; web and Android update in
+    // the background and expose their deliberate actions in Settings.
     if (
       desktopBridge()?.platform === "darwin" ||
       detectHost() === "android" ||
@@ -62,17 +60,10 @@ function UpdateBanner() {
   const dismiss = useUpdates((s) => s.dismiss);
   const required = useUpdates((s) => s.requiredMinVersion);
   const reduceMotion = useReducedMotion();
-  const web = desktopBridge() === null && detectHost() !== "android";
-  const android = detectHost() === "android";
-  // Ready-only: the worker streams the deploy silently (Settings shows the
-  // progress) and the banner appears once the build is cached and waiting.
-  const message = android
-    ? `Version ${latestVersion} is available.`
-    : web
-      ? latestVersion
-        ? `Version ${latestVersion} is ready — reload to apply.`
-        : "A new version is ready — reload to apply."
-      : `Version ${latestVersion} is available (installed v${__APP_VERSION__})`;
+  // This surface is macOS-only. Browser and Android availability checks stay
+  // in the background and are available from Settings; required updates use
+  // the blocking dialog instead.
+  const message = `Version ${latestVersion} is available (installed v${__APP_VERSION__})`;
 
   return (
     <AnimatePresence>
@@ -97,7 +88,7 @@ function UpdateBanner() {
                 className="h-8"
                 onClick={() => void installUpdate()}
               >
-                {web ? "Reload to update" : "Update"}
+                Update
               </Button>
               {!required && (
                 <button

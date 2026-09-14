@@ -6,10 +6,9 @@
  * - Web/PWA: the custom service worker (src/main/sw.ts) installs a new
  *   deploy sequentially and posts ks:sw-progress messages — this store
  *   turns them into live download progress (percent, size, ETA) for the
- *   Settings row. The banner stays silent until the new worker is fully
- *   cached and WAITING; its "reload to apply" sends SKIP_WAITING and
- *   reloads on the resulting controllerchange. The worker never activates itself and a
- *   tab is never force-reloaded. A hidden update check runs hourly so
+ *   Settings row. A waiting worker stays background-only until the user
+ *   deliberately reloads from Settings. The worker never activates itself
+ *   and a tab is never force-reloaded. A hidden update check runs hourly so
  *   long-lived tabs find deploys.
  * - Electron Windows/Linux: status is pushed over the kc:update:* IPC bridge
  *   (electron/updater.ts) — silent background download with byte progress,
@@ -500,7 +499,7 @@ export function initUpdateChecks(): void {
   }
 }
 
-/** True where the banner (not the blocking dialog) is the update surface. */
+/** True where a routine update needs a non-blocking install/download surface. */
 export function showUpdateBanner(): boolean {
   const s = useUpdates.getState();
   if (s.requiredMinVersion) return false;
@@ -516,16 +515,9 @@ export function showUpdateBanner(): boolean {
   ) {
     return false;
   }
-  if (desktopBridge() === null) {
-    if (detectHost() === "android") {
-      // Android has no waiting worker — the banner owns the whole flow:
-      // available, then live APK progress while it streams.
-      return s.status === "ready" || s.status === "downloading";
-    }
-    // Web/PWA: the waiting worker only. Install progress stays silent
-    // (Settings shows it) — announcing every install nags on every page
-    // while a slow network streams the deploy.
-    return s.swWaiting;
-  }
+  // Browser and Android availability checks are background work. The current
+  // web tab picks up the fresh shell on its next navigation; Android keeps a
+  // downloaded release discoverable from Settings. Neither interrupts work.
+  if (desktopBridge() === null) return false;
   return usesManifestFlow() && s.status === "ready";
 }

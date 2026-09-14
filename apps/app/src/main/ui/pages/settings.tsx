@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { RefreshCw, Save } from "lucide-react";
 import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { useUpdates } from "@/store/updates";
+import { detectHost } from "@/lib/platform";
 import { fmtDate } from "@/ui/lib/format";
 import {
   useAuth,
@@ -464,9 +465,13 @@ function UpdateRow() {
   const checking = useUpdates((s) => s.checking);
   const status = useUpdates((s) => s.status);
   const progress = useUpdates((s) => s.progress);
+  const swWaiting = useUpdates((s) => s.swWaiting);
   const [result, setResult] = useState<string | null>(null);
 
-  const updateAvailable = latestVersion !== null && status === "ready";
+  const web = detectHost() === "web";
+  const updateAvailable = web
+    ? swWaiting
+    : latestVersion !== null && status === "ready";
   const downloading = status === "downloading";
 
   const check = async () => {
@@ -477,7 +482,9 @@ function UpdateRow() {
         ? "You're on the latest version."
         : outcome === "error"
           ? "Couldn't reach the update service."
-          : null,
+          : web && !swWaiting
+            ? "The latest web version will apply when you next open the app."
+            : null,
     );
   };
 
@@ -501,7 +508,7 @@ function UpdateRow() {
             disabled={downloading}
             loading={downloading}
           >
-            {downloading ? "Downloading…" : "Update"}
+            {downloading ? "Downloading…" : web ? "Reload" : "Update"}
           </Button>
         ) : (
           <Button

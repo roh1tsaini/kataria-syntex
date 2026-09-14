@@ -358,7 +358,14 @@ code and the owner's word are the truth.
   workspace and wiped on logout/401/account switch (`lib/data-caches.ts` in
   apps/app). Stale-while-revalidate UIs must still refetch on mount.
 - The service worker never force-reloads a tab and never caches `/api/*`;
-  updates apply through the update banner / blocking dialog only.
+  routine updates apply on normal navigation or through Settings, while a
+  blocking dialog is reserved for a required version floor.
+- **Routine updates are background work.** Browser/PWA deploys cache in the
+  background and reach the next normal navigation; Android manifest checks
+  stay silent and expose the APK action in Settings. Only a server `426
+update_required` floor may block work. Keep HTML and `/sw.js` revalidated,
+  cache only content-hashed assets as immutable, and never make users clear
+  browser data to receive a normal release.
 
 **Style**
 
