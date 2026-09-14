@@ -131,7 +131,7 @@ public class PrinterPlugin extends Plugin {
      * Streams a finished PDF into the print framework. The document is already
      * rendered, so onLayout only reports the page count and onWrite only copies
      * bytes — no Canvas, no re-typeset. Page count is read from the PDF's own
-     * /Count tree when parseable; UNKNOWN_PAGE_COUNT lets the framework ask
+     * /Count tree when parseable; PAGE_COUNT_UNKNOWN lets the framework ask
      * the user instead of guessing wrong.
      */
     private static final class PdfPrintAdapter extends PrintDocumentAdapter {
@@ -139,7 +139,7 @@ public class PrinterPlugin extends Plugin {
         private final Context context;
         private final String filename;
         private final byte[] bytes;
-        private int pageCount = PrintDocumentInfo.UNKNOWN_PAGE_COUNT;
+        private int pageCount = PrintDocumentInfo.PAGE_COUNT_UNKNOWN;
 
         PdfPrintAdapter(Context context, String filename, byte[] bytes) {
             this.context = context;
@@ -194,7 +194,7 @@ public class PrinterPlugin extends Plugin {
                     out.write(buffer, 0, read);
                 }
                 out.flush();
-                callback.onWriteFinished(PageRange.ALL_PAGES);
+                callback.onWriteFinished(new PageRange[] { PageRange.ALL_PAGES });
             } catch (IOException e) {
                 callback.onWriteFailed(e.toString());
             }
