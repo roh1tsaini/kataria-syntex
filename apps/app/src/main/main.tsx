@@ -10,6 +10,7 @@ import {
   desktopBridge,
   detectHost,
   hydrateAndroidStorage,
+  initAndroidDeepLinks,
 } from "@/lib/platform";
 import "@/ui/globals.css";
 
@@ -20,7 +21,14 @@ initTheme();
 configureWebCore(__APP_VERSION__);
 // Android's sync storage is a session map over async Preferences — hydrate it
 // before the first render so the offline engine never reads an empty store.
-if (detectHost() === "android") await hydrateAndroidStorage();
+if (detectHost() === "android") {
+  await hydrateAndroidStorage();
+  // Deep links (kataria:// and the release origin's /login/scan/<code>) hand
+  // the app a URL on launch or resume. Wired before first render so a
+  // cold-start link routes the initial location instead of arriving after the
+  // router already painted the default route.
+  void initAndroidDeepLinks();
+}
 configureToasts({
   success: (title, description) =>
     toast.success(title, { description, duration: 4000 }),

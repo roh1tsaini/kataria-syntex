@@ -30,6 +30,22 @@
                 <data android:scheme="kataria" />
             </intent-filter>
 
+            <!-- The QR-login payload is an https URL on the release origin:
+                 <origin>/login/scan/<code>. Claiming only that path keeps the
+                 browser the handler for everything else. autoVerify is off by
+                 design: it would require hosting assetlinks.json on the web
+                 origin, and the app claims one path, not the whole domain — a
+                 chooser for a login link is acceptable until that file exists. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="${APP_HOST}"
+                    android:pathPrefix="/login/scan/" />
+            </intent-filter>
+
         </activity>
 
         <provider

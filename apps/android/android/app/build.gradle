@@ -27,6 +27,13 @@ android {
         versionCode APP_VERSION_CODE
         versionName APP_VERSION
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // The host the https deep-link filter claims (the QR-login payload is
+        // <origin>/login/scan/<code>). CI passes the same value the web bundle
+        // bakes as VITE_API_URL; a local build without it gets a placeholder so
+        // the manifest still merges — the filter just matches nothing real.
+        manifestPlaceholders = [
+            APP_HOST: project.findProperty('APP_HOST') ?: 'localhost'
+        ]
         // ARM-only: the app ships to phones, never emulators; dropping x86
         // halves build time and never ships an emulator-only binary.
         ndk {

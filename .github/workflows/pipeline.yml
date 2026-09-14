@@ -342,7 +342,11 @@ jobs:
 
       - name: Build signed release APK
         working-directory: apps/android/android
-        run: ./gradlew assembleRelease
+        env:
+          # The same FQDN the web bundle bakes as VITE_API_URL becomes the host
+          # the https deep-link filter claims (APP_URL is a bare FQDN here).
+          APP_HOST: ${{ vars.APP_URL }}
+        run: ./gradlew assembleRelease -PAPP_HOST="$APP_HOST"
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
