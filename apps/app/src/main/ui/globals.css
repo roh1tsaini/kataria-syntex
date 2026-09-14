@@ -878,3 +878,28 @@
     animation-duration: 0.22s;
   }
 }
+
+/* Notification banner (§3, §5) — sonner ships 400ms `ease` transitions, which
+   is not the house curve. Scoped one level deeper than sonner's own selectors
+   so the override holds whatever order the injected stylesheet lands in.
+   Reduced motion is already collapsed by the block above. */
+[data-sonner-toaster] [data-sonner-toast] {
+  transition:
+    transform 380ms var(--ease-out),
+    opacity 380ms var(--ease-out),
+    height 380ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+/* Exits mirror entries ~20% faster (§5 rule 2). */
+[data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+  transition:
+    transform 300ms var(--ease-out),
+    opacity 300ms var(--ease-out),
+    height 300ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+[data-sonner-toaster] [data-sonner-toast] > * {
+  transition: opacity 380ms var(--ease-out);
+}

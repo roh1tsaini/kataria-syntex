@@ -7,7 +7,7 @@ Monorepo for Kataria Syntex — yarn trading + dyeing via job work.
 | Path                | What                                                                | Stack                                                                                      |
 | ------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `apps/app`          | Internal business app — challans, job work, stock, packing, reports | React 19 + Vite + Tailwind v4 · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
-| `apps/android`      | Android business app — same flows, native shell                     | React Native + Expo SDK 57 (expo-router) · NativeWind · zustand                            |
+| `apps/android`      | Android business app — same flows, native shell                     | Capacitor 8 shell over the `apps/app` bundle · official `@capacitor/*` plugins             |
 | `apps/web`          | Public showcase website                                             | Next.js + React 19 + Tailwind v4                                                           |
 | `packages/app-core` | Shared business core — API client, stores, offline engine           | TypeScript                                                                                 |
 | `packages/shared`   | Shared domain types, yarn/shade data, validation                    | TypeScript                                                                                 |
@@ -39,9 +39,10 @@ bun run electron:package  # renderer + main + installer (electron-builder)
 Inside `apps/android`:
 
 ```bash
-bun run start        # Metro (adb reverse tcp:3000 tcp:3000 for the local API)
-bun run android      # dev build on a device/emulator
-bun run prebuild     # regenerate android/ (never hand-edited)
+bun run build:web    # apps/app Vite build → ../app/dist
+bun run sync         # build:web + cap sync android
+bun run open         # open android/ in Android Studio
+bun run build:apk    # sync + gradle assembleRelease (needs the Android SDK)
 bun run typecheck
 ```
 
@@ -58,5 +59,5 @@ bun run typecheck
 
 - **Web/PWA + API** — Cloudflare free tier (Workers + D1, `wrangler dev`)
 - **Desktop** — Electron (Windows x64, macOS arm64, Linux x64)
-- **Android** — React Native (Expo) universal APK, built in CI
-  (`.github/workflows/pipeline.yml`)
+- **Android** — Capacitor shell over the `apps/app` bundle, universal APK,
+  built in CI (`.github/workflows/pipeline.yml`)

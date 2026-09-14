@@ -34,7 +34,7 @@ shell, in writing.
 | Path                | What                                                                                                             | Stack                                                                                                |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `apps/app`          | Internal business app — web/PWA + Electron desktop (challans, job work, stock, packing, reports)                 | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
-| `apps/android`      | Internal business app — Android (same features as apps/app)                                                      | React Native 0.86 + Expo SDK 57 + expo-router + NativeWind 4 + Zustand · shares `packages/app-core`  |
+| `apps/android`      | Internal business app — Android shell around the `apps/app` bundle                                               | Capacitor 8 + the `apps/app` React 19/Vite bundle · shares `packages/app-core`                       |
 | `apps/web`          | Public showcase website                                                                                          | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                      |
 | `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                      | TypeScript                                                                                           |
 | `packages/app-core` | Shared business core for both apps: API client, zustand stores, offline/sync engine (`@kataria-syntex/app-core`) | TypeScript + React                                                                                   |
@@ -46,7 +46,7 @@ shell, in writing.
 | -------- | ------------------------------------ | --------------------------------- |
 | Web/PWA  | Browser                              | HttpOnly cookie                   |
 | Desktop  | Electron (`apps/app`)                | OS keychain via IPC + safeStorage |
-| Mobile   | React Native + Expo (`apps/android`) | expo-secure-store (keystore)      |
+| Mobile   | Capacitor 8 WebView (`apps/android`) | `@capacitor/preferences`          |
 
 Build targets (fixed by owner): Android universal APK,
 Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
@@ -54,10 +54,11 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
 
 - `packages/app-core` holds the shared business core (API client, zustand
   stores, offline/sync engine, error copy). Both apps configure it at boot
-  through its `PlatformAdapter` seam (web/Electron:
-  `apps/app/src/main/lib/platform.ts`; Android:
-  `apps/android/src/lib/core-adapter.ts`). Platform differences live ONLY in
-  those two adapter files. Never branch on platform elsewhere.
+  through its `PlatformAdapter` seam. All three shells share one file —
+  `apps/app/src/main/lib/platform.ts` — because the Android app runs the
+  same built bundle inside a Capacitor WebView; the adapter branches on
+  `detectHost()`. Platform differences live ONLY there. Never branch on
+  platform elsewhere.
 - A change is "done" for apps/app only when web/PWA still works; desktop
   (Electron) must stay compiling against the same renderer bundle. Business
   logic changes must build in BOTH apps (`apps/app` + `apps/android`) —
@@ -105,48 +106,51 @@ that lands on one shell only is unfinished; never report it as done.
 - **Behavior:** same validation, navigation targets, confirmations, toasts
   (copy via `friendlyError`), permission gates, pagination and paging copy.
 - **Data:** same fields, sorting, totals math; formatting from the shared
-  homes (`apps/app/src/main/ui/lib/format.ts` ↔
-  `apps/android/src/lib/format.ts`): en-IN grouping, weights to 3 decimals,
-  `DD Mon YYYY`.
-- **Motion:** same presets and grammar (`lib/motion.ts` mirrors web);
+  home (`apps/app/src/main/ui/lib/format.ts`): en-IN grouping, weights to 3
+  decimals, `DD Mon YYYY`.
+- **Motion:** same presets and grammar (`apps/app/src/main/ui/lib/motion.ts`);
   enter/exit mirror, exits ~20% faster, reduced motion collapses.
 - **Logic:** one home. Business logic, stores, offline/sync, error copy live
   in `packages/app-core` / `packages/shared`; platform differences live ONLY
-  in the two adapter files (`apps/app/src/main/lib/platform.ts`,
-  `apps/android/src/lib/core-adapter.ts`). Never fork logic per shell.
+  in the one adapter file (`apps/app/src/main/lib/platform.ts`). Never fork
+  logic per shell.
 
-### Counterpart map (open the pair before editing either side)
+### One bundle, one UI
 
-| Web (`apps/app`)                               | Android (`apps/android`)                         |
-| ---------------------------------------------- | ------------------------------------------------ |
-| `ui/pages/*.tsx`                               | `app/*.tsx` routes (+ `app/(tabs)/`)             |
-| `ui/components/app-shell.tsx` (mobile)         | `src/ui/app-header.tsx`, `src/ui/nav-drawer.tsx` |
-| `ui/components/nav-config.tsx`                 | `src/ui/nav-sections.ts`                         |
-| `ui/components/ui/*` primitives                | `src/ui/kit.tsx`, `src/ui/controls.tsx`          |
-| `ui/components/ui/dialog.tsx` (mobile sheet)   | `src/ui/morph-sheet.tsx`                         |
-| `ui/components/ui/date-picker.tsx` + calendar  | `src/ui/date-sheet.tsx`                          |
-| `ui/components/toast.tsx` (sonner)             | `src/lib/toasts.ts` + `src/ui/toast-overlay.tsx` |
-| `ui/components/motion.tsx`, `ui/lib/motion.ts` | `src/lib/motion.ts`, `src/ui/count-up.tsx`       |
-| `ui/components/update-surface.tsx`             | `src/ui/update-surface.tsx`                      |
-| `ui/components/sync-dialog.tsx`                | `src/ui/sync.tsx`                                |
-| `ui/components/page-skeletons.tsx` shapes      | the screen's own in-file skeleton                |
+There is no separate Android UI. `apps/android` is a Capacitor shell that
+loads the built `apps/app` bundle; the Android rendering IS the web rendering
+at the `≤sm` breakpoint. There is nothing to port and nothing to mirror —
+parity is structural.
+
+- A UI change is a web change. It lands on Android the moment the bundle is
+  rebuilt and `cap sync` copies it. Never write a second implementation.
+- The only Android-specific code is the Capacitor branch inside
+  `apps/app/src/main/lib/platform.ts` (detectHost() === "android"): token
+  storage, KV hydration, network/activity listeners, deep links, PDF
+  share/print. Every other platform difference is a bug.
+- Design values come from `apps/app/design.md` and its tokens in
+  `globals.css`; there is no Android token conversion step.
+- `apps/android/android/` is a Capacitor-generated Gradle project — native
+  config only (manifest permissions, signing, ARM-only), never UI.
 
 ### How to execute
 
 1. Read `design.md` and the web implementation first — web is truth.
-2. Change web (`apps/app`); business-logic changes go in `packages/*` so both
-   shells consume them.
-3. Mirror in `apps/android` against the web **mobile** rendering (base
-   Tailwind classes, `≤sm` branches) — open both files and port line by
-   line; never port from memory.
-4. New value or pattern? Add it to `design.md` first; palette changes
-   regenerate Android tokens (`apps/android/scripts/convert-tokens.ts`),
-   then code.
-5. Update docs in the same change: `design.md` (§4.1 + any untrue section),
-   `apps/android/APP.md` (§4/§8), `BACKLOG.md` for anything deferred.
-6. Platform limits (blur without a dep, OS pickers, share sheet): surface the
-   exact gap to the owner. Never silently diverge, and never copy a web bug —
-   report it and log it in `BACKLOG.md`.
+2. Change web (`apps/app`); business-logic changes go in `packages/*` so every
+   shell consumes them.
+3. Anything that needs native capability gets a guarded branch in
+   `apps/app/src/main/lib/platform.ts` behind `detectHost() === "android"`,
+   plus the official `@capacitor/*` plugin. Nowhere else.
+4. New value or pattern? Add it to `design.md` first; then code. Never invent
+   an Android-only visual value.
+5. Rebuild + sync: `bun run build` (apps/app) then
+   `bunx cap sync android` (apps/android). CI does this; run both locally to
+   verify.
+6. Update docs in the same change: `design.md` (any untrue section),
+   `apps/android/APP.md`, `BACKLOG.md` for anything deferred.
+7. Platform limits (print, APK self-update): surface the exact gap to the
+   owner. Never silently diverge, and never copy a web bug — report it and
+   log it in `BACKLOG.md`.
 
 ## 2.4 Verification protocol (continuous — not a final step)
 
@@ -155,10 +159,9 @@ code never certifies it.
 
 1. **After each file/step:** `cd apps/android && bunx tsc --noEmit` (or the
    touched app's typecheck) — fix before moving on.
-2. **Line-by-line before "done":** for every touched screen, read the
-   Android file against its web counterpart in the map above — copy,
-   structure, controls, data, motion. The report states which pairs were
-   compared.
+2. **One bundle:** the Android rendering is the web rendering at `≤sm`, so a
+   UI change is verified once — in the browser at the `≤sm` breakpoint. The
+   report states which viewport was checked.
 3. **Independent pass:** for UI/business changes, hand the working diff to a
    separate verification agent (fresh context, no edit rights). It reads
    `git diff` plus the web references and lists mismatches/regressions; the
@@ -166,8 +169,9 @@ code never certifies it.
 4. **Gates (repo root):** `bun run typecheck`, `bun run lint`,
    `bun run build`, `bun run format:check` (Windows CRLF noise is
    pre-existing — at minimum every changed file passes
-   `bunx prettier --check`). Android: `bunx tsc --noEmit` +
-   `bunx expo export -p android` (Metro bundle).
+   `bunx prettier --check`). Android: `cd apps/android && bunx tsc --noEmit` +
+   `bunx cap sync android` (copies the built web bundle into the native
+   project; CI runs `gradle assembleRelease` for the signed APK).
 5. **Device checks belong to the owner:** motion feel, camera, install,
    real-pixel layout. List them as "owner-verified pending" — never claim
    them.
@@ -195,11 +199,10 @@ bun run dev:server   # Hono API (workerd, wrangler dev)
 bun run dev          # Vite frontend on :1420
 bun run electron:dev # Electron shell over the Vite dev server
 
-# inside apps/android (Android app — React Native + Expo)
-bun run start        # Metro dev server (needs `adb reverse tcp:3000 tcp:3000`
-                     # for the local API, or set EXTRA_API_BASE)
-bun run android      # compile + install a dev build on a connected device
-bun run prebuild     # regenerate android/ from app.config.ts (CI does this)
+# inside apps/android (Android app — Capacitor shell over the apps/app bundle)
+bun run sync         # build apps/app + cap sync android
+bun run open         # open android/ in Android Studio
+bun run build:apk    # cap sync + gradle assembleRelease (needs the Android SDK)
 ```
 
 ## 4. Hard rules
@@ -223,8 +226,7 @@ bun run prebuild     # regenerate android/ from app.config.ts (CI does this)
 9. **Latest deps, verified before commit.** `bun run check:updates` before
    every commit; safe lines float via `^`/`~` and the lock refreshes with
    `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
-   (builder hoisting), react-native (Expo SDK pairing), nitro (mmkv proven
-   pair), drizzle v1 RC (ahead of stable), expo `~` (SDK pins).
+   (builder hoisting), drizzle v1 RC (ahead of stable).
 10. **Both shells or not done.** Every feature, UI, copy, motion, or
     business-flow change lands in `apps/app` AND `apps/android` in the same
     session (§2.3) — docs updated in the same change, verification run per
@@ -371,7 +373,8 @@ code and the owner's word are the truth.
 build` all green from repo root, AND the feature verified by actually
   running it. The web renderer (web/PWA + Electron) must still compile as
   one bundle, and the Android app (apps/android) must still typecheck and
-  Metro-bundle (`bunx expo export -p android`) — CI builds the signed APK.
-- A UI change is verified line-by-line against the web mobile rendering
-  (§2.3–§2.4); a business-logic change is done only when both shells
-  consume the same `packages/*` code.
+  sync (`cd apps/android && bunx tsc --noEmit && bunx cap sync android`) —
+  CI runs `gradle assembleRelease` for the signed APK.
+- A UI change is verified once in the browser at the `≤sm` breakpoint
+  (§2.3–§2.4) — Android renders the same bundle; a business-logic change is
+  done only when both shells consume the same `packages/*` code.

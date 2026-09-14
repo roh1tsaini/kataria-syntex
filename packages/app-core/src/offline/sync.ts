@@ -35,9 +35,31 @@ export function syncPending(): Promise<void> {
 
 let syncInFlight: Promise<void> | null = null;
 
+/** One banner per run, not one per challan. A phone that was offline pushes a
+ * whole queue at once, and a banner each would bury the top of the screen and
+ * lose most of them to the visible cap (design.md §3). A lone item keeps its
+ * own number; a batch reports the count, and the sync screen lists the rest. */
+function reportSync(synced: string[], clashed: string[]): void {
+  if (synced.length === 1) {
+    toastSuccess(`Synced ${synced[0]}`, "Saved to the server.");
+  } else if (synced.length > 1) {
+    toastSuccess(`Synced ${synced.length} challans`, "Saved to the server.");
+  }
+  if (clashed.length === 1) {
+    toastError(`Number clash on ${clashed[0]}`, "Open sync status to fix it.");
+  } else if (clashed.length > 1) {
+    toastError(
+      `${clashed.length} challans need new numbers`,
+      "Open sync status to fix them.",
+    );
+  }
+}
+
 async function runSync(): Promise<void> {
   useSync.setState({ syncing: true });
   let changed = false;
+  const synced: string[] = [];
+  const clashed: string[] = [];
   try {
     // Multiple passes: items created while a pass is in flight are picked up
     // by the next one instead of waiting for the 30s tick.
@@ -57,20 +79,14 @@ async function runSync(): Promise<void> {
           removePending(current.clientRef);
           bumpCounter(current.fyLabel, current.input.type, current.seq);
           changed = true;
-          toastSuccess(
-            `Synced ${current.challanNumber}`,
-            "Saved to the server.",
-          );
+          synced.push(current.challanNumber);
         } else if (result.reason === "conflict") {
           updatePending(current.clientRef, {
             status: "conflict",
             suggestion: result.suggestion,
           });
           changed = true;
-          toastError(
-            `Number clash on ${current.challanNumber}`,
-            "Open sync status to fix it.",
-          );
+          clashed.push(current.challanNumber);
         } else if (result.reason === "network") {
           setOnline(false);
           stopped = true; // server went away mid-sync — retry later
@@ -92,6 +108,7 @@ async function runSync(): Promise<void> {
       if (stopped) break;
     }
   } finally {
+    reportSync(synced, clashed);
     recountPending();
     useSync.setState({
       syncing: false,

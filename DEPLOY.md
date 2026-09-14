@@ -148,9 +148,9 @@ Bump `apps/app/package.json`, push, then Repo → Actions → **Pipeline**
   whose tag already exists fails the run — bump first.
 
 Android signing uses the secrets from first-time setup step 5 — the APK job
-fails fast when they are absent. The APK job runs `bunx expo prebuild -p
-android --no-install` (generates the native project — it is not committed)
-before gradle; the signing config comes from the config plugin.
+fails fast when they are absent. The APK job builds `apps/app`, runs
+`bunx cap sync android` from `apps/android`, then gradle; the signing config
+is read from `apps/android/android/keystore.properties` written by CI.
 
 ### Monitoring
 
@@ -183,6 +183,6 @@ on :3000 — the frontend expects it via `adb reverse` or dev proxy),
 bun run typecheck && bun run lint && bun run format:check && bun run build
 ```
 
-Web/PWA and Electron compile against one renderer bundle (`apps/app`); the
-Android app typechecks and Metro-bundles separately
-(`bunx tsc --noEmit` + `bunx expo export -p android` inside `apps/android`).
+Web/PWA, Electron and Android render one bundle (`apps/app`); the Android
+shell typechecks and syncs separately
+(`bunx tsc --noEmit` + `bunx cap sync android` inside `apps/android`).

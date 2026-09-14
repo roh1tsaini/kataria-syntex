@@ -15,7 +15,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 import { useUpdates, showUpdateBanner } from "@/store/updates";
-import { desktopBridge } from "@/lib/platform";
+import { desktopBridge, detectHost } from "@/lib/platform";
 import { UpdateDialog } from "@/ui/components/update-dialog";
 import { Button } from "@/ui/components/ui/button";
 import { EASE_OUT } from "@/ui/lib/motion";
@@ -32,8 +32,13 @@ function UpdateReadyToast() {
   const toastedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    // Windows/Linux only: macOS and web use the banner.
-    if (desktopBridge()?.platform === "darwin" || required) return;
+    // Windows/Linux only: macOS, web and Android use the banner.
+    if (
+      desktopBridge()?.platform === "darwin" ||
+      detectHost() === "android" ||
+      required
+    )
+      return;
     if (status !== "ready" || !latestVersion) return;
     if (toastedFor.current === latestVersion) return;
     toastedFor.current = latestVersion;
@@ -57,14 +62,17 @@ function UpdateBanner() {
   const dismiss = useUpdates((s) => s.dismiss);
   const required = useUpdates((s) => s.requiredMinVersion);
   const reduceMotion = useReducedMotion();
-  const web = desktopBridge() === null;
+  const web = desktopBridge() === null && detectHost() !== "android";
+  const android = detectHost() === "android";
   // Ready-only: the worker streams the deploy silently (Settings shows the
   // progress) and the banner appears once the build is cached and waiting.
-  const message = web
-    ? latestVersion
-      ? `Version ${latestVersion} is ready — reload to apply.`
-      : "A new version is ready — reload to apply."
-    : `Version ${latestVersion} is available (installed v${__APP_VERSION__})`;
+  const message = android
+    ? `Version ${latestVersion} is available.`
+    : web
+      ? latestVersion
+        ? `Version ${latestVersion} is ready — reload to apply.`
+        : "A new version is ready — reload to apply."
+      : `Version ${latestVersion} is available (installed v${__APP_VERSION__})`;
 
   return (
     <AnimatePresence>

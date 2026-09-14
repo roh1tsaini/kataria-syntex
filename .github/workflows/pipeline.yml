@@ -290,9 +290,9 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Normalize API origin for the app bundle
-        # The RN app is not same-origin with the backend, so it bakes the
-        # absolute https:// origin at build time (EXTRA_API_BASE →
-        # app.config.ts extra.apiBaseUrl → expo-constants). A bare FQDN
+        # The Android WebView is not same-origin with the backend, so the web
+        # bundle bakes the absolute https:// origin at build time (APP_URL →
+        # VITE_API_URL → vite.config allowlist + platform.ts). A bare FQDN
         # would build broken relative URLs.
         shell: bash
         env:
@@ -300,11 +300,15 @@ jobs:
         run: |
           APP_URL="https://${APP_URL#*://}"
           APP_URL="${APP_URL%/}"
-          echo "EXTRA_API_BASE=$APP_URL" >> "$GITHUB_ENV"
+          echo "VITE_API_URL=$APP_URL" >> "$GITHUB_ENV"
 
-      - name: Generate native project (Expo prebuild)
+      - name: Build web bundle + sync Capacitor
+        # cap sync runs from apps/android — it owns capacitor.config.ts (which
+        # points webDir at ../app/dist) and the Capacitor CLI dependency.
         working-directory: apps/android
-        run: bunx expo prebuild -p android --no-install
+        run: |
+          bun run build:web
+          bunx cap sync android
 
       - name: Decode signing keystore from secrets
         shell: bash
@@ -318,7 +322,7 @@ jobs:
           echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.p12"
 
       - name: Write keystore.properties
-        working-directory: apps/android
+        working-directory: apps/android/android
         shell: bash
         env:
           KEYSTORE_FILE: ${{ runner.temp }}/keystore.p12
@@ -329,7 +333,7 @@ jobs:
             echo "::error::ANDROID_KEY_ALIAS or ANDROID_KEY_PASSWORD secret is missing."
             exit 1
           fi
-          cat > android/keystore.properties <<EOF
+          cat > keystore.properties <<EOF
           storeFile=$KEYSTORE_FILE
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEYSTORE_ALIAS

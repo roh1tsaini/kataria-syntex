@@ -14,21 +14,22 @@ Single maintained doc for the Android app. Kept current with the code —
 
 ## 1 · What this is
 
-The Android app for Kataria Syntex — the same business flows as `apps/app`
+The Android app for Kataria Syntex — the **same `apps/app` web bundle**
 (sales challans, job-work challans + returns, raw material, packing, stock,
-reports, colors) as a native React Native shell. Feature parity with the
-web app, per-screen ports of the same flows and copy.
+reports, colors) wrapped in a Capacitor Android shell. One renderer, three
+shells: browser/PWA, Electron, Android.
 
-Not a webview. The web app (web/PWA + Electron) and this app are two
-bundles sharing one business core (`packages/app-core`): API client,
-zustand stores, offline engine, error copy, toast sink, page-cache
-registry.
+This is a WebView shell, not a second UI codebase. `apps/android` holds the
+native project, the Capacitor config and the build/release wiring; every
+screen, store and business flow comes from `apps/app` +
+`packages/app-core`.
 
 Domain rules, database, API, auth, permissions — all documented in
 `apps/app/APP.md` (§6–§10) and shared unchanged.
 
 Parity rules and the verification protocol: `AGENTS.md` §2.3–§2.4.
-`apps/app/design.md` stays the single source of truth for every visual value.
+Open native decisions (APK self-update, PDF print): `BACKLOG.md` §5.
+`apps/app/design.md` is the single source of truth for every visual value.
 
 ## 2 · Monorepo & commands
 
@@ -36,125 +37,91 @@ Bun workspaces + Turborepo. Bun is the only package manager.
 
 | Path                | Role                                           |
 | ------------------- | ---------------------------------------------- |
-| `apps/android`      | Android app (this doc)                         |
+| `apps/android`      | Android shell + native project (this doc)      |
 | `apps/app`          | Business app — web/PWA + Electron (its APP.md) |
 | `packages/app-core` | Shared business core (see `adapter.ts` seam)   |
 | `packages/shared`   | Domain types, permissions, errors, numbering   |
 
 ```bash
 # inside apps/android
-bun run start        # Metro dev server (--dev-client)
-bun run android      # dev build on a device/emulator
-bun run prebuild     # regenerate android/ (expo prebuild --clean)
-bun run build:apk    # prebuild + gradle assembleRelease
+bun run build:web    # apps/app Vite build → ../app/dist
+bun run sync         # build:web + cap sync android (copies bundle + plugins)
+bun run open         # open the native project in Android Studio
+bun run build:apk    # sync + gradle assembleRelease
 bun run typecheck    # gate
 bun run lint         # gate
 ```
 
 Root gates unchanged: `bun run typecheck && bun run lint &&
-bun run format:check && bun run build` from the repo root. The Android
-bundle check is `bunx expo export -p android` (Metro bundles the whole app
-without needing an Android SDK).
+bun run format:check && bun run build` from the repo root.
 
-**Done** = repo-root gates green, web/Electron renderer compiles as one
-bundle, `apps/android` typechecks and Metro-bundles. The APK itself is
-built by CI (no local Android SDK in this repo's flow).
+**Done** = repo-root gates green, the web/Electron renderer still compiles
+as one bundle, `apps/android` typechecks and `cap sync` completes. The APK
+is built by CI (`pipeline.yml` android job) with the repo's release keystore.
 
 ## 3 · Tech stack
 
 Latest stable majors; never downgrade to escape a break.
 
-| Layer     | Tech                                                                        |
-| --------- | --------------------------------------------------------------------------- |
-| Runtime   | React Native 0.86 · React 19 · Expo SDK 57                                  |
-| Routing   | expo-router (file-based, Stack + Tabs route container)                      |
-| Styling   | NativeWind 4.2 (Tailwind 3.4 classes → RN styles) + theme tokens (§8)       |
-| State     | zustand 5 — the shared `packages/app-core` stores                           |
-| Storage   | MMKV (`react-native-mmkv`) — synchronous KV for the offline engine          |
-| Secrets   | expo-secure-store — bearer token in the hardware-backed keystore            |
-| Network   | `@react-native-community/netinfo` — connectivity events for the sync engine |
-| Camera    | expo-camera — QR login + device approval scanning                           |
-| Files/PDF | expo-file-system (APK + PDF downloads) · expo-sharing · expo-print          |
-| Updates   | manifest poll + APK self-install (§7)                                       |
-| CI        | GitHub Actions (`pipeline.yml` — android job)                               |
+| Layer     | Tech                                                                    |
+| --------- | ----------------------------------------------------------------------- |
+| Shell     | Capacitor 8 (`@capacitor/core`, `@capacitor/android`, `@capacitor/cli`) |
+| Renderer  | the `apps/app` React 19 + Vite + Tailwind v4 bundle                     |
+| Storage   | `@capacitor/preferences` — token + offline KV (`localStorage` contract) |
+| Network   | `@capacitor/network` — connectivity events for the sync engine          |
+| Camera    | `@capacitor/camera` — QR login + device approval scanning               |
+| Files/PDF | `@capacitor/filesystem` + `@capacitor/share` — PDF save/share           |
+| Chrome    | `@capacitor/status-bar`, `@capacitor/splash-screen`                     |
+| Lifecycle | `@capacitor/app` — foreground/background, back button, deep links       |
+| Native    | `apps/android/android/` Gradle project (generated by `cap add android`) |
+| CI        | GitHub Actions (`pipeline.yml` — android job)                           |
 
 ## 4 · Source map
 
 ```
 apps/android/
-├── app/                       # expo-router routes (file = screen)
-│   ├── _layout.tsx            # boot: theme, configureAndroidCore, toasts, bootstrap, sync, splash, updates
-│   ├── index.tsx              # auth gate
-│   ├── auth.tsx               # login (identifier → OTP/password), QR panel
-│   ├── login/scan/[code].tsx  # QR approve screen (camera)
-│   ├── (tabs)/                # route container (no visible bar): Dashboard · Challans · Job work · Packing
-│   │                          #   Navigation is the full-screen NavDrawer, opened from the header avatar
-│   ├── challan-editor.tsx     # full-screen challan editor
-│   ├── challan-detail.tsx
-│   ├── returns.tsx · raw-material.tsx · packing.tsx · stock.tsx
-│   ├── reports.tsx · colors.tsx · masters.tsx
-│   ├── members.tsx · devices.tsx · settings.tsx
-├── src/
-│   ├── lib/
-│   │   ├── core-adapter.ts    # configureAndroidCore() — the app-core seam
-│   │   ├── theme.ts           # theme persistence + live system-scheme sync
-│   │   ├── updates.ts         # update store: poll manifest, banner, install
-│   │   ├── installer.ts       # APK download (expo-file-system) + system installer
-│   │   ├── pdf.ts             # server PDF download → share / PrintManager
-│   │   ├── toasts.ts          # app-core toast sink → card overlay (title-only, 4s, max 3)
-│   │   ├── use-masters-load.ts # load → block save → nonce-retry (editor forms)
-│   │   ├── challan-kinds.ts   # one kind table: registers, detail, editor
-│   │   ├── format.ts          # single home for number/date/count formatting
-│   │   ├── dashboard-math.ts · motion.ts · cn.ts · nav-drawer.ts
-│   ├── ui/                    # kit.tsx primitives, app-header.tsx, nav-drawer.tsx,
-│   │                          # nav-sections.ts (drawer tree), count-up.tsx (rolling digits),
-│   │                          # sync.tsx, update-surface.tsx, qr-login-panel.tsx,
-│   │                          # date-sheet.tsx (DateField sheet calendar),
-│   │                          # toast-overlay.tsx (bottom-center card stack),
-│   │                          # otp-input.tsx (six-cell OTP row),
-│   │                          # feather.tsx icons, confirm.ts
-│   └── theme/
-│       ├── tokens.ts          # GENERATED from globals.css — never hand-edit
-│       └── index.ts           # usePalette() (light/dark, one neutral accent),
-│                               # CHART donut palette, withAlpha(), SCRIM, SHADOWS
-├── plugins/with-signing.ts    # wires keystore.properties into the release build
-├── scripts/
-│   ├── convert-tokens.ts      # globals.css oklch → sRGB → src/theme/tokens.ts
-│   └── generate-assets.ts     # resources/icon.svg → assets/*.png (sharp)
-├── assets/                    # icon, adaptive-icon, splash-icon, Inter TTFs
-├── app.config.ts              # expo config as code (version, versionCode, perms)
-├── global.css                 # NativeWind entry (@tailwind directives)
-├── tailwind.config.js         # NativeWind config (radius ladder, Inter fonts)
-├── metro.config.cjs           # monorepo watchFolders + NativeWind
-└── babel.config.cjs
+├── capacitor.config.ts        # appId, appName, webDir, server, plugin config
+├── package.json               # shell deps + bun scripts
+├── tsconfig.json              # extends @kataria-syntex/tsconfig
+├── android/                   # Capacitor native project (gradle)
+│   ├── app/
+│   │   ├── build.gradle       # signing, version, ARM-only abiFilters
+│   │   ├── src/main/AndroidManifest.xml  # permissions + deep-link intent filters
+│   │   └── src/main/assets/public/       # the synced apps/app bundle
+│   ├── build.gradle · variables.gradle · gradle.properties
+│   └── settings.gradle
+└── APP.md                     # this doc
 ```
 
-`android/` (the native project) is **generated, never committed** — see §9.
+The platform adapter is **shared, not in this workspace**: the Android
+branch lives in `apps/app/src/main/lib/platform.ts` because the WebView
+loads that bundle. See §5.
 
-## 5 · The app-core seam (PlatformAdapter)
+## 5 · Platform adapter (the app-core seam)
 
-All business logic lives in `packages/app-core`; it never touches
-window/document/localStorage. Each shell configures it once at boot via
-`configureCore(adapter)` (`packages/app-core/src/adapter.ts`).
+`packages/app-core/src/adapter.ts` is the contract; each shell supplies one
+implementation through `configureCore`. Android detection + all Android
+behaviour live in `apps/app/src/main/lib/platform.ts` (the `"android"`
+host branch), wired at boot by `apps/app/src/main/main.tsx`, which awaits
+`hydrateAndroidStorage()` before render so the offline store is warm on
+first paint.
 
-Android's adapter: `src/lib/core-adapter.ts` → `configureAndroidCore()`,
-called at the top of `app/_layout.tsx` (module scope, StrictMode-safe):
+| Adapter field     | Android implementation                                                                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apiBaseUrl`      | baked `import.meta.env.VITE_API_URL` (CI normalizes `vars.APP_URL` to `https://`); a bundle built without it has no API origin and realtime stays off |
+| `appVersion`      | `__APP_VERSION__` — the same value the web build stamps from `apps/app/package.json`                                                                  |
+| `storage`         | `@capacitor/preferences` map, hydrated at boot, synchronous reads/writes after that                                                                   |
+| token read/write  | `@capacitor/preferences` key `auth.sessionToken`                                                                                                      |
+| `deviceLabel`     | `"Android"`                                                                                                                                           |
+| `onNetworkChange` | `@capacitor/network` status events                                                                                                                    |
+| lifecycle         | `@capacitor/app` foreground/background events                                                                                                         |
+| deep links        | `@capacitor/app` `appUrlOpen` — `kataria://` and the release origin's `/login/scan/<code>`                                                            |
 
-| Adapter field     | Android implementation                                                                                                                                                                                                                              |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `host`            | `"android"`                                                                                                                                                                                                                                         |
-| `apiBaseUrl`      | baked `extra.apiBaseUrl` (CI `EXTRA_API_BASE`); dev-only `http://localhost:3000` over `adb reverse` (`__DEV__`); a release built without an override falls back to `extra.releaseApiBase` — the same origin the release QR intent filter advertises |
-| `appVersion`      | expo-constants (`app.config.ts` version)                                                                                                                                                                                                            |
-| `storage`         | MMKV instance id `ks-app-core` (synchronous — the offline engine's KV contract is sync)                                                                                                                                                             |
-| token read/write  | expo-secure-store key `auth.sessionToken` (keystore encryption; never plaintext)                                                                                                                                                                    |
-| `deviceLabel`     | `"Android"`                                                                                                                                                                                                                                         |
-| `onNetworkChange` | NetInfo connectivity events                                                                                                                                                                                                                         |
+Capacitor plugins are **dynamically imported** inside the branch — the web
+bundle never loads `@capacitor/*` on a browser. Rollup emits them as
+separate chunks (`esm-*.js`); `cap sync` copies them into the native assets.
 
-Web/Electron counterpart: `apps/app/src/main/lib/platform.ts`
-(`configureWebCore`, wired in `main.tsx`).
-
-Toasts: `configureAndroidToasts()` (also at `app/_layout.tsx` module scope)
-wires app-core's toast sink to the card overlay — never the OS toast.
+Counterpart: `configureWebCore` (same file) drives browser/PWA + Electron.
 
 ## 6 · Dev workflow
 
@@ -162,108 +129,70 @@ wires app-core's toast sink to the card overlay — never the OS toast.
 # terminal 1 — API
 cd apps/app && bun run dev:server          # Hono on :3000
 
-# terminal 2 — Android
+# terminal 2 — Android shell
 cd apps/android
-adb reverse tcp:3000 tcp:3000              # device localhost → machine :3000
-bun run start                              # Metro
-bun run android                            # install + launch the dev build
+bun run sync                               # build the bundle + cap sync
+bun run open                               # Android Studio → Run on device
 ```
 
-- Dev builds hit `http://localhost:3000` (via adb reverse). Release builds
-  bake the deployed origin — CI normalizes `vars.APP_URL` to an absolute
-  `https://` origin and passes it as `EXTRA_API_BASE`; `app.config.ts`
-  stores it in `extra.apiBaseUrl`, `core-adapter.ts` reads it through
-  expo-constants. A bare FQDN would build broken relative URLs.
-- QR approval links use the custom `kataria://` scheme in dev and the release
-  HTTPS origin's `/login/scan/<code>` path in production; both are registered
-  in the native Android intent filters so camera taps route into Expo Router.
-- Auth on dev: OTP or password as on web (see `apps/app/APP.md` §9).
-- Metro needs the monorepo roots — `metro.config.cjs` watches the workspace
-  root and resolves `node_modules` from both roots (Bun hoisting).
-- NativeWind compiles `global.css` through Metro; Tailwind classes resolve
-  at build time, colors come from the runtime palette (§8), not the
-  Tailwind config.
+- Release builds bake the deployed origin: CI normalizes `vars.APP_URL` to
+  an absolute `https://` origin and exports `VITE_API_URL`, which
+  `vite.config.ts` allowlists and `platform.ts` reads. A bare FQDN would
+  build broken relative URLs.
+- QR approval links use the custom `kataria://` scheme in dev and the
+  release HTTPS origin's `/login/scan/<code>` path in production; both are
+  registered in `AndroidManifest.xml` intent filters and handled by
+  `appUrlOpen`.
+- Auth is the web flow unchanged — OTP or password (see `apps/app/APP.md`
+  §9). The token persists in Preferences, not a cookie jar.
+- The renderer is the same bundle in every shell: fix UI once in `apps/app`,
+  re-run `bun run sync`.
 
 ## 7 · Updates & versioning
 
-One release train with everything else: **`apps/app/package.json`
-`version` is the single version for every platform.** `app.config.ts`
-reads it; `versionCode = major*10000 + minor*100 + patch` (0.6.0 → 600) —
-monotonic, Android rejects any update whose code doesn't rise. One bump
-releases everywhere; CI publishes only when the version differs from the
-published manifest.
+One release train: **`apps/app/package.json` `version` is the single
+version for every platform.** `android/app/build.gradle` reads it (relative
+path `../../app/package.json`) and derives
+`versionCode = major*10000 + minor*100 + patch` (0.10.0 → 1000) —
+monotonic, Android rejects any update whose code doesn't rise. CI publishes
+to R2 only when the version differs from the published manifest.
 
-Update flow (`src/lib/updates.ts` + `installer.ts`):
+Poll + 426 gate: the same `/releases/app/android/latest.json` manifest and
+the same `426 update_required` blocking dialog as every shell (app-core
+`setUpdateRequiredHandler`).
 
-1. Poll `/releases/app/android/latest.json` (R2 `ks-releases`, served by
-   the app worker; published by `scripts/publish-releases.ts`) — on launch
-   and every 4 hours.
-2. Newer version → non-blocking banner (`src/ui/update-surface.tsx`).
-3. Server 426 `update_required` (below `minAppVersion`) → blocking dialog
-   through app-core's `setUpdateRequiredHandler` — identical gate on every
-   shell.
-4. Install: APK streamed via expo-file-system into app-private storage
-   (progress percent) → handed to the system package installer through a
-   VIEW intent on the FileProvider content URI (expo-intent-launcher;
-   expo-sharing is the fallback). `REQUEST_INSTALL_PACKAGES`; first install
-   asks once for "install unknown apps".
-
-Same signing identity as every previous install — the signature never
-changes.
+In-app APK install: a WebView cannot fire the system package installer, so
+the shell ships a small native plugin
+(`android/app/src/main/java/com/katariasyntex/bizapp/InstallerPlugin.java`,
+registered in `MainActivity` — no npm package). The shared update store
+(`apps/app/src/main/store/updates.ts`, Android branch) streams
+`manifest.android.apk` into app-private cache with live byte progress, then
+the plugin fires the installer via the FileProvider content URI. First
+install asks once for "install unknown apps" (`REQUEST_INSTALL_PACKAGES`;
+denial surfaces the allow-in-settings copy in the blocking dialog).
 
 ## 8 · Design tokens
 
 `apps/app/design.md` is the design system — single source of truth for
-every visual value (radius ladder, spacing, type, color).
+every visual value. **There is no token conversion step for Android any
+more**: the WebView renders the same CSS, so `globals.css` tokens
+(oklch included) apply as-is. No generated palette, no mirrored config.
 
-- `scripts/convert-tokens.ts` converts `apps/app`'s `globals.css` palette
-  (oklch) → `src/theme/tokens.ts` (sRGB hex/rgba — RN cannot parse oklch at
-  runtime). **After any palette change in globals.css, run
-  `bun scripts/convert-tokens.ts`** and commit the regenerated tokens.
-- `src/theme/index.ts` exposes `usePalette()` — light/dark schemes with one
-  neutral accent, the monochrome that mirrors apps/app's `--a-*` (no picker).
-  `CHART` is the dashboard donut palette (`--chart-1..5`). `withAlpha()`
-  tints a palette color safely (tokens are hex in light mode but `rgba()` in
-  dark for `border`/`input`, so string concatenation would produce an invalid
-  color); `SCRIM` is the one overlay scrim; `SHADOWS` is the soft/lift/overlay
-  ramp from `--shadow-*`, read through the `boxShadow` style prop.
-- `src/lib/theme.ts` owns the choice: a stored scheme wins, otherwise the OS
-  scheme is followed live (`Appearance`); the scheme persists in the
-  adapter's `uiStorage`, which is never wiped on logout. Light/Dark is
-  switched in Settings → Appearance, and the status bar follows the resolved
-  scheme. `initTheme()` runs at boot in `app/_layout.tsx` (idempotent), so the
-  stored choice applies before the first paint.
-- Status-bar inset: `Screen` clears the status bar itself (via `AppHeader`);
-  reports composes `AppHeader` directly for its grid/detail layout. The
-  returns / raw-material / packing editor sheets draw their own chrome and
-  apply `insets.top` to their root view. Auth/scan pre-auth surfaces sit
-  outside `Screen` with their own safe-area padding.
-- `tailwind.config.js` mirrors the radius ladder (8/10/12/16/20px) and maps
-  `font-mono` to Android's `monospace` (pairing codes, tabular figures);
-  colors are NOT in the Tailwind config — components read the runtime
-  palette. The Inter families are declared but never registered, so text
-  currently renders in the platform font.
-- `src/ui/kit.tsx` implements design.md §2.2–§2.4 exactly — controls 10px,
-  cards 12px, badges 8px (soft tint + hairline), page titles 28px, pulsing
-  skeletons, loading buttons that keep their label (no spinners). Mobile
-  grammar adaptations are deliberate: bottom-sheet pickers instead of
-  popovers, native confirm dialogs, date fields as a sheet calendar
-  (`DateField` in `src/ui/date-sheet.tsx`, the web DatePicker counterpart).
+Status bar and splash are configured natively in `capacitor.config.ts`
+(`StatusBar`, `SplashScreen` plugins) and follow the resolved theme.
 
-## 9 · Continuous Native Generation (CNG)
+## 9 · Native project (Gradle)
 
-The `android/` directory is **generated — never hand-edit, never commit
-it.** It is produced by `bunx expo prebuild -p android` from
-`app.config.ts` + `plugins/`:
+`android/` is a committed Capacitor Gradle project. `cap sync` copies the
+web bundle and the plugin list into it; `cap add android`/`cap sync` keep
+plugin wiring current.
 
-- `plugins/with-signing.ts` — CI decodes `ANDROID_KEY_BASE64` into
-  `android/keystore.properties`; the plugin wires that file into the
-  release buildType so `assembleRelease` signs the APK. Local builds
-  without the file keep Expo's debug signing.
-- Regenerate after any config/plugin change: `bun run prebuild`.
-- CI (`pipeline.yml` android job): Bun install → `expo prebuild -p android
---no-install` on the runner → decode keystore → write
-  `keystore.properties` → `gradle assembleRelease` → artifact
+- `android/app/build.gradle` — signing from `keystore.properties`, version
+  from `apps/app/package.json`, ARM-only via `abiFilters 'armeabi-v7a',
+'arm64-v8a'`.
+- CI (`pipeline.yml` android job): Bun install → `bun run build:web` →
+  `bunx cap sync android` → decode keystore → write
+  `android/keystore.properties` → `gradle assembleRelease` → artifact
   `ks-biz-app-android` → release + `publish-r2` jobs (unchanged paths).
 
 Secrets (repo-level, owner-only): `ANDROID_KEY_BASE64` / `ANDROID_KEY_ALIAS`
@@ -272,30 +201,25 @@ means uninstall/reinstall on every device — keep it durable outside GitHub.
 
 ## 10 · Permissions
 
-| Permission                 | Why                                               |
-| -------------------------- | ------------------------------------------------- |
-| `INTERNET`                 | API + release downloads                           |
-| `CAMERA`                   | QR login + device approval scanning (expo-camera) |
-| `REQUEST_INSTALL_PACKAGES` | in-app APK self-update via the system installer   |
+| Permission                 | Why                                                 |
+| -------------------------- | --------------------------------------------------- |
+| `INTERNET`                 | API calls                                           |
+| `CAMERA`                   | QR login + device approval scanning (Camera plugin) |
+| `REQUEST_INSTALL_PACKAGES` | in-app APK self-update via the system installer     |
 
-Transitive config plugins would otherwise merge in `RECORD_AUDIO`,
-`SYSTEM_ALERT_WINDOW` and external-storage access — `android.blockedPermissions`
-in `app.config.ts` strips them, so the shipped manifest carries exactly the
-three above. `android.allowBackup` is `false`: offline challans, masters and the
-company profile are business data and must not ride Android's cloud or
+`android.allowBackup` is `false`: offline challans, masters and the company
+profile are business data and must not ride Android's cloud or
 device-transfer backups.
 
 ## 11 · PDFs & printing
 
 The server renders the PDF (Cloudflare Browser Run) — same template, same
 Inter inlining, visually identical output on every shell
-(`apps/app/APP.md` §12). This shell:
-
-- `src/lib/pdf.ts` downloads `/api/challans/:id/pdf` with the persisted
-  bearer + device headers into app-private storage.
-- Output paths: Android share sheet (expo-sharing — save to Drive,
-  WhatsApp, etc.) or the Android print framework (expo-print →
-  PrintManager).
+(`apps/app/APP.md` §12). On Android the shared `downloadChallanPdf` path
+fetches the PDF and hands it to the OS: `@capacitor/filesystem` writes it to
+cache, `@capacitor/share` opens the system share sheet (save to Drive,
+WhatsApp, print via a viewer, etc.). Web/Electron keep the blob-download +
+print-view path.
 
 No local HTML rendering — offline PDF needs the server, like web/PWA
 (Electron is the only shell that renders locally).
@@ -304,14 +228,16 @@ No local HTML rendering — offline PDF needs the server, like web/PWA
 
 Same engine as every shell: `packages/app-core/src/offline/` — cached
 masters + counters, outbox (`pending | conflict | error`), `clientRef`
-idempotency, single-flight 3-pass sync (boot, `online` event via NetInfo,
-30 s interval, manual retry), conflict resolution with the server's
-suggested number (`SyncBanner` / `SyncSheet` in `src/ui/sync.tsx`),
-logout wipe. Persistence rides the adapter's MMKV storage. Full contract:
+idempotency, single-flight 3-pass sync (boot, `online` event via the
+Network plugin, 30 s interval, manual retry), conflict resolution with the
+server's suggested number, logout wipe. Persistence rides the adapter's
+Preferences-backed storage, hydrated at boot. Full contract:
 `apps/app/APP.md` §11.
 
 ## 13 · Pointers
 
+- `BACKLOG.md` §5 — open native decisions (APK self-update, PDF print).
 - `apps/app/APP.md` — domain, database, API, auth, permissions, infra.
-- `apps/app/design.md` — design system (tokens this app mirrors).
+- `apps/app/design.md` — design system (the WebView renders it directly).
+- `apps/app/src/main/lib/platform.ts` — the Android adapter branch.
 - `packages/app-core/src/adapter.ts` — the seam contract.

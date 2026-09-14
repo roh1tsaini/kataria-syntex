@@ -5,7 +5,8 @@
  * compatibility, so a client below the floor has nothing useful to do.
  *
  * The action follows the host: web reloads (the SW has already precached
- * the new build), Electron quit-and-installs (or re-downloads on macOS).
+ * the new build), Electron quit-and-installs (or re-downloads on macOS),
+ * Android downloads the APK and hands it to the system installer.
  */
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";
@@ -28,6 +29,14 @@ function actionCopy(): { title: string; description: string; cta: string } {
       description:
         "This version can no longer reach the server. The new version installs when the app restarts.",
       cta: "Restart and update",
+    };
+  }
+  if (host === "android") {
+    return {
+      title: "Update required",
+      description:
+        "This version can no longer reach the server. Install the latest version to continue.",
+      cta: "Update app",
     };
   }
   return {
@@ -70,6 +79,13 @@ export function UpdateDialog() {
             role="status"
           >
             {formatUpdateProgress(progress)}
+          </p>
+        )}
+        {status === "error" && (
+          <p className="text-center text-xs text-muted-foreground">
+            {detectHost() === "android"
+              ? "If Android opened install settings, allow installs from this app, then try again. Otherwise check your connection."
+              : "Check your connection, then try again."}
           </p>
         )}
         <Button

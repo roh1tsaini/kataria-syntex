@@ -5,7 +5,12 @@ import { configureToasts } from "@kataria-syntex/app-core";
 import { toast } from "sonner";
 import { App } from "@/ui/App";
 import { initTheme } from "@/ui/hooks/use-theme";
-import { configureWebCore, desktopBridge } from "@/lib/platform";
+import {
+  configureWebCore,
+  desktopBridge,
+  detectHost,
+  hydrateAndroidStorage,
+} from "@/lib/platform";
 import "@/ui/globals.css";
 
 initTheme();
@@ -13,11 +18,14 @@ initTheme();
 // Shell boot: adapter (host/token/storage/network seam) + toast sink before
 // the first render, so no store or API call can run unconfigured.
 configureWebCore(__APP_VERSION__);
+// Android's sync storage is a session map over async Preferences — hydrate it
+// before the first render so the offline engine never reads an empty store.
+if (detectHost() === "android") await hydrateAndroidStorage();
 configureToasts({
   success: (title, description) =>
-    toast.success(title, { description, duration: 3800 }),
+    toast.success(title, { description, duration: 4000 }),
   error: (title, description) =>
-    toast.error(title, { description, duration: 6500 }),
+    toast.error(title, { description, duration: 8000 }),
 });
 
 // The entry document is always the "/" route: any shell that hands it a

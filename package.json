@@ -34,7 +34,6 @@
   },
   "trustedDependencies": [
     "@swc/core",
-    "react-native-nitro-modules",
     "unrs-resolver"
   ]
 }

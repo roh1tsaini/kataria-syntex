@@ -9,12 +9,11 @@
 > Tokens live in `src/main/ui/globals.css` — code never hardcodes what a token
 > already provides.
 >
-> The Android app (`apps/android`) implements this same design language as a
-> React Native shell: `apps/android/scripts/convert-tokens.ts` generates
-> `apps/android/src/theme/tokens.ts` from `globals.css` (oklch → sRGB), and
-> its primitives live in `apps/android/src/ui/kit.tsx`. This document stays
-> the single source of truth for every visual value — change the palette
-> here, then regenerate the Android tokens.
+> The Android app (`apps/android`) implements this same design language by
+> loading the same web bundle in a Capacitor WebView at the `≤sm` breakpoint.
+> There is no separate Android token set or primitives — the rendering is the
+> web rendering. This document stays the single source of truth for every
+> visual value on every shell.
 
 ## 1. Principles
 
@@ -276,7 +275,7 @@ placeholders, fallbacks) — never the app name.
 | Dropdown/Popover                                     | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Tabs                                                 | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Badge                                                | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Toast                                                | Bottom-center stack, radius 12px, overlay shadow, auto-dismiss, one line: title only, no restating description.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Notification banner                                  | Top-centre card stack, radius 12px, card surface, hairline border, overlay shadow, auto-dismiss. Drops from the top edge on `EASE_OUT` — 380ms in, 300ms out (overrides sonner's 400ms `ease`); exits mirror entries. A tinted status glyph sits left of a 14px semibold title with an optional 13px muted description, and that second line always renders. Dwell 4000ms success / 8000ms error (Material 3's 4–10s band). Max 3 visible; the sync engine reports a whole queue as one banner with a count rather than one per challan (`packages/app-core/src/offline/sync.ts`). Dismiss by the close button or a swipe. Web renders it with sonner at `position="top-center"` (`ui/components/toast.tsx` + the sink in `main.tsx`); the Android counterpart is `src/ui/toast-overlay.tsx` (§4.1).                                                                                                                                                     |
 | Empty states                                         | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Skeletons                                            | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (§3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Tables                                               | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -385,10 +384,13 @@ variant. `Screen` (`src/ui/kit.tsx`) composes the whole page:
   counterpart): a 44px trigger showing `DD Mon YYYY` opens a bottom-sheet
   month grid (MorphSheet surface) — today outlined, selected day filled,
   min/max clamping, Today / Clear footer.
-- **Toasts** render the sonner grammar as a bottom-center card stack overlay
-  (`toast-overlay.tsx` + `lib/toasts.ts`, hosted in the root layout): card
-  surface, radius 12, overlay shadow, one-line title, newest at the bottom,
-  tap to dismiss — never the OS toast.
+- **Notification banner** (`toast-overlay.tsx` + `lib/toasts.ts`, hosted in
+  the root layout) mirrors the web surface: top-centre card stack, radius 12,
+  card surface, overlay shadow, a tinted status glyph beside a 14px semibold
+  title with an optional 13px muted description, newest at the top, tap to
+  dismiss — never the OS toast. Enters with a short drop from above on
+  `EASE_OUT` (380ms), exits upward in 300ms, reduced motion collapses to a
+  cross-fade. Dwell 4000ms success / 8000ms error; the stack caps at 3.
 - **Badges** use the one kit tone ladder (`Badge` in `kit.tsx`):
   neutral/secondary/outline plus the success/warning/destructive status
   tints — soft tint + ink text + hairline edge, 11px semibold, 8px radius.
@@ -447,6 +449,12 @@ Rules:
 9. `prefers-reduced-motion`: everything collapses to ≤200ms opacity cross-fades
    (handled centrally in globals.css + `useReducedMotion()` in components).
 
+**Third-party surfaces** ship their own animation timing. Sonner's toasts
+default to 400ms `ease`; `globals.css` overrides the toast transition to
+`EASE_OUT` (380ms in / 300ms out) so the notification banner matches this
+grammar. Any third-party animated surface gets the same override — never a
+documented exception.
+
 ### 5.6 Morph — pill ⇄ card
 
 One surface grows from its collapsed row into the expanded card and back —
@@ -480,22 +488,23 @@ the same element at both sizes, never a close-then-open swap.
 
 ## 7. Codebase map (where things live)
 
-| Concern                                 | File                                                |
-| --------------------------------------- | --------------------------------------------------- |
-| Tokens (color/radius/shadow/ease)       | `src/main/ui/globals.css`                           |
-| Motion presets                          | `src/main/ui/lib/motion.ts`                         |
-| Morph kit (pill ⇄ card, §5.6)           | `src/main/ui/components/morph.tsx`                  |
-| Reveal/Stagger/Skeleton/PageTransition  | `src/main/ui/components/motion.tsx`                 |
-| Per-screen route skeletons (§3.1)       | `src/main/ui/components/page-skeletons.tsx`         |
-| Shared table skeleton                   | `src/main/ui/components/table-skeleton.tsx`         |
-| Primitives (shadcn-style)               | `src/main/ui/components/ui/*`                       |
-| Circular icon buttons & capsules (§2.7) | `src/main/ui/components/ui/circle-button.tsx`       |
-| App frame (sidebar/header/nav drawer)   | `src/main/ui/components/app-shell.tsx`              |
-| Nav tree (sections/items/subs)          | `src/main/ui/components/nav-config.tsx`             |
-| Page scaffold                           | `src/main/ui/components/page-header.tsx`            |
-| Update surface (banner/gate/toast)      | `src/main/ui/components/update-surface.tsx`         |
-| OS brand glyphs (download/entry)        | `src/main/ui/components/brand-icons.tsx`            |
-| Error-code → human copy                 | `packages/app-core/src/errors.ts` (`friendlyError`) |
+| Concern                                 | File                                                             |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Tokens (color/radius/shadow/ease)       | `src/main/ui/globals.css`                                        |
+| Motion presets                          | `src/main/ui/lib/motion.ts`                                      |
+| Morph kit (pill ⇄ card, §5.6)           | `src/main/ui/components/morph.tsx`                               |
+| Reveal/Stagger/Skeleton/PageTransition  | `src/main/ui/components/motion.tsx`                              |
+| Per-screen route skeletons (§3.1)       | `src/main/ui/components/page-skeletons.tsx`                      |
+| Shared table skeleton                   | `src/main/ui/components/table-skeleton.tsx`                      |
+| Primitives (shadcn-style)               | `src/main/ui/components/ui/*`                                    |
+| Circular icon buttons & capsules (§2.7) | `src/main/ui/components/ui/circle-button.tsx`                    |
+| App frame (sidebar/header/nav drawer)   | `src/main/ui/components/app-shell.tsx`                           |
+| Nav tree (sections/items/subs)          | `src/main/ui/components/nav-config.tsx`                          |
+| Page scaffold                           | `src/main/ui/components/page-header.tsx`                         |
+| Update surface (banner/gate/toast)      | `src/main/ui/components/update-surface.tsx`                      |
+| Notification banner (top-centre)        | `src/main/ui/components/toast.tsx` + sink in `src/main/main.tsx` |
+| OS brand glyphs (download/entry)        | `src/main/ui/components/brand-icons.tsx`                         |
+| Error-code → human copy                 | `packages/app-core/src/errors.ts` (`friendlyError`)              |
 
 ## 8. Agent checklist (before any UI change ships)
 

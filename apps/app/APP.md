@@ -19,10 +19,10 @@ Internal app for Kataria Syntex (yarn dyeing + trading):
 sales challans, job-work challans + returns, raw material purchase,
 packing, stock ledger, reports, color recipes.
 
-One SPA bundle for web/PWA and Electron desktop. The Android app is a
-separate React Native workspace (`apps/android` — see its APP.md). All
-shells share the business core (`packages/app-core`): API client, stores,
-offline engine. Backend = Hono on Cloudflare Workers + D1 (SQLite).
+One SPA bundle for web/PWA, Electron desktop and Android. The Android app is
+a Capacitor shell (`apps/android` — see its APP.md) that loads this same
+bundle. All shells share the business core (`packages/app-core`): API client,
+stores, offline engine. Backend = Hono on Cloudflare Workers + D1 (SQLite).
 
 ```
 purchase → job-work OUT (dyeing) → return → packing → sales challan
@@ -37,14 +37,14 @@ grey rolls    grey cones             dyed      packed    invoice
 
 Bun workspaces + Turborepo. Bun is the only package manager (`bun@1.3.14`).
 
-| Path                | Role                                               |
-| ------------------- | -------------------------------------------------- |
-| `apps/app`          | Business app — web/PWA + Electron (this doc)       |
-| `apps/android`      | Android app — React Native + Expo (its own APP.md) |
-| `apps/web`          | Public website — Next.js + Vinext on Workers       |
-| `packages/app-core` | Shared business core — API client, stores, offline |
-| `packages/shared`   | Domain types, permissions, errors, numbering, FY   |
-| `packages/tsconfig` | Shared TS presets                                  |
+| Path                | Role                                                            |
+| ------------------- | --------------------------------------------------------------- |
+| `apps/app`          | Business app — web/PWA + Electron (this doc)                    |
+| `apps/android`      | Android app — Capacitor shell over this bundle (its own APP.md) |
+| `apps/web`          | Public website — Next.js + Vinext on Workers                    |
+| `packages/app-core` | Shared business core — API client, stores, offline              |
+| `packages/shared`   | Domain types, permissions, errors, numbering, FY                |
+| `packages/tsconfig` | Shared TS presets                                               |
 
 ### Commands
 
@@ -75,9 +75,9 @@ Packaging notes (local-only helpers — CI inlines the same steps in
   `turbo.json` build outputs — shipped as CI artifacts, never cached.
 
 **Done** = typecheck + lint + format + build green from repo root
-AND the feature works when run. Web/PWA and Electron compile as one
-renderer bundle; `apps/android` typechecks and Metro-bundles against the
-same `packages/app-core`.
+AND the feature works when run. Web/PWA, Electron and Android compile as one
+renderer bundle; `apps/android` typechecks and syncs (`bunx cap sync android`)
+against the same `packages/app-core`.
 
 ## 3 · Tech stack
 
@@ -94,7 +94,7 @@ Latest stable majors; never downgrade to escape a break.
 | PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                             |
 | Desktop     | Electron 43 · electron-builder 26                                                                                        |
 | Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline engine (web + Electron here, Android in `apps/android`) |
-| Android     | separate workspace `apps/android` — React Native 0.86 · Expo SDK 57 · expo-router · NativeWind 4.2                       |
+| Android     | `apps/android` — Capacitor 8 shell loading this bundle (official `@capacitor/*` plugins)                                 |
 | QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                       |
 | CI          | GitHub Actions (`pipeline.yml`: gate → deploy + desktop + android → R2)                                                  |
 
@@ -145,15 +145,15 @@ Platform differences live in each shell's `PlatformAdapter`
 meets its host: API base, token storage, sync KV, network events,
 realtime origin, foreground events, optional Electron transport). This
 app configures it via `configureWebCore()` in `src/main/lib/platform.ts`
-(wired in `main.tsx`); Android configures it via `configureAndroidCore()`
-in `apps/android/src/lib/core-adapter.ts`. Never branch on platform
-elsewhere.
+(wired in `main.tsx`); the Android branch of the same file
+(`detectHost() === "android"`) configures it for the Capacitor shell.
+Never branch on platform elsewhere.
 
-| Shell    | Session storage                              | API origin                                                            |
-| -------- | -------------------------------------------- | --------------------------------------------------------------------- |
-| Web/PWA  | HttpOnly cookie                              | same-origin `/api/*` (Vite proxy in dev)                              |
-| Electron | OS keychain via safeStorage (`kc:*` IPC)     | `APP_URL` injected by `build:electron` at build time                  |
-| Android  | expo-secure-store (hardware-backed keystore) | `EXTRA_API_BASE` baked by CI; dev `localhost:3000` over `adb reverse` |
+| Shell    | Session storage                          | API origin                                                          |
+| -------- | ---------------------------------------- | ------------------------------------------------------------------- |
+| Web/PWA  | HttpOnly cookie                          | same-origin `/api/*` (Vite proxy in dev)                            |
+| Electron | OS keychain via safeStorage (`kc:*` IPC) | `APP_URL` injected by `build:electron` at build time                |
+| Android  | `@capacitor/preferences` (bearer token)  | `VITE_API_URL` baked by CI; dev `localhost:3000` over `adb reverse` |
 
 Build targets (fixed by owner):
 
@@ -164,8 +164,9 @@ Build targets (fixed by owner):
 - **iOS skipped — never build or scaffold for it.**
 
 Electron renders challan PDFs locally via `kc:render-pdf` (printToPDF);
-Android fetches the server-rendered PDF and shares/prints natively —
-see §12 and `apps/android/APP.md`.
+Android fetches the server-rendered PDF and opens the system share sheet
+via `@capacitor/filesystem` + `@capacitor/share` — see §12 and
+`apps/android/APP.md`.
 
 Desktop shell notes: one instance per installation (second launch focuses
 the first), no menu bar in packaged Windows/Linux builds, pinch/ctrl-wheel
@@ -427,8 +428,8 @@ refetch-on-mount.
   and the renderer is configured). No fallback renderer.
 - Filenames sanitized. Print route (web): fonts awaited first
   (`document.fonts.ready`), then `window.print()`. Android downloads the
-  server PDF and prints it through the Android print framework or the share
-  sheet (`apps/android/src/lib/pdf.ts`).
+  server PDF and opens the system share sheet via the Android branch of
+  `src/main/lib/platform.ts` (`sharePdfOnAndroid`).
 - Restyles pending in `design-compare/`: ten challan-sheet directions (A–J),
   ten carton-sticker directions (S-A–S-J), and ten sales-report formats
   (R1–R10, each in both A4 orientations). Its README has status + the pick
@@ -506,8 +507,8 @@ copy, or commit them. Secrets enter only as env read at use site.
   real id into `wrangler.jsonc`) → apply migrations → ensure `ks-releases`
   bucket exists → `wrangler deploy`; website: same for its worker + inquiry
   DB), `desktop` (win-x64, mac-arm64, linux-x64) and `android` APK (from
-  `apps/android`: `expo prebuild -p android` → `assembleRelease`; native
-  project generated on the runner, not committed) in parallel; then
+  `apps/android`: build `apps/app` → `cap sync android` → `assembleRelease`;
+  native project committed under `apps/android/android/`) in parallel; then
   `publish-r2` uploads artifacts + rewrites `latest.json`/`latest*.yml` via
   `scripts/publish-releases.ts` and prunes everything older (latest-only).
   Push builds publish only when `package.json` `version` differs from the
@@ -534,7 +535,7 @@ all read it.
 | Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — check at launch + every 4h, silent download, install on quit ("Restart now" action)                                                                                                                                                                                                                                                                       |
 | Electron Mac   | Unsigned builds can't self-install — manifest poll + "Download new dmg" dialog (`openReleaseUrl` → OS browser)                                                                                                                                                                                                                                                                                                          |
 | Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                                                                   |
-| Android        | Manifest poll (`apps/android/src/lib/updates.ts` — launch + every 4h) → banner → APK streamed via expo-file-system into app-private storage (progress) → system package installer (REQUEST_INSTALL_PACKAGES); first install asks once for "install unknown apps"                                                                                                                                                        |
+| Android        | Manifest poll (shared update surface — launch + every 4h) → banner; the in-app APK install intent is open (no WebView path) — see BACKLOG C1                                                                                                                                                                                                                                                                            |
 
 Settings → About carries the manual "Check for updates" row. Force updates
 render the blocking `update-dialog.tsx` (undismissable, host-appropriate

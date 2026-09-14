@@ -7,23 +7,6 @@ when it ships; history lives in git.
 
 ## 1. Owner decisions (blocked on a call)
 
-- [ ] **B1 · Toast exactness vs design.md §3.**
-      Web (sonner) shows a description line when one is passed and dwells
-      success 3.8s / error 6.5s. `design.md` §3 says "title only". Android
-      (`src/lib/toasts.ts`, `src/ui/toast-overlay.tsx`) is title-only at a
-      flat 4s. Pick: mirror sonner exactly (descriptions + per-kind timing,
-      update `design.md`), or keep the doc and accept divergence.
-- [ ] **B2 · Android-only surfaces: keep or remove for strict parity?** - challan-detail record meta block (Created/Updated/Issued-by; file
-      comment claims the owner asked for it) - Retry buttons on error states (web has none) - permission-gated Edit/Delete buttons (web relies on route guards) - discard-confirm on Cancel in editors (web cancels silently) - scan-approve "Done" button - deep-link `returnTo` continuation through sign-in (web drops the code) - "Select a date." save guard (web has none) - challan editor offline number preview + save toasts were removed for
-      parity — restore if that behavior was wanted.
-- [ ] **B3 · Backdrop blur.**
-      Web header/sheets use `backdrop-blur`; Android is solid because
-      `expo-blur` is not installed. Add the Expo package (free, same vendor)
-      or accept solid surfaces.
-- [ ] **B4 · Android lint is a no-op.**
-      `apps/android/eslint.config.mjs` matches no TS/TSX, so `bun run lint`
-      silently checks nothing there. Add flat-config `files` + TS parser, or
-      accept `tsc` + `expo export` as the Android gates.
 - [ ] **B5 · Repo-wide `format:check` fails on Windows CRLF.**
       Pre-existing; every non-Android file is flagged on this machine. Fix
       via `git add --renormalize .` in a dedicated commit or
@@ -32,6 +15,19 @@ when it ships; history lives in git.
       `AGENTS.md` §4.0.1: bump `apps/app/package.json` `version` when a
       change warrants a release; the bump is the release action. Owner call
       for the parity pass and future sessions.
+- [ ] **B7 · Inline confirmation beside the triggering action.**
+      Material 3's snackbar rule: an auto-dismissing message must also be
+      communicated inline or near the action that raised it (a Save button
+      relabelling to "Saved"). Most of the ~50 `toastSuccess`/`toastError`
+      call sites in `apps/app` raise the banner alone, so the confirmation
+      lives only in a surface that disappears. Decide: add inline
+      confirmation at the highest-traffic triggers (saves, deletes, sync),
+      or accept the banner as the only signal.
+- [ ] **B8 · The update banner auto-dismisses despite carrying an action.**
+      `ui/components/update-surface.tsx` raises "Update ready" with a
+      "Restart now" button and an 8000ms dwell. Material 3: a message with
+      an action shouldn't auto-dismiss. Decide: make it persist until
+      dismissed, or accept the timeout.
 
 ## 2. Web bugs found during the parity audit (fix in `apps/app`, then mirror)
 
@@ -56,16 +52,8 @@ when it ships; history lives in git.
 - [ ] **W11 · `MastersSkeleton` still draws segmented-pill tabs** instead of
       the underline grammar.
 
-## 3. Android parity follow-ups (not blocking)
+## 3. Android device pass (owner)
 
-- [ ] **F1 · Missing lucide glyphs:** Dashboard (`LayoutDashboard`), Devices
-      (`MonitorSmartphone`), Stock Summary (`ClipboardList`), Transaction Log
-      (`ListTree`). Port as custom SVGs like the other `feather.tsx` icons.
-- [ ] **F2 · Drawer RoleBadge:** `award`/`shield` replaced with
-      Crown/ShieldCheck — confirm on device.
-- [ ] **F3 · Panel shadows:** `SHADOWS` tokens exist in
-      `src/theme/index.ts`; audit screens that render borderless panels
-      without them.
 - [ ] **F4 · Device pass (owner):** motion feel, sheet drag, QR camera,
       toast stack, date sheet at real phone size.
 
@@ -73,7 +61,23 @@ when it ships; history lives in git.
 
 - [ ] **D1 · Blur surfaces everywhere** once B3 is decided (header, sheet
       scrims, frosted glass).
-- [ ] **D2 · Toast descriptions + durations** once B1 is decided.
 - [ ] **D3 · Breathing room:** `Field` label typography (web form labels
       12px/600 vs kit 13px/500; `design.md` §3 says 13px medium) — align one
       way, then update the other.
+
+## 5. Android: open Capacitor decisions
+
+The Android app is a Capacitor shell over the `apps/app` bundle
+(`apps/android` — see its APP.md). Two native features have no official
+Capacitor plugin and stay open:
+
+- [x] **C1 · APK self-update — custom plugin, built (owner decided).**
+      `InstallerPlugin.java` (registered in `MainActivity`, no npm package)
+      streams the APK to app-private cache with progress events and fires
+      the system installer via the FileProvider URI. Wired through the
+      shared update store + blocking dialog. Java never compiled locally
+      (no Android SDK on this machine) — CI `assembleRelease` is the first
+      compile; verify install flow on a real phone.
+- [x] **C2 · PDF print — accepted as share sheet (owner decided).**
+      `@capacitor/share` covers sending the PDF to Drive, WhatsApp or a
+      print app; no native print plugin needed.

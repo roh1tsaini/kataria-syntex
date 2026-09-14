@@ -3,9 +3,9 @@
  * bundled Inter TTFs, builds the HTML for the local render, and saves the
  * finished file. The host transport lives here: Electron renders with its
  * own Chromium over the IPC bridge (fully offline); web/PWA fetches the
- * server-rendered copy. Inter (OFL) is fetched from locally bundled assets
- * — no CDN, no system fallback. (The Android app downloads the server PDF
- * through its own shell — apps/android/lib/pdf.ts.)
+ * server-rendered copy; the Android shell opens the same copy in the
+ * system share sheet (see sharePdfOnAndroid in lib/platform.ts). Inter
+ * (OFL) is fetched from locally bundled assets — no CDN, no system fallback.
  */
 
 import type { ChallanFonts } from "../../shared/challan-html";
@@ -20,7 +20,11 @@ import { createCached } from "../../shared/cached";
 import interBoldUrl from "../../shared/fonts/Inter-Bold.ttf?url";
 import interRegularUrl from "../../shared/fonts/Inter-Regular.ttf?url";
 import { ApiError, apiBlob } from "@kataria-syntex/app-core";
-import { desktopBridge } from "@/lib/platform";
+import {
+  desktopBridge,
+  isAndroidShell,
+  sharePdfOnAndroid,
+} from "@/lib/platform";
 
 /** Both Inter weights as base64 for the template's inline @font-face. */
 export const loadChallanFonts: () => Promise<ChallanFonts> = createCached(
@@ -88,6 +92,12 @@ export async function downloadChallanPdf(
     const { saved } = await desktop.saveFile(res.base64, filename);
     return { via: "local", saved };
   }
-  saveBlob(await apiBlob(`/challans/${challanId}/pdf`), filename);
+  const blob = await apiBlob(`/challans/${challanId}/pdf`);
+  if (isAndroidShell()) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    await sharePdfOnAndroid(bytes, filename);
+    return { via: "server", saved: true };
+  }
+  saveBlob(blob, filename);
   return { via: "server", saved: true };
 }

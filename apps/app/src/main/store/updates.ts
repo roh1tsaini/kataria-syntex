@@ -32,7 +32,11 @@ import {
   setUpdateRequiredHandler,
   type UpdateProgress,
 } from "@kataria-syntex/app-core";
-import { desktopBridge } from "@/lib/platform";
+import {
+  desktopBridge,
+  detectHost,
+  downloadAndInstallApk,
+} from "@/lib/platform";
 
 export type { UpdateProgress };
 
@@ -74,6 +78,7 @@ function releasesManifestUrl(): string {
 type LatestManifest = {
   version: string;
   minVersion?: string;
+  android?: { apk?: string };
   desktop?: { win?: string; mac?: string; linux?: string };
 };
 
@@ -186,6 +191,39 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   installUpdate: async () => {
+    if (detectHost() === "android") {
+      // Single-flight like the desktop shell: a second tap while the APK
+      // streams is a no-op, and the native side single-flights too.
+      if (get().status === "downloading") return;
+      etaFrom.reset();
+      set({
+        status: "downloading",
+        progress: {
+          percent: 0,
+          transferredBytes: 0,
+          totalBytes: 0,
+          etaSeconds: null,
+        },
+      });
+      try {
+        await downloadAndInstallApk(apiOrigin(), ({ bytes, total }) => {
+          set({
+            progress: {
+              percent: total > 0 ? Math.min(100, (bytes / total) * 100) : 0,
+              transferredBytes: bytes,
+              totalBytes: total,
+              etaSeconds: etaFrom.sample(bytes, total),
+            },
+          });
+        });
+        // Fully downloaded — the system installer dialog takes over from here.
+        set({ status: "ready", progress: null });
+      } catch {
+        etaFrom.reset();
+        set({ status: "error", progress: null });
+      }
+      return;
+    }
     const desktop = desktopBridge();
     if (desktop) {
       if (usesManifestFlow()) {
@@ -410,7 +448,11 @@ let updateChecksWired = false;
 export function initUpdateChecks(): void {
   if (updateChecksWired) return;
   updateChecksWired = true;
-  if (desktopBridge() === null) {
+  // The Android WebView must never register the PWA worker — there is no
+  // navigation-time update check inside the native shell, and the bundle is
+  // replaced by cap sync, not by the worker. It polls the manifest like the
+  // macOS flow instead.
+  if (desktopBridge() === null && detectHost() !== "android") {
     void registerServiceWorker();
     // Long-lived tabs: SWs are checked by the browser on navigation only, so
     // a standalone PWA window left open for days would never see a deploy.
@@ -475,6 +517,11 @@ export function showUpdateBanner(): boolean {
     return false;
   }
   if (desktopBridge() === null) {
+    if (detectHost() === "android") {
+      // Android has no waiting worker — the banner owns the whole flow:
+      // available, then live APK progress while it streams.
+      return s.status === "ready" || s.status === "downloading";
+    }
     // Web/PWA: the waiting worker only. Install progress stays silent
     // (Settings shows it) — announcing every install nags on every page
     // while a slow network streams the deploy.
