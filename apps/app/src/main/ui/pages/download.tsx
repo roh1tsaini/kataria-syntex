@@ -36,6 +36,8 @@ import {
 import { EASE_OUT } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
 
+import { detectPlatformKey } from "@/lib/platform";
+
 type PlatformKey = "win" | "mac" | "linux" | "android";
 
 type ReleaseInfo = {
@@ -76,16 +78,6 @@ async function fetchRelease(): Promise<ReleaseInfo | null> {
 }
 
 /** Best-effort platform guess for the recommended card. */
-function detectPlatform(): PlatformKey {
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return "android";
-  if (/iphone|ipad/i.test(ua)) return "mac";
-  if (/mac/i.test(ua)) return "mac";
-  if (/win/i.test(ua)) return "win";
-  if (/linux/i.test(ua)) return "linux";
-  return "win";
-}
-
 const PLATFORM_META: Record<
   PlatformKey,
   { name: string; file: string; note: string; icon: typeof WindowsGlyph }
@@ -250,7 +242,7 @@ function PlatformCard({
 export function DownloadPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [platform] = useState<PlatformKey>(() => detectPlatform());
+  const [platform] = useState<PlatformKey>(() => detectPlatformKey() ?? "win");
   const [busyPlatform, setBusyPlatform] = useState<PlatformKey | null>(null);
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
   const aliveRef = useRef(true);

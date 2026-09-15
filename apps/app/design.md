@@ -131,6 +131,9 @@ no text-transform on body copy.
 - Dates render `DD Mon YYYY` (`03 Sep 2026`), parsed timezone-safe:
   date-only strings build from parts, entry keys use device-local days,
   never UTC.
+- Fresh timestamps render relative through `fmtRelative` (`ui/lib/format.ts`):
+  "Active now", "12 min ago", "3 hr ago", "Yesterday" — anything older falls
+  back to `fmtDate`. Same single home, one wording everywhere.
 - Dashboard stat cards animate value changes with rolling digits (`CountUp`
   in `ui/components/motion.tsx`): each digit rides a 0–9 strip, separators
   and symbols stay fixed; first appearance counts up from zero, columns
@@ -344,70 +347,26 @@ text-foreground` while a sub is active. The collapsed rail keeps the
 - Every screen answers: Where am I? (header) Where can I go? (nav)
   How do I get out? (back/close) — wayfinding is never optional.
 
-### 4.1 Android shell (apps/android) — the web mobile layout at phone scale
+### 4.1 Android shell — one bundle, phone scale
 
-The Android app implements the web mobile chrome, not a platform-native
-variant. `Screen` (`src/ui/kit.tsx`) composes the whole page:
+`apps/android` is a Capacitor 8 WebView over the same `apps/app` bundle. There
+is no second UI, no Android token set, and nothing to port: the phone renders
+the web layout at the `≤sm` breakpoint (§4). Rebuilding the bundle and running
+`bunx cap sync android` is the whole release step.
 
-- **Header bar** (`src/ui/app-header.tsx`) mirrors `HeaderBar`: 56px, card
-  surface, hairline bottom edge, safe-area top. Account avatar left (opens
-  the full-screen nav drawer) with the online/offline dot
-  bottom-right; the current page label centered, 13px medium; the company
-  chip right (briefcase glyph + name, max 140px).
-- **Sync strip** (shared `SyncStrip`) sits between header and page title,
-  matching the web sync banner's position under the header.
-- **Page header**: 11px uppercase eyebrow, 28px/700 title, 15px description,
-  then the action as a full-width control below — exactly how `PageHeader`
-  actions collapse at the mobile breakpoint. Stack screens whose title is a
-  record pass `headerLabel` so the header names the section (e.g. "Sales
-  challans"), not the number.
-- **Nav drawer** (`src/ui/nav-drawer.tsx`) is the only navigation — no bottom
-  tab bar. Full-screen panel sliding from the left with `EASE_DRAWER` (280ms
-  in / 200ms out), the exact web drawer content: brand header + role badge,
-  FY/sync strip (tap opens the sync sheet), the roomy permission-gated nav
-  tree (`src/ui/nav-sections.ts`, same sections/items/subs as the web
-  `nav-config`), and the footer identity with theme + log-out and the
-  full-width `New challan` action.
-- **Registers** mirror the web mobile list: filter bars are one bordered card
-  (search control + FY `MenuSelect`), the list is a card with a muted
-  "… • N shown" header strip, each row is a 12px card, and paging is
-  Prev/Next + "Page X of Y · N total" — never a floating action button; the
-  primary action lives in the page header.
-- **Menus**: `MenuSelect` is the phone counterpart of the web Select (44px
-  trigger → bottom-sheet option list). Segmented controls stay for tiny
-  fixed sets; tab groups that the web renders as underlined tabs keep that
-  underline grammar.
-- **Pre-auth surfaces** sit outside `Screen`: auth carries the 44px "K" tile
-  and name lockup plus the six-cell OTP row (`otp-input.tsx`, the InputOTP
-  counterpart); scan-approve is a centered card.
-- **Date fields** use the sheet calendar (`date-sheet.tsx`, the DatePicker
-  counterpart): a 44px trigger showing `DD Mon YYYY` opens a bottom-sheet
-  month grid (MorphSheet surface) — today outlined, selected day filled,
-  min/max clamping, Today / Clear footer.
-- **Notification banner** (`toast-overlay.tsx` + `lib/toasts.ts`, hosted in
-  the root layout) mirrors the web surface: top-centre card stack, radius 12,
-  card surface, overlay shadow, a tinted status glyph beside a 14px semibold
-  title with an optional 13px muted description, newest at the top, tap to
-  dismiss — never the OS toast. Enters with a short drop from above on
-  `EASE_OUT` (380ms), exits upward in 300ms, reduced motion collapses to a
-  cross-fade. Dwell 4000ms success / 8000ms error; the stack caps at 3.
-- **Badges** use the one kit tone ladder (`Badge` in `kit.tsx`):
-  neutral/secondary/outline plus the success/warning/destructive status
-  tints — soft tint + ink text + hairline edge, 11px semibold, 8px radius.
-- **Icons** keep lucide glyph parity via custom SVGs (`feather.tsx`): the
-  Feather font plus verbatim lucide path data behind one `IconValue` prop,
-  rendered by `AppIcon` — nav rows included, with the animated sub-list and
-  150ms chevron rotate.
-- **Update gate** is an undismissable bottom sheet (radius 20 top, overlay
-  shadow, live progress readout) only after a server-required update. Routine
-  APK availability stays in Settings and no routine deploy shows a surface at
-  all — web, Android and Windows/Linux stay silent. A newer APK additionally
-  raises a system notification once per release
-  (`@capacitor/local-notifications`, tap → Updates) — OS chrome, not an
-  in-app surface. Panels and toasts carry the `SHADOWS`
-  tokens (soft/lift/overlay).
-- **Screen transitions** fade (root Stack `animation: "fade"`), matching the
-  web page fade.
+Platform differences live only in `src/main/lib/platform.ts`, branched on
+`detectHost() === "android"`: token storage, KV hydration, network/activity
+listeners, deep links, PDF share, APK self-update. A platform branch anywhere
+else is a bug, and an Android-only visual value is a bug (§2).
+
+- The update gate is the same dialog — it renders as an undismissable bottom
+  sheet at ≤sm (§3), after a server-required update only.
+- Routine APK availability stays in Settings; one system notification per
+  release points at it (`@capacitor/local-notifications`, tap → Updates) —
+  OS chrome, not an in-app surface.
+- Printing is web/desktop: Android shares the rendered PDF instead
+  (`shareChallanPdfOnAndroid` in platform.ts), because no maintained
+  Capacitor plugin can print a file.
 
 ## 5. Motion grammar
 

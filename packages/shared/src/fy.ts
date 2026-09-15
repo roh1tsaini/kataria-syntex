@@ -15,11 +15,6 @@ export function fyForDate(date: Date): {
   };
 }
 
-/** Indian FY label ("2026-27") for a "YYYY-MM-DD" date string, computed in UTC. */
-export function fyLabelForDateString(date: string): string {
-  return fyForDate(new Date(`${date}T00:00:00.000Z`)).label;
-}
-
 /** Previous FY label ("2026-27" -> "2025-26"). Pure string math, no dates. */
 export const fyPrevLabel = (label: string) => {
   const [a, b] = label.split("-").map(Number);

@@ -28,7 +28,6 @@ Domain rules, database, API, auth, permissions — all documented in
 `apps/app/APP.md` (§6–§10) and shared unchanged.
 
 Parity rules and the verification protocol: `AGENTS.md` §2.3–§2.4.
-Open native decisions (APK self-update, PDF print): `BACKLOG.md` §5.
 `apps/app/design.md` is the single source of truth for every visual value.
 
 ## 2 · Monorepo & commands
@@ -275,7 +274,6 @@ storage, hydrated at boot. Full contract: `apps/app/APP.md` §11.
 
 ## 13 · Pointers
 
-- `BACKLOG.md` §5 — open native decisions (APK self-update, PDF print).
 - `apps/app/APP.md` — domain, database, API, auth, permissions, infra.
 - `apps/app/design.md` — design system (the WebView renders it directly).
 - `apps/app/src/main/lib/platform.ts` — the Android adapter branch.

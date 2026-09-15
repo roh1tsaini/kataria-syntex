@@ -333,8 +333,9 @@ drives routing. Zod at the boundary; dummy-hash on unknown user (no timing leak)
 **Sessions**
 
 - Token per device; DB stores SHA-256 `tokenHash` (unique). TTL 30 days.
-- `devices` row per physical machine (web fingerprint in localStorage);
-  `lastSeenAt` throttled to 5 min; revoke per device from `/devices`.
+- `devices` row per device (identity in the adapter's KV store);
+  `lastSeenAt` throttled to 5 min (presence info, not per-request state);
+  revoke per device from `/devices`.
 - `login_attempts` powers the lockout counters.
 
 ## 10 · Permissions
@@ -474,8 +475,8 @@ packages, net kg, job-work sendings) · dispatch bars + customer donut
 
 **Reports (7)**: job-work-balance · over-receipts · stock-summary ·
 sales-register · job-work-register · transaction-log · party-summary.
-From/to picker; column toggles persisted (`reports.hiddenCols`);
-skeleton/empty/error states everywhere.
+From/to picker; column toggles persisted per workspace
+(`reports.hiddenCols:<workspaceId>`); skeleton/empty/error states everywhere.
 
 **Stock pages**: raw | dyed, grouped denier × color × lot, `q` filter,
 lot chips, color dots, negative-balance alert.

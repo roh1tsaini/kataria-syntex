@@ -268,6 +268,7 @@ export function RecipeLinkButton({
   const lookupRecipe = useRecipes((s) => s.lookupRecipe);
   const [recipeId, setRecipeId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [missingOpen, setMissingOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   if (!colorId || !denierId) return null;
@@ -280,7 +281,9 @@ export function RecipeLinkButton({
         setRecipeId(found);
         setOpen(true);
       } else {
-        toastSuccess("No recipe saved for this color and denier yet.");
+        // Nothing recorded is a normal state, not a success — it gets its own
+        // surface instead of a green check.
+        setMissingOpen(true);
       }
     } catch (err) {
       toastError("Could not look up the recipe", friendlyError(err));
@@ -306,6 +309,16 @@ export function RecipeLinkButton({
         onOpenChange={setOpen}
         recipeId={recipeId}
       />
+      <Dialog open={missingOpen} onOpenChange={setMissingOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>No recipe yet</DialogTitle>
+            <DialogDescription>
+              Nothing is recorded for this colour and denier. Add it in Colors.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

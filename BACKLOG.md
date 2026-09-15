@@ -178,12 +178,6 @@ Every item below was confirmed against the actual code. Fix targets
       the offline write queue is gone (see the online-only saving change);
       `sync-dialog.tsx` no longer exists, so the unhandled-rejection path
       went with it.
-- [ ] **A8 · Every `<Select>` opens ~2× slower than its own contract.**
-      `ui/components/ui/select.tsx:74` — `duration-[380ms]` open /
-      `duration-300ms` close with the morph spring curve. `design.md` §3
-      contracts dropdowns/popovers to ≤180ms and §5.6 says floating menus
-      keep the fast timing, not the morph grammar. 380ms is the
-      notification-banner dwell — the wrong grammar on every menu.
 - [ ] **A9 · Offline challan numbering converts a clash into a raw 500.**
       `lib/document-pipeline.ts:1001` — the batch catch shapes `UNIQUE
 constraint failed` into a 409 only when `input.offline` is set, and
@@ -201,11 +195,6 @@ constraint failed` into a 409 only when `input.offline` is set, and
       `member.permissions` once and never re-synced. A realtime update or a
       second admin save landing while the editor is open is silently
       overwritten by Save.
-- [ ] **A12 · `challans-list` page is never clamped to `pageCount`.**
-      `ui/pages/challans-list.tsx:181` — after a delete or FY switch shrinks
-      `total`, `page` can exceed `pageCount`. The pager is gated on
-      `pageCount > 1`, so it disappears and the register shows an empty
-      table with no way back except changing the filter.
 - [ ] **A13 · Web SEO: no `og:image`, Twitter card, or canonical URL.**
       `apps/web/src/app/layout.tsx:12` — one `openGraph` reference
       site-wide (`siteName` + `type` only); no `twitter` block, no
@@ -220,12 +209,6 @@ constraint failed` into a 409 only when `input.offline` is set, and
 
 ### Medium
 
-- [x] **A15 · Stale docs describing the removed prompt-mode SW flow.**
-      `src/main/sw.ts` and `vite.config.ts` still described SKIP_WAITING /
-      banner-on-ready. Fixed 2026-09-15 alongside A0 — both now describe the
-      self-applying flow. (The `showUpdateBanner` guard was re-checked and
-      is correct, not vestigial: `desktopBridge() === null` returns before
-      the macOS-only final line, so it is reached on desktop alone.)
 - [ ] **A16 · QR login polls overlap and never stop on success.**
       `ui/components/qr-login-panel.tsx:57-80` — async tick on a 3s interval
       with no overlap guard (a slow network runs two `pollQrLogin` calls,
@@ -249,11 +232,6 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
       Save button sit outside the company-details `<form>`; Enter inside a
       prefix/digits/suffix input silently fires `saveCompany` and saves
       nothing numbering-related.
-- [ ] **A21 · Devices failure looks identical to "no devices".**
-      `ui/pages/devices.tsx:98` — `refreshDevices().catch(() => {})`
-      swallows the failure and the render branch only distinguishes
-      `length === 0`. An offline launch shows the permanent empty state with
-      no error text and no Retry.
 - [ ] **A22 · `UpdateDialog` on web can become an undismissable dead end.**
       `ui/components/update-dialog.tsx:93` → `store/updates.ts:239` —
       `installUpdate()` on web now does only `if (requiredMinVersion)
@@ -333,34 +311,9 @@ window.location.reload()`. If the 426 floor fires before the SW has
       Each row is a `<div onClick>` with no `role="checkbox"`,
       `aria-checked`, or keyboard handler — the 44px hit area reads as
       inert content to screen readers.
-- [ ] **A38 · `use-camera-scanner.ts:67` discards `video.play()`.** If
-      playback is blocked the rejection is unhandled and `scanError` is
-      never set: a live-looking loop that silently never decodes, with no
-      manual-entry fallback.
-- [x] **A39 · `sync-dialog.tsx:240` calls `listPending()` in render with no
-      subscription.** Resolved by removal — the queue and dialog are gone
-      (online-only saving); nothing reads a pending list anymore.
-- [ ] **A40 · Small control-size misses vs the contract.**
-      `update-surface.tsx:67` dismiss button is `size-7` (28px) on desktop
-      against §2.7's 32px floor (the coarse-pointer 44px case is right);
-      `dialog.tsx:129` close button is `rounded-md` where §2.7 wants a
-      circle; `select.tsx:105` items compute to 32px against §3's 36px.
-- [ ] **A41 · `recipe-detail.tsx:283` sends a negative result through
-      `toastSuccess`.** "No recipe saved…" renders in success color with a
-      check glyph, against §2.5's "status colors used for state, never
-      decoration".
-- [ ] **A42 · `reports.tsx:227` has no debounce** (unlike `challans-list`
-      :201's 200ms), so each date-picker change fires a request; the
-      `columns` array is also fresh each render, so the hiddenCols effect
-      runs on every render.
-- [ ] **A43 · Dead/duplicated code.** `worker.ts:81` exports `RealtimeRoom`
-      that `index.ts` never imports (wired via `wrangler.jsonc` class_name);
-      `document-pipeline.ts:63` `allocatedEntryNumber` /
-      `allocatedChallanNumber` are near-identical; four `Map.get` non-null
-      `!`s (`:164,366,564,921`) rely on validation-by-convention;
-      `download.tsx:80` UA-sniffs outside `platform.ts` and drifts from
-      `detectPlatformLabel()` (the two disagree on iPads); `SectionHead.as`
-      is a prop no call site passes.
+- [ ] **A43 · Map.get non-null `!`s.** `document-pipeline.ts`
+      (`:164,366,564,921`) rely on validation-by-convention — return a
+      found-or-error shape instead of asserting.
 - [ ] **A44 · Web `robots.ts:6` allows everything** with no `disallow`,
       exposing `/api/inquiry` and the stray compare pages; 708KB of design
       compare pages ship in `apps/web/public/` and are crawlable,
@@ -383,8 +336,6 @@ window.location.reload()`. If the 426 floor fires before the SW has
 - **Invariant enforcement is one-layered in three places** (A2, A5, A6):
   a rule assumed by the consumer but enforced only by one producer. That
   is the shape that breaks when a new caller skips the guarded path.
-- **`finally` without `catch` appears once** (A21) — same silent failure as
-  the late A7, whose instance died with the removed sync dialog.
 - **Verified clean, do not re-audit:** no SQL injection (all Drizzle, raw
   SQL parameterized); constant-time OTP/password compares with dummy-hash
   enumeration defense; every workspace-scoped read filtered by
@@ -395,55 +346,15 @@ window.location.reload()`. If the 426 floor fires before the SW has
   self-hosted. The uncommitted diff's new code (`lazy-route.ts`, Electron
   cache headers, `reloadOnStaleAndroidBundle`) was checked and is correct.
 
-## 2. Web bugs found during the parity audit (fix in `apps/app`, then mirror)
-
-- [ ] **W1 · challan editor: failed masters load doesn't block save** — an
-      empty form can overwrite a challan
-      (`src/main/ui/pages/challans-editor.tsx`).
-- [ ] **W2 · Update banner `bg-accent/10` compounds alpha** (~0.7% tint).
-- [ ] **W3 · Drawer footer circle buttons stay 32px** on coarse pointers
-      (no 44px touch floor).
-- [ ] **W4 · `toLocaleString()` instead of en-IN** — reports row count,
-      `devices.tsx` dates; `design.md` §2.4.2 wants `en-IN` / `DD Mon YYYY`.
-- [ ] **W5 · Reports hidden columns live in global `localStorage`**, not
-      keyed by workspace.
-- [ ] **W6 · Outward editor mobile row says "Boxes"**, desktop says "Sacks".
-- [ ] **W7 · Members empty copy says "form above"** (form is below).
-- [ ] **W8 · `/auth` renders sign-in for authenticated users**; scan-approve
-      drops the `returnTo` code on deep links.
-- [ ] **W9 · challan-detail mobile Print/Edit/Delete are icon-only** with no
-      accessible name.
-- [ ] **W10 · Masters dialog title/description render as body text** (raw
-      Radix primitives vs Tailwind preflight).
-- [ ] **W11 · `MastersSkeleton` still draws segmented-pill tabs** instead of
-      the underline grammar.
-
-## 3. Android device pass (owner)
+## 2. Android device pass (owner)
 
 - [ ] **F4 · Device pass (owner):** motion feel, sheet drag, QR camera,
       toast stack, date sheet at real phone size.
 
-## 4. Deferred from the parity pass
+## 3. Deferred from the parity pass
 
 - [ ] **D1 · Blur surfaces everywhere** once B3 is decided (header, sheet
       scrims, frosted glass).
 - [ ] **D3 · Breathing room:** `Field` label typography (web form labels
       12px/600 vs kit 13px/500; `design.md` §3 says 13px medium) — align one
       way, then update the other.
-
-## 5. Android: open Capacitor decisions
-
-The Android app is a Capacitor shell over the `apps/app` bundle
-(`apps/android` — see its APP.md). Two native features have no official
-Capacitor plugin and stay open:
-
-- [x] **C1 · APK self-update — custom plugin, built (owner decided).**
-      `InstallerPlugin.java` (registered in `MainActivity`, no npm package)
-      streams the APK to app-private cache with progress events and fires
-      the system installer via the FileProvider URI. Wired through the
-      shared update store + blocking dialog. Java never compiled locally
-      (no Android SDK on this machine) — CI `assembleRelease` is the first
-      compile; verify install flow on a real phone.
-- [x] **C2 · PDF print — accepted as share sheet (owner decided).**
-      `@capacitor/share` covers sending the PDF to Drive, WhatsApp or a
-      print app; no native print plugin needed.

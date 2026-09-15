@@ -1,8 +1,6 @@
 # Cleanup backlog — remaining work
 
-Triaged from the 2026-09-07 assisted cleanup pass. Items below are
-deliberately not done yet; each lists the files, the risk, and what "done"
-requires. Completed items are listed at the bottom — do not redo.
+Each item lists the files, the risk, and what "done" requires.
 
 ## Priority 1 — do when touching the area
 
@@ -70,41 +68,3 @@ requires. Completed items are listed at the bottom — do not redo.
   state for vendored code. Leave alone.
 - **Big-file splits** (`colors.tsx`, `dashboard.tsx`, `app-shell.tsx`):
   subcomponents only if they keep growing, never moves for their own sake.
-
-## Already done — do not redo
-
-**2026-09-08 pass** (all gates green: typecheck, lint, format, build,
-Electron compile):
-
-- Dashboard summary cache → `useChallans.summaryCache`, keyed
-  `workspaceId:FY`, cleared in `logout()`; instant first paint preserved.
-- CSP origin injection at Vite time (`appOrigin()` `transformIndexHtml`
-  plugin; `APP_URL` desktop / `VITE_API_URL` Android / same-origin local);
-  both CI `bun -e` rewrite steps deleted.
-- Offline `sync.ts` split into `sync-state.ts` + `deliver.ts` +
-  `conflict.ts`; `sync.ts` stays the orchestrator (move-verbatim, consumers
-  import from the new modules). Integration test still open (item 6a).
-- `errors.ts` split into `CLIENT_MESSAGES` + `SERVER_MESSAGES`, drift-check
-  kept; pruned `company_not_found`, `entry_locked`, `stock_consumed`,
-  `financial_year_missing` (zero server references).
-- Dialog editors guarded: `useDialogDiscard` in `use-dirty-guard.ts` wired
-  into masters + colors (add/edit/recipe) with a "Discard changes?" confirm;
-  hook comment documents tab-close-only coverage.
-- Report date filters honored: `over-receipts`, `party-summary`,
-  `/reports/dashboard` filter by `from`/`to`; `stock-summary` with a range
-  aggregates the period's movements (lifetime position when unset).
-- `fyPrevLabel` moved to `packages/shared/src/fy.ts`.
-
-**2026-09-07 pass**: dead packing→challan linkage dropped (+ migration);
-dead motion tokens; `EASE`→`EASE_OUT`; duplicate `/company` fetches; dead
-stock guards; `deleteSessionCookie`; dead scripts deleted; `dead-files/`
-removed; Capacitor output gitignored; offline totals → `challanTotals()`;
-badge simplification; web shim deletion; 8 dead query params; balance +
-stock endpoint consolidation (`jobWorkBalances`, `summarizeStockLedger`);
-recipe count batching; shared font-loader core (`shared/cached.ts`);
-transaction-log pagination fields; loginAttempts pruning; lookup envelope;
-web literals batch; 14-page AppShell→fragment strip; challan-editor
-`useMastersLoad` + dialog extract; date-key unification; hours.ts
-simplification (109/109 behavior-proven); CompanyInfo export; numbering
-`@internal` docs; dead column drops (+ migration); CI electron invocation;
-APP.md/DECISIONS.md consistency.

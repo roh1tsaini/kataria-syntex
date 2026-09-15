@@ -478,9 +478,10 @@ function MastersSkeleton() {
   return (
     <>
       <PageHeaderSkeleton desc={false} />
-      <div className="mt-6 inline-flex w-max items-center gap-0.5 rounded-md bg-muted p-1">
+      {/* Tab groups use the underline grammar, not segmented pills. */}
+      <div className="mt-6 flex h-11 w-max items-center gap-1 border-b border-border sm:h-10">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-7 w-24 rounded-sm" />
+          <Skeleton key={i} className="mx-2.5 h-4 w-16" />
         ))}
       </div>
       <div className="filter-bar mt-4">

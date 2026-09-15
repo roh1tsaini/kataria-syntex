@@ -28,8 +28,8 @@ export type Numbering = NumberingConfig;
  * e.g. 7 + CH/ + 3 + "2026-27" → "CH/007/27"
  * Shared single source — server and offline both import from here.
  *
- * @internal Prefer formatNumberForType — this stays exported for the
- * wrapper and rare direct uses (e.g. conflict suggestions).
+ * @internal Also reachable through formatNumberForType, the unified
+ * client formatter.
  */
 export function formatChallanNumber(
   config: NumberingConfig,
@@ -47,7 +47,8 @@ export function formatChallanNumber(
  * No FY suffix (counter resets per FY, but number has no year in it).
  * e.g. 7 + PKG/S/ + 3 → "PKG/S/007"
  *
- * @internal Prefer formatNumberForType — this stays exported for the wrapper.
+ * @internal Also reachable through formatNumberForType, the unified
+ * client formatter.
  */
 export function formatEntryNumber(
   config: NumberingConfig,

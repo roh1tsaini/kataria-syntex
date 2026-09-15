@@ -459,7 +459,7 @@ export function MembersPage() {
               <EmptyHeader>
                 <EmptyTitle>No members yet</EmptyTitle>
                 <EmptyDescription>
-                  Invite your team with the form above.
+                  Invite your team with the form below.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>

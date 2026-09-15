@@ -10,7 +10,7 @@ const circleButtonVariants = cva(
   {
     variants: {
       size: {
-        md: "size-8 [&_svg]:size-4",
+        md: "size-8 touch-44 [&_svg]:size-4",
         touch: "size-11 [&_svg]:size-5",
       },
     },

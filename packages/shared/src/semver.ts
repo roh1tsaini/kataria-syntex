@@ -19,10 +19,10 @@ export function compareSemver(a: string, b: string): number {
 /**
  * `minAppVersion` when no breaking change has shipped — the package.json
  * default. `0.0.0` is falsy-looking but a TRUTHY string, so any code that
- * tests the raw value (rather than this predicate) treats "no floor" as a
- * real one and arms the blocking update dialog on every client.
+ * tests the raw value (rather than the predicate below) treats "no floor" as
+ * a real one and arms the blocking update dialog on every client.
  */
-export const NO_UPDATE_FLOOR = "0.0.0";
+const NO_UPDATE_FLOOR = "0.0.0";
 
 /**
  * True only when a minVersion value actually forces an update. Anything

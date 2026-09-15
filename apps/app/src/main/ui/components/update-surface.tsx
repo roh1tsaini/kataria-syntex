@@ -42,7 +42,7 @@ function UpdateBanner() {
           animate={{ height: "auto", opacity: 1 }}
           exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
           transition={{ duration: reduceMotion ? 0 : 0.2, ease: EASE_OUT }}
-          className="overflow-hidden border-b border-border bg-accent/10"
+          className="overflow-hidden border-b border-border bg-accent"
         >
           <div
             className="flex min-h-11 items-center justify-between gap-3 pl-4 pr-[calc(1rem+var(--wc-w))] sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))]"

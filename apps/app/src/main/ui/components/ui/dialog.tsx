@@ -126,7 +126,7 @@ export const DialogContent = React.forwardRef<
             >
               {children}
               {!hideClose && (
-                <DialogPrimitive.Close className="absolute right-4 top-4 grid size-11 place-items-center rounded-md opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10">
+                <DialogPrimitive.Close className="absolute right-4 top-4 grid size-11 place-items-center rounded-full opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10">
                   <X className="size-4" aria-hidden />
                   <span className="sr-only">Close</span>
                 </DialogPrimitive.Close>
@@ -147,5 +147,35 @@ export const DialogHeader = ({
   <div className={cn("flex flex-col gap-1.5", className)} {...props} />
 );
 
-export const DialogTitle = DialogPrimitive.Title;
-export const DialogDescription = DialogPrimitive.Description;
+/** Section-head type scale (§2.4) — Radix renders a bare `<h2>`, which
+ * Tailwind's preflight resets to body text, so the size and weight live here
+ * once instead of at every call site. */
+export const DialogTitle = React.forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn(
+      "text-[17px] font-semibold leading-[1.3] tracking-[-0.01em]",
+      className,
+    )}
+    {...props}
+  />
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
+export const DialogDescription = React.forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn(
+      "text-[13px] leading-relaxed text-muted-foreground",
+      className,
+    )}
+    {...props}
+  />
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;

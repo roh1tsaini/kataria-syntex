@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -157,7 +157,25 @@ registerDataCache(() => {
   for (const key of Object.keys(reportCache)) delete reportCache[key];
 });
 
-const STORAGE_KEY = "reports.hiddenCols";
+const STORAGE_KEY_PREFIX = "reports.hiddenCols";
+
+/** Column visibility is per workspace — a shared browser must never inherit
+ * the previous account's hidden columns. */
+function readHiddenCols(workspaceId: string): Record<string, boolean> {
+  try {
+    const parsed: unknown = JSON.parse(
+      localStorage.getItem(`${STORAGE_KEY_PREFIX}:${workspaceId}`) ?? "{}",
+    );
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return Object.fromEntries(
+        Object.entries(parsed).filter(([, v]) => typeof v === "boolean"),
+      ) as Record<string, boolean>;
+    }
+  } catch {
+    // Storage may be blocked or corrupted — start clean.
+  }
+  return {};
+}
 
 function columnLabel(key: string) {
   return key
@@ -177,21 +195,26 @@ function ReportView({ reportId }: { reportId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [hiddenCols, setHiddenCols] = useState<Record<string, boolean>>(() => {
-    try {
-      const parsed: unknown = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) ?? "{}",
-      );
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return Object.fromEntries(
-          Object.entries(parsed).filter(([, v]) => typeof v === "boolean"),
-        ) as Record<string, boolean>;
-      }
-    } catch {
-      // Storage may be blocked or corrupted — start clean.
-    }
-    return {};
-  });
+  // Settled range: one request per edit, not per keystroke or picker step
+  // (200ms, the same cadence as the challan register).
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const [hiddenCols, setHiddenCols] = useState<Record<string, boolean>>(() =>
+    readHiddenCols(workspaceId),
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setRangeFrom(from);
+      setRangeTo(to);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [from, to]);
+
+  // Account switch on a shared browser: swap in that workspace's settings.
+  useEffect(() => {
+    setHiddenCols(readHiddenCols(workspaceId));
+  }, [workspaceId]);
 
   // Monotonic request id: overlapping loads (debounced date edits, realtime
   // events) resolve out of order, and a slow stale response must never
@@ -201,8 +224,8 @@ function ReportView({ reportId }: { reportId: string }) {
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     const params = new URLSearchParams();
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
+    if (rangeFrom) params.set("from", rangeFrom);
+    if (rangeTo) params.set("to", rangeTo);
     const qs = params.toString() ? `?${params.toString()}` : "";
     const cacheKey = `${baseKey}${qs}`;
     if (!reportCache[cacheKey]) {
@@ -222,7 +245,7 @@ function ReportView({ reportId }: { reportId: string }) {
     } finally {
       if (seq === loadSeq.current) setLoading(false);
     }
-  }, [baseKey, reportId, from, to]);
+  }, [baseKey, reportId, rangeFrom, rangeTo]);
 
   useEffect(() => {
     void load();
@@ -237,8 +260,11 @@ function ReportView({ reportId }: { reportId: string }) {
   const report = REPORTS.find((r) => r.id === reportId);
   const title = report?.label ?? "Report";
   const Icon = report?.icon ?? ClipboardList;
-  const rows = data?.items ?? [];
-  const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const rows = useMemo(() => data?.items ?? [], [data]);
+  const columns = useMemo(
+    () => (rows.length > 0 ? Object.keys(rows[0]) : []),
+    [rows],
+  );
   const visibleColumns = columns.filter((key) => !hiddenCols[key]);
   // Numeric columns right-align so figures scan like a ledger.
   const numericColumns = new Set(
@@ -259,11 +285,14 @@ function ReportView({ reportId }: { reportId: string }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(hiddenCols));
+      localStorage.setItem(
+        `${STORAGE_KEY_PREFIX}:${workspaceId}`,
+        JSON.stringify(hiddenCols),
+      );
     } catch {
       // Storage unavailable — the toggle just won't persist.
     }
-  }, [hiddenCols]);
+  }, [hiddenCols, workspaceId]);
 
   const toggleHidden = (key: string) =>
     setHiddenCols((prev) => {
@@ -379,7 +408,7 @@ function ReportView({ reportId }: { reportId: string }) {
                 variant="secondary"
                 className="font-medium tabular-nums whitespace-nowrap"
               >
-                {rows.length.toLocaleString()}{" "}
+                {rows.length.toLocaleString("en-IN")}{" "}
                 {rows.length === 1 ? "row" : "rows"}
               </Badge>
               <Popover>

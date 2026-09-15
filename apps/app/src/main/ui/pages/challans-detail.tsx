@@ -241,13 +241,13 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
           <Button asChild variant="outline" className="flex-1 sm:flex-none">
             <Link to={`${kind.listPath}/${challan.id}/print`}>
               <Printer aria-hidden />
-              <span className="hidden sm:inline">Print</span>
+              <span className="sr-only sm:not-sr-only">Print</span>
             </Link>
           </Button>
           <Button asChild variant="outline" className="flex-1 sm:flex-none">
             <Link to={`${kind.listPath}/${challan.id}/edit`}>
               <Pencil aria-hidden />
-              <span className="hidden sm:inline">Edit</span>
+              <span className="sr-only sm:not-sr-only">Edit</span>
             </Link>
           </Button>
           <Button
@@ -257,7 +257,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
             className="flex-1 sm:flex-none"
           >
             <Trash2 aria-hidden />
-            <span className="hidden sm:inline">Delete</span>
+            <span className="sr-only sm:not-sr-only">Delete</span>
           </Button>
         </div>
       </div>

@@ -64,7 +64,15 @@ export function useCameraScanner(
         const video = videoRef.current;
         if (video) {
           video.srcObject = s;
-          void video.play();
+          // A blocked playback must not fail silently — the scan loop would
+          // run forever against a frozen frame.
+          video
+            .play()
+            .catch(() =>
+              setScanError(
+                "Video playback was blocked. Enter the code manually instead.",
+              ),
+            );
           raf = requestAnimationFrame(tick);
         }
       })

@@ -8,7 +8,7 @@ import {
 import { initUpdateChecks } from "@/store/updates";
 import { lazyRoute } from "@/lib/lazy-route";
 import { isNative, isPlainBrowser } from "@/lib/platform";
-import { ProtectedRoute } from "@/ui/components/protected-route";
+import { GuestRoute, ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
 import { Toaster } from "@/ui/components/toast";
 import { UpdateSurface } from "@/ui/components/update-surface";
@@ -178,7 +178,9 @@ export function App() {
                 path="/auth"
                 element={
                   <Suspense fallback={<AuthSkeleton />}>
-                    <AuthPage />
+                    <GuestRoute>
+                      <AuthPage />
+                    </GuestRoute>
                   </Suspense>
                 }
               />

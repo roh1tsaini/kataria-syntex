@@ -9,7 +9,7 @@
 export type RealtimeEntity =
   "challans" | "returns" | "raw-material" | "packing" | "stock" | "masters";
 
-export const REALTIME_ENTITIES: readonly RealtimeEntity[] = [
+const REALTIME_ENTITIES: readonly RealtimeEntity[] = [
   "challans",
   "returns",
   "raw-material",

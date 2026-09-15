@@ -49,7 +49,13 @@ export function ScanApprovePage() {
     };
   }, [status, code]);
 
-  if (!code || status === "guest") return <Navigate to="/auth" replace />;
+  if (!code || status === "guest")
+    return (
+      <Navigate
+        to={`/auth?next=${encodeURIComponent(`/login/scan/${code}`)}`}
+        replace
+      />
+    );
 
   if (status === "loading") {
     return (

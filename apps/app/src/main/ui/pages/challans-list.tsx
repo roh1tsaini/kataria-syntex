@@ -187,6 +187,12 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
     }
   }, [filterKey]);
 
+  // A delete or FY switch can shrink the register below the current page —
+  // clamp so the pager never strands the user on an empty page.
+  useEffect(() => {
+    setPage((p) => Math.min(p, Math.max(1, pageCount)));
+  }, [pageCount]);
+
   useEffect(() => {
     if (!initializedFy.current && currentFy) {
       initializedFy.current = true;
@@ -312,7 +318,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
         <span className="text-xs tabular-nums text-muted-foreground">
           {loading
             ? "Refreshing…"
-            : `${total.toLocaleString()} ${total === 1 ? "record" : "records"} • FY ${fy || "All"}`}
+            : `${total.toLocaleString("en-IN")} ${total === 1 ? "record" : "records"} • FY ${fy || "All"}`}
         </span>
         {q && (
           <span className="text-xs text-muted-foreground truncate ml-2">
@@ -591,8 +597,8 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
       {total > 0 && pageCount > 1 && (
         <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <span className="text-xs tabular-nums text-muted-foreground order-2 sm:order-1">
-            Page {page} of {pageCount.toLocaleString()} ·{" "}
-            {total.toLocaleString()} total
+            Page {page} of {pageCount.toLocaleString("en-IN")} ·{" "}
+            {total.toLocaleString("en-IN")} total
           </span>
           <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto">
             <Button

@@ -16,7 +16,7 @@ import type { BatchItem } from "drizzle-orm/batch";
 import {
   challanTotals,
   formatChallanNumber,
-  formatEntryNumber,
+  formatNumberForType,
   fyForDate,
   parseSeqFromNumber,
   round3,
@@ -60,54 +60,35 @@ import { generateId } from "./token";
 
 // ── Common helpers ─────────────────────────────────────────────────────────
 
-async function allocatedEntryNumber(
-  d: Queryable,
-  workspaceId: string,
-  date: Date,
-  type: "packing_s" | "packing_j" | "raw",
-): Promise<{ entryNumber: string; fyId: string; fyLabel: string }> {
-  const company = await getOrCreateCompany(d, workspaceId);
-  const alloc = await allocateFyNumber(
-    d,
-    workspaceId,
-    date,
-    type,
-    (config, seq) => formatEntryNumber(config, type, seq),
-    parseNumbering(company.numbering),
-  );
-  return {
-    entryNumber: alloc.number,
-    fyId: alloc.fyId,
-    fyLabel: alloc.fyLabel,
-  };
-}
-
-/**
+/** One counter allocation for every document type: sales/outward numbers
+ * carry the FY short, packing/raw ones don't. Pass `config` when the caller
+ * already holds the numbering; otherwise the workspace's live config is
+ * loaded here.
+ *
  * Counter CAS with retry. Must run BEFORE the caller's db.batch() — a failed
  * CAS (0 changes) does not error a batch, so the document writes would commit
  * against a number that was never allocated. Only after the CAS commits does
  * the caller collect its writes into the batch.
  */
-async function allocatedChallanNumber(
+async function allocatedNumber(
   d: Queryable,
   workspaceId: string,
   date: Date,
-  type: "sales" | "outward",
-  config: NumberingConfig,
-): Promise<{ challanNumber: string; fyId: string; fyLabel: string }> {
+  type: "sales" | "outward" | "packing_s" | "packing_j" | "raw",
+  config?: NumberingConfig,
+): Promise<{ number: string; fyId: string; fyLabel: string }> {
+  const numbering =
+    config ??
+    parseNumbering((await getOrCreateCompany(d, workspaceId)).numbering);
   const alloc = await allocateFyNumber(
     d,
     workspaceId,
     date,
     type,
-    (cfg, seq, fyLabel) => formatChallanNumber(cfg, type, seq, fyLabel),
-    config,
+    (cfg, seq, fyLabel) => formatNumberForType(cfg, type, seq, fyLabel),
+    numbering,
   );
-  return {
-    challanNumber: alloc.number,
-    fyId: alloc.fyId,
-    fyLabel: alloc.fyLabel,
-  };
+  return { number: alloc.number, fyId: alloc.fyId, fyLabel: alloc.fyLabel };
 }
 
 // ── Raw material ───────────────────────────────────────────────────────────
@@ -210,12 +191,11 @@ export async function createRawMaterial(
 
   // D1 has no interactive transactions — reads and the counter CAS commit
   // first, then every write goes out in ONE db.batch().
-  const { entryNumber, fyId, fyLabel } = await allocatedEntryNumber(
-    d,
-    workspaceId,
-    date,
-    "raw",
-  );
+  const {
+    number: entryNumber,
+    fyId,
+    fyLabel,
+  } = await allocatedNumber(d, workspaceId, date, "raw");
   const nowIso = new Date().toISOString();
   const entryId = generateId();
   const items = buildRawItems(validated, input.items, entryId, nowIso);
@@ -407,12 +387,11 @@ export async function createPacking(
   if ("error" in validated) return { error: validated.error };
 
   const numType = input.type === "sale" ? "packing_s" : "packing_j";
-  const { entryNumber, fyId, fyLabel } = await allocatedEntryNumber(
-    d,
-    workspaceId,
-    date,
-    numType,
-  );
+  const {
+    number: entryNumber,
+    fyId,
+    fyLabel,
+  } = await allocatedNumber(d, workspaceId, date, numType);
   const nowIso = new Date().toISOString();
   const entryId = generateId();
   const items = buildPackingItems(validated, input.items, entryId, nowIso);
@@ -1062,14 +1041,14 @@ export async function createChallan(
             })
             .where(eq(financialYears.id, fy.id));
   } else {
-    const alloc = await allocatedChallanNumber(
+    const alloc = await allocatedNumber(
       d,
       workspaceId,
       date,
       input.type,
       config,
     );
-    challanNumber = alloc.challanNumber;
+    challanNumber = alloc.number;
     fyId = alloc.fyId;
   }
 

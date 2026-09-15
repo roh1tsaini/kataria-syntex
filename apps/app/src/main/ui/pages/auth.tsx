@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
@@ -29,6 +29,7 @@ import {
 } from "@/ui/components/ui/field";
 import { EASE_OUT, SPRING } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
+import { safeNextPath } from "@/ui/lib/next-path";
 
 type Step = "home" | "otp" | "password" | "create";
 
@@ -482,6 +483,10 @@ function MethodTab({
 
 export function AuthPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // A QR deep link sends signed-out users here with the approve page as the
+  // destination, so approving resumes after sign-in.
+  const next = safeNextPath(params.get("next"));
   const requestOtp = useAuth((s) => s.requestOtp);
   const lookupIdentifier = useAuth((s) => s.lookupIdentifier);
   const reduceMotion = useReducedMotion();
@@ -496,7 +501,7 @@ export function AuthPage() {
   const [homeBusy, setHomeBusy] = useState(false);
   const [homeError, setHomeError] = useState<string | null>(null);
 
-  const done = () => navigate("/", { replace: true });
+  const done = () => navigate(next, { replace: true });
 
   const handleIdentifier = async (value: string) => {
     setHomeError(null);

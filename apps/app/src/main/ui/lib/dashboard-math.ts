@@ -50,8 +50,7 @@ export function pctDelta(current: number, previous: number): number | null {
   return ((current - previous) / previous) * 100;
 }
 
-export const shortMonth = (d: Date) =>
-  d.toLocaleString("en-IN", { month: "short" });
+const shortMonth = (d: Date) => d.toLocaleString("en-IN", { month: "short" });
 
 export function revenueBuckets(list: Challan[], period: Period, fy: string) {
   const buckets: Record<

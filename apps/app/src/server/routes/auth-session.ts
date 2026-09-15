@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { deleteCookie } from "hono/cookie";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import { devices, sessions } from "../db/schema";
 
@@ -52,7 +52,9 @@ authSessionRoute.get("/devices", requireAuth, async (c) => {
     .select()
     .from(devices)
     .where(and(eq(devices.userId, auth.userId), isNull(devices.revokedAt)))
-    .orderBy(devices.lastSeenAt);
+    // Most recently used first — the device you just signed in from is the
+    // one you are looking for.
+    .orderBy(desc(devices.lastSeenAt));
   return c.json({
     devices: list.map((d) => ({
       id: d.id,

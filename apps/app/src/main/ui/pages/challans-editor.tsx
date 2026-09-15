@@ -750,7 +750,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                                 htmlFor={`row-${i}-boxes`}
                                 className="text-[11px] font-semibold"
                               >
-                                Boxes
+                                {kind.type === "outward" ? "Sacks" : "Boxes"}
                               </FieldLabel>
                               <Input
                                 id={`row-${i}-boxes`}

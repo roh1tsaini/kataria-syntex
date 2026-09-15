@@ -106,16 +106,27 @@ function deviceLabel(): string {
       : "Browser";
 }
 
-/** OS name for download recommendations (entry + download pages). Only
- * cosmetic — detection is never load-bearing and every platform stays
- * selectable on the download page. */
-export function detectPlatformLabel(): string {
+/** OS key for download recommendations (entry + download pages). Cosmetic —
+ * detection is never load-bearing and every platform stays selectable. The
+ * one UA read in the app for platform display decisions. */
+export function detectPlatformKey():
+  "win" | "mac" | "linux" | "android" | null {
   const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return "Android";
-  if (/iphone|ipad|mac/i.test(ua)) return "macOS";
-  if (/win/i.test(ua)) return "Windows";
-  if (/linux/i.test(ua)) return "Linux";
-  return "this device";
+  if (/android/i.test(ua)) return "android";
+  if (/iphone|ipad|mac/i.test(ua)) return "mac";
+  if (/win/i.test(ua)) return "win";
+  if (/linux/i.test(ua)) return "linux";
+  return null;
+}
+
+/** Human-readable OS name — derived from the same sniff as
+ * detectPlatformKey, so the two surfaces can never disagree. */
+export function detectPlatformLabel(): string {
+  const key = detectPlatformKey();
+  if (!key) return "this device";
+  return { win: "Windows", mac: "macOS", linux: "Linux", android: "Android" }[
+    key
+  ];
 }
 
 /** Opens the browser print dialog. Prints the current view after the page
@@ -430,7 +441,7 @@ export function configureWebCore(appVersion: string): void {
  * either. Returns null for anything that isn't a scan route — the link must
  * not route the app off somewhere unrelated.
  */
-export function parseScanUrl(url: string): string | null {
+function parseScanUrl(url: string): string | null {
   // A custom-scheme URL with no authority ("kataria://login/scan/AB12CD") is
   // still parseable by URL, but the scheme's first segment reads as the host
   // and the pathname starts at /scan — so match the full path, not just the

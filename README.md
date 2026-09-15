@@ -2,62 +2,35 @@
 
 Monorepo for Kataria Syntex — yarn trading + dyeing via job work.
 
+Bun workspaces + Turborepo; Bun is the only package manager.
+
+```bash
+bun install
+bun run dev        # all dev servers
+bun run build      # production build
+bun run typecheck  # required gate
+bun run lint       # required gate
+```
+
 ## Workspaces
 
-| Path                | What                                                                | Stack                                                                                      |
-| ------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `apps/app`          | Internal business app — challans, job work, stock, packing, reports | React 19 + Vite + Tailwind v4 · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
-| `apps/android`      | Android business app — same flows, native shell                     | Capacitor 8 shell over the `apps/app` bundle · official `@capacitor/*` plugins             |
-| `apps/web`          | Public showcase website                                             | Next.js + React 19 + Tailwind v4                                                           |
-| `packages/app-core` | Shared business core — API client, stores, offline engine           | TypeScript                                                                                 |
-| `packages/shared`   | Shared domain types, yarn/shade data, validation                    | TypeScript                                                                                 |
-| `packages/tsconfig` | Shared TS config presets                                            | —                                                                                          |
+| Path                | What                                                                  |
+| ------------------- | --------------------------------------------------------------------- |
+| `apps/app`          | Internal business app (web/PWA + Electron + the Android shell bundle) |
+| `apps/android`      | Android Capacitor shell over the `apps/app` bundle                    |
+| `apps/web`          | Public showcase website                                               |
+| `packages/app-core` | Shared business core (API client, stores, offline engine)             |
+| `packages/shared`   | Shared domain types, yarn/shade data, validation                      |
+| `packages/tsconfig` | Shared TS config presets                                              |
 
-## Commands
-
-Bun is the only package manager.
-
-```bash
-bun install          # install all workspaces
-bun run dev          # all dev servers
-bun run build        # production build
-bun run typecheck    # required gate
-bun run lint         # required gate
-bun run format:check # required gate
-```
-
-Inside `apps/app`:
-
-```bash
-bun run dev:server     # Hono API on :3000
-bun run dev            # Vite frontend on :1420
-bun run electron:dev   # Electron shell over the Vite dev server
-bun run icons          # regenerate PWA/Electron icons from resources/icon.svg
-bun run electron:package  # renderer + main + installer (electron-builder)
-```
-
-Inside `apps/android`:
-
-```bash
-bun run build:web    # apps/app Vite build → ../app/dist
-bun run sync         # build:web:apk + cap sync android (bakes the API origin)
-bun run open         # open android/ in Android Studio
-bun run build:apk    # sync + gradle assembleRelease (needs the Android SDK)
-bun run typecheck
-```
+Per-workspace commands (dev servers, Electron, Android APK) live in
+`AGENTS.md` §3.
 
 ## Docs
 
-- `AGENTS.md` — working agreement for AI agents and humans
+- `AGENTS.md` — working agreement: repo map, parity rules, gates
 - `DEPLOY.md` — deploy & maintenance on GitHub + Cloudflare
-- `apps/app/APP.md` — business app reference (kept current with the code)
-- `apps/android/APP.md` — Android app reference (kept current with the code)
+- `apps/app/APP.md` — business app reference
+- `apps/android/APP.md` — Android shell reference
 - `apps/app/design.md` — app design system
 - `apps/web/design.md` — website design system
-
-## Platforms
-
-- **Web/PWA + API** — Cloudflare free tier (Workers + D1, `wrangler dev`)
-- **Desktop** — Electron (Windows x64, macOS arm64, Linux x64)
-- **Android** — Capacitor shell over the `apps/app` bundle, universal APK,
-  built in CI (`.github/workflows/pipeline.yml`)
