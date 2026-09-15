@@ -543,6 +543,19 @@
     -webkit-print-color-adjust: exact;
   }
 
+  /* The settings window scrolls its own body: the desktop shell pins the
+     document and routes scroll in .shell-scroll, but the window is a
+     portal-mounted fixed surface outside that container, so it needs its
+     own scroller. Mobile renders the page inside .shell-scroll and never
+     reaches this class. */
+  .settings-window-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 0%;
+    min-height: 0;
+    scrollbar-gutter: stable;
+  }
+
   /* Horizontal scroll affordance — fade mask to hint scrollability */
   .scroll-fade {
     mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);

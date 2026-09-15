@@ -190,6 +190,13 @@ the shells do it identically.
 - **Session storage** — web keeps the session in an HttpOnly cookie; Android
   in `@capacitor/preferences` under `auth.token.v1`; Electron in the OS
   keychain via `safeStorage` through the `kc:*` IPC bridge.
+- **Company settings surface** — one component, two presentations, decided by
+  the `md` breakpoint and never by host: desktop web and Electron render
+  `/settings` as a large top-anchored window over a blurred app
+  (`settings-window.tsx`); phone web and the Android WebView render the same
+  content as a full page. Closing the window navigates back, so `/settings`
+  never leaves an empty content area; `/settings` as the launch URL falls
+  back to home because there is no history to pop.
 - **Offline KV** — web/Electron use `localStorage` (`offline.*.v1` keys);
   Android uses `@capacitor/preferences` behind a session map
   (`androidMemory`) because Preferences is async and the offline engine reads
