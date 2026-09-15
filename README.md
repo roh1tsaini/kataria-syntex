@@ -23,14 +23,18 @@ bun run lint       # required gate
 | `packages/shared`   | Shared domain types, yarn/shade data, validation                      |
 | `packages/tsconfig` | Shared TS config presets                                              |
 
+The Android shell renders the same built `apps/app` bundle — one product,
+three shells, no separate Android UI (`AGENTS.md` Section 2.3). Its native project
+and per-platform behaviour are documented in `apps/app/APP.md` (Section 5.1, Section 5.2).
+
 Per-workspace commands (dev servers, Electron, Android APK) live in
-`AGENTS.md` §3.
+`AGENTS.md` Section 3.
 
 ## Docs
 
 - `AGENTS.md` — working agreement: repo map, parity rules, gates
 - `DEPLOY.md` — deploy & maintenance on GitHub + Cloudflare
-- `apps/app/APP.md` — business app reference
-- `apps/android/APP.md` — Android shell reference
+- `apps/app/APP.md` — business app reference (incl. the Android shell)
 - `apps/app/design.md` — app design system
+- `apps/web/APP.md` — website reference
 - `apps/web/design.md` — website design system

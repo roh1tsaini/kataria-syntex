@@ -14,11 +14,12 @@ Then work ONLY on that target until told otherwise. Never change the other
 workspace "while you're in there".
 
 **Business-app exception — parity is always in scope.** The business app is
-two shells: `apps/app` (web/PWA + Electron) and `apps/android` (phone). A
-feature, UI, copy, motion, or business-flow change belongs to BOTH, in the
-same session (§2.3). The question picks where to start — it is never
-permission to skip the mirror. Only the owner can scope a change to one
-shell, in writing.
+one bundle in three shells: `apps/app` (web/PWA + Electron) and `apps/android`
+(a Capacitor 8 WebView that renders that same built bundle at the `≤sm`
+breakpoint). There is no separate Android UI, so a feature, UI, copy, motion,
+or business-flow change lands on every shell by landing on the web bundle
+(Section 2.3). The question picks where to start — it is never permission to fork.
+Only the owner can scope a change to one shell, in writing.
 
 ## 1. Communication style (mandatory)
 
@@ -27,7 +28,7 @@ shell, in writing.
 - Every sentence earns its place. Code > prose. Lists > paragraphs.
 - Plain English everywhere: code, comments, copy, docs.
 - **UI copy & copywriting:** Real software only — zero marketing slop, promotional fluff, or conversational padding. Explain in 1–2 lines max, direct and to the point with no overexplanation.
-- **Visual choices are shown, never just described.** Whenever suggesting options or asking the owner to pick between visual variants (rings, colors, spacing, layouts), build a small standalone compare page (e.g. `apps/app/public/<topic>-compare.html` — all variants visible at once, real `:focus`/`:hover` states, dark/light toggle) and surface it via SendUserFile `render`. Delete the file once the owner decides.
+- **Visual choices are shown, never just described.** Whenever suggesting options or asking the owner to pick between visual variants (rings, colors, spacing, layouts), build a small standalone compare page (e.g. `apps/app/design-compare/<topic>-compare.html` — all variants visible at once, real `:focus`/`:hover` states, dark/light toggle) and surface it via SendUserFile `render`. Delete the file once the owner decides.
 
 ## 2. Repo map
 
@@ -62,9 +63,8 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   platform elsewhere.
 - A change is "done" for apps/app only when web/PWA still works; desktop
   (Electron) must stay compiling against the same renderer bundle. Business
-  logic changes must build in BOTH apps (`apps/app` + `apps/android`) —
-  they share `packages/app-core`. Breaking one shell to fix another is not
-  a fix.
+  logic changes must build in `apps/app` + `apps/android` — they share
+  `packages/app-core`. Breaking one shell to fix another is not a fix.
 
 ## 2.2 Design language (mandatory for every screen, both apps)
 
@@ -82,7 +82,7 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   per-page styles.
 - shadcn/ui components + Tailwind v4 utilities only. Inter Variable, fluid
   `clamp()` typography, `oklch` accent tokens.
-- Motion per design.md §5: springs from `src/main/ui/lib/motion.ts`, no
+- Motion per design.md Section 5: springs from `src/main/ui/lib/motion.ts`, no
   bounce spam, exits mirror entries, respect `prefers-reduced-motion`.
   **NO spinners** — skeleton shimmer blocks only.
 - Responsive first-class: mobile cards → desktop grids; 44px touch targets;
@@ -93,17 +93,20 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
 
 ## 2.3 Web ↔ Android parity (mandatory for every business-app change)
 
-The business app is ONE product with two shells: `apps/app` (web/PWA +
-Electron) and `apps/android` (phone). **Web mobile is the source of truth** —
-Android is the same product at phone scale, not a native variant. A change
-that lands on one shell only is unfinished; never report it as done.
+**One bundle, one UI.** The business app is ONE product: `apps/app` is a
+React 19 + Vite SPA served as web/PWA, wrapped by Electron (desktop), and
+wrapped by `apps/android` — a Capacitor 8 WebView that renders the same built
+bundle at the `≤sm` breakpoint. **There is no separate Android UI, nothing to
+port, nothing to mirror — parity is structural.** A UI change is a web
+change; it lands on Android the moment the bundle is rebuilt and `cap sync`
+copies it. Never write a second implementation.
 
 ### What "same" means
 
 - **Visual:** same structure, spacing, radii, control heights, colors, copy,
   icons, empty/loading/error states as `apps/app` at the `≤sm` breakpoint.
-  `apps/app/design.md` is the contract; §4.1 maps the web mobile grammar onto
-  Android.
+  `apps/app/design.md` is the contract; design values come from it and its
+  tokens in `globals.css`, with no Android token-conversion step.
 - **Behavior:** same validation, navigation targets, confirmations, toasts
   (copy via `friendlyError`), permission gates, pagination and paging copy.
 - **Data:** same fields, sorting, totals math; formatting from the shared
@@ -111,32 +114,15 @@ that lands on one shell only is unfinished; never report it as done.
   decimals, `DD Mon YYYY`.
 - **Motion:** same presets and grammar (`apps/app/src/main/ui/lib/motion.ts`);
   enter/exit mirror, exits ~20% faster, reduced motion collapses.
-- **Logic:** one home. Business logic, stores, offline read cache + reachability, error copy live
-  in `packages/app-core` / `packages/shared`; platform differences live ONLY
-  in the one adapter file (`apps/app/src/main/lib/platform.ts`). Never fork
-  logic per shell.
-
-### One bundle, one UI
-
-There is no separate Android UI. `apps/android` is a Capacitor shell that
-loads the built `apps/app` bundle; the Android rendering IS the web rendering
-at the `≤sm` breakpoint. There is nothing to port and nothing to mirror —
-parity is structural.
-
-- A UI change is a web change. It lands on Android the moment the bundle is
-  rebuilt and `cap sync` copies it. Never write a second implementation.
-- The only Android-specific code is the Capacitor branch inside
-  `apps/app/src/main/lib/platform.ts` (detectHost() === "android"): token
-  storage, KV hydration, network/activity listeners, deep links, PDF
-  share/print. Every other platform difference is a bug.
-- Design values come from `apps/app/design.md` and its tokens in
-  `globals.css`; there is no Android token conversion step.
-- `apps/android/android/` is a Capacitor-generated Gradle project — native
-  config only (manifest permissions, signing, ARM-only), never UI.
+- **Logic:** one home. Business logic, stores, offline read cache +
+  reachability, error copy live in `packages/app-core` / `packages/shared`.
+  Platform differences live ONLY in the one adapter file
+  (`apps/app/src/main/lib/platform.ts`), behind `detectHost() === "android"`.
+  A platform branch anywhere else is a bug.
 
 ### How to execute
 
-1. Read `design.md` and the web implementation first — web is truth.
+1. Read `design.md` and the web implementation first — the bundle is truth.
 2. Change web (`apps/app`); business-logic changes go in `packages/*` so every
    shell consumes them.
 3. Anything that needs native capability gets a guarded branch in
@@ -148,7 +134,8 @@ parity is structural.
    `bunx cap sync android` (apps/android). CI does this; run both locally to
    verify.
 6. Update docs in the same change: `design.md` (any untrue section),
-   `apps/android/APP.md`, `BACKLOG.md` for anything deferred.
+   `apps/app/APP.md` Section 5.1 (per-platform behaviour), `BACKLOG.md` for
+   anything deferred.
 7. Platform limits (print, APK self-update): surface the exact gap to the
    owner. Never silently diverge, and never copy a web bug — report it and
    log it in `BACKLOG.md`.
@@ -160,9 +147,10 @@ code never certifies it.
 
 1. **After each file/step:** `cd apps/android && bunx tsc --noEmit` (or the
    touched app's typecheck) — fix before moving on.
-2. **One bundle:** the Android rendering is the web rendering at `≤sm`, so a
-   UI change is verified once — in the browser at the `≤sm` breakpoint. The
-   report states which viewport was checked.
+2. **One bundle:** the Android rendering is the web rendering at the `≤sm`
+   breakpoint, so a UI change is verified once — in the browser at the `≤sm`
+   breakpoint. The report states which viewport was checked. A business-logic
+   change is done only when every shell consumes the same `packages/*` code.
 3. **Independent pass:** for UI/business changes, hand the working diff to a
    separate verification agent (fresh context, no edit rights). It reads
    `git diff` plus the web references and lists mismatches/regressions; the
@@ -228,10 +216,12 @@ bun run build:apk    # cap sync + gradle assembleRelease (needs the Android SDK)
    every commit; safe lines float via `^`/`~` and the lock refreshes with
    `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
    (builder hoisting), drizzle v1 RC (ahead of stable).
-10. **Both shells or not done.** Every feature, UI, copy, motion, or
-    business-flow change lands in `apps/app` AND `apps/android` in the same
-    session (§2.3) — docs updated in the same change, verification run per
-    §2.4. Only the owner can scope a change to one shell, in writing.
+10. **One bundle, three shells.** The business app is one SPA bundle rendered
+    by web/PWA, Electron and the `apps/android` WebView — there is no separate
+    Android UI, so every feature, UI, copy, motion, or business-flow change
+    lands on every shell by landing on the web bundle (Section 2.3). Docs updated in
+    the same change, verification run per Section 2.4. Only the owner can scope a
+    change to one shell, in writing.
 
 ## 4.0.1 Updates & versioning (owner-mandated, apps/app)
 
@@ -246,7 +236,7 @@ bun run build:apk    # cap sync + gradle assembleRelease (needs the Android SDK)
    The CI push build publishes to R2 only when the version differs, so the
    bump IS the release action.
 3. Releases ship from the `ks-releases` R2 bucket (`/releases/*` on the app
-   Worker) — see `apps/app/APP.md` §14. Latest version only; the manifest
+   Worker) — see `apps/app/APP.md` Section 14. Latest version only; the manifest
    is `app/android/latest.json`.
 
 ## 4.1 Decision authority (owner-mandated, overrides everything)
@@ -294,8 +284,8 @@ code and the owner's word are the truth.
   isn't written anywhere: ask the owner, then code it.
 - Ask questions ONE at a time. Fix/build ONE thing at a time.
 - Owner's spoken word beats code, docs, and past decisions.
-- A feature/UI request on the business app is a two-shell request (§2.3).
-  Never scope one shell out on your own.
+- A feature/UI request on the business app is a one-bundle request — it
+  reaches every shell (Section 2.3). Never scope one shell out on your own.
 - No shortcuts, no placeholders, no template code. Best practices + latest
   stable tech. Hard work over hacks.
 - Dead code dies instantly. Old code is reference until a feature matches
@@ -354,7 +344,7 @@ code and the owner's word are the truth.
 - HTTP: content-hashed URLs may be `immutable`; everything else (HTML, SW
   scripts, manifests) is revalidated (`max-age=0, must-revalidate`) or
   short-TTL. API responses are always `no-store`. apps/app's concrete
-  policy lives in `apps/app/APP.md` §14.2.
+  policy lives in `apps/app/APP.md` Section 14.2.
 - Client caches (module-level, store, SW runtime) are keyed by account/
   workspace and wiped on logout/401/account switch (`lib/data-caches.ts` in
   apps/app). Stale-while-revalidate UIs must still refetch on mount.
@@ -395,5 +385,5 @@ build` all green from repo root, AND the feature verified by actually
   sync (`cd apps/android && bunx tsc --noEmit && bunx cap sync android`) —
   CI runs `gradle assembleRelease` for the signed APK.
 - A UI change is verified once in the browser at the `≤sm` breakpoint
-  (§2.3–§2.4) — Android renders the same bundle; a business-logic change is
+  (Sections 2.3–2.4) — Android renders the same bundle; a business-logic change is
   done only when both shells consume the same `packages/*` code.

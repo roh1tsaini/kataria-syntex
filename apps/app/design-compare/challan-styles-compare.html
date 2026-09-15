@@ -1028,15 +1028,514 @@
         font-size: 5.8pt;
         text-align: center;
       }
+
+      /* ── format picker ── */
+      html.js .dir {
+        display: none;
+      }
+      html.js .dir.on {
+        display: block;
+      }
+      html.js.all .dir {
+        display: block;
+      }
+      .picker {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        margin: 0 -20px 24px;
+        padding: 10px 20px 11px;
+        background: rgba(23, 24, 28, 0.94);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid #2b2d34;
+      }
+      .picker-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        padding-bottom: 3px;
+      }
+      .picker-row::-webkit-scrollbar {
+        height: 5px;
+      }
+      .picker-row::-webkit-scrollbar-thumb {
+        background: #3d404a;
+        border-radius: 99px;
+      }
+      .pbtn {
+        flex: none;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 7px;
+        padding: 7px 13px;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        background: #1d1f24;
+        color: #b9bcc5;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .pbtn:hover {
+        color: #fff;
+        border-color: #4b4f5a;
+      }
+      .pbtn .code {
+        font-weight: 800;
+        color: #8b8e98;
+      }
+      .pbtn[aria-pressed="true"] {
+        background: #fff;
+        border-color: #fff;
+        color: #17181c;
+      }
+      .pbtn[aria-pressed="true"] .code {
+        color: #52525b;
+      }
+      .pbtn.all {
+        margin-left: 6px;
+        border-style: dashed;
+      }
+      .pbtn:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      .pk-hint {
+        flex: none;
+        color: #6b6e78;
+        font-size: 10px;
+        margin-left: 6px;
+        letter-spacing: 0.02em;
+      }
+      @media (max-width: 760px) {
+        .pbtn .name,
+        .pk-hint {
+          display: none;
+        }
+      }
+      @media print {
+        .picker {
+          display: none;
+        }
+        body {
+          padding: 0;
+          background: #fff;
+        }
+      }
+
+      /* ── K · Barcode Depot ── */
+      .vK {
+        padding: 5mm 8mm 3.4mm;
+      }
+      .vK .co-name {
+        font-size: 16pt;
+        letter-spacing: 0.02em;
+      }
+      .vK .doc-title {
+        color: #52525b;
+      }
+      .vK .mrule {
+        border-top: 0.25mm solid #111;
+      }
+      .vK .party {
+        border: none;
+        border-top: 0.2mm solid #111;
+        border-bottom: 0.2mm solid #111;
+        margin-top: 1.4mm;
+      }
+      .vK .p-main {
+        padding: 1.2mm 0;
+      }
+      .vK .p-gstin {
+        color: #52525b;
+        font-weight: 600;
+      }
+      .vK .p-meta {
+        border-left: none;
+        padding: 1.2mm 0;
+        text-align: right;
+      }
+      .vK th {
+        background: #fff;
+        color: #111;
+        border-bottom: 0.3mm solid #111;
+        letter-spacing: 0.06em;
+        font-size: 6.2pt;
+      }
+      .vK tbody tr:nth-child(even) td {
+        background: #f7f7f8;
+      }
+      .vK tbody tr:last-child td {
+        border-bottom: 0.3mm solid #111;
+      }
+      .vK table {
+        border: none;
+      }
+      .vK .s-left {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1.2mm;
+        padding-top: 0;
+      }
+      .vK .s-line {
+        letter-spacing: 0.02em;
+      }
+      .vK .barcode {
+        height: 7mm;
+        background: repeating-linear-gradient(
+          90deg,
+          #111 0 0.35mm,
+          transparent 0.35mm 0.85mm,
+          #111 0.85mm 1.1mm,
+          transparent 1.1mm 1.9mm,
+          #111 1.9mm 2.4mm,
+          transparent 2.4mm 3.1mm
+        );
+      }
+      .vK .bcap {
+        font-size: 6.2pt;
+        font-weight: 700;
+        color: #52525b;
+        letter-spacing: 0.18em;
+      }
+      .vK td {
+        height: 4.3mm;
+        line-height: 4.3mm;
+      }
+      .vK th {
+        padding: 1mm 1mm;
+      }
+      .vK .s-panel {
+        background: none;
+        border: 0.2mm solid #111;
+        border-radius: 0;
+        padding: 1.6mm 2.6mm;
+      }
+      .vK .t-net {
+        border-top: 0.15mm solid #111;
+      }
+
+      /* ── L · Edge Stripe ── */
+      .vL {
+        padding: 5.5mm 8mm 4mm 12mm;
+      }
+      .vL::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4mm;
+        background: #18181b;
+      }
+      .vL .mast {
+        grid-template-columns: 1fr 30mm;
+      }
+      .vL .doc-title {
+        display: none;
+      }
+      .vL .co {
+        text-align: left;
+      }
+      .vL .co-name {
+        font-size: 19pt;
+        letter-spacing: -0.02em;
+      }
+      .vL .co-sub {
+        color: #8e8e96;
+      }
+      .vL .copies {
+        flex-direction: row;
+        gap: 3mm;
+        align-self: start;
+        margin-top: 0.6mm;
+      }
+      .vL .mrule,
+      .vL .party {
+        border: none;
+      }
+      .vL .party {
+        border-bottom: 0.15mm solid #d4d4d8;
+        margin-top: 1.6mm;
+      }
+      .vL .p-main {
+        padding: 1.4mm 0;
+      }
+      .vL .p-gstin {
+        color: #71717a;
+        font-weight: 600;
+      }
+      .vL .p-meta {
+        border-left: none;
+        padding: 1.2mm 0;
+        text-align: right;
+        flex-direction: row;
+        justify-content: flex-end;
+        gap: 7mm;
+      }
+      .vL .m-val {
+        font-size: 13pt;
+      }
+      .vL .m-val.date {
+        font-size: 10.5pt;
+      }
+      .vL th {
+        background: none;
+        color: #111;
+        border-top: 0.4mm solid #111;
+        border-bottom: 0.15mm solid #111;
+        letter-spacing: 0.1em;
+        font-size: 6pt;
+        padding: 1.4mm 1mm 1.1mm;
+      }
+      .vL td {
+        border-bottom: 0.12mm solid #ececee;
+      }
+      .vL tbody tr:last-child td {
+        border-bottom: 0.3mm solid #111;
+      }
+      .vL table {
+        border: none;
+        margin-top: 2mm;
+      }
+      .vL .s-left {
+        display: none;
+      }
+      .vL .s-panel {
+        background: none;
+        padding: 0;
+        margin-top: 1.4mm;
+      }
+      .vL .t-row .l {
+        color: #8e8e96;
+      }
+      .vL .t-net {
+        border-top: 0.3mm solid #111;
+      }
+      .vL .foot {
+        border-top: none;
+      }
+      .vL .f-line {
+        border-top: 0.15mm solid #d4d4d8;
+      }
+
+      /* ── M · Inverse Dark ── */
+      .vM {
+        background: #18181b;
+        color: #fff;
+        padding: 5.5mm 8mm 4mm;
+      }
+      .vM .doc-title {
+        color: #a1a1aa;
+      }
+      .vM .co-sub {
+        color: #a1a1aa;
+      }
+      .vM .copy {
+        color: #e4e4e7;
+      }
+      .vM .copy i {
+        border-color: #71717a;
+      }
+      .vM .mrule {
+        border-top: 0.4mm solid #fff;
+      }
+      .vM .party {
+        border-color: #52525b;
+      }
+      .vM .p-name {
+        color: #fff;
+      }
+      .vM .p-ms,
+      .vM .p-sub {
+        color: #a1a1aa;
+      }
+      .vM .p-gstin {
+        background: #27272a;
+        color: #fff;
+        border-radius: 1mm;
+        padding: 0.5mm 1.6mm;
+      }
+      .vM .p-meta {
+        border-left-color: #52525b;
+      }
+      .vM .m-label {
+        color: #a1a1aa;
+      }
+      .vM .m-val {
+        color: #fff;
+      }
+      .vM th {
+        background: #fff;
+        color: #18181b;
+      }
+      .vM td {
+        color: #f4f4f5;
+        border-bottom: 0.12mm solid #3f3f46;
+      }
+      .vM tbody tr:last-child td {
+        border-bottom: 0.3mm solid #fff;
+      }
+      .vM table {
+        border-color: #52525b;
+        border-top: none;
+      }
+      .vM .s-line {
+        color: #d4d4d8;
+      }
+      .vM .s-line span {
+        color: #8e8e96;
+      }
+      .vM .s-panel {
+        background: #27272a;
+        border-radius: 1.6mm;
+      }
+      .vM .t-row .l {
+        color: #a1a1aa;
+      }
+      .vM .t-net {
+        border-top-color: #52525b;
+      }
+      .vM .foot {
+        border-top-color: #3f3f46;
+      }
+      .vM .f-terms ol {
+        color: #a1a1aa;
+      }
+      .vM .f-cap,
+      .vM .f-authcap {
+        color: #a1a1aa;
+      }
+      .vM .f-for {
+        color: #fff;
+      }
+      .vM .f-line {
+        border-top-color: #71717a;
+      }
+
+      /* ── N · Tab File ── */
+      .vN {
+        padding: 6mm 8mm 4mm;
+      }
+      .vN .mast {
+        grid-template-columns: 1fr 30mm;
+      }
+      .vN .doc-title {
+        display: none;
+      }
+      .vN .co {
+        text-align: left;
+      }
+      .vN .co-name {
+        font-size: 17pt;
+        letter-spacing: 0.06em;
+      }
+      .vN .copies {
+        flex-direction: row;
+        gap: 0;
+        align-self: start;
+        margin-top: 0.6mm;
+      }
+      .vN .copy {
+        background: #f4f4f5;
+        border: 0.2mm solid #d4d4d8;
+        border-bottom: none;
+        border-radius: 1.6mm 1.6mm 0 0;
+        padding: 1mm 3mm 1.1mm;
+        margin-right: -0.2mm;
+        color: #71717a;
+      }
+      .vN .copy:last-child {
+        margin-right: 0;
+      }
+      .vN .copy i {
+        display: none;
+      }
+      .vN .mrule {
+        border-top: 0.6mm solid #111;
+        margin: 1.6mm 0 0;
+      }
+      .vN .party {
+        border: none;
+        border-top: 0.15mm solid #111;
+        border-bottom: 0.15mm solid #111;
+        margin-top: 0;
+      }
+      .vN .p-main {
+        padding: 1.4mm 0;
+      }
+      .vN .p-gstin {
+        color: #52525b;
+        font-weight: 600;
+      }
+      .vN .p-meta {
+        border-left: none;
+        padding: 1.2mm 0;
+        text-align: right;
+      }
+      .vN th {
+        background: #fff;
+        color: #111;
+        border-bottom: 0.3mm solid #111;
+        letter-spacing: 0.1em;
+        font-size: 6.2pt;
+      }
+      .vN td {
+        border-bottom: 0.12mm solid #e8e8ea;
+        height: 4.6mm;
+        line-height: 4.6mm;
+      }
+      .vN tbody tr:last-child td {
+        border-bottom: 0.3mm solid #111;
+      }
+      .vN table {
+        border: none;
+      }
+      .vN .s-left {
+        padding-top: 0;
+      }
+      .vN .s-line {
+        letter-spacing: 0.04em;
+      }
+      .vN .s-panel {
+        background: none;
+        border: 0.18mm solid #8e8e96;
+        border-radius: 0;
+      }
+      .vN .t-net {
+        border-top: 0.15mm solid #8e8e96;
+      }
+      .vN .foot {
+        border-top: 0.3mm solid #111;
+      }
+      .vN .f-terms h4 {
+        letter-spacing: 0.08em;
+      }
     </style>
   </head>
   <body>
-    <h1>Delivery challan — 10 formats, pick one</h1>
+    <h1>Delivery challan — 14 formats, pick one</h1>
     <p class="note">
       Same jobwork challan data on every sheet (12 rows shown; all formats
       paginate at 12 rows/page). All grayscale-safe for mono printers. Terms,
       signatures and ORIGINAL/DUPLICATE marks appear on each in its own accent.
+      Use the picker bar to jump between formats (arrow keys step,
+      <b>All</b> shows every sheet).
     </p>
+
+    <nav class="picker" aria-label="Format picker">
+      <div class="picker-row"></div>
+    </nav>
 
     <div class="dir">
       <div class="dir-label">
@@ -3569,5 +4068,1130 @@
         </div>
       </div>
     </div>
+    <div class="dir">
+      <div class="dir-label">
+        <b>K · Barcode Depot</b
+        ><span
+          >logistics skin — CSS barcode in place of the remarks line, zebra
+          rows, square cuts</span
+        >
+      </div>
+      <div class="sheet vK">
+        <div class="mast">
+          <div class="doc-title">JOBWORK<br />DELIVERY CHALLAN</div>
+          <div class="co">
+            <div class="co-name">KATARIA SYNTEX</div>
+            <div class="co-sub">
+              PLOT NO. 115-116, JAI JALARAM IND. ESTATE, G.H.B ROAD, PANDESARA,
+              SURAT. 394221
+            </div>
+            <div class="co-sub">Contact No.: +91 93758 30760</div>
+          </div>
+          <div class="copies">
+            <div class="copy"><i></i>ORIGINAL</div>
+            <div class="copy"><i></i>DUPLICATE</div>
+          </div>
+        </div>
+        <hr class="mrule" />
+
+        <div class="party">
+          <div class="p-main">
+            <span class="p-gstin">GSTIN 24BOOPS8731P1ZY</span
+            ><span class="p-ms">M/s</span
+            ><span class="p-name">SRI RAM EMBROIDERY</span>
+            <div class="p-sub">
+              LUDHIANA &nbsp;·&nbsp; Mobile: 98765 43210 &nbsp;·&nbsp; PAN
+              BOOPS8731P
+            </div>
+          </div>
+          <div class="p-meta">
+            <div>
+              <div class="m-label">CHALLAN NO.</div>
+              <div class="m-val">15</div>
+            </div>
+            <div>
+              <div class="m-label">DATE</div>
+              <div class="m-val date">19-09-2025</div>
+            </div>
+          </div>
+        </div>
+        <table>
+          <colgroup>
+            <col style="width: 7mm" />
+            <col style="width: 17mm" />
+            <col style="width: 15mm" />
+            <col style="width: 21mm" />
+            <col style="width: 19mm" />
+            <col style="width: 21mm" />
+            <col style="width: 26mm" />
+            <col style="width: 1fr" />
+            <col style="width: 20mm" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>SR.</th>
+              <th>BOX NO.</th>
+              <th>CHEESE</th>
+              <th>GROSS WT.</th>
+              <th>TARE WT.</th>
+              <th>NET WT.</th>
+              <th>DENIER</th>
+              <th>COLOR</th>
+              <th>LOT NO.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>153</td>
+              <td>18</td>
+              <td>27.000</td>
+              <td>2.850</td>
+              <td>24.150</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>154</td>
+              <td>18</td>
+              <td>27.370</td>
+              <td>2.880</td>
+              <td>25.060</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>155</td>
+              <td>18</td>
+              <td>27.740</td>
+              <td>2.910</td>
+              <td>25.970</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>156</td>
+              <td>18</td>
+              <td>28.110</td>
+              <td>2.940</td>
+              <td>24.780</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>157</td>
+              <td>18</td>
+              <td>28.480</td>
+              <td>2.970</td>
+              <td>25.690</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>158</td>
+              <td>18</td>
+              <td>28.850</td>
+              <td>3.000</td>
+              <td>24.500</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>159</td>
+              <td>18</td>
+              <td>29.220</td>
+              <td>3.030</td>
+              <td>25.410</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>160</td>
+              <td>18</td>
+              <td>27.290</td>
+              <td>3.060</td>
+              <td>24.220</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>161</td>
+              <td>18</td>
+              <td>27.660</td>
+              <td>3.090</td>
+              <td>25.130</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>162</td>
+              <td>18</td>
+              <td>28.030</td>
+              <td>2.870</td>
+              <td>26.040</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>163</td>
+              <td>18</td>
+              <td>28.400</td>
+              <td>2.900</td>
+              <td>24.850</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td>164</td>
+              <td>18</td>
+              <td>28.770</td>
+              <td>2.930</td>
+              <td>25.760</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="sum">
+          <div class="s-left">
+            <div class="s-line">
+              <span>Remarks:</span> HANDLE WITH CARE — DO NOT STACK
+            </div>
+            <div class="barcode"></div>
+            <div class="bcap">CHALLAN 15 · KS-015-246</div>
+          </div>
+          <div class="s-panel">
+            <div class="t-row">
+              <span class="l">Total Box</span><span class="v">24</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Cheese</span><span class="v">432</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Gross Wt.</span
+              ><span class="v">674.220</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Tare Wt.</span><span class="v">71.180</span>
+            </div>
+            <div class="t-net">
+              <span>Total Net Wt.</span><span class="v">603.040</span>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="f-terms">
+            <h4>Terms &amp; Conditions</h4>
+            <ol>
+              <li>Please do not mix different lots.</li>
+              <li>Subject to SURAT jurisdiction.</li>
+            </ol>
+          </div>
+          <div class="f-sign">
+            <div class="f-line"></div>
+            <div class="f-cap">Receiver's Sign.</div>
+          </div>
+          <div class="f-auth">
+            <div class="f-for">For KATARIA SYNTEX</div>
+            <div class="f-line"></div>
+            <div class="f-authcap">AUTHORISED SIGNATORY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>L · Edge Stripe</b
+        ><span
+          >quiet editorial — full-height accent stripe, no frames, type carries
+          the hierarchy</span
+        >
+      </div>
+      <div class="sheet vL">
+        <div class="mast">
+          <div class="doc-title">JOBWORK<br />DELIVERY CHALLAN</div>
+          <div class="co">
+            <div class="co-name">KATARIA SYNTEX</div>
+            <div class="co-sub">
+              PLOT NO. 115-116, JAI JALARAM IND. ESTATE, G.H.B ROAD, PANDESARA,
+              SURAT. 394221
+            </div>
+            <div class="co-sub">Contact No.: +91 93758 30760</div>
+          </div>
+          <div class="copies">
+            <div class="copy"><i></i>ORIGINAL</div>
+            <div class="copy"><i></i>DUPLICATE</div>
+          </div>
+        </div>
+        <hr class="mrule" />
+
+        <div class="party">
+          <div class="p-main">
+            <span class="p-gstin">GSTIN 24BOOPS8731P1ZY</span
+            ><span class="p-ms">M/s</span
+            ><span class="p-name">SRI RAM EMBROIDERY</span>
+            <div class="p-sub">
+              LUDHIANA &nbsp;·&nbsp; Mobile: 98765 43210 &nbsp;·&nbsp; PAN
+              BOOPS8731P
+            </div>
+          </div>
+          <div class="p-meta">
+            <div>
+              <div class="m-label">CHALLAN NO.</div>
+              <div class="m-val">15</div>
+            </div>
+            <div>
+              <div class="m-label">DATE</div>
+              <div class="m-val date">19-09-2025</div>
+            </div>
+          </div>
+        </div>
+        <table>
+          <colgroup>
+            <col style="width: 7mm" />
+            <col style="width: 17mm" />
+            <col style="width: 15mm" />
+            <col style="width: 21mm" />
+            <col style="width: 19mm" />
+            <col style="width: 21mm" />
+            <col style="width: 26mm" />
+            <col style="width: 1fr" />
+            <col style="width: 20mm" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>SR.</th>
+              <th>BOX NO.</th>
+              <th>CHEESE</th>
+              <th>GROSS WT.</th>
+              <th>TARE WT.</th>
+              <th>NET WT.</th>
+              <th>DENIER</th>
+              <th>COLOR</th>
+              <th>LOT NO.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>153</td>
+              <td>18</td>
+              <td>27.000</td>
+              <td>2.850</td>
+              <td>24.150</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>154</td>
+              <td>18</td>
+              <td>27.370</td>
+              <td>2.880</td>
+              <td>25.060</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>155</td>
+              <td>18</td>
+              <td>27.740</td>
+              <td>2.910</td>
+              <td>25.970</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>156</td>
+              <td>18</td>
+              <td>28.110</td>
+              <td>2.940</td>
+              <td>24.780</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>157</td>
+              <td>18</td>
+              <td>28.480</td>
+              <td>2.970</td>
+              <td>25.690</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>158</td>
+              <td>18</td>
+              <td>28.850</td>
+              <td>3.000</td>
+              <td>24.500</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>159</td>
+              <td>18</td>
+              <td>29.220</td>
+              <td>3.030</td>
+              <td>25.410</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>160</td>
+              <td>18</td>
+              <td>27.290</td>
+              <td>3.060</td>
+              <td>24.220</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>161</td>
+              <td>18</td>
+              <td>27.660</td>
+              <td>3.090</td>
+              <td>25.130</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>162</td>
+              <td>18</td>
+              <td>28.030</td>
+              <td>2.870</td>
+              <td>26.040</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>163</td>
+              <td>18</td>
+              <td>28.400</td>
+              <td>2.900</td>
+              <td>24.850</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td>164</td>
+              <td>18</td>
+              <td>28.770</td>
+              <td>2.930</td>
+              <td>25.760</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="sum">
+          <div class="s-left">
+            <div class="s-line">
+              <span>Remarks:</span> HANDLE WITH CARE — DO NOT STACK
+            </div>
+          </div>
+          <div class="s-panel">
+            <div class="t-row">
+              <span class="l">Total Box</span><span class="v">24</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Cheese</span><span class="v">432</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Gross Wt.</span
+              ><span class="v">674.220</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Tare Wt.</span><span class="v">71.180</span>
+            </div>
+            <div class="t-net">
+              <span>Total Net Wt.</span><span class="v">603.040</span>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="f-terms">
+            <h4>Terms &amp; Conditions</h4>
+            <ol>
+              <li>Please do not mix different lots.</li>
+              <li>Subject to SURAT jurisdiction.</li>
+            </ol>
+          </div>
+          <div class="f-sign">
+            <div class="f-line"></div>
+            <div class="f-cap">Receiver's Sign.</div>
+          </div>
+          <div class="f-auth">
+            <div class="f-for">For KATARIA SYNTEX</div>
+            <div class="f-line"></div>
+            <div class="f-authcap">AUTHORISED SIGNATORY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>M · Inverse Dark</b
+        ><span
+          >white-on-dark logistics label — premium and high-contrast; heavier
+          toner use</span
+        >
+      </div>
+      <div class="sheet vM">
+        <div class="mast">
+          <div class="doc-title">JOBWORK<br />DELIVERY CHALLAN</div>
+          <div class="co">
+            <div class="co-name">KATARIA SYNTEX</div>
+            <div class="co-sub">
+              PLOT NO. 115-116, JAI JALARAM IND. ESTATE, G.H.B ROAD, PANDESARA,
+              SURAT. 394221
+            </div>
+            <div class="co-sub">Contact No.: +91 93758 30760</div>
+          </div>
+          <div class="copies">
+            <div class="copy"><i></i>ORIGINAL</div>
+            <div class="copy"><i></i>DUPLICATE</div>
+          </div>
+        </div>
+        <hr class="mrule" />
+
+        <div class="party">
+          <div class="p-main">
+            <span class="p-gstin">GSTIN 24BOOPS8731P1ZY</span
+            ><span class="p-ms">M/s</span
+            ><span class="p-name">SRI RAM EMBROIDERY</span>
+            <div class="p-sub">
+              LUDHIANA &nbsp;·&nbsp; Mobile: 98765 43210 &nbsp;·&nbsp; PAN
+              BOOPS8731P
+            </div>
+          </div>
+          <div class="p-meta">
+            <div>
+              <div class="m-label">CHALLAN NO.</div>
+              <div class="m-val">15</div>
+            </div>
+            <div>
+              <div class="m-label">DATE</div>
+              <div class="m-val date">19-09-2025</div>
+            </div>
+          </div>
+        </div>
+        <table>
+          <colgroup>
+            <col style="width: 7mm" />
+            <col style="width: 17mm" />
+            <col style="width: 15mm" />
+            <col style="width: 21mm" />
+            <col style="width: 19mm" />
+            <col style="width: 21mm" />
+            <col style="width: 26mm" />
+            <col style="width: 1fr" />
+            <col style="width: 20mm" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>SR.</th>
+              <th>BOX NO.</th>
+              <th>CHEESE</th>
+              <th>GROSS WT.</th>
+              <th>TARE WT.</th>
+              <th>NET WT.</th>
+              <th>DENIER</th>
+              <th>COLOR</th>
+              <th>LOT NO.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>153</td>
+              <td>18</td>
+              <td>27.000</td>
+              <td>2.850</td>
+              <td>24.150</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>154</td>
+              <td>18</td>
+              <td>27.370</td>
+              <td>2.880</td>
+              <td>25.060</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>155</td>
+              <td>18</td>
+              <td>27.740</td>
+              <td>2.910</td>
+              <td>25.970</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>156</td>
+              <td>18</td>
+              <td>28.110</td>
+              <td>2.940</td>
+              <td>24.780</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>157</td>
+              <td>18</td>
+              <td>28.480</td>
+              <td>2.970</td>
+              <td>25.690</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>158</td>
+              <td>18</td>
+              <td>28.850</td>
+              <td>3.000</td>
+              <td>24.500</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>159</td>
+              <td>18</td>
+              <td>29.220</td>
+              <td>3.030</td>
+              <td>25.410</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>160</td>
+              <td>18</td>
+              <td>27.290</td>
+              <td>3.060</td>
+              <td>24.220</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>161</td>
+              <td>18</td>
+              <td>27.660</td>
+              <td>3.090</td>
+              <td>25.130</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>162</td>
+              <td>18</td>
+              <td>28.030</td>
+              <td>2.870</td>
+              <td>26.040</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>163</td>
+              <td>18</td>
+              <td>28.400</td>
+              <td>2.900</td>
+              <td>24.850</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td>164</td>
+              <td>18</td>
+              <td>28.770</td>
+              <td>2.930</td>
+              <td>25.760</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="sum">
+          <div class="s-left">
+            <div class="s-line">
+              <span>Remarks:</span> HANDLE WITH CARE — DO NOT STACK
+            </div>
+          </div>
+          <div class="s-panel">
+            <div class="t-row">
+              <span class="l">Total Box</span><span class="v">24</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Cheese</span><span class="v">432</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Gross Wt.</span
+              ><span class="v">674.220</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Tare Wt.</span><span class="v">71.180</span>
+            </div>
+            <div class="t-net">
+              <span>Total Net Wt.</span><span class="v">603.040</span>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="f-terms">
+            <h4>Terms &amp; Conditions</h4>
+            <ol>
+              <li>Please do not mix different lots.</li>
+              <li>Subject to SURAT jurisdiction.</li>
+            </ol>
+          </div>
+          <div class="f-sign">
+            <div class="f-line"></div>
+            <div class="f-cap">Receiver's Sign.</div>
+          </div>
+          <div class="f-auth">
+            <div class="f-for">For KATARIA SYNTEX</div>
+            <div class="f-line"></div>
+            <div class="f-authcap">AUTHORISED SIGNATORY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>N · Tab File</b
+        ><span
+          >file-folder tabs for ORIGINAL/DUPLICATE, letter-spaced caps, ledger
+          rules</span
+        >
+      </div>
+      <div class="sheet vN">
+        <div class="mast">
+          <div class="doc-title">JOBWORK<br />DELIVERY CHALLAN</div>
+          <div class="co">
+            <div class="co-name">KATARIA SYNTEX</div>
+            <div class="co-sub">
+              PLOT NO. 115-116, JAI JALARAM IND. ESTATE, G.H.B ROAD, PANDESARA,
+              SURAT. 394221
+            </div>
+            <div class="co-sub">Contact No.: +91 93758 30760</div>
+          </div>
+          <div class="copies">
+            <div class="copy"><i></i>ORIGINAL</div>
+            <div class="copy"><i></i>DUPLICATE</div>
+          </div>
+        </div>
+        <hr class="mrule" />
+
+        <div class="party">
+          <div class="p-main">
+            <span class="p-gstin">GSTIN 24BOOPS8731P1ZY</span
+            ><span class="p-ms">M/s</span
+            ><span class="p-name">SRI RAM EMBROIDERY</span>
+            <div class="p-sub">
+              LUDHIANA &nbsp;·&nbsp; Mobile: 98765 43210 &nbsp;·&nbsp; PAN
+              BOOPS8731P
+            </div>
+          </div>
+          <div class="p-meta">
+            <div>
+              <div class="m-label">CHALLAN NO.</div>
+              <div class="m-val">15</div>
+            </div>
+            <div>
+              <div class="m-label">DATE</div>
+              <div class="m-val date">19-09-2025</div>
+            </div>
+          </div>
+        </div>
+        <table>
+          <colgroup>
+            <col style="width: 7mm" />
+            <col style="width: 17mm" />
+            <col style="width: 15mm" />
+            <col style="width: 21mm" />
+            <col style="width: 19mm" />
+            <col style="width: 21mm" />
+            <col style="width: 26mm" />
+            <col style="width: 1fr" />
+            <col style="width: 20mm" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>SR.</th>
+              <th>BOX NO.</th>
+              <th>CHEESE</th>
+              <th>GROSS WT.</th>
+              <th>TARE WT.</th>
+              <th>NET WT.</th>
+              <th>DENIER</th>
+              <th>COLOR</th>
+              <th>LOT NO.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>153</td>
+              <td>18</td>
+              <td>27.000</td>
+              <td>2.850</td>
+              <td>24.150</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>154</td>
+              <td>18</td>
+              <td>27.370</td>
+              <td>2.880</td>
+              <td>25.060</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>155</td>
+              <td>18</td>
+              <td>27.740</td>
+              <td>2.910</td>
+              <td>25.970</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>156</td>
+              <td>18</td>
+              <td>28.110</td>
+              <td>2.940</td>
+              <td>24.780</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>157</td>
+              <td>18</td>
+              <td>28.480</td>
+              <td>2.970</td>
+              <td>25.690</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>158</td>
+              <td>18</td>
+              <td>28.850</td>
+              <td>3.000</td>
+              <td>24.500</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>159</td>
+              <td>18</td>
+              <td>29.220</td>
+              <td>3.030</td>
+              <td>25.410</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>160</td>
+              <td>18</td>
+              <td>27.290</td>
+              <td>3.060</td>
+              <td>24.220</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>161</td>
+              <td>18</td>
+              <td>27.660</td>
+              <td>3.090</td>
+              <td>25.130</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>162</td>
+              <td>18</td>
+              <td>28.030</td>
+              <td>2.870</td>
+              <td>26.040</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>163</td>
+              <td>18</td>
+              <td>28.400</td>
+              <td>2.900</td>
+              <td>24.850</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td>164</td>
+              <td>18</td>
+              <td>28.770</td>
+              <td>2.930</td>
+              <td>25.760</td>
+              <td>225</td>
+              <td>RESAM SILK</td>
+              <td>SRE-101</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="sum">
+          <div class="s-left">
+            <div class="s-line">
+              <span>Remarks:</span> HANDLE WITH CARE — DO NOT STACK
+            </div>
+          </div>
+          <div class="s-panel">
+            <div class="t-row">
+              <span class="l">Total Box</span><span class="v">24</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Cheese</span><span class="v">432</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Gross Wt.</span
+              ><span class="v">674.220</span>
+            </div>
+            <div class="t-row">
+              <span class="l">Total Tare Wt.</span><span class="v">71.180</span>
+            </div>
+            <div class="t-net">
+              <span>Total Net Wt.</span><span class="v">603.040</span>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="f-terms">
+            <h4>Terms &amp; Conditions</h4>
+            <ol>
+              <li>Please do not mix different lots.</li>
+              <li>Subject to SURAT jurisdiction.</li>
+            </ol>
+          </div>
+          <div class="f-sign">
+            <div class="f-line"></div>
+            <div class="f-cap">Receiver's Sign.</div>
+          </div>
+          <div class="f-auth">
+            <div class="f-for">For KATARIA SYNTEX</div>
+            <div class="f-line"></div>
+            <div class="f-authcap">AUTHORISED SIGNATORY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        document.documentElement.classList.add("js");
+        var dirs = [].slice.call(document.querySelectorAll(".dir"));
+        if (!dirs.length) return;
+        var row = document.querySelector(".picker-row");
+        var labels = dirs.map(function (d) {
+          var b = d.querySelector(".dir-label b");
+          var t = b ? b.textContent.trim() : "";
+          var p = t.split("·");
+          return {
+            code: (p[0] || "").trim(),
+            name: (p[1] || "").trim(),
+          };
+        });
+        var buttons = [];
+        var allBtn = null;
+        var current = -1;
+
+        function paint() {
+          buttons.forEach(function (b, i) {
+            b.setAttribute("aria-pressed", i === current ? "true" : "false");
+          });
+          allBtn.setAttribute(
+            "aria-pressed",
+            current === -1 ? "true" : "false",
+          );
+        }
+        function show(i, push) {
+          current = i;
+          dirs.forEach(function (d, j) {
+            d.classList.toggle("on", j === i);
+          });
+          document.documentElement.classList.remove("all");
+          if (push !== false) {
+            try {
+              history.replaceState(null, "", "#" + labels[i].code);
+            } catch (e) {}
+          }
+          paint();
+          if (buttons[i])
+            buttons[i].scrollIntoView({ inline: "nearest", block: "nearest" });
+          window.scrollTo({ top: 0 });
+        }
+        function showAll(push) {
+          current = -1;
+          dirs.forEach(function (d) {
+            d.classList.remove("on");
+          });
+          document.documentElement.classList.add("all");
+          if (push !== false) {
+            try {
+              history.replaceState(null, "", "#all");
+            } catch (e) {}
+          }
+          paint();
+        }
+
+        labels.forEach(function (l, i) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "pbtn";
+          var c = document.createElement("span");
+          c.className = "code";
+          c.textContent = l.code;
+          var n = document.createElement("span");
+          n.className = "name";
+          n.textContent = l.name;
+          b.appendChild(c);
+          b.appendChild(n);
+          b.addEventListener("click", function () {
+            show(i);
+          });
+          row.appendChild(b);
+          buttons.push(b);
+        });
+        allBtn = document.createElement("button");
+        allBtn.type = "button";
+        allBtn.className = "pbtn all";
+        allBtn.textContent = "All";
+        allBtn.setAttribute("aria-label", "Show all directions");
+        allBtn.addEventListener("click", function () {
+          showAll();
+        });
+        row.appendChild(allBtn);
+        var hint = document.createElement("span");
+        hint.className = "pk-hint";
+        hint.textContent = "← → to step · #code to link";
+        row.appendChild(hint);
+
+        function fromHash() {
+          var h = (location.hash || "").slice(1);
+          if (h === "all") return showAll(false);
+          var i = labels.findIndex(function (l) {
+            return l.code.toLowerCase() === h.toLowerCase();
+          });
+          show(i > -1 ? i : 0, false);
+        }
+        window.addEventListener("hashchange", fromHash);
+        document.addEventListener("keydown", function (e) {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          var next =
+            current === -1 ? 0 : current + (e.key === "ArrowRight" ? 1 : -1);
+          next = (next + dirs.length) % dirs.length;
+          show(next);
+          if (buttons[next]) buttons[next].focus();
+          e.preventDefault();
+        });
+        fromHash();
+      })();
+    </script>
   </body>
 </html>

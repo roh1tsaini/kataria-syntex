@@ -189,7 +189,7 @@ carries the same editorial treatment. Hover on card art: `scale(1.04)` over
 | ghost   | 1.5px currentColor border, transparent  | secondary                |
 | link    | royal (light) / cornflower (dark), 600  | inline actions           |
 
-Press: `scale(0.97)` on `:active`. Radius 11px, height per §2.4. Primary
+Press: `scale(0.97)` on `:active`. Radius 11px, height per Section 2.4. Primary
 hover deepens to navy with a stronger shadow; transitions 200ms.
 
 ## 3. Section grammar (page anatomy)
@@ -307,28 +307,28 @@ on `html` covers anchor jumps. Non-negotiables:
 
 ## 7. Codebase map (where things live)
 
-| Concern                         | File                                           |
-| ------------------------------- | ---------------------------------------------- |
-| Tokens (color/radius/shadow)    | `src/app/globals.css`                          |
-| Atmosphere utilities (`ks-*`)   | `src/app/globals.css`                          |
-| Fonts (self-hosted WOFF2)       | `src/app/fonts/` + `@font-face` in globals.css |
-| Brand/company facts             | `packages/shared` → `src/content/site.ts`      |
-| Products/shades/markets content | `src/content/*`                                |
-| Motion primitives               | `src/components/motion/*`                      |
-| Layout chrome (header/footer)   | `src/components/layout/*`                      |
-| Page head / CTA tiles           | `src/components/section/*`                     |
-| Shared product card             | `src/components/products/ProductCard.tsx`      |
+| Concern                         | File                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| Tokens (color/radius/shadow)    | `src/app/globals.css`                                                                      |
+| Atmosphere utilities (`ks-*`)   | `src/app/globals.css`                                                                      |
+| Fonts (self-hosted WOFF2)       | `src/app/fonts/` + `@font-face` in globals.css                                             |
+| Brand/company facts             | `COMPANY_DETAILS` in `packages/shared/src/index.ts`, re-exported via `src/content/site.ts` |
+| Products/shades/markets content | `src/content/*`                                                                            |
+| Motion primitives               | `src/components/motion/*`                                                                  |
+| Layout chrome (header/footer)   | `src/components/layout/*`                                                                  |
+| Page head / CTA tiles           | `src/components/section/*`                                                                 |
+| Shared product card             | `src/components/products/ProductCard.tsx`                                                  |
 
 ## 8. Agent checklist (before any UI change ships)
 
-- [ ] Colors are tokens from §2.1 — no raw hex in components.
-- [ ] Band order and anatomy match §3; one primary action per band.
-- [ ] Radii/heights/spacing match §2.2–§2.4 — no new magic numbers.
-- [ ] Type roles match §2.5; Grotesk only for headings, Plex Mono only for data.
-- [ ] Motion per §4, reduced-motion honored, no spinners.
+- [ ] Colors are tokens from Section 2.1 — no raw hex in components.
+- [ ] Band order and anatomy match Section 3; one primary action per band.
+- [ ] Radii/heights/spacing match Sections 2.2–2.4 — no new magic numbers.
+- [ ] Type roles match Section 2.5; Grotesk only for headings, Plex Mono only for data.
+- [ ] Motion per Section 4, reduced-motion honored, no spinners.
 - [ ] `ks-*` atmosphere utilities never share a className with `bg-navy`
       (twMerge drops the color) — put them on separate elements.
 - [ ] 44px targets + focus rings + contrast verified at mobile width.
-- [ ] Would it print on the card without breaking §6? If not, rethink.
+- [ ] Would it print on the card without breaking Section 6? If not, rethink.
 - [ ] Looks at home next to Luma / Linear / Apple marketing pages. If it reads
       as "bootstrap template", it is not done.

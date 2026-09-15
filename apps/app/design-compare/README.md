@@ -72,7 +72,7 @@ keep the light totals panel"):
 2. Re-render sample PDFs through the Electron pipeline and re-verify: exact
    page size, no clipping, single- and multi-page (challan) and full 6-up
    sheets (sticker).
-3. Update this folder's status, `design.md` § 2.4.1 and `APP.md` § 12.
+3. Update this folder's status, `design.md` Section 2.4.1 and `APP.md` Section 12.
 4. Delete this folder — the style then lives only in the template.
 
 Note: sticker printing has no pipeline in the app yet; building it is a

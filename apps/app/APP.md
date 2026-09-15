@@ -20,8 +20,9 @@ sales challans, job-work challans + returns, raw material purchase,
 packing, stock ledger, reports, color recipes.
 
 One SPA bundle for web/PWA, Electron desktop and Android. The Android app is
-a Capacitor shell (`apps/android` — see its APP.md) that loads this same
-bundle. All shells share the business core (`packages/app-core`): API client,
+a Capacitor shell (`apps/android`) that loads this same bundle — one
+renderer, three shells, no separate Android UI (Section 5.1). All shells share the
+business core (`packages/app-core`): API client,
 stores, offline read cache + network reachability. Backend = Hono on
 Cloudflare Workers + D1 (SQLite).
 
@@ -36,16 +37,16 @@ grey rolls    grey cones             dyed      packed    invoice
 
 ## 2 · Monorepo
 
-Bun workspaces + Turborepo. Bun is the only package manager (`bun@1.3.14`).
+Bun workspaces + Turborepo. Bun is the only package manager (`bun@1.4.2`).
 
-| Path                | Role                                                            |
-| ------------------- | --------------------------------------------------------------- |
-| `apps/app`          | Business app — web/PWA + Electron (this doc)                    |
-| `apps/android`      | Android app — Capacitor shell over this bundle (its own APP.md) |
-| `apps/web`          | Public website — Next.js + Vinext on Workers                    |
-| `packages/app-core` | Shared business core — API client, stores, read cache           |
-| `packages/shared`   | Domain types, permissions, errors, numbering, FY                |
-| `packages/tsconfig` | Shared TS presets                                               |
+| Path                | Role                                                  |
+| ------------------- | ----------------------------------------------------- |
+| `apps/app`          | Business app — web/PWA + Electron (this doc)          |
+| `apps/android`      | Android app — Capacitor shell over this bundle        |
+| `apps/web`          | Public website — Next.js + Vinext on Workers          |
+| `packages/app-core` | Shared business core — API client, stores, read cache |
+| `packages/shared`   | Domain types, permissions, errors, numbering, FY      |
+| `packages/tsconfig` | Shared TS presets                                     |
 
 ### Commands
 
@@ -167,8 +168,61 @@ Build targets (fixed by owner):
 
 Electron renders challan PDFs locally via `kc:render-pdf` (printToPDF);
 Android fetches the server-rendered PDF and opens the system share sheet
-via `@capacitor/filesystem` + `@capacitor/share` — see §12 and
-`apps/android/APP.md`.
+via `@capacitor/filesystem` + `@capacitor/share` — see Section 5.1 and Section 12.
+
+### 5.1 · Per-platform behavior
+
+Every genuine difference between the shells, one bullet per behaviour. Each
+holds for all three platforms in the same line. If a behaviour is not here,
+the shells do it identically.
+
+- **Login** — web/electron offer QR as the primary path with OTP/password as
+  fallback; Android is OTP/password only, because a phone cannot scan its own
+  screen. The QR panel renders on `isPlainBrowser()`; native shells fall
+  through to the identifier form (`ui/pages/auth.tsx`).
+- **Challan PDF output** — web/desktop call `window.print()` on a print page
+  (`ui/pages/challans-print.tsx`); Android shares the server-rendered PDF
+  through the system share sheet (`shareChallanPdfOnAndroid`), because no
+  maintained Capacitor plugin prints a file. The button reads "Share / Save
+  PDF" on Android, "Print / Save as PDF" elsewhere; the print page's
+  auto-fire (350 ms after load) is skipped on Android so a sheet never opens
+  unprompted. Electron additionally renders offline via `kc:render-pdf`.
+- **Session storage** — web keeps the session in an HttpOnly cookie; Android
+  in `@capacitor/preferences` under `auth.token.v1`; Electron in the OS
+  keychain via `safeStorage` through the `kc:*` IPC bridge.
+- **Offline KV** — web/Electron use `localStorage` (`offline.*.v1` keys);
+  Android uses `@capacitor/preferences` behind a session map
+  (`androidMemory`) because Preferences is async and the offline engine reads
+  synchronously. `hydrateAndroidStorage()` runs once from `main.tsx` before
+  the first render so the store is warm at first paint.
+- **Routine updates** — web/PWA applies a deploy through the service worker
+  with no prompt (next navigation picks it up); Windows/Linux download
+  silently and install on quit; macOS shows a title-bar banner for the dmg;
+  Android announces each newer release once with a system notification (tap →
+  Settings) and exposes the APK install in Settings. Only a server
+  `426 update_required` floor blocks (`update-dialog.tsx`). The WebView never
+  registers the PWA worker (`updates.ts`).
+- **Deep links** — Android only. `kataria://` and `https://<origin>/login/scan/<code>`
+  are registered as intent filters in `AndroidManifest.xml` and routed by
+  `initAndroidDeepLinks()` (wired before first render so a cold-start link
+  sets the initial location). `autoVerify="false"` — App Links would need an
+  `assetlinks.json` hosted on the web origin, which does not exist; until it
+  ships, Android may show a chooser for a login link.
+- **Network + lifecycle events** — web/Electron read `window` online/offline
+  and `visibilitychange`; Android reads `@capacitor/network` and
+  `@capacitor/app` `appStateChange` (a backgrounded socket dies; foreground
+  drives the reconnect).
+- **Realtime origin** — same-origin web derives the WS origin from the page;
+  Android and Electron use the baked `VITE_API_URL` because their page origin
+  is the local bundle, not the API.
+- **Android bundle self-heal** — an APK install does not invalidate the
+  WebView's cached bundle, so the app can boot running the build just
+  replaced, which also breaks the `X-App-Version` handshake.
+  `reloadOnStaleAndroidBundle()` compares the native `versionName`
+  (`App.getInfo()`) with the baked `__APP_VERSION__` and reloads once with a
+  version query; one attempt per WebView session (`sessionStorage`).
+- **Electron window chrome** — `desktopWindow()` exposes minimize/maximize/
+  close and the resolved theme background; web/PWA have no window chrome.
 
 Desktop shell notes: one instance per installation (second launch focuses
 the first), no menu bar in packaged Windows/Linux builds, pinch/ctrl-wheel
@@ -176,7 +230,49 @@ zoom locked, camera granted to app origins for QR scan/approve, packaged
 renderer served at `app://bundle/` with SPA deep-link fallback, and the
 document never scrolls — routed content scrolls in
 `.app-scroll` under the custom title bar so the window controls sit flush
-against the window edge (see design.md §2.7.1).
+against the window edge (see design.md Section 2.7.1).
+
+### 5.2 · Android native project
+
+`apps/android/android/` is a committed Capacitor Gradle project — native
+config only (manifest permissions, signing, ABI filters), never UI. `cap
+sync` copies the built bundle and the plugin list into it.
+
+- `app/build.gradle` — reads `apps/app/package.json` for `versionName` and
+  derives `versionCode = major*10000 + minor*100 + patch` (monotonic;
+  Android rejects an update whose code does not rise). ARM-only:
+  `abiFilters 'armeabi-v7a', 'arm64-v8a'`. `manifestPlaceholders.APP_HOST`
+  comes from the `-PAPP_HOST` gradle property (CI passes the same
+  `vars.APP_URL` the bundle bakes as `VITE_API_URL`; local builds default to
+  `localhost` so the manifest still merges).
+- `AndroidManifest.xml` — `allowBackup="false"`: the cached masters and
+  company profile are business data and must not ride Android's cloud or
+  device-transfer backups. Three permissions: `INTERNET` (API calls),
+  `CAMERA` (QR login + device-approval scan), `REQUEST_INSTALL_PACKAGES`
+  (in-app APK self-update).
+- Signing — `keystore.properties` is written by CI from the
+  `ANDROID_KEY_BASE64` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` repo
+  secrets and wired into the release build by `plugins/with-signing.ts`. A
+  lost keystore means uninstall/reinstall on every device — keep the
+  original `.p12` and its password somewhere durable outside GitHub.
+- `InstallerPlugin.java` (native, registered in `MainActivity`, no npm
+  package) — a WebView cannot fire the system package installer. The shared
+  update store streams `manifest.android.apk` into app-private cache with
+  byte progress, then the plugin fires the installer via the FileProvider
+  content URI. First install asks once for "install unknown apps"
+  (`REQUEST_INSTALL_PACKAGES`); denial surfaces the allow-in-settings copy in
+  the blocking dialog.
+- Baked-origin build requirement — the WebView serves the bundle from
+  `https://localhost`, which is NOT the API. Without a baked origin every
+  fetch resolves against the bundle origin, `/api/health` answers the SPA
+  shell, the client classifies it as a network failure, and the app reads
+  "offline / no internet" on a device with a perfect connection.
+  `apps/android/scripts/build-web.ts` fails the build before a broken APK
+  exists; `platform.ts` throws again at boot (`bakedApiOrigin`). Bake with
+  `VITE_API_URL=<origin>`.
+- Commands (`apps/android`) — `bun run sync` (build:web:apk + `cap sync
+android`), `bun run open` (Android Studio), `bun run build:apk` (sync +
+  `gradle assembleRelease`), `bun run typecheck` + `bun run lint` (gates).
 
 **Logged-out entry flow (web only)**: unauthenticated visitors to `/` get
 the two-path entry screen (`ui/pages/entry.tsx` — Sign in / Install for
@@ -367,7 +463,8 @@ What _does_ survive offline is the **read cache**, so a flaky connection never
 blanks the pickers or an offline-restarted device. It lives in
 `packages/app-core/src/offline/` and persists through the shell adapter's
 synchronous KV storage — localStorage on web/Electron (`offline.*.v1`
-keys), MMKV on Android. Same cache, same behavior everywhere.
+keys), `@capacitor/preferences` on Android (behind a session map hydrated at
+boot; see Section 5). Same cache, same behavior everywhere.
 
 - Cached: masters (customers, job workers, suppliers, deniers, colors),
   company + numbering + per-FY counters, session profile, device identity.
@@ -442,9 +539,9 @@ refetch-on-mount.
   (`document.fonts.ready`), then `window.print()`. Android downloads the
   server PDF and opens the system share sheet via the Android branch of
   `src/main/lib/platform.ts` (`sharePdfOnAndroid`).
-- Restyles pending in `design-compare/`: ten challan-sheet directions (A–J),
-  ten carton-sticker directions (S-A–S-J), and ten sales-report formats
-  (R1–R10, each in both A4 orientations). Its README has status + the pick
+- Restyles pending in `design-compare/`: 14 challan-sheet directions (A–N),
+  12 carton-sticker directions (S-A–S-L), and 14 sales-report formats
+  (R1–R14, each in both A4 orientations). Its README has status + the pick
   workflow; live templates unchanged.
 
 ## 13 · App UI
@@ -548,10 +645,14 @@ all read it.
 | Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                                             |
 | Android        | Manifest poll (launch + every 4h) stays in the background; a system notification announces each newer APK once (tap → Updates); Settings exposes the in-app APK install intent. A required server floor remains blocking — see BACKLOG C1. Boot compares the native versionName with the executing bundle (`reloadOnStaleAndroidBundle`) so a replaced APK can never leave a stale bundle running |
 
+Per-shell behaviour detail and the APK install path live in Section 5.1; the
+update-announcement notification, the APK stream and the bundle self-heal are
+all described there.
+
 Settings → About carries the manual "Check for updates" row; on web that row
 is a readout plus the manual check, with no install action at all. Only the
 blocking `update-dialog.tsx` (undismissable, host-appropriate action) acts on
-a forced update. Breaking-change protocol lives in AGENTS.md §4.0.1: bump
+a forced update. Breaking-change protocol lives in AGENTS.md Section 4.0.1: bump
 `version` + `minAppVersion` together, never keep old API shapes alive.
 
 **Free-tier limits** (Cloudflare — re-verify before claiming; limits change)
@@ -575,12 +676,12 @@ Four layers cache in apps/app. Each has one owner and one contract — never
 let a cache outlive the data it mirrors, and never add a new cache without
 stating its invalidation story here.
 
-| Layer                    | Owner / file                                         | Policy                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| HTTP — static assets     | `public/_headers` (deployed into `dist/` by Vite)    | `index.html` + unhashed files (icons, `theme-init.js`, manifest, fonts): `max-age=0, must-revalidate`. `/sw.js`: `no-cache, must-revalidate` (explicit — the SW script must revalidate every load). Hashed `/assets/*`: `max-age=31536000, immutable`. Only content-hashed URLs may be `immutable`. Deploys are atomic (Workers publishes every file together), so HTML never references missing or mixed-revision assets.                    |
-| HTTP — API + releases    | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                                                                                                                                                                     |
-| Service worker (web/PWA) | Custom `injectManifest` SW (`src/main/sw.ts`)        | Precache all JS/CSS chunks (offline is a feature — see §11). Inter TTFs ride outside the precache and cache on first use (`ks-runtime-v1`, max 8 entries). Navigations are network-first with the precached `index.html` as the offline fallback. The worker applies itself (`skipWaiting` after the precache, `clients.claim` on activate) — no prompt, no forced reload. Old precache revisions and unknown caches are dropped on activate. |
-| Client data              | app-core: zustand stores + `src/data-caches.ts`      | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), MMKV (Android).                                                                                                                                            |
+| Layer                    | Owner / file                                         | Policy                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------ | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP — static assets     | `public/_headers` (deployed into `dist/` by Vite)    | `index.html` + unhashed files (icons, `theme-init.js`, manifest, fonts): `max-age=0, must-revalidate`. `/sw.js`: `no-cache, must-revalidate` (explicit — the SW script must revalidate every load). Hashed `/assets/*`: `max-age=31536000, immutable`. Only content-hashed URLs may be `immutable`. Deploys are atomic (Workers publishes every file together), so HTML never references missing or mixed-revision assets.                           |
+| HTTP — API + releases    | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                                                                                                                                                                            |
+| Service worker (web/PWA) | Custom `injectManifest` SW (`src/main/sw.ts`)        | Precache all JS/CSS chunks (offline is a feature — see Section 11). Inter TTFs ride outside the precache and cache on first use (`ks-runtime-v1`, max 8 entries). Navigations are network-first with the precached `index.html` as the offline fallback. The worker applies itself (`skipWaiting` after the precache, `clients.claim` on activate) — no prompt, no forced reload. Old precache revisions and unknown caches are dropped on activate. |
+| Client data              | app-core: zustand stores + `src/data-caches.ts`      | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), `@capacitor/preferences` on Android.                                                                                                                              |
 
 Rules that keep this from regressing:
 

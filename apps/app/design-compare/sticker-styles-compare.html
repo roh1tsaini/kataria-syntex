@@ -443,16 +443,1108 @@
         color: #52525b;
         padding: 1.5mm 2mm;
       }
+
+      /* ── format picker ── */
+      html.js .dir {
+        display: none;
+      }
+      html.js .dir.on {
+        display: block;
+      }
+      html.js.all .dir {
+        display: block;
+      }
+      .picker {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        margin: 0 -20px 24px;
+        padding: 10px 20px 11px;
+        background: rgba(23, 24, 28, 0.94);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid #2b2d34;
+      }
+      .picker-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        padding-bottom: 3px;
+      }
+      .picker-row::-webkit-scrollbar {
+        height: 5px;
+      }
+      .picker-row::-webkit-scrollbar-thumb {
+        background: #3d404a;
+        border-radius: 99px;
+      }
+      .pbtn {
+        flex: none;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 7px;
+        padding: 7px 13px;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        background: #1d1f24;
+        color: #b9bcc5;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .pbtn:hover {
+        color: #fff;
+        border-color: #4b4f5a;
+      }
+      .pbtn .code {
+        font-weight: 800;
+        color: #8b8e98;
+      }
+      .pbtn[aria-pressed="true"] {
+        background: #fff;
+        border-color: #fff;
+        color: #17181c;
+      }
+      .pbtn[aria-pressed="true"] .code {
+        color: #52525b;
+      }
+      .pbtn.all {
+        margin-left: 6px;
+        border-style: dashed;
+      }
+      .pbtn:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      .pk-hint {
+        flex: none;
+        color: #6b6e78;
+        font-size: 10px;
+        margin-left: 6px;
+        letter-spacing: 0.02em;
+      }
+      @media (max-width: 760px) {
+        .pbtn .name,
+        .pk-hint {
+          display: none;
+        }
+      }
+      @media print {
+        .picker {
+          display: none;
+        }
+        body {
+          padding: 0;
+          background: #fff;
+        }
+      }
+
+      .sheet.D .st {
+        outline: 0.2mm solid #c8c8cd;
+      }
+
+      /* ── S-D · Centered Vintage ── */
+      .st.D {
+        padding: 4mm 5mm 3.4mm;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 0.3mm solid #111;
+      }
+      .st.D .co {
+        font-size: 13pt;
+        font-weight: 800;
+        letter-spacing: 0.07em;
+      }
+      .st.D .party {
+        margin-top: 2.4mm;
+        font-size: 8.6pt;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      .st.D .orule {
+        width: 100%;
+        margin-top: 2.6mm;
+        height: 3.4mm;
+        position: relative;
+      }
+      .st.D .orule::before,
+      .st.D .orule::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 6mm;
+        border-top: 0.2mm solid #111;
+      }
+      .st.D .orule::after {
+        left: 6mm;
+        right: 0;
+      }
+      .st.D .orule i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 2.6mm;
+        height: 2.6mm;
+        margin: -1.3mm 0 0 -1.3mm;
+        background: #fff;
+        border: 0.2mm solid #111;
+        transform: rotate(45deg);
+      }
+      .st.D .wts {
+        display: grid;
+        grid-template-columns: 1fr 1.1fr 1fr;
+        gap: 0 5mm;
+        margin-top: 2.4mm;
+      }
+      .st.D .wts .f {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .st.D .wts .l {
+        font-size: 5.8pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.14em;
+      }
+      .st.D .wts .v {
+        font-size: 10.4pt;
+        font-weight: 700;
+        margin-top: 0.4mm;
+      }
+      .st.D .wts .net .v {
+        font-size: 12pt;
+        font-weight: 800;
+      }
+      .st.D .wts .net .l {
+        color: #111;
+      }
+      .st.D .meta {
+        display: flex;
+        justify-content: center;
+        gap: 3.4mm;
+        margin-top: 3mm;
+        font-size: 7.4pt;
+        font-weight: 700;
+      }
+      .st.D .meta span {
+        color: #71717a;
+        font-weight: 600;
+      }
+      .st.D .den {
+        margin-top: 1.6mm;
+        font-size: 7.8pt;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+      .st.D .note {
+        margin-top: auto;
+        font-size: 6pt;
+        color: #71717a;
+        text-align: center;
+        font-style: italic;
+      }
+
+      .sheet.E .st {
+        outline: 0.2mm solid #c8c8cd;
+      }
+
+      /* ── S-E · Hero Carton ── */
+      .st.E {
+        padding: 3.6mm 4.4mm 3mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.E .top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .st.E .co {
+        font-size: 11.5pt;
+        font-weight: 800;
+      }
+      .st.E .party {
+        font-size: 7.4pt;
+        font-weight: 700;
+        color: #52525b;
+        margin-top: 0.5mm;
+      }
+      .st.E .chip {
+        background: #18181b;
+        color: #fff;
+        border-radius: 1mm;
+        padding: 0.7mm 1.8mm;
+        font-size: 6.6pt;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      .st.E .hero {
+        margin-top: 0.6mm;
+        text-align: center;
+      }
+      .st.E .hero .l {
+        font-size: 6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.22em;
+      }
+      .st.E .hero .v {
+        display: block;
+        font-size: 43pt;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 0.94;
+      }
+      .st.E .hero .v small {
+        font-size: 8pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.1em;
+      }
+      .st.E .hline {
+        border: none;
+        border-top: 0.3mm solid #111;
+        margin: 1.4mm 0 0;
+      }
+      .st.E .wts {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1fr;
+        margin-top: 2.4mm;
+        border: 0.25mm solid #d4d4d8;
+        border-radius: 1.2mm;
+        overflow: hidden;
+      }
+      .st.E .wts > div {
+        padding: 1.9mm 2mm;
+        display: flex;
+        flex-direction: column;
+        border-left: 0.2mm solid #e4e4e7;
+      }
+      .st.E .wts > div:first-child {
+        border-left: none;
+      }
+      .st.E .wts .l {
+        font-size: 5.4pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.12em;
+      }
+      .st.E .wts .v {
+        font-size: 11.4pt;
+        font-weight: 700;
+        margin-top: 0.4mm;
+      }
+      .st.E .wts .em {
+        background: #18181b;
+      }
+      .st.E .wts .em .l {
+        color: #a1a1aa;
+      }
+      .st.E .wts .em .v {
+        color: #fff;
+        font-weight: 800;
+      }
+      .st.E .meta {
+        display: flex;
+        align-items: baseline;
+        gap: 3mm;
+        margin-top: 2.4mm;
+        font-size: 7.6pt;
+        font-weight: 700;
+      }
+      .st.E .meta span {
+        color: #71717a;
+        font-weight: 600;
+      }
+      .st.E .den {
+        margin-left: auto;
+      }
+      .st.E .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+
+      .sheet.F .st {
+      }
+
+      /* ── S-F · Split Panel ── */
+      .st.F {
+        display: flex;
+        flex-direction: row;
+        border: 0.3mm solid #18181b;
+      }
+      .st.F .rail {
+        width: 33mm;
+        flex: none;
+        background: #18181b;
+        color: #fff;
+        padding: 3.4mm 3mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.F .rail .co {
+        font-size: 8.6pt;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+      .st.F .rail .rl {
+        font-size: 5.4pt;
+        font-weight: 700;
+        color: #a1a1aa;
+        letter-spacing: 0.16em;
+        margin-top: 3.4mm;
+      }
+      .st.F .rail .rv {
+        font-size: 15pt;
+        font-weight: 800;
+        line-height: 1;
+        margin-top: 0.6mm;
+      }
+      .st.F .rail .rsm {
+        font-size: 8pt;
+        font-weight: 600;
+        color: #d4d4d8;
+        margin-top: 0.6mm;
+      }
+      .st.F .rail .rfoot {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2.4mm;
+      }
+      .st.F .rail .rfoot .rv {
+        font-size: 11pt;
+      }
+      .st.F .rail .rfoot .rl {
+        margin-top: 0;
+      }
+      .st.F .main {
+        flex: 1;
+        min-width: 0;
+        padding: 3.4mm 3.8mm 3mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.F .party {
+        font-size: 9.6pt;
+        font-weight: 800;
+      }
+      .st.F .psub {
+        font-size: 6.4pt;
+        color: #71717a;
+        margin-top: 0.5mm;
+      }
+      .st.F .wts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.4mm;
+        margin-top: 3mm;
+      }
+      .st.F .wts .f {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 0.2mm solid #e0e0e4;
+        padding-bottom: 1.4mm;
+      }
+      .st.F .wts .l {
+        font-size: 5.6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.1em;
+      }
+      .st.F .wts .v {
+        font-size: 11pt;
+        font-weight: 700;
+        margin-top: 0.4mm;
+      }
+      .st.F .net {
+        grid-column: 1 / -1;
+        background: #f1f1f3;
+        border-radius: 1.2mm;
+        border-bottom: none;
+        padding: 1.8mm 2.2mm 1.6mm;
+      }
+      .st.F .net .v {
+        font-size: 15pt;
+        font-weight: 800;
+      }
+      .st.F .den {
+        margin-top: 2.6mm;
+        font-size: 7.8pt;
+        font-weight: 700;
+      }
+      .st.F .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.8pt;
+        color: #8e8e96;
+      }
+
+      .sheet.G .st {
+        outline: 0.2mm solid #c8c8cd;
+      }
+
+      /* ── S-G · Dotted Ledger ── */
+      .st.G {
+        padding: 3.6mm 4.4mm 3mm;
+        display: flex;
+        flex-direction: column;
+        border: 0.3mm solid #111;
+        outline: 0.15mm solid #111;
+        outline-offset: -1.4mm;
+      }
+      .st.G .co {
+        text-align: center;
+        font-size: 12.4pt;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+      }
+      .st.G .party {
+        text-align: center;
+        font-size: 8pt;
+        font-weight: 700;
+        color: #3f3f46;
+        margin-top: 1.4mm;
+        letter-spacing: 0.04em;
+      }
+      .st.G .f {
+        display: flex;
+        align-items: baseline;
+        gap: 2mm;
+        border-bottom: 0.15mm dotted #8e8e96;
+        padding: 1.5mm 0 1.2mm;
+      }
+      .st.G .f:first-of-type {
+        margin-top: 2.4mm;
+      }
+      .st.G .f .l {
+        font-size: 6.4pt;
+        font-weight: 700;
+        color: #52525b;
+        letter-spacing: 0.06em;
+      }
+      .st.G .f .v {
+        margin-left: auto;
+        font-size: 10.4pt;
+        font-weight: 700;
+      }
+      .st.G .f.net {
+        border-bottom: 0.3mm double #111;
+        margin-top: 1mm;
+        padding: 1.8mm 0 1.6mm;
+      }
+      .st.G .f.net .v {
+        font-size: 13pt;
+        font-weight: 800;
+      }
+      .st.G .meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+        margin-top: 2.4mm;
+        font-size: 7pt;
+        font-weight: 700;
+        color: #52525b;
+      }
+      .st.G .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #71717a;
+      }
+
+      .sheet.H .st {
+        outline: 0.2mm solid #c8c8cd;
+      }
+
+      /* ── S-H · Corner Tag ── */
+      .st.H {
+        padding: 5.6mm 5mm 3mm;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 0.3mm solid #111;
+        border-radius: 2mm 0 0 0;
+      }
+      .st.H .hole {
+        width: 6mm;
+        height: 6mm;
+        border: 0.25mm dashed #52525b;
+        border-radius: 50%;
+        position: relative;
+        margin-bottom: 2.4mm;
+      }
+      .st.H .hole::after {
+        content: "";
+        position: absolute;
+        inset: 1.6mm;
+        background: #18181b;
+        border-radius: 50%;
+      }
+      .st.H .co {
+        font-size: 12.6pt;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+      }
+      .st.H .party {
+        margin-top: 1.8mm;
+        font-size: 8pt;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .st.H .wts {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0 4mm;
+        margin-top: 3mm;
+        width: 100%;
+      }
+      .st.H .wts .f {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-bottom: 0.2mm solid #111;
+        padding-bottom: 1.4mm;
+      }
+      .st.H .wts .l {
+        font-size: 5.4pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.12em;
+      }
+      .st.H .wts .v {
+        font-size: 10.6pt;
+        font-weight: 700;
+        margin-top: 0.4mm;
+      }
+      .st.H .wts .net .v {
+        font-size: 12.4pt;
+        font-weight: 800;
+      }
+      .st.H .meta {
+        display: flex;
+        justify-content: center;
+        gap: 3mm;
+        margin-top: 2.6mm;
+        font-size: 7.2pt;
+        font-weight: 700;
+      }
+      .st.H .meta span {
+        color: #71717a;
+        font-weight: 600;
+      }
+      .st.H .den {
+        margin-top: 1.4mm;
+        font-size: 7.6pt;
+        font-weight: 700;
+      }
+      .st.H .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #71717a;
+      }
+
+      .sheet.I .st {
+      }
+
+      /* ── S-I · Zebra Rows ── */
+      .st.I {
+        display: flex;
+        flex-direction: column;
+        border: 0.3mm solid #18181b;
+      }
+      .st.I .head {
+        background: #18181b;
+        color: #fff;
+        padding: 2.4mm 4mm;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .st.I .head .co {
+        font-size: 11.4pt;
+        font-weight: 800;
+      }
+      .st.I .head .party {
+        font-size: 7pt;
+        font-weight: 600;
+        color: #d4d4d8;
+      }
+      .st.I .band {
+        display: flex;
+        align-items: baseline;
+        gap: 3mm;
+        padding: 2mm 4mm;
+        font-size: 7pt;
+        font-weight: 600;
+        color: #52525b;
+        letter-spacing: 0.06em;
+      }
+      .st.I .band b {
+        color: #18181b;
+        font-size: 9pt;
+        letter-spacing: 0;
+      }
+      .st.I .f {
+        display: flex;
+        align-items: baseline;
+        gap: 3mm;
+        padding: 2.2mm 4mm;
+        background: #f7f7f8;
+        border-bottom: 0.15mm solid #e8e8ea;
+      }
+      .st.I .f:nth-of-type(odd) {
+        background: #fff;
+      }
+      .st.I .f .l {
+        font-size: 6.4pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.08em;
+      }
+      .st.I .f .v {
+        margin-left: auto;
+        font-size: 10.6pt;
+        font-weight: 700;
+      }
+      .st.I .f.net {
+        background: #18181b;
+        border-bottom: none;
+        padding: 2.6mm 4mm;
+      }
+      .st.I .f.net .l {
+        color: #a1a1aa;
+      }
+      .st.I .f.net .v {
+        color: #fff;
+        font-size: 13pt;
+        font-weight: 800;
+      }
+      .st.I .note {
+        text-align: center;
+        font-size: 5.9pt;
+        color: #71717a;
+        padding: 2mm 3mm;
+      }
+
+      .sheet.J .st {
+        outline: 0.2mm solid #c8c8cd;
+      }
+
+      /* ── S-J · Ticket Split ── */
+      .st.J {
+        display: flex;
+        flex-direction: column;
+        border: 0.3mm solid #111;
+      }
+      .st.J .stub {
+        padding: 3mm 4.4mm 3.2mm;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .st.J .stub .co {
+        font-size: 11.4pt;
+        font-weight: 800;
+      }
+      .st.J .stub .party {
+        font-size: 7.4pt;
+        font-weight: 700;
+        color: #3f3f46;
+        margin-top: 0.5mm;
+      }
+      .st.J .stub .cno {
+        text-align: right;
+      }
+      .st.J .stub .cno .l {
+        font-size: 5.6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.14em;
+      }
+      .st.J .stub .cno .v {
+        font-size: 17pt;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .st.J .perf {
+        position: relative;
+        height: 4.6mm;
+        border-bottom: 0.2mm dashed #111;
+      }
+      .st.J .perf span {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        color: #a1a1aa;
+        font-size: 5.4pt;
+        letter-spacing: 0.2em;
+        padding: 0 2mm;
+      }
+      .st.J .body {
+        flex: 1;
+        padding: 3mm 4.4mm 3mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.J .wts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.4mm;
+      }
+      .st.J .wts .f {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 0.2mm solid #e0e0e4;
+        padding-bottom: 1.4mm;
+      }
+      .st.J .wts .l {
+        font-size: 5.6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.1em;
+      }
+      .st.J .wts .v {
+        font-size: 11pt;
+        font-weight: 700;
+        margin-top: 0.4mm;
+      }
+      .st.J .wts .net {
+        grid-column: 1 / -1;
+        background: #f1f1f3;
+        border-radius: 1.2mm;
+        border-bottom: none;
+        padding: 1.7mm 2.2mm;
+      }
+      .st.J .wts .net .v {
+        font-size: 14pt;
+        font-weight: 800;
+      }
+      .st.J .meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+        margin-top: 2.6mm;
+        font-size: 7pt;
+        font-weight: 700;
+        color: #52525b;
+      }
+      .st.J .den {
+        margin-top: 1.6mm;
+        font-size: 7.6pt;
+        font-weight: 700;
+      }
+      .st.J .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #71717a;
+      }
+
+      .sheet.K .st {
+      }
+
+      /* ── S-K · Barcode Rail ── */
+      .st.K {
+        display: flex;
+        flex-direction: row;
+      }
+      .st.K .vrail {
+        width: 12mm;
+        flex: none;
+        background: #18181b;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .st.K .vrail span {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        font-size: 6.6pt;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+      }
+      .st.K .main {
+        flex: 1;
+        min-width: 0;
+        padding: 3.4mm 4mm 3mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.K .top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .st.K .co {
+        font-size: 11pt;
+        font-weight: 800;
+      }
+      .st.K .party {
+        font-size: 7.2pt;
+        font-weight: 700;
+        color: #52525b;
+        margin-top: 0.4mm;
+      }
+      .st.K .chip {
+        background: #f1f1f3;
+        border-radius: 1mm;
+        padding: 0.6mm 1.6mm;
+        font-size: 6.6pt;
+        font-weight: 700;
+      }
+      .st.K .hero {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 3mm;
+        margin-top: 1.8mm;
+      }
+      .st.K .hero .l {
+        font-size: 5.6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.18em;
+      }
+      .st.K .hero .v {
+        font-size: 27pt;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 0.9;
+      }
+      .st.K .bar {
+        height: 7mm;
+        margin-top: 2.4mm;
+        background: repeating-linear-gradient(
+          90deg,
+          #111 0 0.5mm,
+          transparent 0.5mm 1.2mm,
+          #111 1.2mm 1.7mm,
+          transparent 1.7mm 2.6mm,
+          #111 2.6mm 3.6mm,
+          transparent 3.6mm 4.2mm
+        );
+      }
+      .st.K .bcap {
+        font-size: 5.4pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.16em;
+        margin-top: 0.8mm;
+      }
+      .st.K .wts {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        margin-top: 2.6mm;
+        border: 0.25mm solid #d4d4d8;
+        border-radius: 1.2mm;
+        overflow: hidden;
+      }
+      .st.K .wts > div {
+        padding: 1.8mm 2mm;
+        display: flex;
+        flex-direction: column;
+        border-left: 0.2mm solid #e4e4e7;
+      }
+      .st.K .wts > div:first-child {
+        border-left: none;
+      }
+      .st.K .wts .l {
+        font-size: 5.4pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.12em;
+      }
+      .st.K .wts .v {
+        font-size: 11pt;
+        font-weight: 700;
+        margin-top: 0.4mm;
+      }
+      .st.K .wts .em {
+        background: #18181b;
+      }
+      .st.K .wts .em .l {
+        color: #a1a1aa;
+      }
+      .st.K .wts .em .v {
+        color: #fff;
+        font-weight: 800;
+      }
+      .st.K .meta {
+        display: flex;
+        align-items: baseline;
+        gap: 3mm;
+        margin-top: 2.4mm;
+        font-size: 7.4pt;
+        font-weight: 700;
+      }
+      .st.K .meta span {
+        color: #71717a;
+        font-weight: 600;
+      }
+      .st.K .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+
+      .sheet.L .st {
+      }
+
+      /* ── S-L · Spec Sheet ── */
+      .st.L {
+        padding: 3.4mm 4.2mm 3mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.L .top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 3mm;
+        padding-bottom: 1.4mm;
+        border-bottom: 0.4mm solid #111;
+      }
+      .st.L .co {
+        font-size: 10.6pt;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+      }
+      .st.L .top .id {
+        font-size: 6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.14em;
+      }
+      .st.L .party {
+        margin-top: 2.4mm;
+        font-size: 9.4pt;
+        font-weight: 800;
+      }
+      .st.L .hero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 3mm;
+        margin-top: 2.6mm;
+        padding-bottom: 2mm;
+        border-bottom: 0.15mm solid #d4d4d8;
+      }
+      .st.L .hero .l {
+        font-size: 5.8pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.16em;
+      }
+      .st.L .hero .v {
+        font-size: 24pt;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+      .st.L .hero .v small {
+        font-size: 8pt;
+        font-weight: 700;
+        color: #71717a;
+      }
+      .st.L .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 4mm;
+        margin-top: 2.4mm;
+      }
+      .st.L .spec .f {
+        display: flex;
+        align-items: baseline;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e8e8ea;
+        padding: 1.5mm 0 1.2mm;
+      }
+      .st.L .spec .f .l {
+        font-size: 5.8pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.1em;
+      }
+      .st.L .spec .f .v {
+        margin-left: auto;
+        font-size: 9.8pt;
+        font-weight: 700;
+      }
+      .st.L .okrow {
+        display: flex;
+        align-items: center;
+        gap: 2mm;
+        margin-top: 2.6mm;
+      }
+      .st.L .okrow i {
+        width: 3.4mm;
+        height: 3.4mm;
+        border-radius: 50%;
+        background: #18181b;
+        position: relative;
+        flex: none;
+      }
+      .st.L .okrow i::after {
+        content: "";
+        position: absolute;
+        left: 1.1mm;
+        top: 0.5mm;
+        width: 1.2mm;
+        height: 2mm;
+        border-right: 0.4mm solid #fff;
+        border-bottom: 0.4mm solid #fff;
+        transform: rotate(40deg);
+      }
+      .st.L .okrow span {
+        font-size: 6.2pt;
+        font-weight: 700;
+        color: #3f3f46;
+        letter-spacing: 0.08em;
+      }
+      .st.L .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
     </style>
   </head>
   <body>
-    <h1>Carton sticker — pick a direction</h1>
+    <h1>Carton sticker — 12 directions, pick one</h1>
     <p class="note">
       A4 sheet, 6 stickers (2 × 3) — same grid as your current print. Same data
       as your reference (cartons 1596–1601). Weights say Tare/Net (standardized
       like the challan). Each direction shows the full sheet, then one sticker
-      enlarged for detail.
+      enlarged for detail. Use the picker bar to jump between directions (arrow
+      keys step, <b>All</b> shows every sheet).
     </p>
+
+    <nav class="picker" aria-label="Format picker">
+      <div class="picker-row"></div>
+    </nav>
 
     <div class="dir">
       <div class="dir-label">
@@ -1177,5 +2269,2093 @@
         </div>
       </div>
     </div>
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-D · Centered Vintage</b
+        ><span
+          >symmetrical form — ornament rules with a diamond break, framed</span
+        >
+      </div>
+      <div class="sheet D">
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.000</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">36.650</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.350</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1596</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.820</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">38.350</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.470</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1597</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">44.000</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">40.380</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.620</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1598</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 30</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.540</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">37.050</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.490</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1599</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.060</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">37.570</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.490</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1600</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.040</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">37.330</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.710</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1601</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st D">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="orule"><i></i></div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.000</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">36.650</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.350</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1596</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-E · Hero Carton</b
+        ><span
+          >one hero figure — the carton number dwarfs everything for the shop
+          floor</span
+        >
+      </div>
+      <div class="sheet E">
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1596<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">40.000</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">36.650</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.350</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 27</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1597<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">41.820</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">38.350</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.470</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 27</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1598<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">44.000</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">40.380</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.620</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 30</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1599<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">40.540</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">37.050</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.490</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 27</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1600<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">41.060</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">37.570</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.490</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 27</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1601<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">41.040</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">37.330</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.710</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 27</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st E">
+          <div class="top">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="chip">SRE-101</div>
+          </div>
+          <div class="hero">
+            <span class="l">CARTON NO.</span>
+            <span class="v">1596<small> / 246</small></span>
+          </div>
+          <hr class="hline" />
+          <div class="wts">
+            <div><span class="l">GROSS</span><span class="v">40.000</span></div>
+            <div class="em">
+              <span class="l">NET WT.</span><span class="v">36.650</span>
+            </div>
+            <div><span class="l">TARE</span><span class="v">3.350</span></div>
+          </div>
+          <div class="meta">
+            <div><span>CHEESE</span> 27</div>
+            <div><span>LOT</span> 246</div>
+            <div class="den">225 RESAM SILK</div>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-F · Split Panel</b
+        ><span
+          >dark rail with the carton number, weights on the right —
+          shipping-label logic</span
+        >
+      </div>
+      <div class="sheet F">
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1596</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">27 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">40.000</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.350</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">36.650 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1597</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">27 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">41.820</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.470</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">38.350 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1598</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">30 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">44.000</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.620</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">40.380 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1599</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">27 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">40.540</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.490</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">37.050 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1600</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">27 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">41.060</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.490</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">37.570 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1601</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">27 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">41.040</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.710</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">37.330 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st F">
+          <div class="rail">
+            <div class="co">KATARIA<br />SYNTEX</div>
+            <div class="rl">CARTON NO.</div>
+            <div class="rv">1596</div>
+            <div class="rfoot">
+              <div>
+                <div class="rl">LOT</div>
+                <div class="rsm">246 · SRE-101</div>
+              </div>
+              <div>
+                <div class="rl">CHEESE</div>
+                <div class="rsm">27 CONES</div>
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            <div class="party">SHRI RAM EMBROIDERY</div>
+            <div class="psub">JOBWORK · 225 RESAM SILK</div>
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">40.000</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.350</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">36.650 kg</span>
+              </div>
+            </div>
+            <div class="den">225 RESAM SILK · SHADE SRE-101</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-G · Dotted Ledger</b
+        ><span
+          >bill-book dotted rules, double frame, right-aligned register
+          column</span
+        >
+      </div>
+      <div class="sheet G">
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1596</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">40.000</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.350</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">36.650</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1597</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">41.820</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.470</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">38.350</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1598</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">44.000</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.620</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">40.380</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">30</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1599</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">40.540</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.490</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">37.050</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1600</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">41.060</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.490</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">37.570</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1601</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">41.040</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.710</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">37.330</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st G">
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="f">
+            <span class="l">Carton No.</span><span class="v">1596</span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">40.000</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.350</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">36.650</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="meta">
+            <span>LOT 246</span>
+            <span>225 RESAM SILK</span>
+            <span>SHADE SRE-101</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-H · Corner Tag</b
+        ><span
+          >hang-tag punch hole and tag-board feel — reads as an inventory
+          tag</span
+        >
+      </div>
+      <div class="sheet H">
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.000</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">36.650</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.350</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1596</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.820</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">38.350</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.470</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1597</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">44.000</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">40.380</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.620</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1598</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 30</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.540</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">37.050</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.490</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1599</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.060</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">37.570</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.490</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1600</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.040</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">37.330</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.710</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1601</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st H">
+          <div class="hole"></div>
+          <div class="co">KATARIA SYNTEX</div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="wts">
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.000</span>
+            </div>
+            <div class="f net">
+              <span class="l">NET WT.</span><span class="v">36.650</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.350</span>
+            </div>
+          </div>
+          <div class="meta">
+            <div><span>CARTON</span> 1596</div>
+            <div><span>LOT</span> 246</div>
+            <div><span>CHEESE</span> 27</div>
+          </div>
+          <div class="den">225 RESAM SILK · SRE-101</div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-I · Zebra Rows</b
+        ><span
+          >full-bleed banded field rows — scannable like a checklist, net row
+          dark</span
+        >
+      </div>
+      <div class="sheet I">
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1596</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">40.000</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.350</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">36.650 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1597</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">41.820</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.470</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">38.350 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1598</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">44.000</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.620</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">40.380 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">30</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1599</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">40.540</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.490</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">37.050 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1600</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">41.060</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.490</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">37.570 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1601</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">41.040</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.710</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">37.330 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st I">
+          <div class="head">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="party">SHRI RAM EMBROIDERY</div>
+          </div>
+          <div class="band">
+            <span>CARTON <b>1596</b></span>
+            <span>LOT <b>246</b></span>
+            <span>SHADE <b>SRE-101</b></span>
+          </div>
+          <div class="f">
+            <span class="l">Gross Wt.</span><span class="v">40.000</span>
+          </div>
+          <div class="f">
+            <span class="l">Tare Wt.</span><span class="v">3.350</span>
+          </div>
+          <div class="f net">
+            <span class="l">Net Wt.</span><span class="v">36.650 kg</span>
+          </div>
+          <div class="f">
+            <span class="l">Cheese</span><span class="v">27</span>
+          </div>
+          <div class="f">
+            <span class="l">Denier</span><span class="v">225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-J · Ticket Split</b
+        ><span
+          >two halves on a dashed perf — stub carries the ID, body the
+          weights</span
+        >
+      </div>
+      <div class="sheet J">
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1596</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">40.000</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.350</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">36.650 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 27</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1597</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">41.820</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.470</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">38.350 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 27</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1598</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">44.000</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.620</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">40.380 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 30</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1599</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">40.540</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.490</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">37.050 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 27</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1600</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">41.060</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.490</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">37.570 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 27</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1601</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">41.040</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.710</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">37.330 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 27</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st J">
+          <div class="stub">
+            <div>
+              <div class="co">KATARIA SYNTEX</div>
+              <div class="party">SHRI RAM EMBROIDERY</div>
+            </div>
+            <div class="cno">
+              <div class="l">CARTON NO.</div>
+              <div class="v">1596</div>
+            </div>
+          </div>
+          <div class="perf"><span>TEAR</span></div>
+          <div class="body">
+            <div class="wts">
+              <div class="f">
+                <span class="l">GROSS WT.</span><span class="v">40.000</span>
+              </div>
+              <div class="f">
+                <span class="l">TARE WT.</span><span class="v">3.350</span>
+              </div>
+              <div class="f net">
+                <span class="l">NET WT.</span><span class="v">36.650 kg</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>LOT 246</span>
+              <span>CHEESE 27</span>
+              <span>SRE-101</span>
+            </div>
+            <div class="den">225 RESAM SILK</div>
+            <div class="note">
+              Please do not mix this lot with any other lot.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-K · Barcode Rail</b
+        ><span
+          >logistics label — CSS barcode strip, giant digits, vertical lot
+          rail</span
+        >
+      </div>
+      <div class="sheet K">
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 27</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1596</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1596-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">40.000</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">36.650</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.350</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 36.650 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 27</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1597</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1597-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">41.820</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">38.350</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.470</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 38.350 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 30</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1598</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1598-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">44.000</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">40.380</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.620</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 40.380 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 27</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1599</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1599-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">40.540</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">37.050</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.490</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 37.050 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 27</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1600</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1600-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">41.060</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">37.570</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.490</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 37.570 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 27</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1601</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1601-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">41.040</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">37.330</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.710</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 37.330 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st K">
+          <div class="vrail"><span>LOT 246 · SRE-101</span></div>
+          <div class="main">
+            <div class="top">
+              <div>
+                <div class="co">KATARIA SYNTEX</div>
+                <div class="party">SHRI RAM EMBROIDERY</div>
+              </div>
+              <div class="chip">CHEESE 27</div>
+            </div>
+            <div class="hero">
+              <span class="l">CARTON NO.</span>
+              <span class="v">1596</span>
+            </div>
+            <div class="bar"></div>
+            <div class="bcap">KS-1596-246 · 225 RESAM SILK</div>
+            <div class="wts">
+              <div>
+                <span class="l">GROSS</span><span class="v">40.000</span>
+              </div>
+              <div class="em">
+                <span class="l">NET</span><span class="v">36.650</span>
+              </div>
+              <div><span class="l">TARE</span><span class="v">3.350</span></div>
+            </div>
+            <div class="meta">
+              <div><span>NET WT.</span> 36.650 kg</div>
+              <div>Please do not mix this lot with any other lot.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-label">
+        <b>S-L · Spec Sheet</b
+        ><span
+          >datasheet discipline — hairline rule rows, tiny caps labels, one hero
+          net</span
+        >
+      </div>
+      <div class="sheet L">
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1596</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">36.650<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1596</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.000</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.350</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">27</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1597</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">38.350<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1597</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.820</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.470</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">27</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1598</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">40.380<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1598</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">44.000</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.620</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">30</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1599</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">37.050<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1599</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.540</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.490</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">27</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1600</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">37.570<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1600</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.060</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.490</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">27</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1601</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">37.330<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1601</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">41.040</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.710</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">27</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+      <div class="zoomlabel">Detail — 1.5×</div>
+
+      <div class="zoomrow">
+        <div class="st L">
+          <div class="top">
+            <div class="co">KATARIA SYNTEX</div>
+            <div class="id">CARTON SPEC · 1596</div>
+          </div>
+          <div class="party">SHRI RAM EMBROIDERY</div>
+          <div class="hero">
+            <span class="l">NET WT.</span>
+            <span class="v">36.650<small> kg</small></span>
+          </div>
+          <div class="spec">
+            <div class="f">
+              <span class="l">CARTON</span><span class="v">1596</span>
+            </div>
+            <div class="f">
+              <span class="l">LOT</span><span class="v">246</span>
+            </div>
+            <div class="f">
+              <span class="l">GROSS</span><span class="v">40.000</span>
+            </div>
+            <div class="f">
+              <span class="l">TARE</span><span class="v">3.350</span>
+            </div>
+            <div class="f">
+              <span class="l">CHEESE</span><span class="v">27</span>
+            </div>
+            <div class="f">
+              <span class="l">SHADE</span><span class="v">SRE-101</span>
+            </div>
+          </div>
+          <div class="okrow">
+            <i></i><span>WEIGHTS VERIFIED · 225 RESAM SILK</span>
+          </div>
+          <div class="note">Please do not mix this lot with any other lot.</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        document.documentElement.classList.add("js");
+        var dirs = [].slice.call(document.querySelectorAll(".dir"));
+        if (!dirs.length) return;
+        var row = document.querySelector(".picker-row");
+        var labels = dirs.map(function (d) {
+          var b = d.querySelector(".dir-label b");
+          var t = b ? b.textContent.trim() : "";
+          var p = t.split("·");
+          return {
+            code: (p[0] || "").trim(),
+            name: (p[1] || "").trim(),
+          };
+        });
+        var buttons = [];
+        var allBtn = null;
+        var current = -1;
+
+        function paint() {
+          buttons.forEach(function (b, i) {
+            b.setAttribute("aria-pressed", i === current ? "true" : "false");
+          });
+          allBtn.setAttribute(
+            "aria-pressed",
+            current === -1 ? "true" : "false",
+          );
+        }
+        function show(i, push) {
+          current = i;
+          dirs.forEach(function (d, j) {
+            d.classList.toggle("on", j === i);
+          });
+          document.documentElement.classList.remove("all");
+          if (push !== false) {
+            try {
+              history.replaceState(null, "", "#" + labels[i].code);
+            } catch (e) {}
+          }
+          paint();
+          if (buttons[i])
+            buttons[i].scrollIntoView({ inline: "nearest", block: "nearest" });
+          window.scrollTo({ top: 0 });
+        }
+        function showAll(push) {
+          current = -1;
+          dirs.forEach(function (d) {
+            d.classList.remove("on");
+          });
+          document.documentElement.classList.add("all");
+          if (push !== false) {
+            try {
+              history.replaceState(null, "", "#all");
+            } catch (e) {}
+          }
+          paint();
+        }
+
+        labels.forEach(function (l, i) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "pbtn";
+          var c = document.createElement("span");
+          c.className = "code";
+          c.textContent = l.code;
+          var n = document.createElement("span");
+          n.className = "name";
+          n.textContent = l.name;
+          b.appendChild(c);
+          b.appendChild(n);
+          b.addEventListener("click", function () {
+            show(i);
+          });
+          row.appendChild(b);
+          buttons.push(b);
+        });
+        allBtn = document.createElement("button");
+        allBtn.type = "button";
+        allBtn.className = "pbtn all";
+        allBtn.textContent = "All";
+        allBtn.setAttribute("aria-label", "Show all directions");
+        allBtn.addEventListener("click", function () {
+          showAll();
+        });
+        row.appendChild(allBtn);
+        var hint = document.createElement("span");
+        hint.className = "pk-hint";
+        hint.textContent = "← → to step · #code to link";
+        row.appendChild(hint);
+
+        function fromHash() {
+          var h = (location.hash || "").slice(1);
+          if (h === "all") return showAll(false);
+          var i = labels.findIndex(function (l) {
+            return l.code.toLowerCase() === h.toLowerCase();
+          });
+          show(i > -1 ? i : 0, false);
+        }
+        window.addEventListener("hashchange", fromHash);
+        document.addEventListener("keydown", function (e) {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          var next =
+            current === -1 ? 0 : current + (e.key === "ArrowRight" ? 1 : -1);
+          next = (next + dirs.length) % dirs.length;
+          show(next);
+          if (buttons[next]) buttons[next].focus();
+          e.preventDefault();
+        });
+        fromHash();
+      })();
+    </script>
   </body>
 </html>

@@ -127,7 +127,7 @@ Keep exports somewhere durable (GitHub private repo, Google Drive).
 The app version lives only in `apps/app/package.json`. Everything reads it:
 
 - **Electron** — installers are stamped with it by electron-builder.
-- **Android** — `apps/android/app.config.ts` reads the same file:
+- **Android** — `apps/android/android/app/build.gradle` reads the same file:
   `versionName` = the version, `versionCode` =
   `major*10000 + minor*100 + patch` (0.8.0 → 800). Every bump raises the
   code — Android rejects updates that don't.

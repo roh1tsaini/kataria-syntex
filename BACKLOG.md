@@ -1,7 +1,7 @@
 # BACKLOG — focus list
 
 Owner picks items from here; an agent takes one ID and executes it under the
-rules in `AGENTS.md` (§2.3 parity, §2.4 verification, §4.1 decision
+rules in `AGENTS.md` (Section 2.3 parity, Section 2.4 verification, Section 4.1 decision
 authority). Every item carries enough context to start cold. Delete an item
 when it ships; history lives in git.
 
@@ -12,7 +12,7 @@ when it ships; history lives in git.
       via `git add --renormalize .` in a dedicated commit or
       `endOfLine: "auto"` — owner picks.
 - [ ] **B6 · Version bump / release.**
-      `AGENTS.md` §4.0.1: bump `apps/app/package.json` `version` when a
+      `AGENTS.md` Section 4.0.1: bump `apps/app/package.json` `version` when a
       change warrants a release; the bump is the release action. Owner call
       for the parity pass and future sessions.
 - [ ] **B7 · Inline confirmation beside the triggering action.**
@@ -27,157 +27,34 @@ when it ships; history lives in git.
 ## 1b. Findings from the 2026-09-14 full audit (all verified by reading code)
 
 Every item below was confirmed against the actual code. Fix targets
-`apps/app`; business-app changes land in BOTH shells (AGENTS.md §2.3).
+`apps/app`; business-app changes land in BOTH shells (AGENTS.md Section 2.3).
 
 ### Critical
 
-- [x] **A1 · Android routine APK update path is dead.**
-      Audited against the pre-commit tree; commit `0c13374` already fixed it
-      (`if (detectHost() !== "web") set({ status: "ready" })` — Android arms
-      the Settings Update action, macOS arms the banner, web stays idle).
-- [x] **A0 · The blocking "Update required" dialog fired on every manifest
-      read, on every shell.** `src/main/store/updates.ts:173` did
-      `if (manifest.minVersion)`, and the published manifest carries
-      `minVersion: "0.0.0"` — a truthy string, so `markRequired("0.0.0")`
-      armed the undismissable dialog on web and Android alike. Fixed
-      2026-09-15: the floor is ignored unless it is a non-zero semver, and
-      `update-dialog.tsx` now also refuses to render a zero floor.
-- [x] **A2 · `resolveMember` can serve the wrong workspace.** FIXED 2026-09-15.
-      Three layers, in the order they matter: 1. **Schema** — `uq_memberships_user` (unique index on `memberships.user_id`)
-      in `drizzle/20260914193209_mute_magneto`. The DB itself now rejects a
-      second membership; the violation is impossible rather than merely
-      unlikely. All three insert sites are safe to constrain
-      (`members.ts:64` and `auth-otp.ts:186` already gate it). 2. **Resolver** — `perms.ts` queries with `.limit(2)` and returns the new
-      `multiple_memberships` 409 if two rows land anyway, instead of
-      silently picking one. Same guard at the twin site `auth-qr.ts`. 3. **Error code** — registered in `shared/errors.ts` + a user message in
-      `app-core/errors.ts` (the `Record<ApiCode, string>` drift check makes
-      both sides mandatory).
-      Verified against local D1: first membership inserts, the second is
-      rejected with `UNIQUE constraint failed: memberships.user_id`. All 10
-      migrations apply clean. Gates: typecheck (incl. android) ✓, lint ✓,
-      build ✓. Version 0.12.1 → 0.12.2. NOTE: the migration runs against prod
-      in CI before deploy — if prod already holds a duplicate user the deploy
-      fails loudly at `wrangler d1 migrations apply`, which is the right
-      outcome but is the one thing I could not pre-verify from this machine.
-- [x] **A3 · `printPage()` fires `window.print()` on Android.** FIXED
-      2026-09-15, then **REVISED 2026-09-15** by the owner's call.
-      **The shipped behaviour: Android shares the PDF, it does not print.**
-      `window.print()` in the WebView is a silent no-op or a broken attempt to
-      print a page the WebView doesn't own, and the page auto-fired it 350ms
-      after load with no user tap. Both are fixed. But the owner decided
-      against native printing: **there is no maintained Capacitor plugin that
-      prints a file**, and the only path to Android's `PrintManager` is
-      hand-written Java — the one thing in this repo that needs a native
-      compile. That was built and then removed: - **Removed** — `PrinterPlugin.java`, `PdfPageCount.java`, their
-      `MainActivity` registration and the `printPdfOnAndroid` TS surface.
-      Printing is a web/desktop capability; Android no longer pretends. - **Shipped instead** — `shareChallanPdfOnAndroid` in platform.ts wraps
-      the existing Filesystem + Share path (already used by the download
-      button). `challans-print.tsx` routes both call sites through one
-      `printChallan`: Android fetches the server PDF via `apiBlob` and opens
-      the share sheet; web/desktop keep `window.print()`. The button reads
-      "Share / Save PDF" on Android and "Print / Save as PDF" elsewhere. - **Auto-fire** now skips Android on either design — a sheet or a print
-      dialog opened on page load would ambush the user. Android starts from
-      the button, which shows a busy state. `safeFilename` exported from
-      challan-pdf.ts so share and download agree on the name.
-      Trade-off stated plainly: the user picks Drive, a print app, or Save from
-      the sheet. There is no printer/copies/range UI from the app itself.
-      Gates: typecheck (all 5, incl. android) ✓, lint ✓, build ✓.
-      Version 0.12.2 → 0.12.3.
+_None open._ Standing caveats that shipped with resolved items and are still
+true today:
+
+- **Android PDF output is a share, not a print.** No maintained Capacitor
+  plugin prints a file; the only path to Android's `PrintManager` is
+  hand-written Java. `shareChallanPdfOnAndroid` hands the server-rendered PDF
+  to the system share sheet and the user picks Drive, a print app, or Save
+  (`apps/app/APP.md` Section 5.1).
+- **Masters with history archive instead of deleting.** A color/denier with
+  stock or document rows is hidden from pickers, not removed; the probe
+  matches by id **and by copied name**, so a name collision with another
+  workspace's document archives a row that could have been deleted. That errs
+  toward preserving history.
+- **`resolveMember` assumes one membership per user.** The DB rejects a
+  second membership; if prod already held a duplicate when the unique index
+  was created, the CI deploy fails loudly at `wrangler d1 migrations apply`
+  rather than silently picking a workspace.
+- **Hono dispatches the first matching handler.** Master-specific route
+  overrides must be registered in `registerMasterOverrides()` before the
+  generic `registerMaster(...)` routes — a route appended after them is dead
+  code.
 
 ### High
 
-- [x] **A4 · Deep links never wired + HTTPS filter missing.** FIXED 2026-09-15.
-      Both shells, one session (§2.3): - **Listener was dead code** — `initAndroidDeepLinks` had zero callers.
-      Now wired at boot from `main.tsx` (Android branch only, before first
-      render so a cold-start link sets the initial location). Its callback
-      was replaced with a real router: `routeDeepLink` parses the URL and
-      navigates via `history.pushState` + `popstate`, the same seam the
-      notification-tap path already uses. - **Manifest claimed the wrong scheme** — QR payloads are https
-      (`auth-qr.ts:98` builds `<origin>/login/scan/<code>`), but only
-      `kataria://` was registered. Added a second intent filter claiming
-      `https` + `pathPrefix=/login/scan/` on the release host. `pathPrefix`
-      (not `/`) keeps the browser the handler for everything else. - **Host is build-injected** — `manifestPlaceholders.APP_HOST` in
-      app/build.gradle from `findProperty('APP_HOST')`, and CI passes the
-      same `vars.APP_URL` the web bundle bakes as `VITE_API_URL` via
-      `-PAPP_HOST`. Local builds default to `localhost` so the manifest
-      still merges. - **Parser** — `parseScanUrl` exported and unit-checked across 8 cases
-      (https payload, custom scheme with and without authority, lowercase
-      normalisation, query/fragment suffix, and 3 non-scan URLs that must
-      return null so a link can't navigate the app arbitrarily). ALL GREEN.
-      The test caught a real bug: `new URL()` reads the first segment of a
-      scheme-only `kataria://login/scan/X` as the host, so pathname started
-      at `/scan` and the match failed. Dropped `URL` for a direct path
-      regex, which handles every shape.
-      **Not App Links**: `autoVerify="false"`. Verifying would need
-      `.well-known/assetlinks.json` hosted on the web origin, which does not
-      exist and is a deploy-side change outside this repo. Until it ships,
-      Android may show a chooser for a login link — acceptable for one path.
-      Gates: typecheck (5) ✓, lint ✓, build ✓, android tsc ✓; manifest
-      re-parsed with xml2js (3 intent filters, valid). Version 0.12.3 → 0.12.4.
-- [x] **A5 · `colors.stockType` is mutable, corrupting the stock ledger.**
-      FIXED 2026-09-15.
-      `stockType` is not an editable attribute — it is the partition key
-      between the two stock ledgers. `lib/stock.ts` freezes it into every
-      `stock_entries` row at write time and `summarizeStockLedger` groups by
-      that frozen value, so flipping a colour after yarn is booked moves the
-      master while its history stays in the old bucket: one colour's yarn
-      split across two ledgers with contradictory totals. - **Server** — `masters.ts` declares a colors-specific
-      `PUT /masters/colors/:id` that re-validates with `colorBody`,
-      fetches the existing row, and only when the requested `stockType`
-      differs from the stored one does it probe `stock_entries` for any
-      row of that colour, limited to 1. A hit returns
-      `color_type_locked` 409. Name/code edits and same-type saves pass
-      through untouched — the guard never runs for them. - **Client** — the generic `registerMaster` PUT had no hook for
-      master-specific validation, which is why the override route exists
-      rather than a parameter. The store awaits the PUT before refreshing,
-      so a 409 mutates nothing local; the existing `friendlyError` path
-      surfaces the message as both a field error and a toast in the colour
-      dialog. `color_type_locked` is registered on both sides of the typed
-      contract (`shared/errors.ts` ↔ `app-core/errors.ts`), which is what
-      makes the drift check fail typecheck if either side drops it.
-      Gates: typecheck, lint, build. No migration — the guard is read-only
-      against `stock_entries`. Version 0.12.4 → 0.12.5.
-      **Correction found while building A6**: Hono dispatches the FIRST
-      matching handler, so an override registered after the generic
-      `registerMaster` routes is dead code. This A5 route was first
-      appended at the file tail and never ran — `PUT /colors/:id` hit the
-      generic handler with no lock check. Both overrides now live in
-      `registerMasterOverrides()`, called before any `registerMaster(...)`.
-- [x] **A6 · Deleting a color/denier can strand stock and document rows.**
-      FIXED 2026-09-15. Per the owner's direction: **archive instead of
-      refuse** — a master with history should be removed from pickers, not
-      blocked with an error. - **Schema** — nullable `archivedAt` on `colors` and `deniers`
-      (`20260914203136_archive_marrow`: two `ALTER TABLE … ADD archived_at`).
-      Applied clean against local D1. Null = live; a timestamp = archived. - **DELETE** — `archiveOrDelete(c, kind)` is registered on literal
-      `/colors/:id` and `/deniers/:id` in `registerMasterOverrides()`,
-      before the generic routes (Hono: first match wins). It probes the
-      full reference graph by id **and by copied name** — recipes and the
-      four `*_items` tables (challan, job-work return, raw-material,
-      packing) on both, plus `stock_entries` on name only since the ledger
-      carries no color/denier FK at all. One hit → `archivedAt = now`,
-      published, `{ ok: true, archived: true }`. No hits → the ordinary
-      delete, still guarded by the FK catch. - **Reads filter archived out** — `registerMaster`'s GET (masters list
-      and every picker), `validateMasters` (challan save validation),
-      `recipes.ts` recipe create, and `lib/stock.ts`'s stockType lookup.
-      Archived masters can no longer be selected for new work; existing
-      documents keep rendering from their own snapshot columns. - **Client** — the store's `remove` reads the `archived` flag and
-      throws `ArchiveInsteadOfDeleteError`, exported from app-core. Both
-      delete sites (`colors.tsx`, `masters.tsx`) report _"X archived —
-      It has stock or challan history, so it's hidden from pickers — that
-      history keeps its name."_ rather than claiming a delete that didn't
-      happen. The post-delete refresh drops the row from the list. - **Item tables carry no `workspace_id`** (they scope through their
-      parent document), so the probe on them is by id+name only. It is
-      conservative rather than precisely scoped: a _name_ collision with
-      another workspace's document would archive a row that could have
-      been deleted. That errs toward preserving history, which is the
-      point of the fix; a future pass can join through the parent table
-      if the false-positive rate matters.
-      Gates: typecheck (5) ✓, lint ✓, build ✓, android tsc ✓; local D1
-      migration ✓. Version 0.12.5 → 0.12.6.
-- [x] **A7 · Sync-dialog Retry swallows failures.** Resolved by removal —
-      the offline write queue is gone (see the online-only saving change);
-      `sync-dialog.tsx` no longer exists, so the unhandled-rejection path
-      went with it.
 - [ ] **A9 · Offline challan numbering converts a clash into a raw 500.**
       `lib/document-pipeline.ts:1001` — the batch catch shapes `UNIQUE
 constraint failed` into a 409 only when `input.offline` is set, and
@@ -202,8 +79,9 @@ constraint failed` into a 409 only when `input.offline` is set, and
       page renders a text-only card. No JSON-LD on product detail pages
       either — the highest-value SEO spot on the site.
 - [ ] **A14 · Web mobile nav clips in landscape.**
-      `apps/web/src/components/layout/SiteHeader.tsx:112` —
-      `DialogContent` is `fixed inset-0` with no `overflow-y-auto`; ~504px
+      `apps/web/src/components/ui/dialog.tsx:39` —
+      `DialogContent` is `fixed inset-0` with no `overflow-y-auto`, and the
+      inner column (`SiteHeader.tsx:112`) does not scroll either; ~504px
       of content in a 390px-tall viewport clips the last links and "Send
       inquiry". Portrait is fine, which is why it ships.
 
@@ -314,10 +192,11 @@ window.location.reload()`. If the 426 floor fires before the SW has
 - [ ] **A43 · Map.get non-null `!`s.** `document-pipeline.ts`
       (`:164,366,564,921`) rely on validation-by-convention — return a
       found-or-error shape instead of asserting.
-- [ ] **A44 · Web `robots.ts:6` allows everything** with no `disallow`,
-      exposing `/api/inquiry` and the stray compare pages; 708KB of design
-      compare pages ship in `apps/web/public/` and are crawlable,
-      referenced only from `apps/app` docs.
+- [ ] **A44 · Web `robots.ts:6` allows everything** with no `disallow`, so
+      `/api/inquiry` is exposed to crawlers. The 3.7MB of design-compare
+      galleries (`challan`/`sticker`/`report-styles-compare.html` under
+      `apps/app/design-compare/`) are also reachable; nothing in `apps/web`
+      links to them.
 - [ ] **A45 · Web polish.** `SiteHeader` lifted-card style duplicated in
       four places (a sync hazard); product images served at ~3× needed
       resolution (`images.unoptimized` with 1024px sources at ≤440px
@@ -333,7 +212,8 @@ window.location.reload()`. If the 426 floor fires before the SW has
   request from any build passes. Presumably deliberate until a breaking
   release cuts — confirm, since it means `update-dialog.tsx` isn't
   reachable from the server side today.
-- **Invariant enforcement is one-layered in three places** (A2, A5, A6):
+- **Invariant enforcement is one-layered in three places** (membership
+  uniqueness, colors `stockType`, master archive-or-delete):
   a rule assumed by the consumer but enforced only by one producer. That
   is the shape that breaks when a new caller skips the guarded path.
 - **Verified clean, do not re-audit:** no SQL injection (all Drizzle, raw
@@ -343,8 +223,7 @@ window.location.reload()`. If the 426 floor fires before the SW has
   DOM access; Electron preload minimal with `contextIntegration`/`sandbox`
   and thorough IPC origin validation; web hydration safe (seeded PRNG,
   `getServerSnapshot`), reduced motion genuinely respected, fonts fully
-  self-hosted. The uncommitted diff's new code (`lazy-route.ts`, Electron
-  cache headers, `reloadOnStaleAndroidBundle`) was checked and is correct.
+  self-hosted.
 
 ## 2. Android device pass (owner)
 
@@ -356,5 +235,71 @@ window.location.reload()`. If the 426 floor fires before the SW has
 - [ ] **D1 · Blur surfaces everywhere** once B3 is decided (header, sheet
       scrims, frosted glass).
 - [ ] **D3 · Breathing room:** `Field` label typography (web form labels
-      12px/600 vs kit 13px/500; `design.md` §3 says 13px medium) — align one
+      12px/600 vs kit 13px/500; `design.md` Section 3 says 13px medium) — align one
       way, then update the other.
+
+## 4. Code cleanup
+
+Each item lists the files, the risk, and what "done" requires.
+
+### Priority 1 — do when touching the area
+
+- [ ] **C1 · Shared editor-shell for packing / raw-material / returns.**
+      Files: `apps/app/src/main/ui/pages/packing.tsx` (~1.3k lines),
+      `raw-material.tsx` (~1k), `returns.tsx` (~1k). All three repeat
+      `useMastersLoad` + `useDirtyGuard` + `countLabel`/`TableSkeleton` +
+      identical Details/Items `CardHeader` blocks and parallel
+      create/update POST/PUT pairs. Risk HIGH — the three riskiest pages.
+      Extract chrome only (headers, skeletons, dirty guard, masters-load,
+      save plumbing), never fields. Done when a new
+      `components/editor-shell.tsx` (or `useEditorForm`) is consumed by all
+      three; `tsc`, `lint`, manual create+edit smoke on all three forms.
+      `PackingImportDialog` is already extracted to
+      `components/packing-import-dialog.tsx` and `challans-editor.tsx` already
+      uses `useMastersLoad` — both are the pattern.
+
+### Priority 2 — structural, needs test cover first
+
+- [ ] **C2 · Split `document-pipeline.ts` (1,288 lines).** Shape:
+      `pipeline/{challans,returns,raw,packing,common}.ts`; move, don't
+      rewrite; keep every export name stable (`createChallan`,
+      `updateReturn`, `returnedTotalsByChallan`, `jobWorkBalances`, …). Also
+      fold in the repeated `fyForDate(…).label !== …` FY guard, the
+      `resolveSupplier`/`resolveParty`/`resolveReturnParty` trio → one
+      helper, and standardize ~8 raw `new Date().toISOString()` on `toIso()`.
+      Done when `tsc -p tsconfig.server.json` + a full
+      challan/return/raw/packing create+update smoke (offline conflict path
+      included).
+- [ ] **C3 · Split `challan-html.ts` (443 lines) + golden-file test.**
+      That file holds types + pagination + CSS string + builders, shared by
+      the server PDF, desktop PDF and print page. Snapshot-test
+      `buildChallanHtml` output as a golden file FIRST, then split into
+      `challan-{types,css,sheet}.ts` with byte-identical output. Done when
+      the golden test is green before and after and all three PDF/print
+      pipelines smoke-test.
+- [ ] **C4 · Offline sync integration test.** The conflict → resubmit →
+      settled path (queue loss / double-sync risk) has no integration test
+      covering it.
+
+### Explicitly deferred (recommendation: never, unless forced)
+
+- **jsqr → `BarcodeDetector`** — 1 call site
+  (`use-camera-scanner.ts`). Chromium-only; Firefox/Safari still need jsqr
+  fallback. If revisited: `BarcodeDetector` with jsqr fallback + lazy
+  `import()` of the scanner chunk.
+- **QR named-identifier fallback removal** (`auth-qr.ts`, `qr-login.ts`) —
+  the most intricate auth code for the rarest flow. Product sign-off
+  required; full login-matrix re-verification on web + Electron + Capacitor.
+- **Auth 4-router merge** — highest blast radius in the codebase.
+  Incremental only (the `ALL_PERMISSIONS` filter dup is the safe first
+  step).
+- **`woven.ts` / `thread.ts` freeze** — decorative shade textures, correct
+  but disproportionate. Freeze as `shade-texture` with visual regression
+  tests; pre-render to static CSS/PNG only if perf bites.
+- **Dialog-as-mobile-menu (`SiteHeader`)** — works, tested a11y. Replace
+  with a popover + CSS transition only if bundle weight forces it.
+- **Single-use primitives/hooks** (`input-otp`, `toggle-group`, `calendar`,
+  `avatar`, `useCameraScanner`, `useCountdown`, `cn.ts` seam) — correct
+  steady state for vendored code. Leave alone.
+- **Big-file splits** (`colors.tsx`, `dashboard.tsx`, `app-shell.tsx`) —
+  subcomponents only if they keep growing, never moves for their own sake.

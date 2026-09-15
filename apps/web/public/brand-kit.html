@@ -11,8 +11,7 @@
         src: url("/theme-fonts/fraunces-normal.woff2") format("woff2");
         font-weight: 400 700;
         font-display: block;
-      }
-      @font-face {
+      }      @font-face {
         font-family: "Instrument Serif";
         src: url("/theme-fonts/instrument-serif-normal.woff2") format("woff2");
         font-weight: 400;
@@ -23,8 +22,7 @@
         src: url("/theme-fonts/bricolage.woff2") format("woff2");
         font-weight: 400 800;
         font-display: block;
-      }
-      @font-face {
+      }      @font-face {
         font-family: "Geist";
         src: url("/theme-fonts/geist.woff2") format("woff2");
         font-weight: 300 700;
@@ -35,24 +33,49 @@
         src: url("/theme-fonts/jetbrains-mono.woff2") format("woff2");
         font-weight: 400 600;
         font-display: block;
-      }
-      @font-face {
+      }      @font-face {
         font-family: "Space Grotesk";
-        src: url("/theme-fonts/sora.woff2") format("woff2");
+        src: url("/theme-fonts/space-grotesk.woff2") format("woff2");
         font-weight: 300 700;
         font-display: block;
       }
-
-      *,
+      @font-face {
+        font-family: "Geist Mono";
+        src: url("/theme-fonts/geist-mono.woff2") format("woff2");
+        font-weight: 400 600;
+        font-display: block;
+      }      @font-face {
+        font-family: "IBM Plex Mono";
+        src: url("/theme-fonts/ibm-plex-mono.woff2") format("woff2");
+        font-weight: 500;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Fraunces";
+        src: url("/theme-fonts/fraunces-italic.woff2") format("woff2");
+        font-style: italic;
+        font-weight: 400 700;
+        font-display: block;
+      }      @font-face {
+        font-family: "Instrument Serif";
+        src: url("/theme-fonts/instrument-serif-italic.woff2") format("woff2");
+        font-style: italic;
+        font-weight: 400;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Sora";
+        src: url("/theme-fonts/sora.woff2") format("woff2");
+        font-weight: 300 700;
+        font-display: block;
+      }      *,
       *::before,
       *::after {
         box-sizing: border-box;
-      }
-      html,
+      }      html,
       body {
         margin: 0;
-      }
-      body {
+      }      body {
         background: #0b0d12;
         color: #e9edf4;
         font-family:
@@ -67,9 +90,7 @@
       }
       .mono {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      }
-
-      /* ============================================================
+      }      /* ============================================================
          BRAND TOKENS — three source values per palette (ink/pri/acc).
          Surfaces, hairlines, dark bands and muted text are DERIVED, so
          a palette swap re-tints the whole page. `.ptheme` re-declares
@@ -104,8 +125,7 @@
         --logo-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
         --logo-weight: 700;
         --logo-track: -0.035em;
-      }
-      [data-theme="dark"] {
+      }      [data-theme="dark"] {
         --surf: var(--dark2);
         --surf2: var(--dark);
         --card: color-mix(in oklab, var(--p-ink) 72%, #000000);
@@ -123,8 +143,7 @@
         --muted: #575047;
         --line: rgba(20, 17, 13, 0.14);
         --line2: rgba(20, 17, 13, 0.34);
-      }
-      [data-theme="dark"] .s-zine {
+      }      [data-theme="dark"] .s-zine {
         --surf: #f2ece1;
         --ink: #14110d;
         --muted: #5a5245;
@@ -142,8 +161,7 @@
         background: rgba(11, 13, 18, 0.88);
         backdrop-filter: blur(12px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-      }
-      .bar-in {
+      }      .bar-in {
         max-width: 1500px;
         margin: 0 auto;
         padding: 12px 20px;
@@ -156,8 +174,7 @@
         display: flex;
         align-items: baseline;
         gap: 9px;
-      }
-      .brandblock .ksmark {
+      }      .brandblock .ksmark {
         align-self: center;
         display: grid;
         place-items: center;
@@ -173,8 +190,7 @@
       .brandblock b {
         font-size: 15px;
         letter-spacing: -0.01em;
-      }
-      .brandblock > span {
+      }      .brandblock > span {
         font-size: 11.5px;
         color: #8b95a6;
       }
@@ -182,8 +198,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 2px;
-      }
-      .secnav a {
+      }      .secnav a {
         color: #aab4c4;
         text-decoration: none;
         font-size: 12px;
@@ -194,8 +209,7 @@
       .secnav a:hover {
         background: #1b212c;
         color: #f2f5fa;
-      }
-      .bar .spacer {
+      }      .bar .spacer {
         flex: 1;
       }
       .ctl {
@@ -204,8 +218,7 @@
         gap: 7px;
         font-size: 11.5px;
         color: #8b95a6;
-      }
-      .ctl select {
+      }      .ctl select {
         font: inherit;
         font-size: 12px;
         font-weight: 600;
@@ -222,8 +235,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 999px;
         padding: 3px;
-      }
-      .seg button {
+      }      .seg button {
         border: 0;
         background: transparent;
         color: #aab4c4;
@@ -237,8 +249,7 @@
       .seg button[aria-pressed="true"] {
         background: #f2f5fa;
         color: #10131a;
-      }
-      .palette-strip {
+      }      .palette-strip {
         max-width: 1500px;
         margin: 0 auto;
         padding: 0 20px 12px;
@@ -254,8 +265,7 @@
         text-transform: uppercase;
         color: #667085;
         margin: 0 6px 0 10px;
-      }
-      .palette-strip .glabel:first-child {
+      }      .palette-strip .glabel:first-child {
         margin-left: 0;
       }
       .chip {
@@ -274,16 +284,14 @@
           background 0.15s,
           border-color 0.15s,
           color 0.15s;
-      }
-      .chip:hover {
+      }      .chip:hover {
         background: #1f2531;
       }
       .chip[aria-pressed="true"] {
         background: #f2f5fa;
         color: #10131a;
         border-color: #f2f5fa;
-      }
-      .chip i {
+      }      .chip i {
         width: 15px;
         height: 15px;
         border-radius: 50%;
@@ -294,14 +302,12 @@
         width: 7px;
         height: 7px;
         margin-left: -5px;
-      }
-      .chip:focus-visible,
+      }      .chip:focus-visible,
       .seg button:focus-visible,
       .secnav a:focus-visible {
         outline: 2px solid #6ea8ff;
         outline-offset: 2px;
-      }
-      .wrap {
+      }      .wrap {
         max-width: 1500px;
         margin: 0 auto;
         padding: 26px 20px 100px;
@@ -311,8 +317,7 @@
         font-size: clamp(26px, 3.4vw, 38px);
         letter-spacing: -0.03em;
         line-height: 1.1;
-      }
-      .intro .lede {
+      }      .intro .lede {
         max-width: 78ch;
         margin: 12px 0 0;
         color: #9aa5b6;
@@ -321,8 +326,7 @@
       }
       .intro .lede strong {
         color: #e9edf4;
-      }
-      .callouts {
+      }      .callouts {
         display: grid;
         gap: 12px;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -336,8 +340,7 @@
         font-size: 12.5px;
         line-height: 1.65;
         color: #9aa5b6;
-      }
-      .callout b {
+      }      .callout b {
         display: block;
         color: #e9edf4;
         font-size: 12px;
@@ -349,9 +352,7 @@
         padding: 1px 5px;
         border-radius: 4px;
         font-size: 11.5px;
-      }
-
-      .sec {
+      }      .sec {
         margin-top: 74px;
         scroll-margin-top: 130px;
       }
@@ -363,8 +364,7 @@
         flex-wrap: wrap;
         border-top: 1px solid rgba(255, 255, 255, 0.12);
         padding-top: 18px;
-      }
-      .sechead .kicker {
+      }      .sechead .kicker {
         font-size: 10.5px;
         font-weight: 800;
         letter-spacing: 0.16em;
@@ -376,8 +376,7 @@
         font-size: clamp(21px, 2.4vw, 28px);
         letter-spacing: -0.025em;
         flex-basis: 100%;
-      }
-      .sechead p {
+      }      .sechead p {
         margin: 0;
         font-size: 12.5px;
         color: #8b95a6;
@@ -393,8 +392,7 @@
         font-size: 12.5px;
         line-height: 1.7;
         color: #9aa5b6;
-      }
-      .note b {
+      }      .note b {
         color: #e9edf4;
       }
       .note code {
@@ -402,13 +400,11 @@
         padding: 1px 5px;
         border-radius: 4px;
         font-size: 11.5px;
-      }
-      @media (prefers-reduced-motion: reduce) {
+      }      @media (prefers-reduced-motion: reduce) {
         * {
           animation-duration: 0.01ms !important;
           transition-duration: 0.01ms !important;
-        }
-      }
+        }      }
       /* ============================================================
          LOGO WORKBENCH — text-only identity: wordmark + KS monogram.
          Everything reads `--logo-*`, so the face control retypes it.
@@ -418,12 +414,10 @@
         gap: 18px;
         grid-template-columns: 1.25fr 1fr;
         margin-top: 26px;
-      }
-      @media (max-width: 900px) {
+      }      @media (max-width: 900px) {
         .logolab {
           grid-template-columns: 1fr;
-        }
-      }
+        }      }
       .plate {
         border-radius: 18px;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -434,8 +428,7 @@
         padding: 26px;
         position: relative;
         overflow: hidden;
-      }
-      .plate .tag {
+      }      .plate .tag {
         font-family: ui-monospace, monospace;
         font-size: 10px;
         letter-spacing: 0.14em;
@@ -445,16 +438,14 @@
       .plate-paper {
         background: #ffffff;
         color: #0d1016;
-      }
-      .plate-ink {
+      }      .plate-ink {
         background: var(--dark2);
         color: #ffffff;
       }
       .plate-accent {
         background: var(--acc);
         color: #0d1016;
-      }
-      .plate-grid {
+      }      .plate-grid {
         background: #f2f4f8;
         color: #0d1016;
         background-image:
@@ -477,8 +468,7 @@
         line-height: 0.94;
         font-size: clamp(28px, 4.2vw, 46px);
         text-transform: uppercase;
-      }
-      .wm small {
+      }      .wm small {
         display: block;
         font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
         font-weight: 600;
@@ -492,8 +482,7 @@
         display: flex;
         align-items: center;
         gap: 18px;
-      }
-      .ks {
+      }      .ks {
         font-family: var(--logo-display);
         font-weight: var(--logo-weight);
         letter-spacing: -0.06em;
@@ -509,8 +498,7 @@
         background: var(--dark2);
         color: var(--acc);
         font-size: clamp(38px, 5vw, 62px);
-      }
-      .ks-ring {
+      }      .ks-ring {
         border-radius: 50%;
         background: var(--acc);
         color: #0d1016;
@@ -519,8 +507,7 @@
         border: 2px solid currentColor;
         background: transparent;
         color: inherit;
-      }
-      .lockrow {
+      }      .lockrow {
         display: flex;
         align-items: center;
         gap: 14px;
@@ -532,8 +519,7 @@
         text-transform: uppercase;
         font-size: clamp(16px, 1.8vw, 21px);
         line-height: 1;
-      }
-      .lockrow .lock-sub {
+      }      .lockrow .lock-sub {
         display: block;
         font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
         font-weight: 600;
@@ -549,8 +535,7 @@
         min-height: 34px;
         background: currentColor;
         opacity: 0.28;
-      }
-      .logo-matrix {
+      }      .logo-matrix {
         display: grid;
         gap: 14px;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -561,8 +546,7 @@
         border-radius: 14px;
         overflow: hidden;
         background: #12161e;
-      }
-      .facecard .fstage {
+      }      .facecard .fstage {
         background: #ffffff;
         color: #0d1016;
         padding: 22px 20px;
@@ -572,8 +556,7 @@
       .facecard .fstage.rev {
         background: var(--dark2);
         color: #ffffff;
-      }
-      .facecard .fname {
+      }      .facecard .fname {
         font-family: var(--logo-display);
         font-weight: var(--logo-weight);
         letter-spacing: var(--logo-track);
@@ -590,8 +573,7 @@
         font-size: 11px;
         color: #8b95a6;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .facecard .fspec b {
+      }      .facecard .fspec b {
         color: #e9edf4;
         font-weight: 650;
       }
@@ -609,18 +591,15 @@
         grid-template-columns:
           minmax(300px, 1.15fr) minmax(280px, 0.9fr)
           minmax(300px, 1fr);
-      }
-      @media (max-width: 1080px) {
+      }      @media (max-width: 1080px) {
         .detail {
           grid-template-columns: 1fr;
-        }
-      }
+        }      }
       .detail h3 {
         margin: 0 0 3px;
         font-size: 16px;
         letter-spacing: -0.01em;
-      }
-      .detail .sub {
+      }      .detail .sub {
         font-size: 12px;
         color: #8b95a6;
         margin: 0 0 15px;
@@ -629,8 +608,7 @@
       .detail .sub em {
         color: #cdd5e2;
         font-style: normal;
-      }
-      .swatchrow {
+      }      .swatchrow {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
@@ -643,8 +621,7 @@
         flex-direction: column;
         justify-content: space-between;
         border: 1px solid rgba(255, 255, 255, 0.12);
-      }
-      .sw b {
+      }      .sw b {
         font-size: 10.5px;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -654,8 +631,7 @@
       .sw code {
         font-size: 12.5px;
         font-weight: 650;
-      }
-      .sw span {
+      }      .sw span {
         display: block;
         font-family: ui-monospace, monospace;
         font-size: 10px;
@@ -667,16 +643,14 @@
         font-size: 12px;
         line-height: 1.75;
         color: #9aa5b6;
-      }
-      .roles b {
+      }      .roles b {
         color: #e9edf4;
         font-weight: 650;
       }
       .contrast {
         display: grid;
         gap: 7px;
-      }
-      .crow {
+      }      .crow {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -692,8 +666,7 @@
         align-items: center;
         gap: 8px;
         color: #b9c2d0;
-      }
-      .crow .pair i {
+      }      .crow .pair i {
         width: 14px;
         height: 14px;
         border-radius: 4px;
@@ -702,14 +675,12 @@
       }
       .crow .ratio {
         font-weight: 700;
-      }
-      .pass {
+      }      .pass {
         color: #6ee7a8;
       }
       .fail {
         color: #ff9a9a;
-      }
-      .tag {
+      }      .tag {
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0.07em;
@@ -725,8 +696,7 @@
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.12);
         margin-top: 10px;
-      }
-      .ramp i {
+      }      .ramp i {
         flex: 1;
       }
       .rampcap {
@@ -736,8 +706,7 @@
         font-size: 9.5px;
         color: #667085;
         margin-top: 6px;
-      }
-      .printrow {
+      }      .printrow {
         display: grid;
         gap: 6px;
         margin-top: 12px;
@@ -748,8 +717,7 @@
         gap: 9px;
         font-size: 11.5px;
         color: #b9c2d0;
-      }
-      .prow i {
+      }      .prow i {
         width: 13px;
         height: 13px;
         border-radius: 4px;
@@ -761,8 +729,7 @@
         font-family: ui-monospace, monospace;
         font-size: 10.5px;
         color: #8b95a6;
-      }
-      /* Mini site slice shown inside the detail panel (always light). */
+      }      /* Mini site slice shown inside the detail panel (always light). */
       .mini {
         border-radius: 14px;
         overflow: hidden;
@@ -770,8 +737,7 @@
         background: var(--surf);
         color: var(--ink);
         font-size: 11px;
-      }
-      .mini .mini-nav {
+      }      .mini .mini-nav {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -784,8 +750,7 @@
         letter-spacing: -0.02em;
         font-size: 11.5px;
         text-transform: uppercase;
-      }
-      .mini .mini-pill {
+      }      .mini .mini-pill {
         background: var(--pri);
         color: var(--on-pri);
         border-radius: var(--r-btn);
@@ -797,8 +762,7 @@
         padding: 15px 13px 16px;
         display: grid;
         gap: 10px;
-      }
-      .mini .mini-hero h4 {
+      }      .mini .mini-hero h4 {
         margin: 0;
         font-size: 17px;
         line-height: 1.08;
@@ -811,8 +775,7 @@
         font-size: 10.5px;
         line-height: 1.55;
         max-width: 34ch;
-      }
-      .mini .mini-row {
+      }      .mini .mini-row {
         display: flex;
         gap: 7px;
         margin-top: 3px;
@@ -824,8 +787,7 @@
         padding: 7px 11px;
         font-size: 10px;
         font-weight: 700;
-      }
-      .mini .mini-ghost {
+      }      .mini .mini-ghost {
         border: 1.5px solid var(--line2);
         border-radius: var(--r-btn);
         padding: 7px 11px;
@@ -836,8 +798,7 @@
         display: flex;
         gap: 4px;
         padding: 0 13px 14px;
-      }
-      .mini .mini-swatches i {
+      }      .mini .mini-swatches i {
         flex: 1;
         height: 22px;
         border-radius: 5px;
@@ -851,8 +812,7 @@
         margin-top: 26px;
         display: grid;
         gap: 30px;
-      }
-      .pgroup h3 {
+      }      .pgroup h3 {
         margin: 0 0 12px;
         font-size: 12px;
         font-weight: 800;
@@ -868,8 +828,7 @@
         flex: 1;
         height: 1px;
         background: rgba(255, 255, 255, 0.1);
-      }
-      .pcards {
+      }      .pcards {
         display: grid;
         gap: 16px;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -889,16 +848,14 @@
         transition:
           border-color 0.18s,
           transform 0.18s;
-      }
-      .pcard:hover {
+      }      .pcard:hover {
         transform: translateY(-3px);
         border-color: rgba(255, 255, 255, 0.28);
       }
       .pcard[aria-pressed="true"] {
         border-color: #f2f5fa;
         box-shadow: 0 0 0 1px #f2f5fa inset;
-      }
-      .pcard .prev {
+      }      .pcard .prev {
         background: var(--surf);
         color: var(--ink);
         padding: 14px 14px 12px;
@@ -910,8 +867,7 @@
         align-items: center;
         justify-content: space-between;
         font-size: 10px;
-      }
-      .pcard .prev-brand {
+      }      .pcard .prev-brand {
         font-family: var(--logo-display);
         font-weight: var(--logo-weight);
         letter-spacing: -0.02em;
@@ -924,8 +880,7 @@
         padding: 3px 7px;
         font-size: 8.5px;
         font-weight: 700;
-      }
-      .pcard .prev-h {
+      }      .pcard .prev-h {
         font-size: 15px;
         font-weight: 800;
         letter-spacing: -0.03em;
@@ -935,8 +890,7 @@
       .pcard .prev-h em {
         color: var(--pri);
         font-style: normal;
-      }
-      .pcard .prev-strip {
+      }      .pcard .prev-strip {
         display: flex;
         gap: 4px;
       }
@@ -944,8 +898,7 @@
         flex: 1;
         height: 26px;
         border-radius: 6px;
-      }
-      .pcard .prev-btns {
+      }      .pcard .prev-btns {
         display: flex;
         gap: 6px;
       }
@@ -954,15 +907,13 @@
         padding: 5px 9px;
         font-size: 9px;
         font-weight: 700;
-      }
-      .pcard .prev-btns .a {
+      }      .pcard .prev-btns .a {
         background: var(--pri);
         color: var(--on-pri);
       }
       .pcard .prev-btns .b {
         border: 1.5px solid var(--line2);
-      }
-      .pcard .pmeta {
+      }      .pcard .pmeta {
         padding: 12px 14px 14px;
         display: grid;
         gap: 7px;
@@ -972,8 +923,7 @@
         align-items: baseline;
         justify-content: space-between;
         gap: 10px;
-      }
-      .pcard .pmeta b {
+      }      .pcard .pmeta b {
         font-size: 13.5px;
         letter-spacing: -0.01em;
       }
@@ -981,8 +931,7 @@
         font-family: ui-monospace, monospace;
         font-size: 9.5px;
         color: #667085;
-      }
-      .pcard .pmeta .pnote {
+      }      .pcard .pmeta .pnote {
         display: block;
         margin: 0;
         font-size: 11.5px;
@@ -998,8 +947,7 @@
         display: grid;
         gap: 30px;
         margin-top: 26px;
-      }
-      .cgroup h3 {
+      }      .cgroup h3 {
         margin: 0 0 12px;
         font-size: 12px;
         font-weight: 800;
@@ -1015,8 +963,7 @@
         flex: 1;
         height: 1px;
         background: rgba(255, 255, 255, 0.1);
-      }
-      .cpair {
+      }      .cpair {
         display: grid;
         gap: 16px;
         grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -1025,8 +972,7 @@
         margin: 0;
         display: grid;
         gap: 9px;
-      }
-      .cardfig .pair-row {
+      }      .cardfig .pair-row {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
@@ -1043,8 +989,7 @@
         overflow: hidden;
         box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.9);
         font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
-      }
-      .bk .bk-top {
+      }      .bk .bk-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1056,8 +1001,7 @@
         letter-spacing: -0.05em;
         line-height: 1;
         font-size: 24px;
-      }
-      .bk .bk-chip {
+      }      .bk .bk-chip {
         font-family: ui-monospace, monospace;
         font-size: 7.5px;
         letter-spacing: 0.14em;
@@ -1071,8 +1015,7 @@
         text-transform: uppercase;
         line-height: 1;
         font-size: 15.5px;
-      }
-      .bk .bk-role {
+      }      .bk .bk-role {
         font-size: 8px;
         letter-spacing: 0.2em;
         text-transform: uppercase;
@@ -1082,8 +1025,7 @@
         font-family: ui-monospace, monospace;
         font-size: 8.5px;
         line-height: 1.7;
-      }
-      .bk .bk-rule {
+      }      .bk .bk-rule {
         height: 1px;
         background: currentColor;
         opacity: 0.22;
@@ -1091,28 +1033,24 @@
       .bk-front {
         background: var(--dark2);
         color: #fff;
-      }
-      .bk-front .bk-mono {
+      }      .bk-front .bk-mono {
         color: var(--acc);
       }
       .bk-front .bk-role {
         color: var(--acc);
-      }
-      .bk-back {
+      }      .bk-back {
         background: color-mix(in oklab, var(--p-acc) 30%, #ffffff);
         color: var(--p-ink);
       }
       .bk-back .bk-mono {
         color: var(--pri);
-      }
-      .bk-paper {
+      }      .bk-paper {
         background: #fffdf8;
         color: #14110d;
       }
       .bk-paper .bk-mono {
         color: var(--pri);
-      }
-      .bk-paper .bk-role {
+      }      .bk-paper .bk-role {
         color: var(--pri);
       }
       .bk-split::before {
@@ -1121,15 +1059,13 @@
         inset: 0;
         background: var(--dark2);
         clip-path: polygon(0 0, 42% 0, 26% 100%, 0 100%);
-      }
-      .bk-split > * {
+      }      .bk-split > * {
         position: relative;
       }
       .bk-split .bk-mono {
         color: var(--acc);
         font-size: 30px;
-      }
-      .bk-band {
+      }      .bk-band {
         background: var(--dark2);
         color: #fff;
       }
@@ -1139,20 +1075,17 @@
         inset: 0 0 auto 0;
         height: 26%;
         background: var(--acc);
-      }
-      .bk-band > * {
+      }      .bk-band > * {
         position: relative;
       }
       .bk-band .bk-mono {
         color: var(--on-acc);
-      }
-      .bk-band .bk-top {
+      }      .bk-band .bk-top {
         color: var(--on-acc);
       }
       .bk-band .bk-role {
         color: var(--acc);
-      }
-      .bk-big {
+      }      .bk-big {
         background: #fffdf8;
         color: #14110d;
       }
@@ -1165,36 +1098,31 @@
         height: 22%;
         background: var(--acc);
         z-index: 0;
-      }
-      .bk-big > * {
+      }      .bk-big > * {
         position: relative;
         z-index: 1;
       }
       .bk-big .bk-word {
         font-size: 26px;
-      }
-      .bk-big .bk-mono {
+      }      .bk-big .bk-mono {
         color: var(--pri);
       }
       .bk-monoall {
         background: var(--dark2);
         color: #fff;
-      }
-      .bk-monoall .bk-word,
+      }      .bk-monoall .bk-word,
       .bk-monoall .bk-mono,
       .bk-monoall .bk-line,
       .bk-monoall .bk-role {
         font-family: ui-monospace, monospace;
-      }
-      .bk-monoall .bk-word {
+      }      .bk-monoall .bk-word {
         letter-spacing: 0.02em;
         font-size: 12px;
         text-transform: uppercase;
       }
       .bk-monoall .bk-mono {
         color: var(--acc);
-      }
-      .bk-monoall .bk-role {
+      }      .bk-monoall .bk-role {
         color: var(--acc);
       }
       .cardfig figcaption {
@@ -1203,8 +1131,7 @@
         align-items: baseline;
         font-size: 11.5px;
         color: #8b95a6;
-      }
-      .cardfig figcaption b {
+      }      .cardfig figcaption b {
         color: #e9edf4;
         font-size: 12.5px;
       }
@@ -1215,8 +1142,7 @@
         text-transform: uppercase;
         color: #667085;
         min-width: 34px;
-      }
-      .cardfig .cardstack {
+      }      .cardfig .cardstack {
         display: grid;
         gap: 9px;
       }
@@ -1230,8 +1156,7 @@
         align-items: baseline;
         gap: 12px;
         margin: 34px 0 14px;
-      }
-      .cathead h3 {
+      }      .cathead h3 {
         margin: 0;
         font-size: 14px;
         letter-spacing: 0.02em;
@@ -1239,8 +1164,7 @@
       .cathead span {
         font-size: 12px;
         color: #8b95a6;
-      }
-      .cathead .rule {
+      }      .cathead .rule {
         flex: 1;
         height: 1px;
         background: rgba(255, 255, 255, 0.1);
@@ -1250,16 +1174,17 @@
         display: grid;
         gap: 22px;
         grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
-      }
-      @media (max-width: 560px) {
+      }      @media (max-width: 560px) {
         .grid {
           grid-template-columns: 1fr;
-        }
-      }
+        }      }
       figure.d {
         margin: 0;
       }
-      .stage {
+      figure.d .pin {
+        top: 10px;
+        right: 10px;
+      }      .stage {
         container-type: inline-size;
         position: relative;
         overflow: hidden;
@@ -1276,8 +1201,7 @@
         display: flex;
         gap: 9px;
         align-items: baseline;
-      }
-      figcaption b {
+      }      figcaption b {
         font-size: 13px;
         letter-spacing: -0.005em;
       }
@@ -1285,8 +1209,7 @@
         font-size: 12px;
         color: #8b95a6;
         line-height: 1.45;
-      }
-      .num {
+      }      .num {
         font-size: 11px;
         color: #667085;
         font-weight: 700;
@@ -1300,8 +1223,7 @@
         justify-content: space-between;
         gap: 2cqw;
         padding: 2.6cqw 3.6cqw;
-      }
-      .m-brand {
+      }      .m-brand {
         font-family: var(--logo-display);
         font-weight: var(--logo-weight);
         letter-spacing: -0.03em;
@@ -1314,8 +1236,7 @@
         opacity: 0.6;
         font-size: 1.35cqw;
         font-weight: 550;
-      }
-      .m-btn {
+      }      .m-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1329,15 +1250,13 @@
       .m-btn.pri {
         background: var(--pri);
         color: var(--on-pri);
-      }
-      .m-btn.acc {
+      }      .m-btn.acc {
         background: var(--acc);
         color: var(--on-acc);
       }
       .m-btn.gh {
         border: 1.5px solid var(--line2);
-      }
-      .m-kicker {
+      }      .m-kicker {
         font-size: 1.08cqw;
         font-weight: 800;
         letter-spacing: 0.15em;
@@ -1350,8 +1269,7 @@
         line-height: 0.98;
         font-size: 5.9cqw;
         margin: 0;
-      }
-      .m-p {
+      }      .m-p {
         font-size: 1.5cqw;
         line-height: 1.6;
         color: var(--muted);
@@ -1360,8 +1278,7 @@
       .m-acts {
         display: flex;
         gap: 1.2cqw;
-      }
-      .m-row {
+      }      .m-row {
         display: flex;
         gap: 1.6cqw;
       }
@@ -1371,8 +1288,7 @@
         border-radius: var(--r-card);
         padding: 2.2cqw;
         flex: 1;
-      }
-      .m-art {
+      }      .m-art {
         border-radius: 10px;
         height: 9cqw;
         background: linear-gradient(
@@ -1384,8 +1300,7 @@
       }
       .m-mono {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      }
-      /* ---------- 01 Blueprint ---------- */
+      }      /* ---------- 01 Blueprint ---------- */
       .s-blueprint {
         background-image:
           radial-gradient(
@@ -1398,8 +1313,7 @@
             color-mix(in oklab, var(--acc) 32%, transparent),
             transparent 60%
           );
-      }
-      .s-blueprint::after {
+      }      .s-blueprint::after {
         content: "";
         position: absolute;
         inset: 0;
@@ -1416,8 +1330,7 @@
         gap: 3cqw;
         padding: 1.5cqw 3.6cqw 0;
         align-items: start;
-      }
-      .s-blueprint .bp-copy {
+      }      .s-blueprint .bp-copy {
         display: grid;
         gap: 1.5cqw;
       }
@@ -1429,8 +1342,7 @@
         padding: 2cqw;
         box-shadow: 0 14cqw 20cqw -14cqw
           color-mix(in oklab, var(--p-ink) 40%, transparent);
-      }
-      .s-blueprint .bp-stats {
+      }      .s-blueprint .bp-stats {
         display: flex;
         gap: 1.4cqw;
         margin-top: 1.8cqw;
@@ -1441,8 +1353,7 @@
         border: 1px solid var(--line);
         border-radius: 12px;
         padding: 1.4cqw;
-      }
-      .s-blueprint .bp-stat b {
+      }      .s-blueprint .bp-stat b {
         display: block;
         font-size: 2.5cqw;
         color: var(--pri);
@@ -1451,21 +1362,17 @@
       .s-blueprint .bp-stat span {
         font-size: 1cqw;
         color: var(--muted);
-      }
-
-      /* ---------- 02 Swiss Ledger ---------- */
+      }      /* ---------- 02 Swiss Ledger ---------- */
       .s-swiss {
         --r-btn: 0px;
         --r-card: 0px;
-      }
-      .s-swiss .sw-top {
+      }      .s-swiss .sw-top {
         border-bottom: 1.5px solid var(--ink);
       }
       .s-swiss .m-h {
         font-size: 7.6cqw;
         letter-spacing: -0.05em;
-      }
-      .s-swiss .sw-lede {
+      }      .s-swiss .sw-lede {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 3cqw;
@@ -1476,8 +1383,7 @@
         font-family: ui-monospace, monospace;
         font-size: 1.2cqw;
         letter-spacing: 0.1em;
-      }
-      .s-swiss .sw-rows {
+      }      .s-swiss .sw-rows {
         padding: 0 3.6cqw;
       }
       .s-swiss .sw-row {
@@ -1488,16 +1394,14 @@
         padding: 1.7cqw 0;
         border-bottom: 1px solid var(--line);
         font-size: 1.35cqw;
-      }
-      .s-swiss .sw-row b {
+      }      .s-swiss .sw-row b {
         font-size: 1.7cqw;
         letter-spacing: -0.02em;
       }
       .s-swiss .sw-row .r {
         text-align: right;
         color: var(--muted);
-      }
-      .s-swiss .sw-accent {
+      }      .s-swiss .sw-accent {
         color: var(--pri);
         font-weight: 700;
       }
@@ -1515,8 +1419,7 @@
           color-mix(in oklab, var(--acc) 26%, transparent),
           transparent 62%
         );
-      }
-      .s-midnight .md-glow {
+      }      .s-midnight .md-glow {
         color: var(--acc);
       }
       .s-midnight .md-body {
@@ -1524,8 +1427,7 @@
         grid-template-columns: 1.1fr 1fr;
         gap: 3cqw;
         padding: 1.4cqw 3.6cqw 0;
-      }
-      .s-midnight .md-cards {
+      }      .s-midnight .md-cards {
         display: grid;
         gap: 1.4cqw;
       }
@@ -1537,8 +1439,7 @@
         display: flex;
         gap: 1.5cqw;
         align-items: center;
-      }
-      .s-midnight .md-dot {
+      }      .s-midnight .md-dot {
         width: 5cqw;
         height: 5cqw;
         border-radius: 9px;
@@ -1548,8 +1449,7 @@
       .s-midnight .md-card b {
         font-size: 1.5cqw;
         display: block;
-      }
-      .s-midnight .md-card span {
+      }      .s-midnight .md-card span {
         font-size: 1.1cqw;
         color: var(--muted);
       }
@@ -1569,15 +1469,13 @@
           rgba(255, 255, 255, 0.9),
           transparent 70%
         );
-      }
-      .s-paper .pp-body {
+      }      .s-paper .pp-body {
         padding: 1cqw 3.6cqw 0;
       }
       .s-paper .pp-h {
         position: relative;
         display: inline-block;
-      }
-      .s-paper .pp-h .m-h {
+      }      .s-paper .pp-h .m-h {
         font-size: 7.4cqw;
         letter-spacing: -0.045em;
         position: relative;
@@ -1592,8 +1490,7 @@
         height: 2.6cqw;
         background: var(--acc);
         z-index: 0;
-      }
-      .s-paper .pp-cols {
+      }      .s-paper .pp-cols {
         display: grid;
         grid-template-columns: 1.3fr 1fr;
         gap: 3cqw;
@@ -1605,14 +1502,11 @@
         font-family: ui-monospace, monospace;
         font-size: 1.1cqw;
         color: var(--muted);
-      }
-
-      /* ---------- 05 Bento Grid ---------- */
+      }      /* ---------- 05 Bento Grid ---------- */
       .s-bento {
         --r-card: 18px;
         --r-big: 22px;
-      }
-      .s-bento .bn {
+      }      .s-bento .bn {
         display: grid;
         grid-template-columns: 1.6fr 1fr 1fr;
         grid-template-rows: auto auto;
@@ -1626,8 +1520,7 @@
         background: var(--card);
         box-shadow: 0 2cqw 4cqw -2.6cqw
           color-mix(in oklab, var(--p-ink) 45%, transparent);
-      }
-      .s-bento .bn-hero {
+      }      .s-bento .bn-hero {
         grid-column: span 2;
         grid-row: span 2;
         background: linear-gradient(
@@ -1643,16 +1536,14 @@
       }
       .s-bento .bn-hero .m-h {
         font-size: 4.6cqw;
-      }
-      .s-bento .bn-hero .m-p {
+      }      .s-bento .bn-hero .m-p {
         color: color-mix(in oklab, var(--acc) 62%, #fff);
       }
       .s-bento .bn-kpi b {
         display: block;
         font-size: 3.2cqw;
         letter-spacing: -0.04em;
-      }
-      .s-bento .bn-kpi span {
+      }      .s-bento .bn-kpi span {
         font-size: 1.05cqw;
         color: var(--muted);
       }
@@ -1660,8 +1551,7 @@
         background: var(--acc);
         color: var(--on-acc);
         border-color: transparent;
-      }
-      .s-bento .bn-acc b {
+      }      .s-bento .bn-acc b {
         font-size: 1.8cqw;
       }
 
@@ -1669,8 +1559,7 @@
       .s-split {
         display: grid;
         grid-template-columns: 1fr 1fr;
-      }
-      .s-split .sp-l {
+      }      .s-split .sp-l {
         padding: 2.4cqw 3.2cqw;
         display: flex;
         flex-direction: column;
@@ -1686,8 +1575,7 @@
         justify-content: flex-end;
         position: relative;
         overflow: hidden;
-      }
-      .s-split .sp-r::after {
+      }      .s-split .sp-r::after {
         content: "";
         position: absolute;
         inset: 0;
@@ -1705,8 +1593,7 @@
         letter-spacing: -0.05em;
         line-height: 0.85;
         color: var(--acc);
-      }
-      .s-split .sp-cap {
+      }      .s-split .sp-cap {
         position: relative;
         z-index: 1;
         font-size: 1.2cqw;
@@ -1715,14 +1602,12 @@
       }
       .s-split .m-h {
         font-size: 5.4cqw;
-      }
-      /* ---------- 07 Spec Sheet ---------- */
+      }      /* ---------- 07 Spec Sheet ---------- */
       .s-spec {
         --r-btn: 4px;
         --r-card: 4px;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      }
-      .s-spec .m-h {
+      }      .s-spec .m-h {
         font-family: inherit;
         font-size: 3.4cqw;
         letter-spacing: -0.02em;
@@ -1731,8 +1616,7 @@
       .s-spec .m-btn,
       .s-spec .m-kicker {
         font-family: inherit;
-      }
-      .s-spec .sc {
+      }      .s-spec .sc {
         padding: 1.4cqw 3.4cqw;
       }
       .s-spec .sc-head {
@@ -1742,8 +1626,7 @@
         color: var(--muted);
         border-bottom: 1px dashed var(--line2);
         padding-bottom: 1.4cqw;
-      }
-      .s-spec .sc-line {
+      }      .s-spec .sc-line {
         display: flex;
         align-items: baseline;
         gap: 1.2cqw;
@@ -1755,8 +1638,7 @@
         flex: 1;
         border-bottom: 1px dotted var(--line2);
         transform: translateY(-0.3cqw);
-      }
-      .s-spec .sc-line b {
+      }      .s-spec .sc-line b {
         color: var(--pri);
         font-weight: 700;
       }
@@ -1766,9 +1648,7 @@
         margin-top: 1.6cqw;
         font-size: 1.15cqw;
         color: var(--muted);
-      }
-
-      /* ---------- 08 Kinetic Type ---------- */
+      }      /* ---------- 08 Kinetic Type ---------- */
       .s-kinetic {
         display: flex;
         flex-direction: column;
@@ -1779,8 +1659,7 @@
           color-mix(in oklab, var(--acc) 30%, transparent),
           transparent 62%
         );
-      }
-      .s-kinetic .kt {
+      }      .s-kinetic .kt {
         font-weight: 800;
         letter-spacing: -0.055em;
         line-height: 0.84;
@@ -1789,8 +1668,7 @@
       .s-kinetic .kt em {
         font-style: normal;
         color: var(--pri);
-      }
-      .s-kinetic .kt-o {
+      }      .s-kinetic .kt-o {
         color: transparent;
         -webkit-text-stroke: 1.5px var(--ink);
       }
@@ -1802,8 +1680,7 @@
         margin-top: 2.4cqw;
         border-top: 1px solid var(--line2);
         padding-top: 1.8cqw;
-      }
-      .s-kinetic .kt-p {
+      }      .s-kinetic .kt-p {
         max-width: 34cqw;
       }
 
@@ -1825,8 +1702,7 @@
             color-mix(in oklab, var(--acc) 40%, transparent),
             transparent 66%
           );
-      }
-      .s-glass .gl-body {
+      }      .s-glass .gl-body {
         padding: 1cqw 3.6cqw 0;
       }
       .s-glass .gl-panel {
@@ -1837,8 +1713,7 @@
         padding: 2.4cqw;
         box-shadow: 0 3cqw 6cqw -3cqw
           color-mix(in oklab, var(--p-ink) 30%, transparent);
-      }
-      .s-glass .gl-tiles {
+      }      .s-glass .gl-tiles {
         display: flex;
         gap: 1.4cqw;
         margin-top: 1.6cqw;
@@ -1850,8 +1725,7 @@
         border: 1px solid color-mix(in oklab, #fff 55%, transparent);
         border-radius: 14px;
         padding: 1.5cqw;
-      }
-      .s-glass .gl-tile b {
+      }      .s-glass .gl-tile b {
         font-size: 2.2cqw;
         display: block;
         letter-spacing: -0.03em;
@@ -1859,8 +1733,7 @@
       .s-glass .gl-tile span {
         font-size: 1cqw;
         color: var(--muted);
-      }
-      /* ---------- 10 Brutalist Block ---------- */
+      }      /* ---------- 10 Brutalist Block ---------- */
       .s-brutal {
         --r-btn: 0px;
         --r-card: 0px;
@@ -1869,8 +1742,7 @@
         --line: #14110d;
         --line2: #14110d;
         --ink: #14110d;
-      }
-      .s-brutal .br-body {
+      }      .s-brutal .br-body {
         padding: 1cqw 3.2cqw 0;
       }
       .s-brutal .br-block {
@@ -1878,8 +1750,7 @@
         background: var(--card);
         box-shadow: 8px 8px 0 var(--ink);
         padding: 2.4cqw;
-      }
-      .s-brutal .m-h {
+      }      .s-brutal .m-h {
         font-size: 6.4cqw;
         text-transform: uppercase;
         letter-spacing: -0.03em;
@@ -1887,8 +1758,7 @@
       .s-brutal .m-btn.pri {
         border: 2.5px solid var(--ink);
         box-shadow: 4px 4px 0 var(--ink);
-      }
-      .s-brutal .m-btn.gh {
+      }      .s-brutal .m-btn.gh {
         border: 2.5px solid var(--ink);
         background: var(--acc);
         color: var(--ink);
@@ -1900,8 +1770,7 @@
         margin-top: 2cqw;
         border: 2.5px solid var(--ink);
         background: var(--acc);
-      }
-      .s-brutal .br-strip div {
+      }      .s-brutal .br-strip div {
         flex: 1;
         padding: 1.3cqw;
         font-size: 1.2cqw;
@@ -1912,9 +1781,7 @@
       }
       .s-brutal .br-strip div:last-child {
         border-right: 0;
-      }
-
-      /* ---------- 11 Wound Thread ---------- */
+      }      /* ---------- 11 Wound Thread ---------- */
       .s-thread {
         --surf: #f6f1e9;
         --ink: #1b1712;
@@ -1922,8 +1789,7 @@
         --card: #fffdf8;
         --line: rgba(27, 23, 18, 0.14);
         --line2: rgba(27, 23, 18, 0.3);
-      }
-      .s-thread .th-band {
+      }      .s-thread .th-band {
         height: 4.4cqw;
         background-image:
           repeating-linear-gradient(
@@ -1949,15 +1815,13 @@
             rgba(0, 0, 0, 0.16) 0 1px,
             transparent 1px 3.2px
           );
-      }
-      .s-thread .th-body {
+      }      .s-thread .th-body {
         padding: 2cqw 3.4cqw 0;
       }
       .s-thread .th-stitch {
         border-top: 2px dashed var(--line2);
         margin: 2cqw 0 1.6cqw;
-      }
-      .s-thread .th-swatches {
+      }      .s-thread .th-swatches {
         display: flex;
         gap: 1.2cqw;
       }
@@ -1979,9 +1843,7 @@
             rgba(0, 0, 0, 0.2) 0 1px,
             transparent 1px 3.2px
           );
-      }
-
-      /* ---------- 12 Gallery ---------- */
+      }      /* ---------- 12 Gallery ---------- */
       .s-gallery .ga-art {
         height: 42cqw;
         background: linear-gradient(
@@ -1992,8 +1854,7 @@
         );
         position: relative;
         overflow: hidden;
-      }
-      .s-gallery .ga-art::after {
+      }      .s-gallery .ga-art::after {
         content: "";
         position: absolute;
         inset: 0;
@@ -2009,8 +1870,7 @@
         bottom: 2.6cqw;
         color: #fff;
         z-index: 1;
-      }
-      .s-gallery .ga-cap .m-h {
+      }      .s-gallery .ga-cap .m-h {
         font-size: 4.4cqw;
       }
       .s-gallery .ga-meta {
@@ -2018,16 +1878,14 @@
         justify-content: space-between;
         gap: 2cqw;
         padding: 2cqw 3.6cqw 0;
-      }
-      .s-gallery .ga-meta div {
+      }      .s-gallery .ga-meta div {
         flex: 1;
       }
       .s-gallery .ga-meta b {
         display: block;
         font-size: 1.35cqw;
         margin-bottom: 0.5cqw;
-      }
-      .s-gallery .ga-meta span {
+      }      .s-gallery .ga-meta span {
         font-size: 1.1cqw;
         color: var(--muted);
         line-height: 1.5;
@@ -2041,8 +1899,7 @@
         --line: color-mix(in oklab, var(--p-acc) 18%, transparent);
         --line2: color-mix(in oklab, var(--p-acc) 32%, transparent);
         --r-btn: 8px;
-      }
-      .s-ops .op {
+      }      .s-ops .op {
         padding: 1.4cqw 3.4cqw 0;
         display: grid;
         gap: 1.4cqw;
@@ -2050,8 +1907,7 @@
       .s-ops .op-kpis {
         display: flex;
         gap: 1.3cqw;
-      }
-      .s-ops .op-kpi {
+      }      .s-ops .op-kpi {
         flex: 1;
         background: var(--card);
         border: 1px solid var(--line);
@@ -2064,8 +1920,7 @@
         text-transform: uppercase;
         color: var(--muted);
         font-weight: 700;
-      }
-      .s-ops .op-kpi b {
+      }      .s-ops .op-kpi b {
         display: block;
         font-size: 3cqw;
         letter-spacing: -0.04em;
@@ -2076,8 +1931,7 @@
         font-size: 1cqw;
         font-style: normal;
         color: #6ee7a8;
-      }
-      .s-ops .op-chart {
+      }      .s-ops .op-chart {
         background: var(--card);
         border: 1px solid var(--line);
         border-radius: 10px;
@@ -2092,9 +1946,7 @@
         border-radius: 3px 3px 0 0;
         background: linear-gradient(to top, var(--pri), var(--acc));
         display: block;
-      }
-
-      /* ---------- 14 Risograph Zine ---------- */
+      }      /* ---------- 14 Risograph Zine ---------- */
       .s-zine {
         --surf: #f2ece1;
         --ink: #14110d;
@@ -2104,8 +1956,7 @@
         --line2: rgba(20, 17, 13, 0.4);
         --r-btn: 0px;
         --r-card: 0px;
-      }
-      .s-zine::before {
+      }      .s-zine::before {
         content: "";
         position: absolute;
         inset: 0;
@@ -2120,8 +1971,7 @@
       .s-zine .zn {
         position: relative;
         padding: 2cqw 3.4cqw 0;
-      }
-      .s-zine .zn-h {
+      }      .s-zine .zn-h {
         font-size: 8.6cqw;
         font-weight: 800;
         letter-spacing: -0.05em;
@@ -2132,8 +1982,7 @@
       .s-zine .zn-h em {
         font-style: normal;
         color: var(--ink);
-      }
-      .s-zine .zn-off {
+      }      .s-zine .zn-off {
         position: absolute;
         left: 3.9cqw;
         top: 2.35cqw;
@@ -2151,15 +2000,13 @@
         gap: 0;
         margin-top: 2.2cqw;
         border: 1.5px solid var(--ink);
-      }
-      .s-zine .zn-cell {
+      }      .s-zine .zn-cell {
         padding: 1.6cqw;
         border-right: 1.5px solid var(--ink);
       }
       .s-zine .zn-cell:last-child {
         border-right: 0;
-      }
-      .s-zine .zn-cell b {
+      }      .s-zine .zn-cell b {
         display: block;
         font-size: 1.3cqw;
         margin-bottom: 0.5cqw;
@@ -2167,8 +2014,7 @@
       .s-zine .zn-cell span {
         font-size: 1.05cqw;
         color: var(--muted);
-      }
-      .s-zine .zn-cell.acc {
+      }      .s-zine .zn-cell.acc {
         background: var(--acc);
       }
 
@@ -2179,8 +2025,7 @@
         --line: transparent;
         --r-card: 20px;
         --r-big: 26px;
-      }
-      .s-neumorph .nm {
+      }      .s-neumorph .nm {
         padding: 1.4cqw 3.4cqw 0;
       }
       .s-neumorph .nm-slab {
@@ -2190,8 +2035,7 @@
         box-shadow:
           2cqw 2cqw 4cqw color-mix(in oklab, var(--p-ink) 16%, transparent),
           -1.6cqw -1.6cqw 3.4cqw #fff;
-      }
-      .s-neumorph .m-h {
+      }      .s-neumorph .m-h {
         font-size: 5.2cqw;
       }
       .s-neumorph .nm-btn {
@@ -2204,8 +2048,7 @@
         box-shadow:
           1cqw 1cqw 2cqw color-mix(in oklab, var(--p-ink) 18%, transparent),
           -1cqw -1cqw 2cqw #fff;
-      }
-      .s-neumorph .nm-strip {
+      }      .s-neumorph .nm-strip {
         display: flex;
         gap: 1.4cqw;
         margin-top: 1.6cqw;
@@ -2218,8 +2061,7 @@
         box-shadow:
           1cqw 1cqw 2cqw color-mix(in oklab, var(--p-ink) 14%, transparent),
           -0.8cqw -0.8cqw 1.8cqw #fff;
-      }
-      .s-neumorph .nm-strip b {
+      }      .s-neumorph .nm-strip b {
         font-size: 1.9cqw;
         display: block;
         color: var(--pri);
@@ -2236,8 +2078,7 @@
         background-size:
           16.66% 100%,
           100% 25%;
-      }
-      .s-neogrid .ng {
+      }      .s-neogrid .ng {
         position: relative;
         padding: 1.4cqw 3.4cqw 0;
       }
@@ -2246,8 +2087,7 @@
         font-weight: 800;
         letter-spacing: -0.05em;
         line-height: 0.92;
-      }
-      .s-neogrid .ng-h .mark {
+      }      .s-neogrid .ng-h .mark {
         background: var(--pri);
         color: var(--on-pri);
         padding: 0 0.8cqw;
@@ -2257,16 +2097,14 @@
         grid-template-columns: 1fr 1fr 1fr;
         gap: 0;
         margin-top: 2.4cqw;
-      }
-      .s-neogrid .ng-col {
+      }      .s-neogrid .ng-col {
         padding: 0 1.6cqw;
         border-left: 1px solid var(--line2);
       }
       .s-neogrid .ng-col:first-child {
         border-left: 0;
         padding-left: 0;
-      }
-      .s-neogrid .ng-col b {
+      }      .s-neogrid .ng-col b {
         font-size: 1.4cqw;
         display: block;
         margin-bottom: 0.6cqw;
@@ -2275,8 +2113,7 @@
         font-size: 1.1cqw;
         color: var(--muted);
         line-height: 1.5;
-      }
-      .s-neogrid .ng-acc {
+      }      .s-neogrid .ng-acc {
         position: absolute;
         right: 3.4cqw;
         top: 2.2cqw;
@@ -2294,8 +2131,7 @@
         --line: color-mix(in oklab, var(--p-acc) 16%, transparent);
         --line2: color-mix(in oklab, var(--p-acc) 30%, transparent);
         --r-btn: 6px;
-      }
-      .s-cinema::before {
+      }      .s-cinema::before {
         content: "";
         position: absolute;
         inset: 0;
@@ -2320,8 +2156,7 @@
         justify-content: center;
         text-align: center;
         padding: 0 6cqw;
-      }
-      .s-cinema .cn-k {
+      }      .s-cinema .cn-k {
         font-size: 1cqw;
         letter-spacing: 0.42em;
         text-transform: uppercase;
@@ -2334,8 +2169,7 @@
         letter-spacing: 0.02em;
         line-height: 1.05;
         margin: 1.6cqw 0 0;
-      }
-      .s-cinema .cn-h b {
+      }      .s-cinema .cn-h b {
         font-weight: 800;
         letter-spacing: -0.03em;
       }
@@ -2344,8 +2178,7 @@
         height: 1px;
         background: var(--acc);
         margin: 2cqw 0;
-      }
-      .s-cinema .cn-meta {
+      }      .s-cinema .cn-meta {
         position: absolute;
         bottom: 2.2cqw;
         left: 3.4cqw;
@@ -2362,8 +2195,7 @@
       .s-mono {
         --r-btn: 8px;
         --r-card: 12px;
-      }
-      .s-mono .mo {
+      }      .s-mono .mo {
         padding: 1.4cqw 3.6cqw 0;
       }
       .s-mono .mo-h {
@@ -2372,8 +2204,7 @@
         letter-spacing: -0.035em;
         line-height: 1.04;
         max-width: 62%;
-      }
-      .s-mono .mo-h u {
+      }      .s-mono .mo-h u {
         text-decoration: none;
         border-bottom: 2px solid var(--pri);
         padding-bottom: 0.2cqw;
@@ -2382,8 +2213,7 @@
         height: 1px;
         background: var(--line2);
         margin: 2.4cqw 0 1.6cqw;
-      }
-      .s-mono .mo-list {
+      }      .s-mono .mo-list {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 0 3cqw;
@@ -2395,15 +2225,13 @@
         padding: 1.25cqw 0;
         border-bottom: 1px solid var(--line);
         font-size: 1.25cqw;
-      }
-      .s-mono .mo-li .k {
+      }      .s-mono .mo-li .k {
         color: var(--muted);
       }
       .s-mono .mo-li .v {
         font-family: ui-monospace, monospace;
         font-size: 1.15cqw;
-      }
-      .s-mono .m-btn.pri {
+      }      .s-mono .m-btn.pri {
         background: transparent;
         color: var(--pri);
         border: 1.5px solid var(--pri);
@@ -2418,8 +2246,7 @@
         --line2: rgba(22, 19, 16, 0.38);
         --r-btn: 0px;
         --r-card: 0px;
-      }
-      .s-mag .mg {
+      }      .s-mag .mg {
         padding: 1.6cqw 3.6cqw 0;
       }
       .s-mag .mg-top {
@@ -2433,8 +2260,7 @@
         color: var(--muted);
         border-bottom: 1.5px solid var(--ink);
         padding-bottom: 1.2cqw;
-      }
-      .s-mag .mg-h {
+      }      .s-mag .mg-h {
         font-family: Georgia, "Times New Roman", serif;
         font-size: 7.2cqw;
         font-weight: 700;
@@ -2445,8 +2271,7 @@
       .s-mag .mg-h em {
         font-style: italic;
         color: var(--pri);
-      }
-      .s-mag .mg-cols {
+      }      .s-mag .mg-cols {
         column-count: 3;
         column-gap: 2.2cqw;
         column-rule: 1px solid var(--line);
@@ -2456,8 +2281,7 @@
       }
       .s-mag .mg-cols p {
         margin: 0 0 1.2cqw;
-      }
-      .s-mag .mg-drop::first-letter {
+      }      .s-mag .mg-drop::first-letter {
         float: left;
         font-family: Georgia, serif;
         font-size: 7cqw;
@@ -2477,8 +2301,7 @@
         font-style: italic;
         font-size: 1.7cqw;
         color: var(--ink);
-      }
-      .s-mag .mg-pull .m-btn {
+      }      .s-mag .mg-pull .m-btn {
         font-family: inherit;
         font-style: normal;
       }
@@ -2486,13 +2309,10 @@
         background: var(--acc);
         border-radius: 2px;
         padding: 0.8cqw 1.6cqw;
-      }
-
-      /* ---------- 20 Process Rail ---------- */
+      }      /* ---------- 20 Process Rail ---------- */
       .s-rail .rl {
         padding: 1.6cqw 3.6cqw 0;
-      }
-      .s-rail .rl-h {
+      }      .s-rail .rl-h {
         font-size: 4.2cqw;
         letter-spacing: -0.035em;
         margin: 0 0 1cqw;
@@ -2501,8 +2321,7 @@
         font-size: 1.2cqw;
         color: var(--muted);
         margin: 0 0 2cqw;
-      }
-      .s-rail .rl-steps {
+      }      .s-rail .rl-steps {
         position: relative;
         padding-left: 4.4cqw;
       }
@@ -2514,8 +2333,7 @@
         bottom: 1cqw;
         width: 1px;
         background: var(--line2);
-      }
-      .s-rail .rl-step {
+      }      .s-rail .rl-step {
         position: relative;
         display: grid;
         grid-template-columns: 1fr auto;
@@ -2525,8 +2343,7 @@
       }
       .s-rail .rl-step:last-child {
         border-bottom: 0;
-      }
-      .s-rail .rl-step::before {
+      }      .s-rail .rl-step::before {
         content: "";
         position: absolute;
         left: -3.85cqw;
@@ -2541,8 +2358,7 @@
       .s-rail .rl-step b {
         font-size: 1.55cqw;
         letter-spacing: -0.01em;
-      }
-      .s-rail .rl-step span {
+      }      .s-rail .rl-step span {
         grid-column: 1;
         font-size: 1.15cqw;
         color: var(--muted);
@@ -2556,14 +2372,11 @@
         font-style: normal;
         font-size: 1cqw;
         color: var(--pri);
-      }
-
-      /* ---------- 21 Diagonal Split ---------- */
+      }      /* ---------- 21 Diagonal Split ---------- */
       .s-diag {
         position: relative;
         overflow: hidden;
-      }
-      .s-diag .dg-panel {
+      }      .s-diag .dg-panel {
         position: absolute;
         inset: 0;
         background: linear-gradient(
@@ -2581,8 +2394,7 @@
         grid-template-columns: 1.05fr 1fr;
         gap: 2cqw;
         align-items: center;
-      }
-      .s-diag .dg-l {
+      }      .s-diag .dg-l {
         display: grid;
         gap: 1.5cqw;
       }
@@ -2592,8 +2404,7 @@
         gap: 1.2cqw;
         align-content: center;
         padding-left: 6cqw;
-      }
-      .s-diag .dg-big {
+      }      .s-diag .dg-big {
         font-size: 8.4cqw;
         font-weight: 800;
         letter-spacing: -0.05em;
@@ -2603,8 +2414,7 @@
       .s-diag .dg-cap {
         font-size: 1.15cqw;
         color: color-mix(in oklab, var(--acc) 55%, #fff);
-      }
-      .s-diag .dg-stats {
+      }      .s-diag .dg-stats {
         display: flex;
         gap: 2.4cqw;
         margin-top: 1cqw;
@@ -2613,8 +2423,7 @@
         display: block;
         font-size: 2.2cqw;
         color: var(--acc);
-      }
-      .s-diag .dg-stat span {
+      }      .s-diag .dg-stat span {
         font-size: 0.95cqw;
         opacity: 0.8;
       }
@@ -2622,8 +2431,7 @@
       .s-marquee {
         display: flex;
         flex-direction: column;
-      }
-      .s-marquee .mq-body {
+      }      .s-marquee .mq-body {
         padding: 1cqw 3.6cqw 0;
         display: grid;
         gap: 1.4cqw;
@@ -2642,16 +2450,14 @@
         text-transform: uppercase;
         white-space: nowrap;
         overflow: hidden;
-      }
-      .s-marquee .mq-band.acc {
+      }      .s-marquee .mq-band.acc {
         background: var(--pri);
         color: var(--on-pri);
         border-color: var(--pri);
       }
       .s-marquee .mq-band.acc span:nth-child(4n + 1) {
         color: var(--acc);
-      }
-      .s-marquee .mq-band span {
+      }      .s-marquee .mq-band span {
         flex: none;
       }
       .s-marquee .mq-band .dot {
@@ -2660,8 +2466,7 @@
         border-radius: 50%;
         background: currentColor;
         opacity: 0.5;
-      }
-      .s-marquee .mq-foot {
+      }      .s-marquee .mq-foot {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -2674,14 +2479,11 @@
         letter-spacing: -0.04em;
         margin: 0;
         max-width: 15ch;
-      }
-
-      /* ---------- 23 Product Spotlight ---------- */
+      }      /* ---------- 23 Product Spotlight ---------- */
       .s-spot {
         display: grid;
         grid-template-columns: 1fr 1fr;
-      }
-      .s-spot .sp-left {
+      }      .s-spot .sp-left {
         padding: 2.4cqw 3.2cqw;
         display: flex;
         flex-direction: column;
@@ -2698,8 +2500,7 @@
         display: flex;
         align-items: flex-end;
         padding: 2.6cqw;
-      }
-      .s-spot .sp-visual::after {
+      }      .s-spot .sp-visual::after {
         content: "";
         position: absolute;
         inset: 0;
@@ -2717,8 +2518,7 @@
         letter-spacing: 0.14em;
         color: #fff;
         opacity: 0.85;
-      }
-      .s-spot .sp-dots {
+      }      .s-spot .sp-dots {
         display: flex;
         gap: 1cqw;
         align-items: center;
@@ -2729,8 +2529,7 @@
         border-radius: 50%;
         border: 2px solid var(--surf);
         box-shadow: 0 0 0 1px var(--line2);
-      }
-      .s-spot .sp-specs {
+      }      .s-spot .sp-specs {
         display: grid;
         gap: 0.9cqw;
         margin-top: auto;
@@ -2741,24 +2540,20 @@
         font-size: 1.1cqw;
         border-bottom: 1px solid var(--line);
         padding-bottom: 0.8cqw;
-      }
-      .s-spot .sp-spec span {
+      }      .s-spot .sp-spec span {
         color: var(--muted);
       }
       .s-spot .sp-spec b {
         font-family: ui-monospace, monospace;
         font-weight: 500;
-      }
-
-      /* ---------- 24 Mosaic Tile ---------- */
+      }      /* ---------- 24 Mosaic Tile ---------- */
       .s-mosaic .ms {
         display: grid;
         grid-template-columns: 1.5fr 1fr 1fr;
         grid-template-rows: auto auto;
         gap: 1.2cqw;
         padding: 1.2cqw 3.6cqw 0;
-      }
-      .s-mosaic .ms-t {
+      }      .s-mosaic .ms-t {
         border-radius: var(--r-card);
         overflow: hidden;
         position: relative;
@@ -2778,15 +2573,13 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-      }
-      .s-mosaic .ms-hero .m-p {
+      }      .s-mosaic .ms-hero .m-p {
         color: color-mix(in oklab, var(--acc) 60%, #fff);
         font-size: 1.3cqw;
       }
       .s-mosaic .ms-hero .m-h {
         font-size: 3.9cqw;
-      }
-      .s-mosaic .ms-swatch {
+      }      .s-mosaic .ms-swatch {
         padding: 0;
         display: flex;
       }
@@ -2794,14 +2587,12 @@
         flex: 1;
         height: 100%;
         display: block;
-      }
-      .s-mosaic .ms-swatch i:nth-child(2) {
+      }      .s-mosaic .ms-swatch i:nth-child(2) {
         filter: brightness(0.86);
       }
       .s-mosaic .ms-swatch i:nth-child(3) {
         filter: brightness(0.72);
-      }
-      .s-mosaic .ms-swatch i:nth-child(4) {
+      }      .s-mosaic .ms-swatch i:nth-child(4) {
         filter: brightness(0.58);
       }
       .s-mosaic .ms-quote {
@@ -2811,8 +2602,7 @@
         font-size: 1.3cqw;
         font-weight: 650;
         line-height: 1.4;
-      }
-      .s-mosaic .ms-quote b {
+      }      .s-mosaic .ms-quote b {
         display: block;
         font-size: 0.95cqw;
         letter-spacing: 0.12em;
@@ -2829,19 +2619,16 @@
         display: grid;
         gap: 22px;
         grid-template-columns: 1.2fr 1fr;
-      }
-      @media (max-width: 900px) {
+      }      @media (max-width: 900px) {
         .ledger {
           grid-template-columns: 1fr;
-        }
-      }
+        }      }
       .lpanel {
         background: #12161e;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         padding: 18px;
-      }
-      .lpanel h3 {
+      }      .lpanel h3 {
         margin: 0 0 12px;
         font-size: 12px;
         letter-spacing: 0.12em;
@@ -2852,8 +2639,7 @@
       .ltable {
         display: grid;
         gap: 0;
-      }
-      .lhead,
+      }      .lhead,
       .lrow2 {
         display: grid;
         grid-template-columns: 26px 1.5fr 1.5fr 1fr 1fr;
@@ -2862,8 +2648,7 @@
         padding: 8px 0;
         font-size: 12px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-      }
-      .lhead {
+      }      .lhead {
         font-size: 10px;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -2872,8 +2657,7 @@
       }
       .lrow2:last-child {
         border-bottom: 0;
-      }
-      .lrow2 .chipc {
+      }      .lrow2 .chipc {
         width: 22px;
         height: 22px;
         border-radius: 6px;
@@ -2882,8 +2666,7 @@
       .lrow2 .nm {
         font-weight: 650;
         color: #e9edf4;
-      }
-      .lrow2 .role {
+      }      .lrow2 .role {
         color: #8b95a6;
         font-size: 11.5px;
       }
@@ -2891,8 +2674,7 @@
         font-family: ui-monospace, monospace;
         font-size: 11px;
         color: #b9c2d0;
-      }
-      .lrow2 .cmyk {
+      }      .lrow2 .cmyk {
         font-family: ui-monospace, monospace;
         font-size: 10.5px;
         color: #8b95a6;
@@ -2902,8 +2684,7 @@
         font-size: 12px;
         line-height: 1.7;
         color: #8b95a6;
-      }
-      .printnote b {
+      }      .printnote b {
         color: #e9edf4;
       }
       @media (max-width: 640px) {
@@ -2914,6 +2695,325 @@
         .lrow2 .role,
         .lhead span:nth-child(3) {
           display: none;
+        }
+      }      /* ---- new card treatments ---- */
+      .bk-duo {
+        background: linear-gradient(150deg, var(--dark2), var(--pri));
+        color: #fff;
+      }      .bk-duo .bk-mono {
+        color: var(--acc);
+      }
+      .bk-duo .bk-role {
+        color: var(--acc);
+      }      .bk-stripe {
+        background: #fffdf8;
+        color: #14110d;
+        border-left: 6px solid var(--acc);
+      }
+      .bk-stripe .bk-mono {
+        color: var(--pri);
+      }      .bk-stripe .bk-role {
+        color: var(--pri);
+      }
+      /* ---- new monogram treatments ---- */
+      .ks-dot {
+        position: relative;
+      }      .ks-dot::after {
+        content: "";
+        position: absolute;
+        right: -0.08em;
+        bottom: 0.06em;
+        width: 0.18em;
+        height: 0.18em;
+        border-radius: 50%;
+        background: var(--acc);
+      }
+      .ks-underline {
+        position: relative;
+        padding-bottom: 0.1em;
+      }      .ks-underline::after {
+        content: "";
+        position: absolute;
+        left: 0.02em;
+        right: 0.02em;
+        bottom: -0.02em;
+        height: 0.1em;
+        background: var(--acc);
+      }
+      .ks-split {
+        background: linear-gradient(160deg, var(--pri), var(--acc));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }      .ks-stack {
+        display: inline-flex;
+        flex-direction: column;
+        line-height: 0.86;
+      }
+      /* ---- enlarged preview stage ---- */
+      .stage.zoomed {
+        aspect-ratio: 16 / 9;
+        font-size: 2.6cqw;
+      }      .stage .m-h {
+        font-size: 6.4cqw;
+      }
+      .grid.zoomed {
+        grid-template-columns: 1fr;
+      }      .zoombar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 14px;
+      }
+      .zoombar .seg button {
+        padding: 6px 13px;
+      }      .zoombar .hint {
+        font-size: 12px;
+        color: #8b95a6;
+      }
+
+           .s-tabs {
+        background: var(--surf);
+      }      .s-tabs .st-body {
+        padding: 0 4cqw 3.4cqw;
+      }
+      .s-tabs .st-tabs {
+        display: flex;
+        gap: 1cqw;
+        padding: 2.4cqw 4cqw 2.6cqw;
+      }      .s-tabs .st-tab {
+        font-size: 1.35cqw;
+        font-weight: 600;
+        padding: 0.9cqw 1.8cqw;
+        border-radius: 999px;
+        color: var(--muted);
+        border: 1px solid transparent;
+      }
+      .s-tabs .st-tab.on {
+        background: var(--card);
+        color: var(--ink);
+        border-color: var(--line);
+      }
+        padding: 3cqw 4cqw;
+        max-width: 74cqw;
+      }
+      .s-iso {
+        background: var(--surf);
+      }      .s-iso .im-body {
+        display: grid;
+        grid-template-columns: 1fr 1.1fr;
+        align-items: center;
+        padding: 2.4cqw 4cqw;
+      }
+      .s-iso .im-art {
+        display: flex;
+        gap: 2.4cqw;
+        align-items: flex-end;
+        height: 22cqw;
+      }      .s-iso .im-cone {
+        width: 7cqw;
+        height: 14cqw;
+        background: linear-gradient(
+          160deg,
+          var(--pri),
+          color-mix(in oklab, var(--pri) 50%, var(--acc))
+        );
+        clip-path: polygon(50% 0, 100% 34%, 78% 100%, 22% 100%, 0 34%);
+      }
+      .s-iso .im-cone.c2 {
+        height: 18cqw;
+        width: 6cqw;
+      }      .s-iso .im-cone.c3 {
+        height: 11cqw;
+        width: 8cqw;
+      }
+      .s-foil {
+        --surf: #0a0b10;
+        --ink: #fff;
+        --muted: color-mix(in oklab, var(--p-acc) 40%, #fff);
+        --card: #12141c;
+        --line: color-mix(in oklab, var(--p-acc) 18%, transparent);
+        --line2: color-mix(in oklab, var(--p-acc) 32%, transparent);
+      }      .s-foil .fb-body {
+        padding: 3.4cqw 4cqw;
+      }
+      .s-foil .fb-h {
+        background: linear-gradient(
+          120deg,
+          var(--acc),
+          #ffffff 46%,
+          var(--acc)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }      .s-bignum {
+        background: var(--surf);
+      }
+      .s-bignum .bn2-body {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 3.4cqw;
+        align-items: center;
+        padding: 2.4cqw 4cqw;
+      }      .s-bignum .bn2-num {
+        font-size: 20cqw;
+        font-weight: 800;
+        letter-spacing: -0.06em;
+        line-height: 0.8;
+        color: var(--pri);
+      }
+      .s-bignum .bn2-plus {
+        color: var(--acc);
+      }
+      /* ---------- compare mode ---------- */
+      .pin {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line2);
+        background: color-mix(in oklab, var(--card) 88%, transparent);
+        color: var(--ink);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.16s ease;
+      }
+      figure.d,
+      .cardfig,
+      .pcard {
+        position: relative;
+      }
+      figure.d:hover .pin,
+      .cardfig:hover .pin,
+      .pcard:hover .pin,
+      .pin:focus-visible {
+        opacity: 1;
+      }
+      .pin[aria-pressed="true"] {
+        opacity: 1;
+        background: var(--acc);
+        color: var(--on-acc);
+        border-color: transparent;
+      }
+      .cmpbar {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%) translateY(120%);
+        bottom: 16px;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(12, 15, 21, 0.94);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.9);
+        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .cmpbar.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      .cmpbar .cmplabel {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8b95a6;
+        font-weight: 700;
+      }
+      .cmpbar .cmpslot {
+        font-size: 12px;
+        color: #e9edf4;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+      }
+      .cmpbar .cmpslot.empty {
+        color: #5c6675;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        background: transparent;
+      }
+      .cmpbar .seg button {
+        padding: 7px 14px;
+      }
+      .cmpbar .cmpclear {
+        border: none;
+        background: transparent;
+        color: #8b95a6;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 6px 8px;
+      }
+      .cmpbar .cmpclear:hover {
+        color: #fff;
+      }
+      .cmpstage {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: none;
+        grid-template-rows: auto 1fr;
+        background: rgba(6, 8, 12, 0.96);
+        backdrop-filter: blur(18px);
+      }
+      .cmpstage.open {
+        display: grid;
+      }
+      .cmpstage .cmphead {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 26px;
+        border-bottom: 1px solid rgba(255, 255,  255, 0.1);
+      }
+      .cmpstage .cmphead b {
+        font-size: 14px;
+        color: #fff;
+      }
+      .cmpstage .cmphead span {
+        font-size: 12px;
+        color: #8b95a6;
+      }
+      .cmpstage .cmpbody {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+        padding: 22px 26px 26px;
+        overflow: auto;
+      }
+      .cmpstage .cmppane {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+        min-width: 0;
+      }
+      .cmpstage .cmppane .stage {
+        font-size: 1.5cqw;
+      }
+      .cmpstage .cmppane .cmpname {
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .cmpstage .cmppane .cmpdesc {
+        font-size: 12px;
+        line-height: 1.6;
+        color: #8b95a6;
+      }
+      @media (max-width: 900px) {
+        .cmpstage .cmpbody {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -2997,7 +3097,7 @@
           <span class="kicker">01 · Identity</span>
           <h2>Logo workbench — text only</h2>
           <p>
-            Six candidate faces, five monogram treatments. The bar&rsquo;s
+            Eleven candidate faces, eight monogram treatments. The bar&rsquo;s
             <em>Logo face</em> control retypes every wordmark on this page.
             Judge the face and the lockup first, the colour second — a wordmark
             has to survive one colour.
@@ -3024,8 +3124,15 @@
               <span class="ks ks-box">KS</span>
               <span class="ks ks-box ks-ring">KS</span>
               <span class="ks ks-box ks-ghost">KS</span>
+              <span class="ks ks-dot">KS</span>
+              <span class="ks ks-underline">KS</span>
+              <span class="ks ks-split">KS</span>
+              <span class="ks ks-stack">K<span>S</span></span>
             </div>
-            <span class="tag">Plain · boxed · ring · ghost</span>
+            <span class="tag"
+              >Plain · boxed · ring · ghost · dot · underline · split ·
+              stack</span
+            >
           </div>
           <div class="plate plate-accent">
             <span class="tag">Horizontal lockup</span>
@@ -3053,7 +3160,7 @@
       <section class="sec" id="palettes">
         <div class="sechead">
           <span class="kicker">02 · Colour</span>
-          <h2>Colour schemes — 20 directions, five families</h2>
+          <h2>Colour schemes — 25 directions, five families</h2>
           <p>
             Every scheme is built from three values: <b>ink</b> (dark surfaces,
             headings), <b>primary</b> (actions, art field) and <b>accent</b>
@@ -3068,7 +3175,7 @@
       <section class="sec" id="cards">
         <div class="sechead">
           <span class="kicker">03 · Print</span>
-          <h2>Visiting card — six builds</h2>
+          <h2>Visiting card — ten builds</h2>
           <p>
             Cards are 85 &times; 53.5&nbsp;mm. Front carries the mark, name and
             role; back carries the contact ledger. All six read the selected
@@ -3082,13 +3189,27 @@
       <section class="sec" id="web">
         <div class="sechead">
           <span class="kicker">04 · Website</span>
-          <h2>Website directions — 24 languages</h2>
+          <h2>Website directions — 32 languages</h2>
           <p>
-            The same offer in twenty-four design languages, organised by
+            The same offer in twenty-eight design languages, organised by
             category. Each is a live miniature of the real page — nav, hero,
             actions, product data, shade strip — and every one re-tints with the
             palette you picked. Hover states are real; dark mode is real.
           </p>
+        </div>
+        <div class="zoombar">
+          <div class="seg" role="group" aria-label="Preview size">
+            <button type="button" data-zoom="grid" aria-pressed="true">
+              Grid
+            </button>
+            <button type="button" data-zoom="zoomed" aria-pressed="false">
+              Large
+            </button>
+          </div>
+          <span class="hint"
+            >Large renders each direction at full width — the only way to really
+            judge them.</span
+          >
         </div>
         <div id="webgrid"></div>
       </section>
@@ -3115,343 +3236,455 @@
         = card back and role line, primary = product art field.<br />
         <b>After you decide.</b> The chosen palette goes into
         <code>src/app/globals.css</code> and design.md §2.1; the chosen lockup
-        into header, footer, card and favicon. This page, the three older
-        compare pages, and the unused candidate fonts get deleted.
+        into header, footer, card and favicon. This page and the unused
+        candidate fonts get deleted once the palette, the logo face and the web
+        direction are chosen.
       </div>
     </div>
-    <script>
-      // ------------------------------------------------------------------
-      // Colour maths — every ratio on this page is computed, never typed.
-      // ------------------------------------------------------------------
-      const hexToRgb = (hex) => {
-        const h = hex.replace("#", "");
-        return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
-      };
-      const lum = (hex) => {
-        const [r, g, b] = hexToRgb(hex).map((v) => {
-          const c = v / 255;
-          return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-        });
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      };
-      const ratio = (a, b) => {
-        const l1 = lum(a);
-        const l2 = lum(b);
-        const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1];
-        return (hi + 0.05) / (lo + 0.05);
-      };
-      const mix = (hex, other, amount) => {
-        const a = hexToRgb(hex);
-        const b = hexToRgb(other);
-        return (
-          "#" +
-          a
-            .map((v, i) =>
-              Math.round(v + (b[i] - v) * amount)
-                .toString(16)
-                .padStart(2, "0"),
-            )
-            .join("")
-        );
-      };
-      const cmyk = (hex) => {
-        const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
-        const k = 1 - Math.max(r, g, b);
-        const f = (v) => (k >= 1 ? 0 : (1 - v - k) / (1 - k));
-        return [f(r), f(g), f(b), k].map((v) => Math.round(v * 100)).join(" ");
-      };
-      const verdict = (r, big) => {
-        const ok = r >= (big ? 3 : 4.5);
-        return { ok, label: ok ? "AA" : "FAIL", r: r.toFixed(2) + ":1" };
-      };
+    <div class="cmpbar" id="cmpbar" aria-hidden="true">
+      <span class="cmplabel">Compare</span>
+      <span class="cmpslot empty" id="cmpslot-a">empty</span>
+      <span class="cmpslot empty" id="cmpslot-b">empty</span>
+      <div class="seg" role="group" aria-label="Compare actions">
+        <button type="button" id="cmpopen">Open side by side</button>
+      </div>
+      <button type="button" class="cmpclear" id="cmpclear">Clear</button>
+    </div>
+    <div
+      class="cmpstage"
+      id="cmpstage"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Compare"
+    >
+      <div class="cmphead">
+        <b>Compare</b>
+        <span id="cmpsub">side by side, live palette</span>
+        <span style="flex: 1"></span>
+        <button type="button" class="cmpclear" id="cmpclose">Close</button>
+      </div>
+      <div class="cmpbody" id="cmpbody"></div>
+      <script>
+        // ------------------------------------------------------------------
+        // Colour maths — every ratio on this page is computed, never typed.
+        // ------------------------------------------------------------------
+        const hexToRgb = (hex) => {
+          const h = hex.replace("#", "");
+          return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+        };
+        const lum = (hex) => {
+          const [r, g, b] = hexToRgb(hex).map((v) => {
+            const c = v / 255;
+            return c <= 0.03928
+              ? c / 12.92
+              : Math.pow((c + 0.055) / 1.055, 2.4);
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const ratio = (a, b) => {
+          const l1 = lum(a);
+          const l2 = lum(b);
+          const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1];
+          return (hi + 0.05) / (lo + 0.05);
+        };
+        const mix = (hex, other, amount) => {
+          const a = hexToRgb(hex);
+          const b = hexToRgb(other);
+          return (
+            "#" +
+            a
+              .map((v, i) =>
+                Math.round(v + (b[i] - v) * amount)
+                  .toString(16)
+                  .padStart(2, "0"),
+              )
+              .join("")
+          );
+        };
+        const cmyk = (hex) => {
+          const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+          const k = 1 - Math.max(r, g, b);
+          const f = (v) => (k >= 1 ? 0 : (1 - v - k) / (1 - k));
+          return [f(r), f(g), f(b), k]
+            .map((v) => Math.round(v * 100))
+            .join(" ");
+        };
+        const verdict = (r, big) => {
+          const ok = r >= (big ? 3 : 4.5);
+          return { ok, label: ok ? "AA" : "FAIL", r: r.toFixed(2) + ":1" };
+        };
 
-      // ------------------------------------------------------------------
-      // Candidate logo faces — text only, OFL, already on disk.
-      // ------------------------------------------------------------------
-      const FACES = [
-        {
-          id: "grotesk",
-          name: "Space Grotesk",
-          stack: '"Space Grotesk", ui-sans-serif, system-ui, sans-serif',
-          weight: 700,
-          track: "-0.035em",
-          note: "The site's current display face. Tight, engineered, neutral.",
-        },
-        {
-          id: "geist",
-          name: "Geist",
-          stack: '"Geist", ui-sans-serif, system-ui, sans-serif',
-          weight: 700,
-          track: "-0.03em",
-          note: "Software-grade grotesque. Cleanest at small sizes.",
-        },
-        {
-          id: "bricolage",
-          name: "Bricolage Grotesque",
-          stack: '"Bricolage", ui-sans-serif, system-ui, sans-serif',
-          weight: 700,
-          track: "-0.03em",
-          note: "Characterful grotesque — more personality, still modern.",
-        },
-        {
-          id: "fraunces",
-          name: "Fraunces",
-          stack: '"Fraunces", Georgia, serif',
-          weight: 600,
-          track: "-0.02em",
-          note: "Warm, mill-age serif. Reads dye-house and paper.",
-        },
-        {
-          id: "instrument",
-          name: "Instrument Serif",
-          stack: '"Instrument Serif", Georgia, serif',
-          weight: 400,
-          track: "-0.01em",
-          note: "Editorial high-contrast serif. Elegant, less industrial.",
-        },
-        {
-          id: "mono",
-          name: "JetBrains Mono",
-          stack: '"JetBrains Mono", ui-monospace, monospace',
-          weight: 600,
-          track: "-0.01em",
-          note: "Technical ledger mark. Use only if the site goes spec-sheet.",
-        },
-      ];
-      // ------------------------------------------------------------------
-      // Palette library — the owner-locked incumbent plus challengers.
-      // Groups render in this order; each card carries its own --p-*.
-      // ------------------------------------------------------------------
-      const G_LABEL = {
-        blues: "Blues & indigos",
-        warm: "Warm & earthy",
-        green: "Green & natural",
-        vivid: "Vivid & bold",
-        neutral: "Neutral & print",
-      };
-      const PALETTES = [
-        {
-          id: "navy-sky",
-          g: "blues",
-          name: "Navy & Sky",
-          ink: "#0a2540",
-          pri: "#1e3a8a",
-          acc: "#7dd3fc",
-          note: "The locked incumbent. Navy ink, royal action, sky spot. Prints clean, reads corporate, matches the existing card.",
-        },
-        {
-          id: "harbour",
-          g: "blues",
-          name: "Harbour Deep",
-          ink: "#061a2e",
-          pri: "#0e4a8a",
-          acc: "#8fd0ff",
-          note: "The same water, deeper and calmer. Marginally warmer accent than sky; almost no disruption to the current build.",
-        },
-        {
-          id: "indigo",
-          g: "blues",
-          name: "Indigo Ink",
-          ink: "#101935",
-          pri: "#4338ca",
-          acc: "#a5b4fc",
-          note: "Royal navy shifted toward violet. More contemporary than the incumbent, same trust register, stronger on screen.",
-        },
-        {
-          id: "cobalt",
-          g: "blues",
-          name: "Electric Cobalt",
-          ink: "#050b2e",
-          pri: "#1d4ed8",
-          acc: "#60a5fa",
-          note: "Blue but louder and more saturated. High energy, high visibility, slightly less formal — the digital-first option.",
-        },
-        {
-          id: "ocean",
-          g: "blues",
-          name: "Ocean Steel",
-          ink: "#071c2c",
-          pri: "#0369a1",
-          acc: "#7dd3fc",
-          note: "Deeper and cooler than the incumbent, edging toward cyan. Very stable on screen, quietly technical.",
-        },
-        {
-          id: "marigold",
-          g: "warm",
-          name: "Surat Marigold",
-          ink: "#1c1917",
-          pri: "#b45309",
-          acc: "#fbbf24",
-          note: "Textile-industry warmth. Amber reads Indian mill without going saffron. Strong front of card, warm site chrome.",
-        },
-        {
-          id: "terracotta",
-          g: "warm",
-          name: "Clay Terracotta",
-          ink: "#241611",
-          pri: "#c2410c",
-          acc: "#fdba74",
-          note: "Earthy, handmade, tactile. Pairs naturally with the wound-yarn texture direction on the shade card.",
-        },
-        {
-          id: "copper",
-          g: "warm",
-          name: "Slate & Copper",
-          ink: "#0f172a",
-          pri: "#9a3412",
-          acc: "#fdba74",
-          note: "Slate ink under a copper action. Industrial and warm at once — the most mature of the warm set.",
-        },
-        {
-          id: "madder",
-          g: "warm",
-          name: "Madder Thread",
-          ink: "#24120c",
-          pri: "#a8331f",
-          acc: "#d8a03a",
-          note: "Madder root is one of the oldest textile dyes in Gujarat. The sharpest break from the category — every competitor is blue.",
-        },
-        {
-          id: "sandstone",
-          g: "warm",
-          name: "Sandstone Ledger",
-          ink: "#211a12",
-          pri: "#8a6a2f",
-          acc: "#e6c877",
-          note: "Ink-brown with old-gold. Reads archival, like a ledger of lots — quiet and expensive, never flashy.",
-        },
-        {
-          id: "forest",
-          g: "green",
-          name: "Forest Loom",
-          ink: "#0b1f17",
-          pri: "#15803d",
-          acc: "#86efac",
-          note: "Green reads natural fibre and sustainability — the safest possible signal for EU export buyers.",
-        },
-        {
-          id: "teal",
-          g: "green",
-          name: "Deep Teal",
-          ink: "#062b2e",
-          pri: "#0f766e",
-          acc: "#5eead4",
-          note: "Cool, clean, slightly technical. Differentiates hard from every other yarn dealer without leaving the cool family.",
-        },
-        {
-          id: "olive",
-          g: "green",
-          name: "Olive Mill",
-          ink: "#171a0f",
-          pri: "#4d7c0f",
-          acc: "#bef264",
-          note: "Mossy and industrial. The lime spot is loud, but the ink is quiet enough to hold it — a young, mill-floor palette.",
-        },
-        {
-          id: "crimson",
-          g: "vivid",
-          name: "Crimson Thread",
-          ink: "#2a0a12",
-          pri: "#9f1239",
-          acc: "#fda4af",
-          note: "Dyed-yarn confidence. The rose accent keeps it from going aggressive; heavy and memorable in print.",
-        },
-        {
-          id: "violet",
-          g: "vivid",
-          name: "Royal Violet",
-          ink: "#1a1033",
-          pri: "#6d28d9",
-          acc: "#c4b5fd",
-          note: "Bold and modern, reads more software than textile. Sharpest pick if the goal is to look new rather than traditional.",
-        },
-        {
-          id: "plum",
-          g: "vivid",
-          name: "Plum Press",
-          ink: "#1f0a1c",
-          pri: "#86198f",
-          acc: "#f0abfc",
-          note: "Deep magenta-plum with a candy spot. Fashion-adjacent — strong for garment and hosiery buyers, riskier for trading desks.",
-        },
-        {
-          id: "signal",
-          g: "vivid",
-          name: "Signal Amber",
-          ink: "#141719",
-          pri: "#9e5508",
-          acc: "#f2b33d",
-          note: "Safety-amber is the colour of dye-house signage and machinery. Reads engineered and exact, never decorative.",
-        },
-        {
-          id: "carbon",
-          g: "neutral",
-          name: "Carbon Mono",
-          ink: "#0a0a0a",
-          pri: "#262626",
-          acc: "#a3a3a3",
-          note: "Fully neutral. The logo becomes the only colour in the system — maximum print flexibility, zero personality risk.",
-        },
-        {
-          id: "lime",
-          g: "neutral",
-          name: "Graphite & Lime",
-          ink: "#101315",
-          pri: "#365314",
-          acc: "#a3e635",
-          note: "Graphite chrome with a single acid-lime signal. Contemporary and technical — the accent is used as pure signal.",
-        },
-        {
-          id: "slate",
-          g: "neutral",
-          name: "Restrained Slate",
-          ink: "#14110d",
-          pri: "#3f3f46",
-          acc: "#d4d4d8",
-          note: "Almost no colour — one grey action and a silver spot. The logo and the shades carry everything. Safest for print.",
-        },
-      ];
-      // ------------------------------------------------------------------
-      // DOM handles
-      // ------------------------------------------------------------------
-      const root = document.documentElement;
-      const strip = document.getElementById("palette-strip");
-      const groupsEl = document.getElementById("palette-groups");
-      const detailEl = document.getElementById("palette-detail");
-      const ledgerEl = document.getElementById("print-ledger");
-      const matrixEl = document.getElementById("logo-matrix");
-      const faceSelect = document.getElementById("face-select");
-      const faceLabel = document.getElementById("logo-face-label");
-      const cardsEl = document.getElementById("cardstudio");
-      const webEl = document.getElementById("webgrid");
+        // ------------------------------------------------------------------
+        // Candidate logo faces — text only, OFL, already on disk.
+        // ------------------------------------------------------------------
+        const FACES = [
+          {
+            id: "grotesk",
+            name: "Space Grotesk",
+            stack: '"Space Grotesk", ui-sans-serif, system-ui, sans-serif',
+            weight: 700,
+            track: "-0.035em",
+            note: "The site's current display face, now loading the real Space Grotesk. Tight, engineered, neutral.",
+          },
+          {
+            id: "geist",
+            name: "Geist",
+            stack: '"Geist", ui-sans-serif, system-ui, sans-serif',
+            weight: 700,
+            track: "-0.03em",
+            note: "Software-grade grotesque. Cleanest at small sizes.",
+          },
+          {
+            id: "bricolage",
+            name: "Bricolage Grotesque",
+            stack: '"Bricolage", ui-sans-serif, system-ui, sans-serif',
+            weight: 700,
+            track: "-0.03em",
+            note: "Characterful grotesque — more personality, still modern.",
+          },
+          {
+            id: "fraunces",
+            name: "Fraunces",
+            stack: '"Fraunces", Georgia, serif',
+            weight: 600,
+            track: "-0.02em",
+            note: "Warm, mill-age serif. Reads dye-house and paper.",
+          },
+          {
+            id: "instrument",
+            name: "Instrument Serif",
+            stack: '"Instrument Serif", Georgia, serif',
+            weight: 400,
+            track: "-0.01em",
+            note: "Editorial high-contrast serif. Elegant, less industrial.",
+          },
+          {
+            id: "mono",
+            name: "JetBrains Mono",
+            stack: '"JetBrains Mono", ui-monospace, monospace',
+            weight: 600,
+            track: "-0.01em",
+            note: "Technical ledger mark. Use only if the site goes spec-sheet.",
+          },
+          {
+            id: "sora",
+            name: "Sora",
+            stack: "Sora, ui-sans-serif, system-ui, sans-serif",
+            weight: 700,
+            track: "-0.03em",
+            note: "Geometric and open. Reads modern and friendly.",
+          },
+          {
+            id: "geist-mono",
+            name: "Geist Mono",
+            stack: "Geist Mono, ui-monospace, monospace",
+            weight: 600,
+            track: "-0.01em",
+            note: "A cleaner technical mono than JetBrains. Spec-sheet feel.",
+          },
+          {
+            id: "plex",
+            name: "IBM Plex Mono",
+            stack: "IBM Plex Mono, ui-monospace, monospace",
+            weight: 500,
+            track: "-0.01em",
+            note: "The site mono. Softer than JetBrains, ties the kit to the app.",
+          },
+          {
+            id: "fraunces-italic",
+            name: "Fraunces Italic",
+            stack: "Fraunces, Georgia, serif",
+            weight: 600,
+            track: "-0.02em",
+            note: "Editorial italic. Warm, mill-age character with a flourish.",
+          },
+          {
+            id: "instrument-italic",
+            name: "Instrument Italic",
+            stack: "Instrument Serif, Georgia, serif",
+            weight: 400,
+            track: "-0.01em",
+            note: "High-contrast italic serif. Elegant, fashion-adjacent.",
+          },
+        ];
+        // ------------------------------------------------------------------
+        // Palette library — the owner-locked incumbent plus challengers.
+        // Groups render in this order; each card carries its own --p-*.
+        // ------------------------------------------------------------------
+        const G_LABEL = {
+          blues: "Blues & indigos",
+          warm: "Warm & earthy",
+          green: "Green & natural",
+          vivid: "Vivid & bold",
+          neutral: "Neutral & print",
+        };
+        const PALETTES = [
+          {
+            id: "navy-sky",
+            g: "blues",
+            name: "Navy & Sky",
+            ink: "#0a2540",
+            pri: "#1e3a8a",
+            acc: "#7dd3fc",
+            note: "The locked incumbent. Navy ink, royal action, sky spot. Prints clean, reads corporate, matches the existing card.",
+          },
+          {
+            id: "harbour",
+            g: "blues",
+            name: "Harbour Deep",
+            ink: "#061a2e",
+            pri: "#0e4a8a",
+            acc: "#8fd0ff",
+            note: "The same water, deeper and calmer. Marginally warmer accent than sky; almost no disruption to the current build.",
+          },
+          {
+            id: "indigo",
+            g: "blues",
+            name: "Indigo Ink",
+            ink: "#101935",
+            pri: "#4338ca",
+            acc: "#a5b4fc",
+            note: "Royal navy shifted toward violet. More contemporary than the incumbent, same trust register, stronger on screen.",
+          },
+          {
+            id: "cobalt",
+            g: "blues",
+            name: "Electric Cobalt",
+            ink: "#050b2e",
+            pri: "#1d4ed8",
+            acc: "#60a5fa",
+            note: "Blue but louder and more saturated. High energy, high visibility, slightly less formal — the digital-first option.",
+          },
+          {
+            id: "ocean",
+            g: "blues",
+            name: "Ocean Steel",
+            ink: "#071c2c",
+            pri: "#0369a1",
+            acc: "#7dd3fc",
+            note: "Deeper and cooler than the incumbent, edging toward cyan. Very stable on screen, quietly technical.",
+          },
+          {
+            id: "marigold",
+            g: "warm",
+            name: "Surat Marigold",
+            ink: "#1c1917",
+            pri: "#b45309",
+            acc: "#fbbf24",
+            note: "Textile-industry warmth. Amber reads Indian mill without going saffron. Strong front of card, warm site chrome.",
+          },
+          {
+            id: "terracotta",
+            g: "warm",
+            name: "Clay Terracotta",
+            ink: "#241611",
+            pri: "#c2410c",
+            acc: "#fdba74",
+            note: "Earthy, handmade, tactile. Pairs naturally with the wound-yarn texture direction on the shade card.",
+          },
+          {
+            id: "copper",
+            g: "warm",
+            name: "Slate & Copper",
+            ink: "#0f172a",
+            pri: "#9a3412",
+            acc: "#fdba74",
+            note: "Slate ink under a copper action. Industrial and warm at once — the most mature of the warm set.",
+          },
+          {
+            id: "madder",
+            g: "warm",
+            name: "Madder Thread",
+            ink: "#24120c",
+            pri: "#a8331f",
+            acc: "#d8a03a",
+            note: "Madder root is one of the oldest textile dyes in Gujarat. The sharpest break from the category — every competitor is blue.",
+          },
+          {
+            id: "sandstone",
+            g: "warm",
+            name: "Sandstone Ledger",
+            ink: "#211a12",
+            pri: "#8a6a2f",
+            acc: "#e6c877",
+            note: "Ink-brown with old-gold. Reads archival, like a ledger of lots — quiet and expensive, never flashy.",
+          },
+          {
+            id: "forest",
+            g: "green",
+            name: "Forest Loom",
+            ink: "#0b1f17",
+            pri: "#15803d",
+            acc: "#86efac",
+            note: "Green reads natural fibre and sustainability — the safest possible signal for EU export buyers.",
+          },
+          {
+            id: "teal",
+            g: "green",
+            name: "Deep Teal",
+            ink: "#062b2e",
+            pri: "#0f766e",
+            acc: "#5eead4",
+            note: "Cool, clean, slightly technical. Differentiates hard from every other yarn dealer without leaving the cool family.",
+          },
+          {
+            id: "olive",
+            g: "green",
+            name: "Olive Mill",
+            ink: "#171a0f",
+            pri: "#4d7c0f",
+            acc: "#bef264",
+            note: "Mossy and industrial. The lime spot is loud, but the ink is quiet enough to hold it — a young, mill-floor palette.",
+          },
+          {
+            id: "crimson",
+            g: "vivid",
+            name: "Crimson Thread",
+            ink: "#2a0a12",
+            pri: "#9f1239",
+            acc: "#fda4af",
+            note: "Dyed-yarn confidence. The rose accent keeps it from going aggressive; heavy and memorable in print.",
+          },
+          {
+            id: "violet",
+            g: "vivid",
+            name: "Royal Violet",
+            ink: "#1a1033",
+            pri: "#6d28d9",
+            acc: "#c4b5fd",
+            note: "Bold and modern, reads more software than textile. Sharpest pick if the goal is to look new rather than traditional.",
+          },
+          {
+            id: "plum",
+            g: "vivid",
+            name: "Plum Press",
+            ink: "#1f0a1c",
+            pri: "#86198f",
+            acc: "#f0abfc",
+            note: "Deep magenta-plum with a candy spot. Fashion-adjacent — strong for garment and hosiery buyers, riskier for trading desks.",
+          },
+          {
+            id: "signal",
+            g: "vivid",
+            name: "Signal Amber",
+            ink: "#141719",
+            pri: "#9e5508",
+            acc: "#f2b33d",
+            note: "Safety-amber is the colour of dye-house signage and machinery. Reads engineered and exact, never decorative.",
+          },
+          {
+            id: "carbon",
+            g: "neutral",
+            name: "Carbon Mono",
+            ink: "#0a0a0a",
+            pri: "#262626",
+            acc: "#a3a3a3",
+            note: "Fully neutral. The logo becomes the only colour in the system — maximum print flexibility, zero personality risk.",
+          },
+          {
+            id: "lime",
+            g: "neutral",
+            name: "Graphite & Lime",
+            ink: "#101315",
+            pri: "#365314",
+            acc: "#a3e635",
+            note: "Graphite chrome with a single acid-lime signal. Contemporary and technical — the accent is used as pure signal.",
+          },
+          {
+            id: "slate",
+            g: "neutral",
+            name: "Restrained Slate",
+            ink: "#14110d",
+            pri: "#3f3f46",
+            acc: "#d4d4d8",
+            note: "Almost no colour — one grey action and a silver spot. The logo and the shades carry everything. Safest for print.",
+          },
+          {
+            id: "storm",
+            g: "blues",
+            name: "Storm Graphite",
+            ink: "#151a21",
+            pri: "#4a6c8c",
+            acc: "#a8c6e0",
+            note: "Overcast and steady. The blue is desaturated, so it reads serious without going corporate navy.",
+          },
+          {
+            id: "cornflower",
+            g: "blues",
+            name: "Cornflower Field",
+            ink: "#0e1f42",
+            pri: "#3b6fd4",
+            acc: "#9fc2f7",
+            note: "Brighter and friendlier than the incumbent. Picks up daylight instead of the boardroom.",
+          },
+          {
+            id: "midnight-sun",
+            g: "vivid",
+            name: "Midnight Sun",
+            ink: "#0d0f1e",
+            pri: "#312e81",
+            acc: "#fbbf24",
+            note: "Indigo night with a single gold spot. Premium and Indian-luxury adjacent — strong for export markets.",
+          },
+          {
+            id: "cocoa",
+            g: "warm",
+            name: "Cocoa & Cream",
+            ink: "#1e130b",
+            pri: "#8a4b22",
+            acc: "#f0d9b8",
+            note: "Soft, chocolatey brown with cream. Warm and approachable, different from every red-orange direction.",
+          },
+          {
+            id: "ink-rose",
+            g: "vivid",
+            name: "Ink & Rose",
+            ink: "#171019",
+            pri: "#5b2a52",
+            acc: "#f7b8d0",
+            note: "Muted plum-ink with a rose spot. Fashion-adjacent but restrained — less candy than Plum Press.",
+          },
+        ];
+        // ------------------------------------------------------------------
+        // DOM handles
+        // ------------------------------------------------------------------
+        const root = document.documentElement;
+        const strip = document.getElementById("palette-strip");
+        const groupsEl = document.getElementById("palette-groups");
+        const detailEl = document.getElementById("palette-detail");
+        const ledgerEl = document.getElementById("print-ledger");
+        const matrixEl = document.getElementById("logo-matrix");
+        const faceSelect = document.getElementById("face-select");
+        const faceLabel = document.getElementById("logo-face-label");
+        const cardsEl = document.getElementById("cardstudio");
+        const webEl = document.getElementById("webgrid");
 
-      const SHADES = [
-        "#FFA500",
-        "#FFD700",
-        "#4DD0E1",
-        "#00838F",
-        "#7B1F3A",
-        "#43A047",
-        "#E91E63",
-        "#3949AB",
-      ];
+        const SHADES = [
+          "#FFA500",
+          "#FFD700",
+          "#4DD0E1",
+          "#00838F",
+          "#7B1F3A",
+          "#43A047",
+          "#E91E63",
+          "#3949AB",
+        ];
 
-      let currentFace = FACES[0];
-      let currentPalette = PALETTES[0];
+        let currentFace = FACES[0];
+        let currentPalette = PALETTES[0];
 
-      // ------------------------------------------------------------------
-      // Logo workbench
-      // ------------------------------------------------------------------
-      function faceStyle(f) {
-        return `font-family:${f.stack};font-weight:${f.weight};letter-spacing:${f.track}`;
-      }
-
-      function renderLogoMatrix() {
-        matrixEl.innerHTML = FACES.map((f) => {
-          const on = f.id === currentFace.id;
-          return `<div class="facecard"${
-            on ? ' style="border-color:#f2f5fa"' : ""
-          }>
+        // ------------------------------------------------------------------
+        // Logo workbench
+        // ------------------------------------------------------------------
+        function faceStyle(f) {
+          return `font-family:${f.stack};font-weight:${f.weight};letter-spacing:${f.track}`;
+        }
+        function renderLogoMatrix() {
+          matrixEl.innerHTML = FACES.map((f) => {
+            const on = f.id === currentFace.id;
+            return `<div class="facecard"${
+              on ? ' style="border-color:#f2f5fa"' : ""
+            }>
             <div class="fstage">
               <span class="fname" style="${faceStyle(f)}">Kataria Syntex</span>
               <span style="display:flex;align-items:center;gap:14px">
@@ -3471,57 +3704,53 @@
               <span>${on ? "selected" : "click to select"}</span>
             </div>
           </div>`;
-        }).join("");
-        matrixEl.querySelectorAll(".facecard").forEach((el, i) => {
-          el.style.cursor = "pointer";
-          el.addEventListener("click", () => applyFace(FACES[i]));
+          }).join("");
+          matrixEl.querySelectorAll(".facecard").forEach((el, i) => {
+            el.style.cursor = "pointer";
+            el.addEventListener("click", () => applyFace(FACES[i]));
+          });
+        }
+
+        function applyFace(f) {
+          currentFace = f;
+          root.style.setProperty("--logo-display", f.stack);
+          root.style.setProperty("--logo-weight", f.weight);
+          root.style.setProperty("--logo-track", f.track);
+          faceLabel.textContent = f.name;
+          faceSelect.value = f.id;
+          renderLogoMatrix();
+          renderCards();
+        }
+        faceSelect.innerHTML = FACES.map(
+          (f) => `<option value="${f.id}">${f.name}</option>`,
+        ).join("");
+        faceSelect.addEventListener("change", () => {
+          const f = FACES.find((x) => x.id === faceSelect.value);
+          if (f) applyFace(f);
         });
-      }
-
-      function applyFace(f) {
-        currentFace = f;
-        root.style.setProperty("--logo-display", f.stack);
-        root.style.setProperty("--logo-weight", f.weight);
-        root.style.setProperty("--logo-track", f.track);
-        faceLabel.textContent = f.name;
-        faceSelect.value = f.id;
-        renderLogoMatrix();
-        renderCards();
-      }
-
-      faceSelect.innerHTML = FACES.map(
-        (f) => `<option value="${f.id}">${f.name}</option>`,
-      ).join("");
-      faceSelect.addEventListener("change", () => {
-        const f = FACES.find((x) => x.id === faceSelect.value);
-        if (f) applyFace(f);
-      });
-      // ------------------------------------------------------------------
-      // Palette strip + library
-      // ------------------------------------------------------------------
-      function stripChip(p) {
-        return `<button type="button" class="chip" data-palette="${p.id}" aria-pressed="false">
+        // ------------------------------------------------------------------
+        // Palette strip + library
+        // ------------------------------------------------------------------
+        function stripChip(p) {
+          return `<button type="button" class="chip" data-palette="${p.id}" aria-pressed="false">
           <i style="background:${p.pri}"></i><i class="dot2" style="background:${p.acc}"></i>${p.name}
-        </button>`;
-      }
+        </div>`;
+        }
+        function renderStrip() {
+          const order = ["blues", "warm", "green", "vivid", "neutral"];
+          strip.innerHTML = order
+            .map(
+              (g) =>
+                `<span class="glabel">${G_LABEL[g]}</span>` +
+                PALETTES.filter((p) => p.g === g)
+                  .map(stripChip)
+                  .join(""),
+            )
+            .join("");
+        }
 
-      function renderStrip() {
-        const order = ["blues", "warm", "green", "vivid", "neutral"];
-        strip.innerHTML = order
-          .map(
-            (g) =>
-              `<span class="glabel">${G_LABEL[g]}</span>` +
-              PALETTES.filter((p) => p.g === g)
-                .map(stripChip)
-                .join(""),
-          )
-          .join("");
-      }
-
-      function paletteCard(p) {
-        return `<button type="button" class="pcard ptheme" data-palette="${p.id}" aria-pressed="false"
-          style="--p-ink:${p.ink};--p-pri:${p.pri};--p-acc:${p.acc}">
-          <span class="prev">
+        function palettePreview(p) {
+          return `<span class="prev">
             <span class="prev-nav">
               <span class="prev-brand">Kataria Syntex</span>
               <span class="prev-pill">Enquire</span>
@@ -3534,60 +3763,65 @@
               <i style="background:${p.acc}"></i>
               <i style="background:${mix(p.pri, "#ffffff", 0.86)}"></i>
             </span>
-          </span>
+          </span>`;
+        }
+        function paletteCard(p) {
+          return `<div role="button" tabindex="0" class="pcard ptheme" data-palette="${p.id}" aria-pressed="false"
+          style="--p-ink:${p.ink};--p-pri:${p.pri};--p-acc:${p.acc}">
+          <button type="button" class="pin" data-cmp data-kind="palette" data-name="${p.name}" data-palette="${p.id}" aria-pressed="false">Compare</button>
+          ${palettePreview(p)}
           <span class="pmeta">
             <span class="ptop"><b>${p.name}</b><span class="phex">${p.ink} · ${p.pri} · ${p.acc}</span></span>
             <span class="pnote">${p.note}</span>
           </span>
-        </button>`;
-      }
+        </div>`;
+        }
+        function renderGroups() {
+          const order = ["blues", "warm", "green", "vivid", "neutral"];
+          groupsEl.innerHTML = order
+            .map(
+              (g) =>
+                `<div class="pgroup"><h3>${G_LABEL[g]}</h3><div class="pcards">` +
+                PALETTES.filter((p) => p.g === g)
+                  .map(paletteCard)
+                  .join("") +
+                `</div></div>`,
+            )
+            .join("");
+        }
 
-      function renderGroups() {
-        const order = ["blues", "warm", "green", "vivid", "neutral"];
-        groupsEl.innerHTML = order
-          .map(
-            (g) =>
-              `<div class="pgroup"><h3>${G_LABEL[g]}</h3><div class="pcards">` +
-              PALETTES.filter((p) => p.g === g)
-                .map(paletteCard)
-                .join("") +
-              `</div></div>`,
-          )
-          .join("");
-      }
-
-      function renderDetail(p) {
-        const surf = mix(p.pri, "#ffffff", 0.94);
-        const dark = mix(p.ink, "#000000", 0.2);
-        const muted = mix(p.ink, "#ffffff", 0.32);
-        const rows = [
-          ["Headings on page", p.ink, surf, "body"],
-          ["Body copy on page", muted, surf, "body"],
-          ["Body copy on card", muted, "#ffffff", "body"],
-          ["White on primary", "#ffffff", p.pri, "body"],
-          ["Accent on ink", p.acc, dark, "big"],
-          ["Accent body on ink", mix(p.acc, "#ffffff", 0.48), dark, "body"],
-          ["Hairline vs surface", mix(p.ink, surf, 0.86), surf, "decor"],
-        ];
-        const worst = rows
-          .filter((r) => r[3] === "body")
-          .map((r) => ratio(r[1], r[2]))
-          .reduce((a, b) => Math.min(a, b), 99);
-        const ramp = [
-          p.ink,
-          mix(p.ink, p.pri, 0.34),
-          mix(p.ink, p.pri, 0.67),
-          p.pri,
-          mix(p.pri, p.acc, 0.5),
-          p.acc,
-        ];
-        const sw = (name, hex, ink) =>
-          `<div class="sw" style="background:${hex};color:${ink}">
+        function renderDetail(p) {
+          const surf = mix(p.pri, "#ffffff", 0.94);
+          const dark = mix(p.ink, "#000000", 0.2);
+          const muted = mix(p.ink, "#ffffff", 0.32);
+          const rows = [
+            ["Headings on page", p.ink, surf, "body"],
+            ["Body copy on page", muted, surf, "body"],
+            ["Body copy on card", muted, "#ffffff", "body"],
+            ["White on primary", "#ffffff", p.pri, "body"],
+            ["Accent on ink", p.acc, dark, "big"],
+            ["Accent body on ink", mix(p.acc, "#ffffff", 0.48), dark, "body"],
+            ["Hairline vs surface", mix(p.ink, surf, 0.86), surf, "decor"],
+          ];
+          const worst = rows
+            .filter((r) => r[3] === "body")
+            .map((r) => ratio(r[1], r[2]))
+            .reduce((a, b) => Math.min(a, b), 99);
+          const ramp = [
+            p.ink,
+            mix(p.ink, p.pri, 0.34),
+            mix(p.ink, p.pri, 0.67),
+            p.pri,
+            mix(p.pri, p.acc, 0.5),
+            p.acc,
+          ];
+          const sw = (name, hex, ink) =>
+            `<div class="sw" style="background:${hex};color:${ink}">
             <b>${name}</b>
             <div><code style="display:block">${hex.toUpperCase()}</code><span>CMYK ${cmyk(hex)}</span></div>
           </div>`;
 
-        detailEl.innerHTML = `
+          detailEl.innerHTML = `
           <div>
             <h3>${p.name}</h3>
             <p class="sub"><em>${G_LABEL[p.g]}</em> — ${p.note}</p>
@@ -3661,29 +3895,28 @@
               <div class="prow"><i style="background:${p.acc}"></i>Accent<span>${cmyk(p.acc)}</span></div>
             </div>
           </div>`;
-      }
-      // ------------------------------------------------------------------
-      // Apply palette + print ledger
-      // ------------------------------------------------------------------
-      function renderLedger(p) {
-        const rows = [
-          ["Ink", "Headings, dark bands, card front", p.ink],
-          ["Primary", "Buttons, links, kickers, art field", p.pri],
-          ["Accent", "Numbers, tags, buttons on dark", p.acc],
-          ["Surface", "Cards, panels, inputs", mix(p.pri, "#ffffff", 0.94)],
-          [
-            "Surface alt",
-            "Recessed bands, art plates",
-            mix(p.pri, "#ffffff", 0.87),
-          ],
-          ["Muted", "Body copy on light", mix(p.ink, "#ffffff", 0.6)],
-          [
-            "Dark solid",
-            "Footer, card front (deepened ink)",
-            mix(p.ink, "#000000", 0.2),
-          ],
-        ];
-        ledgerEl.innerHTML = `
+        } // ------------------------------------------------------------------
+        // Apply palette + print ledger
+        // ------------------------------------------------------------------
+        function renderLedger(p) {
+          const rows = [
+            ["Ink", "Headings, dark bands, card front", p.ink],
+            ["Primary", "Buttons, links, kickers, art field", p.pri],
+            ["Accent", "Numbers, tags, buttons on dark", p.acc],
+            ["Surface", "Cards, panels, inputs", mix(p.pri, "#ffffff", 0.94)],
+            [
+              "Surface alt",
+              "Recessed bands, art plates",
+              mix(p.pri, "#ffffff", 0.87),
+            ],
+            ["Muted", "Body copy on light", mix(p.ink, "#ffffff", 0.6)],
+            [
+              "Dark solid",
+              "Footer, card front (deepened ink)",
+              mix(p.ink, "#000000", 0.2),
+            ],
+          ];
+          ledgerEl.innerHTML = `
           <div class="lpanel">
             <h3>Token ledger — ${p.name}</h3>
             <div class="ltable">
@@ -3706,7 +3939,8 @@
             <div class="printnote" style="margin-top: 0">
               <b>Front.</b> Dark solid = ink deepened (<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px">${mix(p.ink, "#000000", 0.2).toUpperCase()}</code>), name white, role + logo spot in accent.<br />
               <b>Back.</b> Accent tint field, ink mono text.<br />
-              <b>Approx CMYK.</b> Ink ${cmyk(p.ink)} · Primary ${cmyk(p.pri)} · Accent ${cmyk(p.acc)}.<br />
+              <b>Approx CMYK.</b> Ink ${cmyk(p.ink)} · Primary ${cmyk(p.pri)} · Accent ${cmyk(p.acc)}
+      .<br />
               <b>Rule.</b> One solid + one spot. Never more than two inks on the physical card. These numbers are screen conversions — <b>lock the recipe with a physical proof before any print run</b>. On screen, hex is exact.
             </div>
             <div class="ramp" style="margin-top: 16px">
@@ -3716,136 +3950,205 @@
             </div>
             <div class="rampcap"><span>solid</span><span>action</span><span>spot</span></div>
           </div>`;
-      }
-
-      function applyPalette(p) {
-        currentPalette = p;
-        root.style.setProperty("--p-ink", p.ink);
-        root.style.setProperty("--p-pri", p.pri);
-        root.style.setProperty("--p-acc", p.acc);
-        document.querySelectorAll("[data-palette]").forEach((el) => {
-          el.setAttribute("aria-pressed", String(el.dataset.palette === p.id));
-        });
-        renderDetail(p);
-        renderLedger(p);
-      }
-
-      strip.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-palette]");
-        if (!btn) return;
-        const p = PALETTES.find((x) => x.id === btn.dataset.palette);
-        if (p) applyPalette(p);
-      });
-      groupsEl.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-palette]");
-        if (!btn) return;
-        const p = PALETTES.find((x) => x.id === btn.dataset.palette);
-        if (p) {
-          applyPalette(p);
-          document.getElementById("palettes").scrollIntoView();
         }
-      });
-      // ------------------------------------------------------------------
-      // Card studio — six front/back builds. Real copy, real sizes.
-      // ------------------------------------------------------------------
-      const LEDGER = `<div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
+        function applyPalette(p) {
+          currentPalette = p;
+          root.style.setProperty("--p-ink", p.ink);
+          root.style.setProperty("--p-pri", p.pri);
+          root.style.setProperty("--p-acc", p.acc);
+          document.querySelectorAll("[data-palette]").forEach((el) => {
+            el.setAttribute(
+              "aria-pressed",
+              String(el.dataset.palette === p.id),
+            );
+          });
+          renderDetail(p);
+          renderLedger(p);
+        }
+
+        strip.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-palette]");
+          if (!btn) return;
+          const p = PALETTES.find((x) => x.id === btn.dataset.palette);
+          if (p) applyPalette(p);
+        });
+        groupsEl.addEventListener("keydown", (event) => {
+          const card = event.target.closest(".pcard");
+          if (!card) return;
+          if (event.key !== "Enter" && event.key !== " ") return;
+          if (event.target.closest("[data-cmp]")) return;
+          event.preventDefault();
+          card.click();
+        });
+        groupsEl.addEventListener("click", (event) => {
+          if (event.target.closest("[data-cmp]")) return;
+          const btn = event.target.closest("[data-palette]");
+          if (!btn) return;
+          const p = PALETTES.find((x) => x.id === btn.dataset.palette);
+          if (p) {
+            applyPalette(p);
+            document.getElementById("palettes").scrollIntoView();
+          }
+        });
+        // ------------------------------------------------------------------
+        // Card studio — six front/back builds. Real copy, real sizes.
+        // ------------------------------------------------------------------
+        const LEDGER = `<div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
         <div class="bk-line" style="opacity: 0.68">Surat, Gujarat, India</div>`;
 
-      const CARDS = [
-        {
-          name: "Classic Navy",
-          desc: "The incumbent treatment — solid front, accent back, mono ledger.",
-          front: `<div class="bk bk-front">
+        const CARDS = [
+          {
+            name: "Classic Navy",
+            desc: "The incumbent treatment — solid front, accent back, mono ledger.",
+            front: `<div class="bk bk-front">
             <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip">Est. 2004</span></div>
             <div><div class="bk-word">Kataria Syntex</div>
             <div class="bk-role" style="margin-top: 6px">Yarn sourcing · Surat</div></div>
             <div class="bk-rule"></div>
           </div>`,
-          back: `<div class="bk bk-back">
+            back: `<div class="bk bk-back">
             <div class="bk-top"><span class="bk-word" style="font-size: 11px">Kataria Syntex</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
             ${LEDGER}
           </div>`,
-        },
-        {
-          name: "Split Diagonal",
-          desc: "Dark mark panel cut on a diagonal; wordmark holds the paper side.",
-          front: `<div class="bk bk-split">
+          },
+          {
+            name: "Split Diagonal",
+            desc: "Dark mark panel cut on a diagonal; wordmark holds the paper side.",
+            front: `<div class="bk bk-split">
             <div class="bk-top" style="position: absolute; left: 16px; top: 15px"><span class="bk-mono">KS</span></div>
             <div style="padding-left: 46%"><div class="bk-word">Kataria Syntex</div>
             <div class="bk-role" style="margin-top: 5px">Yarn sourcing</div></div>
             <div class="bk-line" style="padding-left: 46%; opacity: 0.75">+91 93758 30760</div>
           </div>`,
-          back: `<div class="bk bk-back">
+            back: `<div class="bk bk-back">
             <div class="bk-top"><span class="bk-chip">Back · ledger</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
             ${LEDGER}
           </div>`,
-        },
-        {
-          name: "Accent Band",
-          desc: "Accent band carries the mark; the solid carries the name.",
-          front: `<div class="bk bk-band">
+          },
+          {
+            name: "Accent Band",
+            desc: "Accent band carries the mark; the solid carries the name.",
+            front: `<div class="bk bk-band">
             <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip" style="opacity: 0.85">Est. 2004</span></div>
             <div><div class="bk-word">Kataria Syntex</div>
             <div class="bk-role" style="margin-top: 6px">Cotton · Polyester · Dyed</div></div>
             <div class="bk-line" style="opacity: 0.78">+91 93758 30760</div>
           </div>`,
-          back: `<div class="bk bk-paper">
+            back: `<div class="bk bk-paper">
             <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">Back · paper</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
             <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
             <div class="bk-role">Surat · Gujarat · India</div>
           </div>`,
-        },
-        {
-          name: "Editorial Block",
-          desc: "Paper front, one accent block behind the big wordmark.",
-          front: `<div class="bk bk-big">
+          },
+          {
+            name: "Editorial Block",
+            desc: "Paper front, one accent block behind the big wordmark.",
+            front: `<div class="bk bk-big">
             <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">Est. 2004</span><span class="bk-mono">KS</span></div>
             <div><div class="bk-word">Kataria Syntex</div></div>
             <div class="bk-line">Yarn, sourced straight from Surat.</div>
           </div>`,
-          back: `<div class="bk bk-front">
+            back: `<div class="bk bk-front">
             <div class="bk-top"><span class="bk-chip">Back</span></div>
             <div style="text-align: center"><span class="bk-mono" style="font-size: 54px">KS</span></div>
             <div class="bk-line" style="text-align: center; opacity: 0.8">katariasyntex@gmail.com<br />+91 93758 30760</div>
           </div>`,
-        },
-        {
-          name: "Mono Ledger",
-          desc: "Everything mono — the trading-desk card, no decoration.",
-          front: `<div class="bk bk-monoall">
+          },
+          {
+            name: "Mono Ledger",
+            desc: "Everything mono — the trading-desk card, no decoration.",
+            front: `<div class="bk bk-monoall">
             <div class="bk-top"><span class="bk-word">Kataria Syntex</span><span class="bk-mono">KS</span></div>
             <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
             <div class="bk-role">Yarn sourcing · Surat</div>
           </div>`,
-          back: `<div class="bk bk-paper">
+            back: `<div class="bk bk-paper">
             <div class="bk-top"><span class="bk-word" style="font-size: 11px">Kataria Syntex</span><span class="bk-chip" style="opacity: 0.55">Back</span></div>
             <div class="bk-line">Cotton · Polyester · Dyed yarn<br />Domestic & export supply<br />Est. 2004 · Surat, Gujarat, India</div>
             <div class="bk-mono" style="font-size: 15px">KS</div>
           </div>`,
-        },
-        {
-          name: "Paper Front",
-          desc: "Light card for pen notes — mark, wordmark, rule, nothing else.",
-          front: `<div class="bk bk-paper">
+          },
+          {
+            name: "Paper Front",
+            desc: "Light card for pen notes — mark, wordmark, rule, nothing else.",
+            front: `<div class="bk bk-paper">
             <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip" style="opacity: 0.55">Surat · IN</span></div>
             <div><div class="bk-word">Kataria Syntex</div>
             <div class="bk-role" style="margin-top: 5px">Yarn sourcing · Est. 2004</div></div>
             <div class="bk-rule"></div>
           </div>`,
-          back: `<div class="bk bk-monoall">
+            back: `<div class="bk bk-monoall">
             <div class="bk-top"><span class="bk-chip" style="color: var(--acc)">Back · solid</span></div>
             <div style="text-align: center"><span class="bk-mono" style="font-size: 46px">KS</span>
             <div class="bk-word" style="font-size: 11px; margin-top: 6px">Kataria Syntex</div></div>
             <div class="bk-line" style="text-align: center; opacity: 0.78">katariasyntex.workers.dev</div>
           </div>`,
-        },
-      ];
+          },
+          {
+            name: "Duotone Wash",
+            desc: "Gradient duotone front, paper back with a stitched rule.",
+            front: `<div class="bk bk-duo">
+            <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip">Est. 2004</span></div>
+            <div><div class="bk-word">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 6px">Yarn sourcing · Surat</div></div>
+          </div>`,
+            back: `<div class="bk bk-paper">
+            <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">Back</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
+            <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com</div>
+            <div class="bk-rule"></div>
+          </div>`,
+          },
+          {
+            name: "Edge Stripe",
+            desc: "A single accent stripe down the edge — minimal, modern stationery.",
+            front: `<div class="bk bk-stripe">
+            <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip" style="opacity: 0.7">Est. 2004</span></div>
+            <div><div class="bk-word">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 5px">Yarn sourcing · Surat</div></div>
+          </div>`,
+            back: `<div class="bk bk-stripe">
+            <div class="bk-top"><span class="bk-word" style="font-size: 11px">Kataria Syntex</span></div>
+            <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
+          </div>`,
+          },
+          {
+            name: "Typewriter Index",
+            desc: "Paper index card with a mono ledger — the sampling-room card.",
+            front: `<div class="bk bk-paper">
+            <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">No. 041</span><span class="bk-mono" style="font-size: 17px">KS</span></div>
+            <div><div class="bk-word" style="font-size: 14px">Kataria Syntex</div>
+            <div class="bk-line" style="margin-top: 5px">Yarn sourcing · Surat<br />Cotton · Polyester · Dyed</div></div>
+            <div class="bk-rule"></div>
+          </div>`,
+            back: `<div class="bk bk-paper">
+            <div class="bk-top"><span class="bk-chip" style="opacity: 0.55">Reverse</span></div>
+            <div class="bk-line">+91 93758 30760<br />katariasyntex@gmail.com<br />katariasyntex.workers.dev</div>
+            <div class="bk-rule"></div>
+          </div>`,
+          },
+          {
+            name: "Solid Die",
+            desc: "Full solid front with a blind-embossed wordmark — the premium press card.",
+            front: `<div class="bk bk-front">
+            <div class="bk-top"><span class="bk-mono">KS</span><span class="bk-chip">Est. 2004</span></div>
+            <div><div class="bk-word" style="font-size: 17px">Kataria Syntex</div>
+            <div class="bk-role" style="margin-top: 6px">Yarn sourcing · Surat</div></div>
+            <div class="bk-rule" style="opacity: 0.35"></div>
+          </div>`,
+            back: `<div class="bk bk-front">
+            <div class="bk-top"><span class="bk-chip">Back</span></div>
+            <div style="text-align: center"><span class="bk-mono" style="font-size: 46px">KS</span></div>
+            <div class="bk-line" style="text-align: center; opacity: 0.7">katariasyntex.workers.dev</div>
+          </div>`,
+          },
+        ];
 
-      function renderCards() {
-        cardsEl.innerHTML =
-          `<div class="cgroup"><h3>Front &amp; back — six builds</h3><div class="cpair">` +
-          CARDS.map(
-            (c) => `<figure class="cardfig">
+        function renderCards() {
+          cardsEl.innerHTML =
+            `<div class="cgroup"><h3>Front &amp; back — ten builds</h3><div class="cpair">` +
+            CARDS.map(
+              (c) => `<figure class="cardfig">
+              <button type="button" class="pin" data-cmp data-kind="card" data-name="${c.name}" aria-pressed="false">Compare</button>
               <div class="pair-row">
                 <div style="display: grid; gap: 6px; flex: 1 1 240px">
                   <span style="font-family: ui-monospace, monospace; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #667085">Front</span>
@@ -3858,34 +4161,32 @@
               </div>
               <figcaption><b>${c.name}</b><span>${c.desc}</span></figcaption>
             </figure>`,
-          ).join("") +
-          `</div></div>`;
-      }
-      // ------------------------------------------------------------------
-      // Website directions — 24 languages, grouped by category.
-      // Each body is a miniature built from the shared primitives.
-      // ------------------------------------------------------------------
-      const CAT_LABEL = {
-        corporate: "Corporate & calm",
-        editorial: "Editorial & print",
-        industrial: "Industrial & technical",
-        premium: "Dark & premium",
-        bold: "Bold & expressive",
-        product: "Product-led",
-      };
-      const NAV = (btn) =>
-        `<div class="m-nav">
+            ).join("") +
+            `</div></div>`;
+        } // ------------------------------------------------------------------
+        // Website directions — 28 languages, grouped by category.
+        // Each body is a miniature built from the shared primitives.
+        // ------------------------------------------------------------------
+        const CAT_LABEL = {
+          corporate: "Corporate & calm",
+          editorial: "Editorial & print",
+          industrial: "Industrial & technical",
+          premium: "Dark & premium",
+          bold: "Bold & expressive",
+          product: "Product-led",
+        };
+        const NAV = (btn) =>
+          `<div class="m-nav">
           <div class="m-brand">Kataria Syntex</div>
           <div class="m-links"><span>Products</span><span>Shades</span><span>About</span><span>Contact</span></div>
-          ${btn || '<span class="m-btn pri">Enquire</span>'}
-        </div>`;
+          ${btn || '<span class="m-btn pri">Enquire</span>'}        </div>`;
 
-      const DESIGNS = [
-        {
-          cat: "corporate",
-          name: "Blueprint",
-          desc: "What ships today — aurora wash, blueprint grid, frosted panel, soft blue cards. Safe, calm, corporate-clean.",
-          body: `${NAV()}
+        const DESIGNS = [
+          {
+            cat: "corporate",
+            name: "Blueprint",
+            desc: "What ships today — aurora wash, blueprint grid, frosted panel, soft blue cards. Safe, calm, corporate-clean.",
+            body: `${NAV()}
             <div class="bp-body">
               <div class="bp-copy">
                 <span class="m-kicker">B2B yarn sourcing · Surat</span>
@@ -3902,12 +4203,12 @@
                 </div>
               </div>
             </div>`,
-        },
-        {
-          cat: "corporate",
-          name: "Soft Glass",
-          desc: "Frosted panels over a soft gradient mesh. The Apple/macOS register — calm, expensive, slightly generic.",
-          body: `${NAV()}
+          },
+          {
+            cat: "corporate",
+            name: "Soft Glass",
+            desc: "Frosted panels over a soft gradient mesh. The Apple/macOS register — calm, expensive, slightly generic.",
+            body: `${NAV()}
             <div class="gl-body">
               <div class="gl-panel">
                 <span class="m-kicker">B2B yarn sourcing · Surat</span>
@@ -3921,12 +4222,12 @@
                 <div class="gl-tile"><b>06+</b><span>states</span></div>
               </div>
             </div>`,
-        },
-        {
-          cat: "corporate",
-          name: "Soft Neumorph",
-          desc: "Extruded surfaces, no borders. Tactile and soft — but low contrast, so accessibility needs care.",
-          body: `${NAV('<span class="nm-btn">Enquire</span>')}
+          },
+          {
+            cat: "corporate",
+            name: "Soft Neumorph",
+            desc: "Extruded surfaces, no borders. Tactile and soft — but low contrast, so accessibility needs care.",
+            body: `${NAV('<span class="nm-btn">Enquire</span>')}
             <div class="nm">
               <div class="nm-slab">
                 <span class="m-kicker">B2B yarn sourcing · Surat</span>
@@ -3939,12 +4240,12 @@
                 <div><b>01</b><span style="font-size: 1cqw; color: var(--muted)">contact</span></div>
               </div>
             </div>`,
-        },
-        {
-          cat: "corporate",
-          name: "Restrained Mono",
-          desc: "Almost no colour — one accent underline and a hairline. Lets the logo carry the brand. Safest for print.",
-          body: `${NAV()}
+          },
+          {
+            cat: "corporate",
+            name: "Restrained Mono",
+            desc: "Almost no colour — one accent underline and a hairline. Lets the logo carry the brand. Safest for print.",
+            body: `${NAV()}
             <div class="mo">
               <h3 class="mo-h">Yarn supply, <u>stated plainly</u>.</h3>
               <div class="mo-rule"></div>
@@ -3955,12 +4256,12 @@
                 <div class="mo-li"><span class="k">Markets</span><span class="v">20+ countries</span></div>
               </div>
             </div>`,
-        },
-        {
-          cat: "editorial",
-          name: "Swiss Ledger",
-          desc: "Zero radius, hard rules, tabular rows, mono numerals. Reads as a trading desk — credible and unfussy.",
-          body: `<div class="sw-top">${NAV()}</div>
+          },
+          {
+            cat: "editorial",
+            name: "Swiss Ledger",
+            desc: "Zero radius, hard rules, tabular rows, mono numerals. Reads as a trading desk — credible and unfussy.",
+            body: `<div class="sw-top">${NAV()}</div>
             <div class="sw-lede">
               <h3 class="m-h">Yarn, priced<br />and documented.</h3>
               <div style="display: grid; gap: 1.2cqw; align-content: end">
@@ -3973,12 +4274,12 @@
               <div class="sw-row"><span class="sw-num">02</span><b>Polyester</b><span>150D textured</span><span class="r">Pan-India</span></div>
               <div class="sw-row"><span class="sw-num">03</span><b>Dyed</b><span>RAJ shade card</span><span class="r">Export</span></div>
             </div>`,
-        },
-        {
-          cat: "editorial",
-          name: "Paper & Ink",
-          desc: "Warm paper, heavy display type, one flat accent block behind the headline. Print-shop feel, still modern.",
-          body: `${NAV()}
+          },
+          {
+            cat: "editorial",
+            name: "Paper & Ink",
+            desc: "Warm paper, heavy display type, one flat accent block behind the headline. Print-shop feel, still modern.",
+            body: `${NAV()}
             <div class="pp-body">
               <div class="pp-h"><h3 class="m-h">Yarn you can<br />reorder blind.</h3></div>
               <div class="pp-cols">
@@ -3993,12 +4294,12 @@
                 </div>
               </div>
             </div>`,
-        },
-        {
-          cat: "editorial",
-          name: "Risograph Zine",
-          desc: "Two-colour overprint with offset type and halftone dots. Culturally sharp, very memorable — not for everyone.",
-          body: `<div class="zn">
+          },
+          {
+            cat: "editorial",
+            name: "Risograph Zine",
+            desc: "Two-colour overprint with offset type and halftone dots. Culturally sharp, very memorable — not for everyone.",
+            body: `<div class="zn">
             <div class="m-nav" style="padding: 0 0 1.6cqw">
               <div class="m-brand">Kataria Syntex</div>
               <span class="m-btn pri" style="border: 1.5px solid var(--ink); background: var(--acc); color: var(--ink)">ENQUIRE</span>
@@ -4013,12 +4314,12 @@
               <div class="zn-cell"><b>Dyed</b><span>RAJ card, shade-matched</span></div>
             </div>
           </div>`,
-        },
-        {
-          cat: "editorial",
-          name: "Neo-Grid Editorial",
-          desc: "Visible column grid, a highlighted phrase, one flat accent block. Modern editorial — structured without being stiff.",
-          body: `${NAV()}
+          },
+          {
+            cat: "editorial",
+            name: "Neo-Grid Editorial",
+            desc: "Visible column grid, a highlighted phrase, one flat accent block. Modern editorial — structured without being stiff.",
+            body: `${NAV()}
             <div class="ng">
               <div class="ng-acc"></div>
               <h3 class="ng-h">Yarn supply<br /><span class="mark">that behaves</span><br />like a system.</h3>
@@ -4028,12 +4329,12 @@
                 <div class="ng-col"><b>Dyed</b><span>RAJ shade card, matched</span></div>
               </div>
             </div>`,
-        },
-        {
-          cat: "editorial",
-          name: "Editorial Magazine",
-          desc: "Serif masthead, drop cap, three columns, pull quote. The annual-report register — slow, written, authoritative.",
-          body: `${NAV('<span class="m-btn pri">Subscribe</span>')}
+          },
+          {
+            cat: "editorial",
+            name: "Editorial Magazine",
+            desc: "Serif masthead, drop cap, three columns, pull quote. The annual-report register — slow, written, authoritative.",
+            body: `${NAV('<span class="m-btn pri">Subscribe</span>')}
             <div class="mg">
               <div class="mg-top"><span>Kataria Syntex · The Yarn Review</span><span>Issue 22 · Surat</span></div>
               <h3 class="mg-h">The mill <em>behind</em> the fabric.</h3>
@@ -4043,12 +4344,12 @@
               </div>
               <div class="mg-pull"><span class="accentbar m-btn">22+ years</span><span>“Quoted on your requirement, not a price list.”</span></div>
             </div>`,
-        },
-        {
-          cat: "industrial",
-          name: "Spec Sheet",
-          desc: "Everything mono, dotted leaders, table logic. Speaks to procurement and trading desks in their own language.",
-          body: `<div class="m-nav">
+          },
+          {
+            cat: "industrial",
+            name: "Spec Sheet",
+            desc: "Everything mono, dotted leaders, table logic. Speaks to procurement and trading desks in their own language.",
+            body: `<div class="m-nav">
               <div class="m-brand">KATARIA_SYNTEX</div>
               <div class="m-links"><span>products</span><span>shades</span><span>contact</span></div>
               <span class="m-btn pri">enquire()</span>
@@ -4062,12 +4363,12 @@
               <div class="sc-line"><span>markets</span><span class="fill"></span><b>20+ countries</b></div>
               <div class="sc-box">&gt; send requirement → shortlist → confirm → dispatch</div>
             </div>`,
-        },
-        {
-          cat: "industrial",
-          name: "Supply Ops",
-          desc: "KPI tiles and a chart strip. Feels like operations software — strong if you sell reliability, weak on warmth.",
-          body: `${NAV('<span class="m-btn acc">Enquire</span>')}
+          },
+          {
+            cat: "industrial",
+            name: "Supply Ops",
+            desc: "KPI tiles and a chart strip. Feels like operations software — strong if you sell reliability, weak on warmth.",
+            body: `${NAV('<span class="m-btn acc">Enquire</span>')}
             <div class="op">
               <div class="op-kpis">
                 <div class="op-kpi"><span>Years</span><b>22+</b><i>steady</i></div>
@@ -4082,12 +4383,12 @@
                 <i style="height: 100%"></i>
               </div>
             </div>`,
-        },
-        {
-          cat: "industrial",
-          name: "Process Rail",
-          desc: "Numbered rail with the quote process written down. The most literal expression of “one point of contact”.",
-          body: `${NAV()}
+          },
+          {
+            cat: "industrial",
+            name: "Process Rail",
+            desc: "Numbered rail with the quote process written down. The most literal expression of “one point of contact”.",
+            body: `${NAV()}
             <div class="rl">
               <h3 class="rl-h">Enquiry to dispatch, in three moves.</h3>
               <p class="rl-source">Send counts, quantity and destination — we shortlist on fit, not on a price list.</p>
@@ -4097,12 +4398,12 @@
                 <div class="rl-step"><b>Confirm and dispatch</b><em>03</em><span>Supply and delivery coordinated with clear communication.</span></div>
               </div>
             </div>`,
-        },
-        {
-          cat: "premium",
-          name: "Midnight Mill",
-          desc: "Dark-first. Ink field, glowing accent, product rows as illuminated cards. Premium and modern — prints heavy.",
-          body: `${NAV('<span class="m-btn acc">Request a quote</span>')}
+          },
+          {
+            cat: "premium",
+            name: "Midnight Mill",
+            desc: "Dark-first. Ink field, glowing accent, product rows as illuminated cards. Premium and modern — prints heavy.",
+            body: `${NAV('<span class="m-btn acc">Request a quote</span>')}
             <div class="md-body">
               <div style="display: grid; gap: 1.5cqw; align-content: start">
                 <span class="m-kicker md-glow">Sourcing desk · Surat</span>
@@ -4115,24 +4416,24 @@
                 <div class="md-card"><span class="md-dot"></span><span><b>Dyed · RAJ card</b><span>Shade-matched supply</span></span></div>
               </div>
             </div>`,
-        },
-        {
-          cat: "premium",
-          name: "Cinematic Band",
-          desc: "Full-bleed dark, vignette, wide letter-spaced kicker, light-weight display. The most “expensive” of the set.",
-          body: `<div class="cn">
+          },
+          {
+            cat: "premium",
+            name: "Cinematic Band",
+            desc: "Full-bleed dark, vignette, wide letter-spaced kicker, light-weight display. The most “expensive” of the set.",
+            body: `<div class="cn">
               <div class="cn-k">Kataria Syntex · Est. 2004</div>
               <h3 class="cn-h">The yarn desk<br /><b>behind the fabric.</b></h3>
               <div class="cn-rule"></div>
               <p class="m-p" style="max-width: 52cqw; text-align: center">Cotton, polyester and dyed yarn for weaving, knitting and export buyers — sourced from Surat, shipped worldwide.</p>
             </div>
             <div class="cn-meta"><span>22+ years</span><span>20+ countries</span><span>01 contact</span></div>`,
-        },
-        {
-          cat: "bold",
-          name: "Split Screen",
-          desc: "Hard 50/50 with a solid primary block carrying the number. Bold, confident, extremely scannable.",
-          body: `<div class="sp-l">
+          },
+          {
+            cat: "bold",
+            name: "Split Screen",
+            desc: "Hard 50/50 with a solid primary block carrying the number. Bold, confident, extremely scannable.",
+            body: `<div class="sp-l">
               <div class="m-nav" style="padding: 0">
                 <div class="m-brand">Kataria Syntex</div>
                 <span class="m-btn pri">Enquire</span>
@@ -4148,22 +4449,22 @@
               <div class="sp-big">22+</div>
               <div class="sp-cap">years supplying textile businesses across India and 20+ export markets.</div>
             </div>`,
-        },
-        {
-          cat: "bold",
-          name: "Kinetic Type",
-          desc: "The headline is the layout. Oversized display with an outlined word. Maximum impact, minimum furniture.",
-          body: `<div class="kt">YARN<br /><em>SUPPLY</em> <span class="kt-o">SURAT</span></div>
+          },
+          {
+            cat: "bold",
+            name: "Kinetic Type",
+            desc: "The headline is the layout. Oversized display with an outlined word. Maximum impact, minimum furniture.",
+            body: `<div class="kt">YARN<br /><em>SUPPLY</em> <span class="kt-o">SURAT</span></div>
             <div class="kt-foot">
               <p class="m-p kt-p">Cotton, polyester and dyed yarn for weaving, knitting and export buyers — one point of contact from enquiry to dispatch.</p>
               <span class="m-btn pri">Request a quote</span>
             </div>`,
-        },
-        {
-          cat: "bold",
-          name: "Brutalist Block",
-          desc: "Thick ink borders, hard offset shadows, no radius, uppercase. Loud and memorable — risky for a B2B desk.",
-          body: `${NAV('<span class="m-btn pri">ENQUIRE</span>')}
+          },
+          {
+            cat: "bold",
+            name: "Brutalist Block",
+            desc: "Thick ink borders, hard offset shadows, no radius, uppercase. Loud and memorable — risky for a B2B desk.",
+            body: `${NAV('<span class="m-btn pri">ENQUIRE</span>')}
             <div class="br-body">
               <div class="br-block">
                 <h3 class="m-h">YARN YOU<br />CAN REORDER.</h3>
@@ -4172,12 +4473,12 @@
               </div>
               <div class="br-strip"><div>Cotton</div><div>Polyester</div><div>Dyed</div><div>Export</div></div>
             </div>`,
-        },
-        {
-          cat: "bold",
-          name: "Diagonal Split",
-          desc: "A cut colour field with the number living inside it. Geometric, high-energy, still orderly.",
-          body: `<div class="dg-panel"></div>
+          },
+          {
+            cat: "bold",
+            name: "Diagonal Split",
+            desc: "A cut colour field with the number living inside it. Geometric, high-energy, still orderly.",
+            body: `<div class="dg-panel"></div>
             <div class="dg-in">
               <div class="dg-l">
                 <span class="m-kicker">Surat · Gujarat</span>
@@ -4194,12 +4495,12 @@
                 </div>
               </div>
             </div>`,
-        },
-        {
-          cat: "bold",
-          name: "Marquee Ticker",
-          desc: "Repeating type bands as the hero. Loud, market-board energy — strongest for a single clear message.",
-          body: `${NAV()}
+          },
+          {
+            cat: "bold",
+            name: "Marquee Ticker",
+            desc: "Repeating type bands as the hero. Loud, market-board energy — strongest for a single clear message.",
+            body: `${NAV()}
             <div class="mq-body">
               <div class="mq-band">
                 <span>Cotton</span><span class="dot"></span><span>Polyester</span><span class="dot"></span><span>Dyed</span><span class="dot"></span><span>Export</span><span class="dot"></span><span>Surat</span>
@@ -4212,12 +4513,12 @@
                 <span class="m-btn pri">Request a quote</span>
               </div>
             </div>`,
-        },
-        {
-          cat: "product",
-          name: "Bento Grid",
-          desc: "Modular tiles of mixed size. Very current, very Luma — good if you want the site to feel like a product, not a brochure.",
-          body: `${NAV()}
+          },
+          {
+            cat: "product",
+            name: "Bento Grid",
+            desc: "Modular tiles of mixed size. Very current, very Luma — good if you want the site to feel like a product, not a brochure.",
+            body: `${NAV()}
             <div class="bn">
               <div class="bn-t bn-hero">
                 <span class="m-kicker" style="color: var(--acc)">B2B yarn sourcing</span>
@@ -4229,12 +4530,12 @@
               <div class="bn-t bn-kpi"><b>01</b><span>point of contact</span></div>
               <div class="bn-t bn-kpi"><b>140</b><span>shades on file</span></div>
             </div>`,
-        },
-        {
-          cat: "product",
-          name: "Wound Thread",
-          desc: "Yarn texture as the actual design material — wound bands, stitched dividers, real swatches. Only this brand could use it.",
-          body: `<div class="th-band"></div>
+          },
+          {
+            cat: "product",
+            name: "Wound Thread",
+            desc: "Yarn texture as the actual design material — wound bands, stitched dividers, real swatches. Only this brand could use it.",
+            body: `<div class="th-band"></div>
             ${NAV()}
             <div class="th-body">
               <span class="m-kicker">Wound on the card, wound on the screen</span>
@@ -4248,12 +4549,12 @@
               </div>
               <div class="th-band acc" style="margin-top: 2cqw"></div>
             </div>`,
-        },
-        {
-          cat: "product",
-          name: "Gallery",
-          desc: "One full-bleed colour band carries the whole hero. Quiet captions below. Needs real photography to work.",
-          body: `<div class="ga-art">
+          },
+          {
+            cat: "product",
+            name: "Gallery",
+            desc: "One full-bleed colour band carries the whole hero. Quiet captions below. Needs real photography to work.",
+            body: `<div class="ga-art">
               <div class="ga-cap">
                 <span class="m-kicker" style="color: var(--acc)">Surat · Gujarat · India</span>
                 <h3 class="m-h">The yarn desk<br />behind the fabric.</h3>
@@ -4264,12 +4565,12 @@
               <div><b>Polyester</b><span>Textured and filament, 75D–300D</span></div>
               <div><b>Dyed</b><span>RAJ shade card, matched on request</span></div>
             </div>`,
-        },
-        {
-          cat: "product",
-          name: "Product Spotlight",
-          desc: "One yarn takes the whole right half with live shade dots and a spec ledger. Product first, brand second.",
-          body: `${NAV('<span class="m-btn pri">Enquire</span>')}
+          },
+          {
+            cat: "product",
+            name: "Product Spotlight",
+            desc: "One yarn takes the whole right half with live shade dots and a spec ledger. Product first, brand second.",
+            body: `${NAV('<span class="m-btn pri">Enquire</span>')}
             <div class="sp-left">
               <span class="m-kicker">Now supplying</span>
               <h3 class="m-h" style="font-size: 4.4cqw">Combed cotton, 30s.</h3>
@@ -4287,12 +4588,12 @@
               </div>
             </div>
             <div class="sp-visual"><span class="sp-num">KS-CT-01 · COMBED COTTON</span></div>`,
-        },
-        {
-          cat: "product",
-          name: "Mosaic Tile",
-          desc: "One hero tile plus real shade blocks and a quote tile. Colour-forward — the product is the palette.",
-          body: `${NAV()}
+          },
+          {
+            cat: "product",
+            name: "Mosaic Tile",
+            desc: "One hero tile plus real shade blocks and a quote tile. Colour-forward — the product is the palette.",
+            body: `${NAV()}
             <div class="ms">
               <div class="ms-t ms-hero">
                 <span class="m-kicker" style="color: var(--acc)">B2B yarn sourcing</span>
@@ -4308,56 +4609,110 @@
               <div class="ms-t ms-quote" style="background: var(--card); color: var(--ink); border-color: var(--line)"><b style="color: var(--muted)">Desk</b>+91 93758 30760 · Surat, Gujarat</div>
               <div class="ms-t ms-quote" style="background: var(--pri); color: var(--on-pri); border-color: transparent"><b style="opacity: 0.7">Markets</b>20+ export countries served.</div>
             </div>`,
-        },
-      ];
-      // ------------------------------------------------------------------
-      // Render website directions + boot
-      // ------------------------------------------------------------------
-      const CLS = {
-        Blueprint: "s-blueprint",
-        "Soft Glass": "s-glass",
-        "Soft Neumorph": "s-neumorph",
-        "Restrained Mono": "s-mono",
-        "Swiss Ledger": "s-swiss",
-        "Paper & Ink": "s-paper",
-        "Risograph Zine": "s-zine",
-        "Neo-Grid Editorial": "s-neogrid",
-        "Editorial Magazine": "s-mag",
-        "Spec Sheet": "s-spec",
-        "Supply Ops": "s-ops",
-        "Process Rail": "s-rail",
-        "Midnight Mill": "s-midnight",
-        "Cinematic Band": "s-cinema",
-        "Split Screen": "s-split",
-        "Kinetic Type": "s-kinetic",
-        "Brutalist Block": "s-brutal",
-        "Diagonal Split": "s-diag",
-        "Marquee Ticker": "s-marquee",
-        "Bento Grid": "s-bento",
-        "Wound Thread": "s-thread",
-        Gallery: "s-gallery",
-        "Product Spotlight": "s-spot",
-        "Mosaic Tile": "s-mosaic",
-      };
-
-      function renderWeb() {
-        const order = [
-          "corporate",
-          "editorial",
-          "industrial",
-          "premium",
-          "bold",
-          "product",
+          },
+          {
+            cat: "corporate",
+            name: "Soft Tabs",
+            desc: "Pill navigation over a generous hero. Friendly, app-like, less corporate.",
+            body: `<div class="st-body">
+            <div class="st-tabs"><span class="st-tab on">Yarn</span><span class="st-tab">Shades</span><span class="st-tab">Mill</span><span class="st-tab">Contact</span></div>
+            <span class="m-kicker">B2B yarn sourcing · Surat</span>
+            <h3 class="m-h">Yarn supply that behaves like a system.</h3>
+            <p class="m-p">One point of contact, enquiry to dispatch.</p>
+            <div class="m-acts" style="margin-top: 1.6cqw"><span class="m-btn pri">Request a quote</span></div>
+          </div>`,
+          },
+          {
+            cat: "industrial",
+            name: "Isometric Mill",
+            desc: "Flat isometric art of cones and bobbles. Playful but technical — a distinctive ownable look.",
+            body: `<div class="im-body">
+            <div class="im-art"><div class="im-cone"></div><div class="im-cone c2"></div><div class="im-cone c3"></div></div>
+            <div class="im-copy">
+              <span class="m-kicker">Surat · Gujarat</span>
+              <h3 class="m-h" style="font-size: 4.6cqw">Every cone, lot-consistent.</h3>
+              <p class="m-p">Cotton, polyester and dyed yarn — quoted on your requirement.</p>
+            </div>
+          </div>`,
+          },
+          {
+            cat: "premium",
+            name: "Foil & Black",
+            desc: "Near-black with a metallic gradient accent. Luxury, export-premium, minimal.",
+            body: `<div class="fb-body">
+            <span class="m-kicker" style="color: var(--acc)">Est. 2004 · Surat</span>
+            <h3 class="m-h fb-h">Yarn you can reorder blind.</h3>
+            <p class="m-p">One desk. One standard. Twenty export markets.</p>
+            <div class="m-acts" style="margin-top: 1.8cqw"><span class="m-btn acc">Request a quote</span></div>
+          </div>`,
+          },
+          {
+            cat: "bold",
+            name: "Big Number",
+            desc: "One enormous statistic dominates. Confidence and scale without a photo.",
+            body: `<div class="bn2-body">
+            <div class="bn2-num">22<span class="bn2-plus">+</span></div>
+            <div class="bn2-copy">
+              <span class="m-kicker">Years in the yarn trade</span>
+              <p class="m-p">Cotton, polyester and dyed yarn for weaving, knitting and export buyers — one point of contact, enquiry to dispatch.</p>
+              <div class="m-acts" style="margin-top: 1.4cqw"><span class="m-btn pri">Request a quote</span></div>
+            </div>
+          </div>`,
+          },
         ];
-        let n = 0;
-        webEl.innerHTML = order
-          .map((cat) => {
-            const items = DESIGNS.filter((d) => d.cat === cat);
-            return `<div class="cathead"><h3>${CAT_LABEL[cat]}</h3><span>${items.length} directions</span><span class="rule"></span></div>
+        // ------------------------------------------------------------------
+        // Render website directions + boot
+        // ------------------------------------------------------------------
+        const CLS = {
+          Blueprint: "s-blueprint",
+          "Soft Glass": "s-glass",
+          "Soft Neumorph": "s-neumorph",
+          "Restrained Mono": "s-mono",
+          "Swiss Ledger": "s-swiss",
+          "Paper & Ink": "s-paper",
+          "Risograph Zine": "s-zine",
+          "Neo-Grid Editorial": "s-neogrid",
+          "Editorial Magazine": "s-mag",
+          "Spec Sheet": "s-spec",
+          "Supply Ops": "s-ops",
+          "Process Rail": "s-rail",
+          "Midnight Mill": "s-midnight",
+          "Cinematic Band": "s-cinema",
+          "Split Screen": "s-split",
+          "Kinetic Type": "s-kinetic",
+          "Brutalist Block": "s-brutal",
+          "Diagonal Split": "s-diag",
+          "Marquee Ticker": "s-marquee",
+          "Bento Grid": "s-bento",
+          "Wound Thread": "s-thread",
+          Gallery: "s-gallery",
+          "Product Spotlight": "s-spot",
+          "Mosaic Tile": "s-mosaic",
+          "Soft Tabs": "s-tabs",
+          "Isometric Mill": "s-iso",
+          "Foil & Black": "s-foil",
+          "Big Number": "s-bignum",
+        };
+
+        function renderWeb() {
+          const order = [
+            "corporate",
+            "editorial",
+            "industrial",
+            "premium",
+            "bold",
+            "product",
+          ];
+          let n = 0;
+          webEl.innerHTML = order
+            .map((cat) => {
+              const items = DESIGNS.filter((d) => d.cat === cat);
+              return `<div class="cathead"><h3>${CAT_LABEL[cat]}</h3><span>${items.length} directions</span><span class="rule"></span></div>
               <div class="grid">${items
                 .map((d) => {
                   n += 1;
                   return `<figure class="d">
+                    <button type="button" class="pin" data-cmp data-kind="design" data-name="${d.name}" aria-pressed="false">Compare</button>
                     <div class="stage ${CLS[d.name]}">${d.body}</div>
                     <figcaption>
                       <span class="num">${String(n).padStart(2, "0")}</span>
@@ -4367,24 +4722,177 @@
                   </figure>`;
                 })
                 .join("")}</div>`;
-          })
-          .join("");
-      }
+            })
+            .join("");
+        } // preview size toggle
+        // ------------------------------------------------------------------
+        // Compare mode — pin up to two things (palettes or directions), then
+        // open them side by side at full size under the current palette.
+        // ------------------------------------------------------------------
+        const cmp = { slots: [null, null] };
+        const cmpbar = document.getElementById("cmpbar");
+        const cmpstage = document.getElementById("cmpstage");
+        const cmpbody = document.getElementById("cmpbody");
+        const slotEls = [
+          document.getElementById("cmpslot-a"),
+          document.getElementById("cmpslot-b"),
+        ];
 
-      document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          root.dataset.theme = btn.dataset.themeBtn;
-          document
-            .querySelectorAll("[data-theme-btn]")
-            .forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        function cmpLabel(item) {
+          if (!item) return "empty";
+          return item.kind === "palette" ? "Palette · " + item.name : item.name;
+        }
+
+        function renderCmpBar() {
+          const filled = cmp.slots.filter(Boolean);
+          cmpbar.classList.toggle("show", filled.length > 0);
+          cmpbar.setAttribute("aria-hidden", String(filled.length === 0));
+          slotEls.forEach((el, i) => {
+            const v = cmp.slots[i];
+            el.textContent = cmpLabel(v);
+            el.classList.toggle("empty", !v);
+          });
+          const openBtn = document.getElementById("cmpopen");
+          openBtn.disabled = filled.length < 2;
+          openBtn.style.opacity = filled.length < 2 ? "0.45" : "1";
+        }
+
+        function cmpSame(a, b) {
+          return a && b && a.kind === b.kind && a.name === b.name;
+        }
+
+        function toggleCmp(item) {
+          // clicking an already-pinned item removes it
+          for (let i = 0; i < 2; i++) {
+            if (cmpSame(cmp.slots[i], item)) {
+              cmp.slots[i] = null;
+              syncCmpButtons();
+              renderCmpBar();
+              return;
+            }
+          }
+          // first empty slot wins; if both are taken, drop the oldest
+          const idx = cmp.slots.indexOf(null);
+          if (idx >= 0) {
+            cmp.slots[idx] = item;
+          } else {
+            cmp.slots = [cmp.slots[1], item];
+          }
+          syncCmpButtons();
+          renderCmpBar();
+        }
+
+        function syncCmpButtons() {
+          document.querySelectorAll("[data-cmp]").forEach((b) => {
+            const item = {
+              kind: b.dataset.kind,
+              name: b.dataset.name,
+              palette: b.dataset.palette,
+            };
+            const on = cmp.slots.some((x) => x && cmpSame(x, item));
+            b.setAttribute("aria-pressed", String(on));
+          });
+        }
+
+        function cmpPane(item) {
+          if (item.kind === "palette") {
+            const p2 = PALETTES.find((x) => x.id === item.palette);
+            if (!p2) return "";
+            return `<div class="cmppane ptheme" style="--p-ink:${p2.ink};--p-pri:${p2.pri};--p-acc:${p2.acc}">
+            <span class="cmpname">${p2.name}</span>
+            <div class="stage">${palettePreview(p2)}</div>
+            <span class="cmpdesc">Ink ${p2.ink} · Primary ${p2.pri} · Accent ${p2.acc}</span>
+          </div>`;
+          }
+          if (item.kind === "card") {
+            const c = CARDS.find((x) => x.name === item.name);
+            if (!c) return "";
+            return `<div class="cmppane">
+            <span class="cmpname">${c.name}</span>
+            <div class="cardpair" style="max-width: 640px">${c.front}${c.back}</div>
+            <span class="cmpdesc">${c.desc}</span>
+          </div>`;
+          }
+          const d = DESIGNS.find((x) => x.name === item.name);
+          if (!d) return "";
+          return `<div class="cmppane">
+          <span class="cmpname">${d.name}</span>
+          <div class="stage ${CLS[d.name]}">${d.body}</div>
+          <span class="cmpdesc">${d.desc}</span>
+        </div>`;
+        }
+
+        function openCmp() {
+          const filled = cmp.slots.filter(Boolean);
+          if (filled.length < 2) return;
+          cmpbody.innerHTML = filled.map(cmpPane).join("");
+          cmpstage.classList.add("open");
+          document.body.style.overflow = "hidden";
+        }
+
+        function closeCmp() {
+          cmpstage.classList.remove("open");
+          document.body.style.overflow = "";
+        }
+
+        document.getElementById("cmpopen").addEventListener("click", openCmp);
+        document.getElementById("cmpclose").addEventListener("click", closeCmp);
+        document.getElementById("cmpclear").addEventListener("click", () => {
+          cmp.slots = [null, null];
+          syncCmpButtons();
+          renderCmpBar();
         });
-      });
+        cmpstage.addEventListener("click", (e) => {
+          if (e.target === cmpstage) closeCmp();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && cmpstage.classList.contains("open"))
+            closeCmp();
+        });
 
-      renderStrip();
-      renderGroups();
-      renderWeb();
-      applyFace(FACES[0]);
-      applyPalette(PALETTES[0]);
-    </script>
+        // delegated pin clicks
+        document.addEventListener("click", (e) => {
+          const b = e.target.closest("[data-cmp]");
+          if (!b) return;
+          e.preventDefault();
+          e.stopPropagation();
+          toggleCmp({
+            kind: b.dataset.kind,
+            name: b.dataset.name,
+            palette: b.dataset.palette,
+          });
+        });
+
+        document.querySelectorAll("[data-zoom]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const big = btn.dataset.zoom === "zoomed";
+            webEl
+              .querySelectorAll(".grid")
+              .forEach((g) => g.classList.toggle("zoomed", big));
+            document
+              .querySelectorAll("[data-zoom]")
+              .forEach((b) =>
+                b.setAttribute("aria-pressed", String(b === btn)),
+              );
+          });
+        });
+        document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            root.dataset.theme = btn.dataset.themeBtn;
+            document
+              .querySelectorAll("[data-theme-btn]")
+              .forEach((b) =>
+                b.setAttribute("aria-pressed", String(b === btn)),
+              );
+          });
+        });
+
+        renderStrip();
+        renderGroups();
+        renderWeb();
+        applyFace(FACES[0]);
+        applyPalette(PALETTES[0]);
+      </script>
+    </div>
   </body>
 </html>
