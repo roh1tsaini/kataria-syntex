@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { RefreshCw, Save } from "lucide-react";
 import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { useUpdates } from "@/store/updates";
@@ -14,6 +15,7 @@ import {
   toastSuccess,
 } from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
+import { SettingsWindow } from "@/ui/components/settings-window";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
@@ -170,6 +172,34 @@ function NumberingGroup({
 }
 
 export function SettingsPage() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(true);
+  return (
+    <SettingsWindow
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) return;
+        // The route renders only the window on desktop — closing it must land
+        // on a real page, not an empty content area at /settings. A direct
+        // landing on the URL (typed, deep link) has no history to pop, and a
+        // no-op back there would leave the shell blank until the next nav.
+        if (window.history.length > 1) navigate(-1);
+        else navigate("/", { replace: true });
+      }}
+      label="Company settings"
+    >
+      {/* Desktop: own scroller + padding (portal-mounted, outside the shell's
+          .shell-scroll container). Mobile: bare — the shell's PageTransition
+          already supplies the page gutter, so padding here would double it. */}
+      <div className="settings-window-scroll px-6 pb-8 pt-6 max-md:overflow-visible max-md:p-0 sm:px-8">
+        <SettingsPanel />
+      </div>
+    </SettingsWindow>
+  );
+}
+
+function SettingsPanel() {
   const isPrimaryAdmin = useAuth((s) => s.workspace?.isPrimaryAdmin);
   const can = usePermission();
   const company = useAuth((s) => s.company);

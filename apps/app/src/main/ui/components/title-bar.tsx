@@ -152,7 +152,7 @@ export function WindowControls() {
 
   return (
     <div
-      className="fixed top-0 right-0 z-40 flex h-14 items-stretch print:hidden"
+      className="fixed top-0 right-0 z-[60] flex h-14 items-stretch print:hidden"
       style={noDragStyle}
     >
       <ControlButton label="Minimize" onClick={() => void win.minimize()}>
