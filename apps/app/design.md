@@ -171,7 +171,13 @@ no text-transform on body copy.
   Cards rest flat with hairline borders; lift max −1px on hover.
 - Floating chrome (app header, sticky action bars): translucent
   `color-mix` background + `backdrop-blur` + hairline edge. Content scrolls
-  under it. `prefers-reduced-transparency` falls back to solid.
+  under it. The header sits on the page background (`bg-background/85`,
+  `bg-background/70` where backdrop-filter is supported), never `bg-card` —
+  one flat wash, no double surface against the sidebar's card.
+  `prefers-reduced-transparency` falls back to solid.
+- Header right side: the FY and company are bare muted text separated by a
+  hairline divider (`h-4 w-px bg-border`, xl only) — no bordered chips, no
+  boxed backgrounds in the chrome row.
 
 ### 2.7 Icon buttons & capsules (shell chrome)
 
@@ -204,7 +210,7 @@ appears on any platform.
   Their `h-14` bottom borders form one continuous line across the window.
 - Drag regions: the header row itself is `-webkit-app-region: drag` (its
   free middle moves the window; double-click toggles maximize via
-  HTCAPTION). Interactive islands inside it — avatar button, right chip
+  HTCAPTION). Interactive islands inside it — avatar button, right text
   stack — are `no-drag`. Chrome-less routes (auth, print, scan, 404) drag
   from the invisible fixed strip (`h-14`, `z-20`) laid across the top by
   the TitleBar component. The sidebar is click-only — the whole `<aside>`
@@ -348,7 +354,8 @@ layout — never one generic shape for all pages.
   `ml-5` rule. Reduced-motion collapses to opacity.
 - A collapsed sidebar expands on hover as an overlay — the page underneath
   never moves. Opening waits ~120ms of hover intent; closing waits ~180ms
-  after the pointer leaves.
+  after the pointer leaves. The overlay carries no shadow — the hairline
+  border is the only edge in the shell.
 - A parent item with sub-items is a toggle, never a selection: it never
   takes the accent pill, even when one of its subs is active. The active
   sub alone takes the pill; the parent renders `font-medium

@@ -578,7 +578,7 @@ function HeaderBar({
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card/80 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))]"
+      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))] supports-[backdrop-filter]:bg-background/70"
       style={{
         ...dragStyle,
         paddingTop: "env(safe-area-inset-top, 0px)",
@@ -598,7 +598,7 @@ function HeaderBar({
         </Avatar>
         <span
           className={cn(
-            "absolute bottom-0.5 right-0.5 size-2 rounded-full ring-2 ring-card",
+            "absolute bottom-0.5 right-0.5 size-2 rounded-full ring-2 ring-background",
             online ? "bg-success" : "bg-warning",
           )}
           aria-hidden
@@ -617,14 +617,18 @@ function HeaderBar({
 
       {/* Interactive islands stay clickable inside the draggable header. */}
       <div
-        className="ml-auto flex min-w-0 items-center gap-1.5"
+        className="ml-auto flex min-w-0 items-center gap-3"
         style={noDragStyle}
       >
-        <span className="hidden items-center gap-1 rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground xl:inline-flex">
+        <span className="hidden items-center gap-1.5 text-xs font-medium text-muted-foreground xl:inline-flex">
           <CalendarDays className="size-3.5" aria-hidden />
           FY {currentFy?.label ?? "—"}
         </span>
-        <span className="inline-flex min-w-0 items-center gap-1 rounded-sm border border-border bg-card px-2 py-1 text-xs font-medium text-muted-foreground">
+        <span
+          className="hidden h-4 w-px bg-border xl:inline-block"
+          aria-hidden
+        />
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Building2 className="size-3 shrink-0" aria-hidden />
           <span className="hidden truncate max-w-[140px] min-[380px]:inline">
             {company?.name ?? COMPANY_DETAILS.name}
@@ -838,7 +842,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
             // (drag regions resolve in DOM order, z-index is ignored).
             "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card pt-[var(--tl-inset)] transition-[width] duration-200 ease-[var(--ease-drawer)] motion-reduce:transition-none md:flex",
             railOpen ? "w-60" : "w-14",
-            railHot && "z-50 border-r-transparent shadow-overlay",
           )}
         >
           <AnimatePresence mode="wait" initial={false}>

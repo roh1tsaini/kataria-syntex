@@ -882,7 +882,7 @@
   header[class*="backdrop-blur"],
   nav[class*="backdrop-blur"] {
     backdrop-filter: none !important;
-    background-color: var(--card) !important;
+    background-color: var(--background) !important;
   }
 }
 
