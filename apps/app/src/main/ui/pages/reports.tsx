@@ -416,7 +416,7 @@ function ReportView({ reportId }: { reportId: string }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-md text-muted-foreground hover:text-foreground touch-44"
+                    className="text-muted-foreground hover:text-foreground touch-44"
                     aria-label="Toggle columns"
                   >
                     <SlidersHorizontal aria-hidden />

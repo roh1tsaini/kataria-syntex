@@ -310,7 +310,7 @@ function MemberRow({
                   size="sm"
                   onClick={() => void onRemove()}
                   disabled={busy}
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="size-11 shrink-0 rounded-full px-0 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-8"
                   aria-label={`Remove ${member.name}`}
                 >
                   <Trash2 aria-hidden />
@@ -565,7 +565,7 @@ export function MembersPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="size-11 shrink-0 rounded-full px-0 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-8"
                     disabled={busyId === p.id}
                     onClick={() =>
                       void run(p.id, async () => {

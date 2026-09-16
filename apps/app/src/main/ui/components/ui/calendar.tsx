@@ -127,7 +127,7 @@ export function Calendar({
         <Button
           variant="ghost"
           size="icon"
-          className="size-11 sm:size-10 rounded-lg text-muted-foreground hover:text-foreground"
+          className="size-11 sm:size-10 text-muted-foreground hover:text-foreground"
           onClick={prevMonth}
           aria-label="Previous month"
         >
@@ -141,7 +141,7 @@ export function Calendar({
         <Button
           variant="ghost"
           size="icon"
-          className="size-11 sm:size-10 rounded-lg text-muted-foreground hover:text-foreground"
+          className="size-11 sm:size-10 text-muted-foreground hover:text-foreground"
           onClick={nextMonth}
           aria-label="Next month"
         >

@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/ui/lib/cn";
 
 /* design.md §2.7 — a lone small icon button is a circle; adjacent ones join
-   inside a ButtonCapsule. Shell chrome only; nav rows stay rounded-md. */
+   inside a ButtonCapsule. App-wide control grammar; nav rows stay rounded-md. */
 const circleButtonVariants = cva(
   "btn-motion grid shrink-0 place-items-center rounded-full border border-border/60 text-muted-foreground outline-none [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:scale-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
@@ -51,7 +51,7 @@ export function ButtonCapsule({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 rounded-full bg-muted/60 p-1",
+        "flex items-center gap-1 rounded-full bg-muted/60 p-1 shadow-[var(--specular)] [&>button]:border-0 [&>a]:border-0",
         vertical && "flex-col",
         className,
       )}

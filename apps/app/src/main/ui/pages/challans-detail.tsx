@@ -23,6 +23,7 @@ import {
   toastSuccess,
 } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
+import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 
 import { Badge } from "@/ui/components/ui/badge";
@@ -113,7 +114,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
     return (
       <>
         <div className="flex items-center gap-3">
-          <Skeleton className="size-7 rounded-lg" />
+          <Skeleton className="hidden size-8 shrink-0 rounded-full touch-44 sm:block" />
           <div>
             <Skeleton className="h-6 w-48" />
             <Skeleton className="mt-2 h-3 w-36" />
@@ -180,13 +181,12 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3 min-w-0">
-          <Link
-            to={kind.listPath}
-            className="hidden sm:inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-colors mt-1.5"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            <span className="sr-only">Back</span>
-          </Link>
+          <CircleButton asChild className="mt-1.5 hidden sm:grid">
+            <Link to={kind.listPath}>
+              <ArrowLeft className="size-4" aria-hidden />
+              <span className="sr-only">Back</span>
+            </Link>
+          </CircleButton>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="page-title font-mono tabular-nums">
@@ -218,7 +218,7 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <Button
             asChild
             variant="outline"
@@ -238,27 +238,37 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
             <Download aria-hidden />
             <span>PDF</span>
           </Button>
-          <Button asChild variant="outline" className="flex-1 sm:flex-none">
-            <Link to={`${kind.listPath}/${challan.id}/print`}>
-              <Printer aria-hidden />
-              <span className="sr-only sm:not-sr-only">Print</span>
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="flex-1 sm:flex-none">
-            <Link to={`${kind.listPath}/${challan.id}/edit`}>
-              <Pencil aria-hidden />
-              <span className="sr-only sm:not-sr-only">Edit</span>
-            </Link>
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => void onDelete()}
-            loading={deleting}
-            className="flex-1 sm:flex-none"
-          >
-            <Trash2 aria-hidden />
-            <span className="sr-only sm:not-sr-only">Delete</span>
-          </Button>
+          <ButtonCapsule className="sm:gap-2 sm:bg-transparent sm:p-0 sm:shadow-none sm:[&>a]:border">
+            <Button
+              asChild
+              variant="outline"
+              className="size-11 shrink-0 px-0 sm:h-10 sm:w-auto sm:px-4"
+            >
+              <Link to={`${kind.listPath}/${challan.id}/print`}>
+                <Printer aria-hidden />
+                <span className="sr-only sm:not-sr-only">Print</span>
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="size-11 shrink-0 px-0 sm:h-10 sm:w-auto sm:px-4"
+            >
+              <Link to={`${kind.listPath}/${challan.id}/edit`}>
+                <Pencil aria-hidden />
+                <span className="sr-only sm:not-sr-only">Edit</span>
+              </Link>
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void onDelete()}
+              loading={deleting}
+              className="size-11 shrink-0 px-0 sm:h-10 sm:w-auto sm:px-4"
+            >
+              <Trash2 aria-hidden />
+              <span className="sr-only sm:not-sr-only">Delete</span>
+            </Button>
+          </ButtonCapsule>
         </div>
       </div>
 

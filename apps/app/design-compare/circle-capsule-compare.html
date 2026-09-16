@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Circle &amp; capsule controls — design compare</title>
+    <style>
+      /* Same token values as apps/app globals.css */
+      :root {
+        --background: oklch(0.99 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --border: oklch(0.922 0 0);
+        --a-strong: oklch(0.22 0.005 260);
+        --a-fg: oklch(0.985 0 0);
+        --a-soft: oklch(0.22 0.005 260 / 7%);
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --radius-md: 0.625rem;
+        --radius-lg: 0.75rem;
+        --specular: inset 0 1px 0 oklch(1 0 0 / 55%);
+        color-scheme: light;
+      }
+      .dark {
+        --background: oklch(0.145 0 0);
+        --foreground: oklch(0.985 0 0);
+        --card: oklch(0.205 0 0);
+        --muted: oklch(0.269 0 0);
+        --muted-foreground: oklch(0.708 0 0);
+        --border: oklch(1 0 0 / 10%);
+        --a-strong: oklch(0.93 0 0);
+        --a-fg: oklch(0.16 0 0);
+        --a-soft: oklch(1 0 0 / 10%);
+        --specular: inset 0 1px 0 oklch(1 0 0 / 8%);
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html {
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+        letter-spacing: -0.011em;
+        line-height: 1.6;
+        font-size: 1rem;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.875rem 1.25rem;
+        background: color-mix(in oklch, var(--card) 72%, transparent);
+        backdrop-filter: blur(16px) saturate(1.5);
+        -webkit-backdrop-filter: blur(16px) saturate(1.5);
+        border-bottom: 1px solid var(--border);
+      }
+      @supports not (backdrop-filter: blur(1px)) {
+        .topbar {
+          background: var(--card);
+        }
+      }
+      .topbar h1 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .theme-btn {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted-foreground);
+        cursor: pointer;
+        transition:
+          background-color 150ms var(--ease-out),
+          color 150ms var(--ease-out),
+          transform 100ms var(--ease-out);
+      }
+      .theme-btn:hover {
+        background: var(--muted);
+        color: var(--foreground);
+      }
+      .theme-btn:active {
+        transform: scale(0.9);
+      }
+
+      main {
+        max-width: 56rem;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 4rem;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      section {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--card);
+        padding: 1.25rem;
+        display: grid;
+        gap: 1rem;
+        /* Entrance: fade + 5px rise, staggered 40ms — house choreography */
+        animation: rise 300ms var(--ease-out) backwards;
+      }
+      section:nth-child(1) {
+        animation-delay: 0ms;
+      }
+      section:nth-child(2) {
+        animation-delay: 40ms;
+      }
+      section:nth-child(3) {
+        animation-delay: 80ms;
+      }
+      section:nth-child(4) {
+        animation-delay: 120ms;
+      }
+      section:nth-child(5) {
+        animation-delay: 160ms;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      section > h2 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      section > p {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+        margin-top: -0.625rem;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .row-center {
+        justify-content: center;
+        padding: 1rem 0;
+      }
+
+      /* ── Circle buttons (lone icon = circle) ─────────────────────────── */
+      .circle {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted-foreground);
+        cursor: pointer;
+        transition:
+          background-color 150ms var(--ease-out),
+          color 150ms var(--ease-out),
+          transform 100ms var(--ease-out),
+          box-shadow 150ms var(--ease-out);
+      }
+      .circle:hover {
+        background: var(--muted);
+        color: var(--foreground);
+      }
+      .circle:active {
+        transform: scale(0.9);
+      }
+      .circle:focus-visible {
+        outline: 2px solid var(--a-strong);
+        outline-offset: 2px;
+      }
+      .circle svg {
+        width: 16px;
+        height: 16px;
+        pointer-events: none;
+      }
+
+      /* ── Button capsule (2+ adjacent = one capsule) ──────────────────── */
+      .capsule {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--muted) 60%, transparent);
+        box-shadow: var(--specular);
+      }
+      .capsule .circle {
+        border-color: transparent;
+      }
+      .capsule.vertical {
+        flex-direction: column;
+      }
+
+      /* ── Tab bar: pill capsule, spring-sliding fill, circle when single ── */
+      .tabbar {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px;
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--muted) 65%, transparent);
+        border: 1px solid var(--border);
+        box-shadow: var(--specular);
+      }
+      .tab {
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted-foreground);
+        font: inherit;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: color 200ms var(--ease-out);
+      }
+      .tab svg {
+        width: 16px;
+        height: 16px;
+      }
+      .tab.on {
+        color: var(--a-fg);
+      }
+      .tab:not(.on):hover {
+        color: var(--foreground);
+      }
+      /* The selection pill: one element, moved by a JS spring (iOS segmented control) */
+      .tabbar .pill-el {
+        position: absolute;
+        top: 4px;
+        left: 0;
+        height: calc(100% - 8px);
+        z-index: 0;
+        border-radius: 999px;
+        background: var(--a-strong);
+        box-shadow: 0 1px 3px oklch(0 0 0 / 18%);
+        transform: translateX(0px) scaleX(1);
+        will-change: transform;
+        pointer-events: none;
+      }
+      .tab:focus-visible {
+        outline: 2px solid var(--a-strong);
+        outline-offset: 2px;
+      }
+      /* Icon pop when a tab wins selection */
+      .tab.pop svg {
+        animation: pop 260ms var(--ease-out);
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.82);
+        }
+        55% {
+          transform: scale(1.14);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .tabbar.single .tab {
+        padding: 0 13px;
+      }
+
+      /* ── Floating phone bottom bar mock ─────────────────────────────── */
+      .phone {
+        width: 300px;
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        border-radius: 40px;
+        overflow: hidden;
+        background: var(--background);
+        box-shadow: 0 8px 24px -8px oklch(0 0 0 / 14%);
+      }
+      .phone-screen {
+        position: relative;
+        height: 480px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .fake-line {
+        height: 12px;
+        border-radius: 999px;
+        background: var(--muted);
+      }
+      .fake-line.w60 {
+        width: 60%;
+      }
+      .fake-line.w40 {
+        width: 40%;
+      }
+      .fake-line.w80 {
+        width: 80%;
+      }
+      .fake-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--card);
+        padding: 0.75rem;
+        display: grid;
+        gap: 0.5rem;
+      }
+      /* Frosted floating bar — content scrolls under it; blur kept modest for old GPUs */
+      .float-bar {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        display: inline-flex;
+        padding: 4px;
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--card) 78%, transparent);
+        backdrop-filter: blur(12px) saturate(1.4);
+        -webkit-backdrop-filter: blur(12px) saturate(1.4);
+        border: 1px solid var(--border);
+        box-shadow:
+          0 8px 24px -8px oklch(0 0 0 / 18%),
+          var(--specular);
+      }
+      @supports not (backdrop-filter: blur(1px)) {
+        .float-bar {
+          background: var(--card);
+        }
+      }
+      .float-bar .tab {
+        width: 46px;
+        height: 40px;
+        padding: 0;
+      }
+
+      /* Demo: sheet springs up from the active tab (Apple modal presentation) */
+      .sheet {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        z-index: 2;
+        border-radius: 20px 20px 28px 28px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        box-shadow: 0 12px 32px -8px oklch(0 0 0 / 22%);
+        padding: 1rem;
+        display: grid;
+        gap: 0.625rem;
+        transform: translateY(calc(100% + 24px));
+        transition:
+          transform 360ms var(--ease-out),
+          opacity 240ms var(--ease-out);
+        opacity: 0;
+      }
+      .sheet.open {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .sheet h3 {
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      .sheet .grab {
+        width: 36px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--border);
+        margin: 0 auto 2px;
+      }
+
+      .legend {
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+      }
+      code {
+        font-size: 0.75rem;
+        background: var(--muted);
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+
+      /* Reduced motion: everything collapses to short cross-fades */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 200ms !important;
+          transition-property:
+            opacity, color, background-color, border-color !important;
+        }
+      }
+      @media (prefers-reduced-transparency: reduce) {
+        .topbar,
+        .float-bar {
+          background: var(--card);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <h1>Circle &amp; capsule controls — Apple-style shell grammar</h1>
+      <button class="theme-btn" id="theme" aria-label="Toggle dark mode">
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        >
+          <circle cx="12" cy="12" r="4.5" />
+          <path
+            d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <main>
+      <section>
+        <h2>Rule 1 — one lone icon button is a circle</h2>
+        <p>
+          32px on desktop, 44px on touch. Hairline border, transparent at rest,
+          muted fill on hover, scale 0.9 on press.
+        </p>
+        <div class="row row-center">
+          <button class="circle" aria-label="Settings">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <circle cx="12" cy="12" r="3.2" />
+              <path
+                d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"
+              />
+            </svg>
+          </button>
+          <button class="circle" aria-label="Search">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m20 20-4.2-4.2" />
+            </svg>
+          </button>
+          <button class="circle" aria-label="Close">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+          <button class="circle" aria-label="Filter">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <h2>
+          Rule 2 — two or more adjacent icon buttons join into one capsule
+        </h2>
+        <p>
+          Every button inside stays a circle; the capsule is one muted pill
+          holding them, with a top specular edge like lit glass. Vertical
+          variant for the rail.
+        </p>
+        <div class="row row-center">
+          <div class="capsule">
+            <button class="circle" aria-label="Edit">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z" />
+              </svg>
+            </button>
+            <button class="circle" aria-label="Duplicate">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <rect x="9" y="9" width="11" height="11" rx="3" />
+                <path d="M5 15V7a2 2 0 0 1 2-2h8" />
+              </svg>
+            </button>
+            <button class="circle" aria-label="Delete">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" />
+              </svg>
+            </button>
+          </div>
+          <div class="capsule vertical">
+            <button class="circle" aria-label="Up">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="m6 14 6-6 6 6" />
+              </svg>
+            </button>
+            <button class="circle" aria-label="Down">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="m6 10 6 6 6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Rule 3 — tab bar: spring-sliding pill, circle when single</h2>
+        <p>
+          The selection pill glides between tabs on a damped spring — squetching
+          as it travels, settle without bounce. Click fast: it retargets
+          mid-flight from its current position and speed.
+        </p>
+        <div class="row row-center">
+          <div class="tabbar" data-spring>
+            <button class="tab on">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="M4 11.5 12 5l8 6.5V20h-5.5v-5h-5v5H4Z" /></svg
+              >Home
+            </button>
+            <button class="tab">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <rect x="4" y="5" width="16" height="15" rx="3" />
+                <path d="M8 3.5V7M16 3.5V7M4 10.5h16" /></svg
+              >Challans
+            </button>
+            <button class="tab">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6" /></svg
+              >Reports
+            </button>
+            <span class="pill-el"></span>
+          </div>
+          <div class="tabbar single" data-spring>
+            <button class="tab on">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <circle cx="12" cy="12" r="8" />
+                <path d="M12 8.5v7M8.5 12h7" /></svg
+              >Menu
+            </button>
+            <span class="pill-el"></span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>On the phone — floating frosted bar + sheet</h2>
+        <p>
+          The capsule floats over content on a frosted material; tapping a tab
+          slides the pill and pops the icon. Tap Home again to pop the sheet up.
+        </p>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="fake-line w60"></div>
+            <div class="fake-card">
+              <div class="fake-line w40"></div>
+              <div class="fake-line w80"></div>
+            </div>
+            <div class="fake-card">
+              <div class="fake-line w40"></div>
+              <div class="fake-line w60"></div>
+            </div>
+            <div class="fake-card">
+              <div class="fake-line w40"></div>
+              <div class="fake-line w80"></div>
+            </div>
+            <div class="sheet" id="sheet">
+              <div class="grab"></div>
+              <h3>Sheet — springs up from the bar</h3>
+              <div class="fake-line w80"></div>
+              <div class="fake-line w60"></div>
+              <button
+                class="circle"
+                id="sheet-close"
+                aria-label="Close"
+                style="margin-top: 0.25rem"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
+            <div class="float-bar" data-spring id="phone-bar">
+              <button class="tab on" aria-label="Home">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <path d="M4 11.5 12 5l8 6.5V20h-5.5v-5h-5v5H4Z" />
+                </svg>
+              </button>
+              <button class="tab" aria-label="Challans">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <rect x="4" y="5" width="16" height="15" rx="3" />
+                  <path d="M8 3.5V7M16 3.5V7M4 10.5h16" />
+                </svg>
+              </button>
+              <button class="tab" aria-label="Stock">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5Z" />
+                  <path d="M4 8.5 12 13l8-4.5M12 13v7" />
+                </svg>
+              </button>
+              <span class="pill-el"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Sidebar rail — vertical capsule on desktop</h2>
+        <p>
+          The collapsed desktop rail holds its icon actions in one vertical
+          capsule, circles inside.
+        </p>
+        <div class="row row-center">
+          <div class="capsule vertical">
+            <button class="circle" aria-label="Home">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="M4 11.5 12 5l8 6.5V20h-5.5v-5h-5v5H4Z" />
+              </svg>
+            </button>
+            <button class="circle" aria-label="Search">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m20 20-4.2-4.2" />
+              </svg>
+            </button>
+            <button class="circle" aria-label="New">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p class="legend">
+          Performance: springs are transform-only and the loop stops on settle;
+          blur is a single modest layer with solid fallbacks for
+          <code>prefers-reduced-transparency</code> and no-<code
+            >backdrop-filter</code
+          >
+          browsers.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* ── Spring engine — Apple segmented-control physics ──────────────
+     Critically damped (no bounce on a tab switch); retargets from the
+     live position + velocity so rapid clicks never jump. Transform-only;
+     the rAF loop stops the frame the value settles. */
+      function makeSpring(el, initial, onSettle) {
+        let x = initial,
+          v = 0,
+          target = initial,
+          raf = null,
+          last = 0;
+        const STIFF = 340,
+          DAMP = 30; // ~0.9 damping ratio: quick, near no overshoot
+        const apply = () => {
+          el.style.transform =
+            "translateX(" + x + "px) scaleX(" + squish() + ")";
+        };
+        const squish = () => Math.min(1 + Math.abs(v) * 0.0004, 1.16);
+        function frame(t) {
+          const dt = Math.min((t - last) / 1000, 1 / 30);
+          last = t;
+          const a = -STIFF * (x - target) - DAMP * v;
+          v += a * dt;
+          x += v * dt;
+          if (Math.abs(v) < 0.005 && Math.abs(x - target) < 0.005) {
+            x = target;
+            v = 0;
+            apply();
+            raf = null;
+            if (onSettle) onSettle();
+            return;
+          }
+          apply();
+          raf = requestAnimationFrame(frame);
+        }
+        return {
+          set(t) {
+            target = t;
+            if (!raf) {
+              last = performance.now();
+              raf = requestAnimationFrame(frame);
+            }
+          },
+          place(px) {
+            x = target = px;
+            v = 0;
+            apply();
+          },
+        };
+      }
+
+      document.querySelectorAll("[data-spring]").forEach((bar) => {
+        const pill = bar.querySelector(".pill-el");
+        const tabs = [...bar.querySelectorAll(".tab")];
+        let current = tabs.findIndex((t) => t.classList.contains("on"));
+        if (current < 0) current = 0;
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let pillTop = parseFloat(getComputedStyle(pill).top) || 4;
+
+        const targetOf = (tab) => tab.offsetLeft - pillTop;
+        const sizeOf = (tab) => {
+          pill.style.width = tab.offsetWidth + "px";
+        };
+
+        const spring = makeSpring(pill, targetOf(tabs[current]), null);
+        pill.style.width = tabs[current].offsetWidth + "px";
+        spring.place(targetOf(tabs[current]));
+
+        bar.addEventListener("click", (e) => {
+          const tab = e.target.closest(".tab");
+          if (!tab || tab.classList.contains("on")) {
+            if (tab && bar.id === "phone-bar")
+              document.getElementById("sheet").classList.toggle("open");
+            return;
+          }
+          tabs.forEach((t) => t.classList.remove("on", "pop"));
+          tab.classList.add("on", "pop");
+          tab
+            .querySelector("svg")
+            .addEventListener(
+              "animationend",
+              () => tab.classList.remove("pop"),
+              { once: true },
+            );
+          pill.style.width = tab.offsetWidth + "px";
+          if (reduced) spring.place(targetOf(tab));
+          else spring.set(targetOf(tab));
+        });
+      });
+
+      const root = document.documentElement;
+      document
+        .getElementById("theme")
+        .addEventListener("click", () => root.classList.toggle("dark"));
+      document
+        .getElementById("sheet-close")
+        .addEventListener("click", () =>
+          document.getElementById("sheet").classList.remove("open"),
+        );
+    </script>
+  </body>
+</html>

@@ -116,6 +116,8 @@
     0 4px 12px -4px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
   --shadow-overlay:
     0 8px 24px -8px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
+  /* Top specular edge on capsule materials — light catching lit glass (§2.7) */
+  --specular: inset 0 1px 0 oklch(1 0 0 / 55%);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -244,6 +246,7 @@
   /* Login QR modules stay near-black: the code sits on a fixed white canvas
      (quiet zone + scan contrast), so a light ink would vanish in dark mode. */
   --qr-ink: oklch(0.145 0 0);
+  --specular: inset 0 1px 0 oklch(1 0 0 / 8%);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
@@ -516,13 +519,13 @@
     }
   }
 
-  /* Sticky bottom bar — Vercel: solid card, flat border */
+  /* Clear the floating navigation without moving actions when field focus changes. */
   .sticky-action-bar {
     position: sticky;
-    bottom: 0;
+    bottom: calc(3.25rem + 2px + 12px + env(safe-area-inset-bottom, 0px));
     z-index: 20;
     margin-inline: -1rem;
-    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0));
+    padding: 0.75rem 1rem;
     background: var(--card);
     border-top: 1px solid var(--border);
   }
@@ -745,6 +748,18 @@
       transform: translateX(260%);
     }
   }
+  /* Tab-bar icon pop — selection wins, the icon answers (§2.7.2) */
+  @keyframes tab-pop {
+    0% {
+      transform: scale(0.82);
+    }
+    55% {
+      transform: scale(1.14);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
   /* Clouds slide sideways more than they zoom — weather, not bubbles */
   @keyframes entry-drift-1 {
     from {
@@ -876,6 +891,22 @@
   }
 }
 
+.phone-navigation {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.capsule-surface {
+  background: var(--card);
+  box-shadow: var(--shadow-overlay), var(--specular);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .capsule-surface {
+    background: color-mix(in oklch, var(--card) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .filter-bar,
   .sticky-action-bar,
@@ -883,6 +914,10 @@
   nav[class*="backdrop-blur"] {
     backdrop-filter: none !important;
     background-color: var(--background) !important;
+  }
+  .capsule-surface {
+    backdrop-filter: none;
+    background: var(--card);
   }
 }
 

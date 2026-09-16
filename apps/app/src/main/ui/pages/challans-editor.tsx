@@ -622,7 +622,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                               onClick={() => removeRow(i)}
                               disabled={rows.length <= 1}
                               aria-label={`Remove row ${i + 1}`}
-                              className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 touch-44"
+                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 touch-44"
                             >
                               <X className="size-4" aria-hidden />
                             </Button>
@@ -1089,7 +1089,7 @@ export function ChallanEditorRoute({ kind }: { kind: ChallanKind }) {
                             onClick={() => removeRow(i)}
                             disabled={rows.length <= 1}
                             aria-label={`Remove row ${i + 1}`}
-                            className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44"
                           >
                             <X className="size-4" aria-hidden />
                           </Button>

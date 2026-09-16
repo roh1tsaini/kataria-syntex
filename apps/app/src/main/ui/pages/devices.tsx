@@ -81,7 +81,7 @@ function DeviceRow({
               type="button"
               onClick={() => setDetailsOpen((v) => !v)}
               aria-expanded={detailsOpen}
-              className="btn-motion -ml-2 mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground touch-44 [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground"
+              className="btn-motion -ml-2 mt-1 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground touch-44 [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground"
             >
               <ChevronDown
                 className={cn(
@@ -106,7 +106,7 @@ function DeviceRow({
           size="sm"
           onClick={onDelete}
           disabled={deleting}
-          className="shrink-0 text-destructive touch-44"
+          className="size-11 shrink-0 rounded-full px-0 text-destructive touch-44 sm:h-8 sm:w-auto sm:px-3"
           aria-label={`Revoke ${device.label}`}
         >
           <Trash2 className="size-4" aria-hidden />
@@ -131,6 +131,9 @@ function DevicesSkeleton() {
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-52" />
           </div>
+          {i > 0 && (
+            <Skeleton className="size-11 shrink-0 rounded-full sm:h-8 sm:w-20 touch-44" />
+          )}
         </div>
       ))}
     </div>

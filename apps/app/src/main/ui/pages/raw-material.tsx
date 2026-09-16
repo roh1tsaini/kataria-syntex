@@ -226,7 +226,7 @@ export function RawMaterialPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-1 shrink-0 rounded-md touch-44"
+                className="mr-1 shrink-0 touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >
@@ -431,7 +431,7 @@ export function RawMaterialPage() {
                               navigate(`/raw-material?edit=${item.id}`)
                             }
                             aria-label={`Edit entry ${item.entryNumber}`}
-                            className="-mr-1 -mt-1 rounded-md text-muted-foreground hover:text-foreground touch-44"
+                            className="-mr-1 -mt-1 text-muted-foreground hover:text-foreground touch-44"
                           >
                             <Pencil className="size-4" aria-hidden />
                           </Button>
@@ -810,7 +810,7 @@ function RawMaterialForm({
                         size="icon"
                         onClick={() => removeRow(idx)}
                         aria-label={`Remove row ${idx + 1}`}
-                        className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
                       >
                         <Trash2 className="size-4" aria-hidden />
                       </Button>

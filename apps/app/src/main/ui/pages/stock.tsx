@@ -184,7 +184,7 @@ export function StockPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-1 shrink-0 rounded-md touch-44"
+                className="mr-1 shrink-0 touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >

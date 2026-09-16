@@ -455,7 +455,7 @@ function MethodTab({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "relative flex h-11 items-center justify-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors duration-150 sm:h-10",
+        "relative flex h-11 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors duration-150 sm:h-10",
         active
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground",
@@ -465,7 +465,7 @@ function MethodTab({
         <motion.span
           layoutId="auth-method-thumb"
           transition={reduceMotion ? { duration: 0 } : SPRING}
-          className="absolute inset-0 rounded-md border border-border bg-card shadow-soft"
+          className="absolute inset-0 rounded-full border border-border bg-card shadow-soft"
           aria-hidden
         />
       )}
@@ -625,7 +625,7 @@ export function AuthPage() {
                       <div
                         role="group"
                         aria-label="Sign-in method"
-                        className="grid grid-cols-2 gap-1 rounded-md border border-border bg-muted p-1 sm:hidden"
+                        className="grid grid-cols-2 gap-1 rounded-full border border-border bg-muted p-1 sm:hidden"
                       >
                         <MethodTab
                           active={authMethod === "phone"}

@@ -62,13 +62,14 @@ Base `--radius: 0.625rem` (10px):
 | Token             | Value | Used for                               |
 | ----------------- | ----- | -------------------------------------- |
 | `rounded-sm`      | 8px   | badges, chips, small tags              |
-| `rounded-md`/base | 10px  | buttons, inputs, selects, toggles      |
+| `rounded-md`/base | 10px  | inputs, selects, navigation rows       |
 | `rounded-lg`      | 12px  | cards, filter bars, table containers   |
 | `rounded-xl`      | 16px  | dialogs, popovers, dropdowns           |
 | `rounded-2xl`     | 20px  | bottom sheets (mobile drawers/dialogs) |
 
-Pills (`rounded-full`) only for avatar/badge dots and icon-button circles /
-capsules (Section 2.7). **A control's radius never depends on its page.**
+`rounded-full` is for avatars/dots, text-action pills, segmented controls,
+and icon-button circles/capsules (Section 2.7). Inputs, cards and calendar
+day cells retain the ladder above. **A control's radius never depends on its page.**
 
 ### 2.3 Control heights (one ladder, everywhere)
 
@@ -179,7 +180,7 @@ no text-transform on body copy.
   hairline divider (`h-4 w-px bg-border`, xl only) — no bordered chips, no
   boxed backgrounds in the chrome row.
 
-### 2.7 Icon buttons & capsules (shell chrome)
+### 2.7 Icon buttons & capsules (app-wide)
 
 New-Apple (iOS 26 / macOS Tahoe) control grammar: hardware curvature informs
 controls, and actions that sit together share one grouped background.
@@ -193,8 +194,39 @@ controls, and actions that sit together share one grouped background.
 - Never mix a circle and a squared button in one cluster. Nav selection rows
   (sidebar items, rail items) keep `rounded-md` — circles are for
   actions, not navigation.
-- Applies on desktop AND mobile, everywhere in the shell (sidebar toggle,
-  drawer close, footer theme/logout, header).
+- Applies across desktop and mobile: shell actions, page actions, form row
+  actions, calendar navigation and dialog close controls. Text action buttons
+  are capsules; icon actions have equal width and height. Inputs, cards and
+  calendar day cells keep their radius ladder.
+- Capsules have a static top highlight (`--specular`: white 55% in light,
+  8% in dark). Related actions share a muted background with 4px inset/gap;
+  direct child buttons and links inside have no individual border. When a
+  responsive cluster becomes separate desktop text buttons, outline links
+  restore their individual borders at that breakpoint.
+
+### 2.7.2 Floating phone navigation
+
+- Below `md`, a centered capsule holds permitted Challans and Raw Stock
+  shortcuts (Packing when Stock is unavailable) plus More. More opens the
+  full navigation drawer and stays available for workspace/account actions.
+  With no shortcuts, More is a single circle. Shortcuts stay in the same order
+  across routes; the drawer holds every permitted destination.
+- Every item is a 44px circle with a 20px icon and an accessible name.
+  Active fill moves using the shared `SPRING` layout transition; selected
+  icons use a 260ms 0.82→1.14→1 pulse on selection, not on initial mount.
+  Reduced motion uses a static selection and no icon pulse.
+- Surface: 4px inset, 12px bottom clearance plus safe area, card 78% opacity,
+  static 12px backdrop blur with 1.4 saturation, hairline border and overlay
+  shadow. Unsupported/reduced-transparency environments use a solid card.
+  Never animate blur or run an idle animation loop.
+- Content keeps its `pb-28` reservation below `md`. Mobile sticky actions sit
+  above the navigation footprint: `3.25rem` (item plus capsule inset), 2px
+  border, 12px bottom clearance and the bottom safe area. Their own padding
+  is 12px vertically and 16px horizontally; the safe area is counted only in
+  the bottom offset. This reservation stays stable while editing, so focus
+  changes do not move the actions. At `sm` and above, actions remain in flow.
+- The bar is hidden while the navigation drawer is open and while editing a
+  field. Native window controls retain their platform edge-click behavior.
 - Primitive: `ui/circle-button.tsx` — `CircleButton`, `ButtonCapsule`.
 - Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
   with a `size-5` icon. One treatment everywhere.
@@ -285,7 +317,7 @@ placeholders, fallbacks) — never the app name.
 | Component                                            | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Button                                               | Radii/heights from Section 2.2/Section 2.3. Press: `scale(0.97)` @100ms on `:active` via `.btn-motion`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| CircleButton / ButtonCapsule                         | Shell-chrome icon actions (Section 2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent pairs join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail). Never for navigation rows.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| CircleButton / ButtonCapsule                         | App-wide icon actions (Section 2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent icon actions join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail); direct children lose their individual borders. Never for navigation rows.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Input/Select/Textarea/DatePicker                     | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Card                                                 | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Dialog                                               | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -321,7 +353,7 @@ layout — never one generic shape for all pages.
   widths, stat cards / charts / forms show bars in place of their real
   blocks. Never a bare rectangle where structured content will appear.
 - **Building blocks:** `PageHeaderSkeleton` (eyebrow `h-3 w-20`, title
-  `h-8 w-56`, description `h-3 w-72`, actions `h-10 w-32 rounded-md`),
+  `h-8 w-56`, description `h-3 w-72`, actions `h-10 w-32 rounded-full`),
   `filter-bar` with the real control heights (40px inputs), register card
   (muted strip + desktop table + mobile card stack), stat/chart cards.
 - **Rules:** every skeleton is `aria-hidden`; `animate-pulse` only
@@ -337,8 +369,9 @@ layout — never one generic shape for all pages.
   same concept. One primary action top-right; secondary inside.
 - Mobile: single column, cards; ≥sm: grids (`minmax(0,1fr)`); ≥xl: data grids
   up to 4 columns. Card grids keep equal heights (`grid` + stretch).
-- Mobile nav: one full-screen nav drawer, opened from the header avatar.
-  Desktop: left sidebar. Same items, same order, same icons on both surfaces.
+- Mobile nav: floating shortcuts (Section 2.7.2) plus one full-screen nav
+  drawer, opened from More or the header avatar. Desktop: left sidebar.
+  Drawer and sidebar share the same items, order and icons.
 - Full-screen nav drawer: covers
   the viewport (`inset-0`, `bg-background`), slides from the left 280ms
   `EASE_DRAWER`, exits 20% faster, no scrim (nothing remains visible to tap).

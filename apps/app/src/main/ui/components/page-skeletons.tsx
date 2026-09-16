@@ -4,6 +4,7 @@ import {
   type SkeletonCol,
 } from "@/ui/components/table-skeleton";
 import { Skeleton } from "@/ui/components/motion";
+import { ButtonCapsule } from "@/ui/components/ui/circle-button";
 import { cn } from "@/ui/lib/cn";
 
 /**
@@ -62,7 +63,10 @@ function PageHeaderSkeleton({
       {actions && (
         <div className="flex flex-wrap items-center gap-2 sm:pb-1">
           {Array.from({ length: actionsCount }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-32 rounded-md" />
+            <Skeleton
+              key={i}
+              className="h-11 w-32 rounded-full sm:h-10 touch-44"
+            />
           ))}
         </div>
       )}
@@ -238,7 +242,7 @@ const CHALLAN_COLS: SkeletonCol[] = [
   { skeleton: "ml-auto h-4 w-10" },
   { skeleton: "ml-auto h-4 w-16" },
   { skeleton: "h-4 w-14", td: "py-2.5" },
-  { skeleton: "ml-auto size-8 rounded-md", td: "py-2.5" },
+  { skeleton: "ml-auto size-8 rounded-full touch-44", td: "py-2.5" },
 ];
 
 function ChallansListSkeleton() {
@@ -254,7 +258,7 @@ const RETURNS_COLS: SkeletonCol[] = [
   { skeleton: "h-4 w-40" },
   { skeleton: "h-4 w-24" },
   { skeleton: "h-4 w-24" },
-  { skeleton: "ml-auto size-8 rounded-md" },
+  { skeleton: "ml-auto size-8 rounded-full touch-44" },
 ];
 
 function ReturnsSkeleton() {
@@ -270,7 +274,7 @@ const RAW_MATERIAL_COLS: SkeletonCol[] = [
   { skeleton: "h-4 w-20" },
   { skeleton: "h-4 w-40" },
   { skeleton: "h-4 w-24" },
-  { skeleton: "ml-auto size-8 rounded-md" },
+  { skeleton: "ml-auto size-8 rounded-full touch-44" },
 ];
 
 function RawMaterialSkeleton() {
@@ -303,7 +307,7 @@ const PACKING_COLS: SkeletonCol[] = [
   { skeleton: "h-4 w-24" },
   { skeleton: "ml-auto h-4 w-12" },
   { skeleton: "ml-auto h-4 w-16" },
-  { skeleton: "ml-auto size-8 rounded-md" },
+  { skeleton: "ml-auto size-8 rounded-full touch-44" },
 ];
 
 export function PackingSkeleton() {
@@ -320,7 +324,7 @@ function ChallanDetailSkeleton() {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <Skeleton className="mt-1.5 hidden size-8 shrink-0 rounded-md sm:block" />
+          <Skeleton className="mt-1.5 hidden size-8 shrink-0 rounded-full touch-44 sm:block" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Skeleton className="h-7 w-44" />
@@ -329,10 +333,20 @@ function ChallanDetailSkeleton() {
             <Skeleton className="mt-2 h-3 w-40" />
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Skeleton className="h-10 w-24 rounded-md" />
-          <Skeleton className="h-10 w-24 rounded-md" />
-          <Skeleton className="h-10 w-24 rounded-md" />
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <Skeleton className="h-11 flex-1 rounded-full sm:hidden" />
+          <Skeleton className="h-11 flex-1 rounded-full sm:h-10 sm:w-24 sm:flex-none touch-44" />
+          <ButtonCapsule
+            aria-hidden
+            className="sm:gap-2 sm:bg-transparent sm:p-0 sm:shadow-none"
+          >
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="size-11 shrink-0 rounded-full sm:h-10 sm:w-24 touch-44"
+              />
+            ))}
+          </ButtonCapsule>
         </div>
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4">
@@ -389,8 +403,8 @@ function ChallanEditorSkeleton() {
           ))}
         </div>
         <div className="hidden justify-end gap-2 sm:flex">
-          <Skeleton className="h-10 w-24 rounded-md" />
-          <Skeleton className="h-10 w-28 rounded-md" />
+          <Skeleton className="h-10 w-24 rounded-full touch-44" />
+          <Skeleton className="h-11 w-28 rounded-full sm:h-10 touch-44" />
         </div>
       </div>
     </>
@@ -434,7 +448,7 @@ function ReportViewSkeleton() {
       <div className="filter-bar mt-6">
         <Skeleton className="h-10 w-full rounded-md sm:w-44" />
         <Skeleton className="h-10 w-full rounded-md sm:w-44" />
-        <Skeleton className="h-10 w-28 rounded-md" />
+        <Skeleton className="h-11 w-28 rounded-full sm:h-10 touch-44" />
       </div>
       <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
         <CardStrip />
@@ -500,7 +514,7 @@ function MastersSkeleton() {
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-3 w-56" />
               </div>
-              <Skeleton className="h-8 w-24 shrink-0 rounded-md" />
+              <Skeleton className="h-11 w-24 shrink-0 rounded-full sm:h-8 touch-44" />
             </div>
           ))}
         </div>
@@ -578,7 +592,7 @@ function DevicesSkeleton() {
               <Skeleton className="h-4 w-40" />
               <Skeleton className="mt-1.5 h-3 w-56" />
             </div>
-            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="size-11 shrink-0 rounded-full sm:h-8 sm:w-20 touch-44" />
           </div>
         ))}
       </div>
@@ -604,7 +618,7 @@ function MembersSkeleton() {
               </div>
             ))}
           </div>
-          <Skeleton className="mt-4 h-10 w-36 rounded-md" />
+          <Skeleton className="mt-4 h-11 w-36 rounded-full sm:h-10 touch-44" />
         </div>
       </div>
       <div className="mt-6 overflow-hidden rounded-lg border border-border bg-card">
@@ -640,9 +654,15 @@ export function AuthSkeleton() {
           <Skeleton className="h-5 w-40" />
           <Skeleton className="mt-2 h-3 w-64" />
           <div className="mt-6 space-y-4">
+            <div
+              aria-hidden
+              className="grid grid-cols-2 gap-1 rounded-full border border-border bg-muted p-1 sm:hidden"
+            >
+              <Skeleton className="h-11 rounded-full" />
+              <Skeleton className="h-11 rounded-full" />
+            </div>
             <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-11 w-full rounded-full sm:h-10 touch-44" />
           </div>
         </div>
       </div>
@@ -657,7 +677,7 @@ export function ScanApproveSkeleton() {
         <Skeleton className="h-5 w-44" />
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-11 w-full rounded-full sm:h-10 touch-44" />
       </div>
     </div>
   );

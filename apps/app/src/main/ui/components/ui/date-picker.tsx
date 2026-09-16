@@ -63,6 +63,7 @@ export function DatePicker({
           className={cn(
             "field-control flex h-11 sm:h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-left text-sm font-normal text-foreground transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
             !value && "text-muted-foreground",
+            clearable && value && !disabled && "pr-14",
           )}
         >
           <span className="flex items-center gap-2.5 min-w-0 truncate">
@@ -81,7 +82,7 @@ export function DatePicker({
               e.stopPropagation();
               onChange?.("");
             }}
-            className="absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:right-2 sm:size-10"
+            className="btn-motion absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-muted-foreground touch-44 hover:bg-muted hover:text-foreground active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:right-2 sm:size-10"
             aria-label="Clear date"
           >
             <X className="size-3.5" />

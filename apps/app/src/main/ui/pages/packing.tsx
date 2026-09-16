@@ -270,7 +270,7 @@ export function PackingPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-1 shrink-0 rounded-md touch-44"
+                className="mr-1 shrink-0 touch-44"
                 onClick={() => setQ("")}
                 aria-label="Clear search"
               >
@@ -500,7 +500,7 @@ export function PackingPage() {
                                   setEditingId(entry.id);
                                 }}
                                 aria-label={`Edit entry ${entry.entryNumber}`}
-                                className="-mr-1 -mt-1 rounded-md text-muted-foreground hover:text-foreground touch-44"
+                                className="-mr-1 -mt-1 text-muted-foreground hover:text-foreground touch-44"
                               >
                                 <Pencil className="size-4" aria-hidden />
                               </Button>
@@ -888,7 +888,7 @@ function PackingForm({
                                   setDirty(true);
                                 }}
                                 aria-label={`Remove row ${idx + 1}`}
-                                className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
+                                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
                               >
                                 <Trash2 className="size-4" aria-hidden />
                               </Button>
@@ -1119,7 +1119,7 @@ function PackingForm({
                                   setDirty(true);
                                 }}
                                 aria-label={`Remove row ${idx + 1}`}
-                                className="rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
+                                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-44 shrink-0"
                               >
                                 <Trash2 className="size-4" aria-hidden />
                               </Button>

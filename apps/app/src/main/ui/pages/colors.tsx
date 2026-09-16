@@ -27,6 +27,7 @@ import {
   processSummary,
 } from "@/ui/components/recipe-detail";
 import { Button } from "@/ui/components/ui/button";
+import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { Input } from "@/ui/components/ui/input";
 import { Textarea } from "@/ui/components/ui/textarea";
 import {
@@ -593,7 +594,8 @@ function RecipeEditorDialog({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="size-8 shrink-0 touch-44"
                       aria-label={`Remove ${row.name || "ingredient"}`}
                       disabled={ingredients.length === 1}
                       onClick={() =>
@@ -859,29 +861,25 @@ export function ColorsPage() {
                       )}
                     </button>
                     {canManage && (
-                      <div className="flex shrink-0 items-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                      <ButtonCapsule className="shrink-0">
+                        <CircleButton
                           aria-label={`Edit ${color.name}`}
                           onClick={() => {
                             setEditingColor(color);
                             setColorDialogOpen(true);
                           }}
                         >
-                          <Pencil className="size-4" aria-hidden />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          <Pencil aria-hidden />
+                        </CircleButton>
+                        <CircleButton
                           aria-label={`Delete ${color.name}`}
                           disabled={deletingId === color.id}
                           onClick={() => void onDeleteColor(color)}
+                          className="[@media(hover:hover)]:hover:text-destructive"
                         >
-                          <Trash2 className="size-4" aria-hidden />
-                        </Button>
-                      </div>
+                          <Trash2 aria-hidden />
+                        </CircleButton>
+                      </ButtonCapsule>
                     )}
                   </div>
                 ))}
@@ -1009,16 +1007,14 @@ export function ColorsPage() {
                           <Pencil className="size-4" aria-hidden />
                           Edit
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          disabled={deletingId === recipe.id}
+                        <CircleButton
                           aria-label={`Delete ${recipe.denierName} recipe`}
+                          disabled={deletingId === recipe.id}
                           onClick={() => void onDeleteRecipe(recipe)}
+                          className="[@media(hover:hover)]:hover:text-destructive"
                         >
-                          <Trash2 className="size-4" aria-hidden />
-                        </Button>
+                          <Trash2 aria-hidden />
+                        </CircleButton>
                       </div>
                     )}
                   </div>

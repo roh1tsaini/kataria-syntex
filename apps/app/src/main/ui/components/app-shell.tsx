@@ -35,6 +35,7 @@ import {
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { Button } from "@/ui/components/ui/button";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
+import { TabBar, type TabBarItem } from "@/ui/components/ui/tab-bar";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
 import { PageTransition } from "@/ui/components/motion";
 import { PackingSkeleton, routeSkeleton } from "@/ui/components/page-skeletons";
@@ -644,6 +645,30 @@ function HeaderBar({
 
 const AppShellContext = createContext<boolean>(false);
 
+/** Phone bottom bar: the two most-used sections plus More (full drawer).
+ * Sections the workspace can't see never appear (§4: nav never advertises
+ * routes the member can't open). A workspace with no shortcuts renders the
+ * bar with More alone. */
+function useTabBarItems(sections: NavSection[]): TabBarItem[] {
+  return useMemo(() => {
+    const all = sections.flatMap((s) => s.items);
+    const preferred = [
+      all.find((i) => i.to === "/challans"),
+      all.find((i) => i.to === "/stock/raw") ??
+        all.find((i) => i.to.startsWith("/stock")) ??
+        all.find((i) => i.to === "/packing"),
+    ].filter((i): i is NonNullable<typeof i> => !!i);
+    const seen = new Set<string>();
+    return preferred
+      .filter((i) => {
+        if (seen.has(i.to)) return false;
+        seen.add(i.to);
+        return true;
+      })
+      .map((i) => ({ to: i.to, label: i.label, icon: i.icon, end: i.end }));
+  }, [sections]);
+}
+
 function InnerPageLoader({ pathname }: { pathname: string }) {
   // One skeleton per screen, shaped like the content it stands in for
   // (design.md §3.1).
@@ -725,6 +750,8 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     }
   }, [railCollapsed]);
   const railOpen = !railCollapsed || railHot;
+
+  const tabBarItems = useTabBarItems(sections);
 
   useNetworkState();
   useRealtime();
@@ -966,6 +993,16 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
             </main>
           </div>
         </div>
+
+        {/* Phone bottom bar (§2.7.2) — frosted capsule above content; hidden
+            with the drawer, chrome-less routes, and on desktop. Always
+            rendered: More alone when the workspace has no shortcuts. */}
+        <TabBar
+          items={tabBarItems}
+          pathname={location.pathname}
+          onMore={() => setMobileOpen(true)}
+          hidden={mobileOpen}
+        />
 
         {/* Mobile nav — full-screen sheet. Opened by buttons, closed by X,
             Escape or navigation. No scrim: the sheet covers the viewport. */}
