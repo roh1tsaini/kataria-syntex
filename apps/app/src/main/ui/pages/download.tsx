@@ -3,27 +3,25 @@
  * macOS redownload flow. Reads the same published manifest the updaters use
  * (latest.json from /releases), so it never needs its own deploy.
  *
- * Artifacts download in-page (fetch → blob → object URL), not via a plain
- * navigation: a stale service worker's SPA fallback could otherwise answer
- * the /releases navigation with index.html and the user saves HTML as
- * .exe/.apk. The in-page fetch never triggers a navigation fallback, the
- * content-type is verified before saving, and progress (percent · size ·
- * ETA) shows on the card.
+ * Artifacts download through the browser itself: the card is a plain link to
+ * the /releases/* URL, the browser's own download bar shows progress, and
+ * this page shows none. A blob hand-rolled in-page would race the service
+ * worker's precache for a big file and keep a copy of the installer in
+ * memory; the browser's downloader is better at it and needs no UI here.
+ *
+ * The manifest is fetched with cache: no-store so a release published inside
+ * the browser's 60s max-age window is picked up on the next page load, not
+ * the next hour.
  *
  * OS detection only picks the recommended card; every platform stays
  * clickable (detection can be wrong).
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Download } from "lucide-react";
-import { COMPANY_DETAILS, formatUpdateProgress } from "@kataria-syntex/shared";
-import {
-  apiOrigin,
-  createEtaEstimator,
-  toastError,
-  type UpdateProgress,
-} from "@kataria-syntex/app-core";
+import { COMPANY_DETAILS } from "@kataria-syntex/shared";
+import { apiOrigin } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import { EntryWash } from "@/ui/components/entry-wash";
@@ -46,11 +44,12 @@ type ReleaseInfo = {
   paths: Partial<Record<PlatformKey, string>>;
 };
 
-const MANIFEST_URL = `${apiOrigin()}/releases/app/android/latest.json`;
-
 async function fetchRelease(): Promise<ReleaseInfo | null> {
   try {
-    const res = await fetch(MANIFEST_URL, {
+    const res = await fetch(`${apiOrigin()}/releases/app/android/latest.json`, {
+      // Manifests are served with max-age=60; the browser HTTP cache would
+      // delay a new release by up to that window — bypass it.
+      cache: "no-store",
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return null;
@@ -108,75 +107,14 @@ const PLATFORM_META: Record<
   },
 };
 
-function filenameFrom(href: string): string {
-  const last = href.split("/").pop() ?? "download";
-  try {
-    return decodeURIComponent(last);
-  } catch {
-    return last;
-  }
-}
-
-/** The SPA fallback answered — a stale service worker is controlling this
- * page. Never save a web page as the artifact. */
-class HtmlResponseError extends Error {}
-
-/** Streams the artifact into memory with live progress, verifies the server
- * did not answer with a web page, and saves it under its real name. */
-async function downloadArtifact(
-  href: string,
-  onProgress: (progress: UpdateProgress) => void,
-): Promise<void> {
-  const res = await fetch(href);
-  if (!res.ok || !res.body) throw new Error("download_failed");
-  const type = (res.headers.get("content-type") ?? "").toLowerCase();
-  if (type.startsWith("text/html")) throw new HtmlResponseError();
-  const total = Number(res.headers.get("content-length")) || 0;
-  const etaFrom = createEtaEstimator();
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      bytes += value.length;
-      onProgress({
-        percent: total > 0 ? Math.min(100, (bytes / total) * 100) : 0,
-        transferredBytes: bytes,
-        totalBytes: total,
-        etaSeconds: etaFrom.sample(bytes, total),
-      });
-    }
-  }
-  const blob = new Blob(chunks as BlobPart[], {
-    type: type || "application/octet-stream",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filenameFrom(href);
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
-
 function PlatformCard({
   platform,
   href,
   recommended,
-  busy,
-  progress,
-  onDownload,
 }: {
   platform: PlatformKey;
   href: string | null;
   recommended: boolean;
-  busy: boolean;
-  progress: UpdateProgress | null;
-  onDownload: (href: string) => void;
 }) {
   const meta = PLATFORM_META[platform];
   const Icon = meta.icon;
@@ -209,27 +147,20 @@ function PlatformCard({
               )}
             </div>
             <p className="mt-1 truncate text-xs text-muted-foreground">
-              {progress
-                ? formatUpdateProgress(progress)
-                : `${meta.file} · ${meta.note}`}
+              {`${meta.file} · ${meta.note}`}
             </p>
           </div>
           {href ? (
-            <Button
-              variant={recommended ? "default" : "outline"}
-              disabled={busy}
-              loading={busy && progress === null}
-              onClick={() => onDownload(href)}
-            >
-              <Download className="size-4" aria-hidden />
-              {busy && progress
-                ? `${Math.round(progress.percent)}%`
-                : busy
-                  ? "Starting…"
-                  : "Download"}
+            // A plain anchor: the browser's own download manager owns the
+            // transfer and its progress. No in-page UI to keep in sync.
+            <Button asChild variant={recommended ? "default" : "outline"}>
+              <a href={href}>
+                <Download className="size-4" aria-hidden />
+                Download
+              </a>
             </Button>
           ) : (
-            <Button variant="outline" disabled={busy}>
+            <Button variant="outline" disabled>
               Unavailable
             </Button>
           )}
@@ -243,17 +174,6 @@ export function DownloadPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [platform] = useState<PlatformKey>(() => detectPlatformKey() ?? "win");
-  const [busyPlatform, setBusyPlatform] = useState<PlatformKey | null>(null);
-  const [progress, setProgress] = useState<UpdateProgress | null>(null);
-  const aliveRef = useRef(true);
-  const etaFrom = useRef(createEtaEstimator());
-
-  useEffect(() => {
-    aliveRef.current = true;
-    return () => {
-      aliveRef.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -266,31 +186,6 @@ export function DownloadPage() {
     return () => {
       alive = false;
     };
-  }, []);
-
-  const download = useCallback(async (key: PlatformKey, href: string) => {
-    setBusyPlatform(key);
-    setProgress(null);
-    etaFrom.current.reset();
-    try {
-      await downloadArtifact(href, (p) => {
-        if (aliveRef.current) setProgress(p);
-      });
-    } catch (err) {
-      if (aliveRef.current) {
-        toastError(
-          "Download failed",
-          err instanceof HtmlResponseError
-            ? "The link returned a web page instead of the file. Update the app and try again."
-            : "The file couldn't be downloaded. Check your connection and try again.",
-        );
-      }
-    } finally {
-      if (aliveRef.current) {
-        setBusyPlatform(null);
-        setProgress(null);
-      }
-    }
   }, []);
 
   const url = (p: PlatformKey): string | null => {
@@ -334,9 +229,6 @@ export function DownloadPage() {
               platform={p}
               href={url(p)}
               recommended={p === platform}
-              busy={busyPlatform !== null}
-              progress={busyPlatform === p ? progress : null}
-              onDownload={(href) => void download(p, href)}
             />
           ))}
         </div>

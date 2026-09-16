@@ -607,10 +607,12 @@ function markNotified(version: string): void {
 }
 
 /**
- * Announces a newer release with a system notification, once per version.
- * Fires from a poll that actually found a newer APK, so the Android 13+
- * permission prompt is contextual — never at boot. Denial only silences the
- * announcement; the Updates row in Settings keeps the install path.
+ * Announces a downloaded release with a system notification, once per
+ * version. Fires after the APK has landed in app-private cache and the
+ * system installer is one tap away, so the notification is a summons to
+ * install, not a promise of a download. The Android 13+ permission prompt
+ * stays contextual — never at boot. Denial only silences the announcement;
+ * the Updates row in Settings keeps the install path.
  */
 export async function notifyAndroidUpdateAvailable(
   version: string,
@@ -626,8 +628,8 @@ export async function notifyAndroidUpdateAvailable(
       notifications: [
         {
           id: 1, // one slot — a newer release replaces the pending announce
-          title: `Kataria Syntex v${version} available`,
-          body: "Tap to open Updates — it installs in place.",
+          title: `Kataria Syntex v${version} ready to install`,
+          body: "Downloaded — tap to install the update.",
           extra: { version },
           schedule: { at: new Date(Date.now() + 1_000) },
         },

@@ -27,7 +27,6 @@ import { create } from "zustand";
 import { compareSemver, hasUpdateFloor } from "@kataria-syntex/shared";
 import {
   apiOrigin,
-  createEtaEstimator,
   setUpdateRequiredHandler,
   type UpdateProgress,
 } from "@kataria-syntex/app-core";
@@ -133,9 +132,6 @@ setUpdateRequiredHandler((minVersion) =>
   useUpdates.getState().markRequired(minVersion),
 );
 
-// ETA math shared by every host's progress source (only one is ever active).
-const etaFrom = createEtaEstimator();
-
 export const useUpdates = create<UpdateState>()((set, get) => ({
   latestVersion: null,
   requiredMinVersion: null,
@@ -178,16 +174,19 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         downloadUrl: artifactFor(manifest),
       });
       if (compareSemver(manifest.version, __APP_VERSION__) > 0) {
-        // "ready" arms the deliberate Settings action on Android (APK) and
-        // the banner on macOS (dmg). On web there is nothing to download and
-        // nothing to prompt — the deploy applies itself, so the state stays
-        // idle and no surface can misfire.
-        if (detectHost() !== "web") set({ status: "ready" });
-        // Android announces each release once via a system notification
-        // (deduped inside) so the user knows an APK is waiting without
-        // opening Settings.
-        if (detectHost() === "android") {
-          void notifyAndroidUpdateAvailable(manifest.version);
+        // macOS arms the banner (dmg download). On web there is nothing to
+        // download and nothing to prompt — the deploy applies itself, so the
+        // state stays idle and no surface can misfire.
+        if (usesManifestFlow()) set({ status: "ready" });
+        // Android downloads the APK itself the moment the poll finds it, on
+        // whatever network the device is on — the installer stays one tap
+        // behind a system notification because Android cannot skip it.
+        // "ready" means this version is already staged and waiting for that
+        // tap, so the 4h re-poll (the user hasn't installed yet, so the
+        // manifest is still "newer") must not download it again.
+        if (detectHost() === "android" && get().status !== "ready") {
+          void get().installUpdate();
+          return "available";
         }
         return "available";
       }
@@ -202,31 +201,26 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       // Single-flight like the desktop shell: a second tap while the APK
       // streams is a no-op, and the native side single-flights too.
       if (get().status === "downloading") return;
-      etaFrom.reset();
       set({
         status: "downloading",
-        progress: {
-          percent: 0,
-          transferredBytes: 0,
-          totalBytes: 0,
-          etaSeconds: null,
-        },
+        progress: { percent: 0, totalBytes: 0 },
       });
       try {
         await downloadAndInstallApk(apiOrigin(), ({ bytes, total }) => {
           set({
             progress: {
               percent: total > 0 ? Math.min(100, (bytes / total) * 100) : 0,
-              transferredBytes: bytes,
               totalBytes: total,
-              etaSeconds: etaFrom.sample(bytes, total),
             },
           });
         });
-        // Fully downloaded — the system installer dialog takes over from here.
+        // Fully downloaded. Android cannot skip the system installer tap, so
+        // the notification is the summons to install; the Settings row keeps
+        // the action for anyone who swiped it away.
         set({ status: "ready", progress: null });
+        const latest = get().latestVersion;
+        if (latest) void notifyAndroidUpdateAvailable(latest);
       } catch {
-        etaFrom.reset();
         set({ status: "error", progress: null });
       }
       return;
@@ -327,12 +321,7 @@ function handleSwProgress(event: SwProgressEvent): void {
       : (event.done / event.totalFiles) * 100;
   useUpdates.setState({
     status: "downloading",
-    progress: {
-      percent,
-      transferredBytes: event.bytes,
-      totalBytes: event.totalBytes,
-      etaSeconds: etaFrom.sample(event.bytes, event.totalBytes),
-    },
+    progress: { percent, totalBytes: event.totalBytes },
   });
 }
 
@@ -356,7 +345,6 @@ async function registerServiceWorker(): Promise<void> {
 /** The install readout must never freeze on a stale percent — finished,
  * failed or superseded installs all clear it. */
 function clearInstallProgress(): void {
-  etaFrom.reset();
   useUpdates.setState({ progress: null, status: "idle" });
 }
 
@@ -404,23 +392,16 @@ export function initUpdateChecks(): void {
           status: "idle",
           progress: null,
         });
-        etaFrom.reset();
       } else if (s.kind === "ready") {
         useUpdates.setState({
           latestVersion: s.version,
           status: "ready",
           progress: null,
         });
-        etaFrom.reset();
       } else if (s.kind === "downloading") {
         useUpdates.setState({
           status: "downloading",
-          progress: {
-            percent: s.percent,
-            transferredBytes: s.transferred,
-            totalBytes: s.total,
-            etaSeconds: etaFrom.sample(s.transferred, s.total),
-          },
+          progress: { percent: s.percent, totalBytes: s.total },
         });
       }
     });

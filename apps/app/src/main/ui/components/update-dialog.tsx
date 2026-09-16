@@ -10,8 +10,8 @@
  */
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";
-import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { Button } from "@/ui/components/ui/button";
+import { ProgressBar } from "@/ui/components/progress-bar";
 import {
   Dialog,
   DialogContent,
@@ -74,12 +74,10 @@ export function UpdateDialog() {
           </DialogHeader>
         </div>
         {busy && progress && (
-          <p
-            className="text-center text-xs tabular-nums text-muted-foreground"
-            role="status"
-          >
-            {formatUpdateProgress(progress)}
-          </p>
+          <ProgressBar
+            percent={progress.percent}
+            totalBytes={progress.totalBytes}
+          />
         )}
         {status === "error" && (
           <p className="text-center text-xs text-muted-foreground">

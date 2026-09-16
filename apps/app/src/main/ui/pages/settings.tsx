@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { RefreshCw, Save } from "lucide-react";
-import { formatUpdateProgress } from "@kataria-syntex/shared";
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";
 import { fmtDate } from "@/ui/lib/format";
@@ -15,6 +14,7 @@ import {
   toastSuccess,
 } from "@kataria-syntex/app-core";
 import { PageHeader } from "@/ui/components/page-header";
+import { ProgressBar } from "@/ui/components/progress-bar";
 import { SettingsWindow } from "@/ui/components/settings-window";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -522,11 +522,13 @@ function UpdateRow() {
 
   return (
     <SettingsRow label="Updates" hint={result ?? undefined}>
-      <div className="flex items-center gap-2">
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-center sm:gap-3 sm:[flex-direction:row]">
         {downloading && progress ? (
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {formatUpdateProgress(progress)}
-          </span>
+          <ProgressBar
+            percent={progress.percent}
+            totalBytes={progress.totalBytes}
+            className="w-full min-w-36 sm:w-40"
+          />
         ) : installable ? (
           <span className="text-xs tabular-nums text-muted-foreground">
             v{latestVersion} available
@@ -535,7 +537,7 @@ function UpdateRow() {
         {showAction ? (
           <Button
             size="sm"
-            className="h-8"
+            className="h-8 shrink-0"
             onClick={() => void installUpdate()}
             disabled={downloading}
             loading={downloading}
@@ -546,7 +548,7 @@ function UpdateRow() {
           <Button
             size="sm"
             variant="outline"
-            className="h-8"
+            className="h-8 shrink-0"
             onClick={() => void check()}
             disabled={checking}
             loading={checking}

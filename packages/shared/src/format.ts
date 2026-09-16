@@ -2,11 +2,22 @@
  * Human-readable formatting for update/download progress — one source of
  * truth for every shell (web/PWA banner, blocking dialog, Settings row,
  * Electron toast copy, Android update surfaces).
+ *
+ * The readout shows percent and total size only — "34% · 38.1 MB". How much
+ * has moved and how long is left changes every tick and adds noise a browser
+ * download bar already gives the user; on Electron the transferred figure was
+ * the one that ran to 1092% against a 100 MB total. Percent is the progress,
+ * size is the scale.
  */
+
+export type UpdateProgressReadout = {
+  percent: number;
+  totalBytes: number;
+};
 
 const BYTE_UNITS = ["B", "kB", "MB", "GB", "TB"] as const;
 
-/** "12.8 MB", "384 kB", "1.1 GB" — decimal (1000-based) units, like a
+/** "38.1 MB", "384 kB", "1.1 GB" — decimal (1000-based) units, like a
  * browser's download manager. Zero/negative/unknown → "0 kB". */
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 kB";
@@ -19,33 +30,10 @@ function formatBytes(bytes: number): string {
   return `${text} ${BYTE_UNITS[exp]}`;
 }
 
-/** "~45s left", "~4m left", "~1h+ left". Unknown/negative → null so callers
- * drop the clause instead of printing a guess. */
-function formatEta(seconds: number | null | undefined): string | null {
-  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return null;
-  if (seconds < 10) return "a few seconds left";
-  if (seconds < 60) return `~${Math.round(seconds)}s left`;
-  if (seconds < 3600) return `~${Math.round(seconds / 60)}m left`;
-  return "~1h+ left";
-}
-
-export type UpdateProgressReadout = {
-  percent: number;
-  transferredBytes: number;
-  totalBytes: number;
-  etaSeconds: number | null;
-};
-
-/** The one-line progress readout: "34% · 12.8 of 38.1 MB · ~20s left".
- * Unknown totals / ETAs drop their clause instead of showing a guess. */
+/** The one-line progress readout: "34% · 38.1 MB".
+ * An unknown total drops the size clause instead of guessing. */
 export function formatUpdateProgress(p: UpdateProgressReadout): string {
   const parts = [`${Math.round(p.percent)}%`];
-  if (p.totalBytes > 0) {
-    parts.push(
-      `${formatBytes(p.transferredBytes)} of ${formatBytes(p.totalBytes)}`,
-    );
-  }
-  const eta = formatEta(p.etaSeconds);
-  if (eta) parts.push(eta);
+  if (p.totalBytes > 0) parts.push(formatBytes(p.totalBytes));
   return parts.join(" · ");
 }

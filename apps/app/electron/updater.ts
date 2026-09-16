@@ -68,8 +68,9 @@ export function initUpdater(getWin: () => BrowserWindow | null): void {
       process.platform === "win32"
         ? `${__KC_UPDATE_FEED__}/releases/app/desktop/win`
         : `${__KC_UPDATE_FEED__}/releases/app/desktop/linux`,
-    // Cloudflare R2 + Workers reject multi-range downloads; fall back to
-    // single-range/blockmap-free transfer if the server nags.
+    // The Worker serves single byte ranges (206 + Content-Range); multiple
+    // ranges per request aren't supported, and one slice at a time is all the
+    // blockmap diff needs.
     useMultipleRangeRequest: false,
   });
 

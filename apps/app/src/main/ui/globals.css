@@ -734,6 +734,17 @@
       transparent 74%
     );
   }
+  /* Indeterminate progress: a size the source can't know gets an honest
+     shimmer instead of a bar pinned at 0%. */
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    60%,
+    to {
+      transform: translateX(260%);
+    }
+  }
   /* Clouds slide sideways more than they zoom — weather, not bubbles */
   @keyframes entry-drift-1 {
     from {
