@@ -4,9 +4,10 @@
  * minVersion). Undismissable by design: the API carries no backward
  * compatibility, so a client below the floor has nothing useful to do.
  *
- * The action follows the host: web reloads (the SW has already precached
- * the new build), Electron quit-and-installs (or re-downloads on macOS),
- * Android downloads the APK and hands it to the system installer.
+ * The action follows the host: web reloads (index.html revalidates, so the
+ * reload runs the new build), Electron quit-and-installs (or re-downloads
+ * on macOS), Android downloads the APK and hands it to the system
+ * installer.
  */
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";

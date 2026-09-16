@@ -5,7 +5,7 @@
  * title-bar window controls, and the browser print dialog.
  *
  * Electron exposes a tiny `window.desktop` API via contextBridge (see
- * electron/preload.ts); web/PWA is everything else. The Android app is a
+ * electron/preload.ts); web is everything else. The Android app is a
  * Capacitor shell (apps/android) wrapping this same bundle — its native
  * branch lives below, with plugins imported lazily so browsers never pull
  * native code.
@@ -62,7 +62,7 @@ export function detectHost(): Host {
   return "web";
 }
 
-/** The Electron IPC bridge (see electron/preload.ts). Null on web/PWA.
+/** The Electron IPC bridge (see electron/preload.ts). Null on web.
  * Everything that touches window.desktop outside this file goes through
  * here (or desktopWindow below) so the bridge surface stays in one module. */
 export function desktopBridge(): DesktopBridge | null {
@@ -72,26 +72,20 @@ export function desktopBridge(): DesktopBridge | null {
 
 /** Desktop shell only: reports the resolved theme background so the next
  *  launch paints in the user's theme instead of flashing the default.
- *  No-op on web/PWA. */
+ *  No-op on web. */
 export function reportThemeBackground(background: string): void {
   void desktopBridge()?.setThemeBackground(background);
 }
 
-/** True outside plain browsers — the Electron and Android shells. (Installed
- *  PWAs run on web too; see isPlainBrowser for the entry/download surface
- *  gate.) */
+/** True outside plain browsers — the Electron and Android shells. */
 export const isNative = () => detectHost() !== "web";
 
-/** True only in a plain browser tab — not Electron, not an installed PWA
- * running in standalone display mode. Gates the install/download surface:
- * the Electron shell and installed PWAs ARE the app. */
+/** True only in a plain browser tab — not Electron, not Android. Gates the
+ * install/download surface: the native shells ARE the app. (No installed-PWA
+ * case: the app ships no web manifest, so standalone display mode cannot
+ * happen.) */
 export function isPlainBrowser(): boolean {
-  if (detectHost() !== "web") return false;
-  const standalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    // iOS Safari, pre display-mode-query
-    (navigator as { standalone?: boolean }).standalone === true;
-  return !standalone;
+  return detectHost() === "web";
 }
 
 /** Human-readable device label for the offline device identity. Reads the
@@ -316,7 +310,7 @@ function localStorageStorage(): CoreStorage {
 function bakedApiOrigin(): string {
   const raw = import.meta.env.VITE_API_URL?.trim();
   if (!raw) {
-    // Web/PWA is same-origin — an empty base is correct there. Android and
+    // Web is same-origin — an empty base is correct there. Android and
     // Electron serve a local bundle whose origin is NOT the API, so an empty
     // base makes every fetch resolve against the WebView/Electron origin:
     // /api/health returns the SPA shell (or nothing), the classifier reads it
@@ -409,7 +403,7 @@ export function configureWebCore(appVersion: string): void {
       // page would dial the bundle origin — realtime stays off until the
       // sync step bakes VITE_API_URL (see bakedApiOrigin).
       if (detectHost() === "android") return null;
-      // Same-origin web/PWA: derive from the page itself (apiBaseUrl is "").
+      // Same-origin web: derive from the page itself (apiBaseUrl is "").
       const loc = window.location;
       return `${loc.protocol === "https:" ? "wss:" : "ws:"}//${loc.host}`;
     },
@@ -771,7 +765,7 @@ export async function shareChallanPdfOnAndroid(
 
 // ── Electron window chrome (used by title-bar.tsx) ──────────────────────────
 
-/** Window-control surface behind the custom title bar. Null on web/PWA —
+/** Window-control surface behind the custom title bar. Null on web —
  * there is no window chrome. Everything touching window.desktop window IPC
  * lives here so no UI file branches on platform. */
 export type DesktopWindow = {

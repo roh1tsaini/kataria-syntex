@@ -1,11 +1,10 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
-import { VitePWA } from "vite-plugin-pwa";
 import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Single source of truth for the app version across both shells (web/PWA,
+// Single source of truth for the app version across both shells (web,
 // Electron). Baked into the renderer as __APP_VERSION__.
 const APP_VERSION = (
   JSON.parse(
@@ -33,7 +32,7 @@ function interFonts(): Plugin {
 }
 
 // Injects the backend origin into the CSP at build time. Installed shells
-// (Electron app://bundle, standalone PWA) may not be same-origin with the
+// (Electron app://bundle) may not be same-origin with the
 // API, so the built HTML allowlists APP_URL / VITE_API_URL. Local builds
 // with neither set drop the placeholder and stay same-origin only.
 function appOrigin(): Plugin {
@@ -59,70 +58,14 @@ function appOrigin(): Plugin {
   };
 }
 
-// Web/PWA build — served same-origin by the Hono server in production.
+// Web build — served same-origin by the Hono server in production.
 // Electron packages the same renderer output (see electron/build.ts for
 // main/preload).
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
-  plugins: [
-    appOrigin(),
-    interFonts(),
-    react(),
-    tailwindcss(),
-    VitePWA({
-      // Custom service worker (src/main/sw.ts) — owns the precache install
-      // loop so the app can show real download progress during a deploy, and
-      // applies itself (skipWaiting after the precache, clients.claim on
-      // activate). A routine deploy needs no prompt and no reload: the
-      // running tab picks the fresh shell up on its next navigation.
-      strategies: "injectManifest",
-      srcDir: "src/main",
-      filename: "sw.ts",
-      // Registration lives in store/updates.ts (it must attach the progress
-      // message listeners BEFORE registering) — no plugin bootstrap script.
-      injectRegister: null,
-      injectManifest: {
-        // Precache every JS/CSS chunk: the app is offline-capable by design
-        // (lib/offline queues challans against cached masters/session), so
-        // every route chunk must load with no network. This is the standard
-        // shape for offline SPAs — do NOT narrow it to "the shell"; lazy
-        // routes would 404 offline. TTFs are the one deliberate exception
-        // (first-use runtime cache in sw.ts).
-        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
-      },
-      manifest: {
-        name: "Kataria Syntex Biz App",
-        short_name: "KS Biz App",
-        description:
-          "Sales challans, job work, stock and packing for Kataria Syntex.",
-        lang: "en",
-        display: "standalone",
-        orientation: "any",
-        start_url: "/",
-        scope: "/",
-        theme_color: "#0a0a0a",
-        background_color: "#0a0a0a",
-        icons: [
-          { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
-          { src: "pwa-512.png", sizes: "512x512", type: "image/png" },
-          {
-            src: "pwa-maskable-192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "maskable",
-          },
-          {
-            src: "pwa-maskable-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
-    }),
-  ],
+  plugins: [appOrigin(), interFonts(), react(), tailwindcss()],
   resolve: {
     alias: {
       "@": resolve(import.meta.dirname, "src/main"),

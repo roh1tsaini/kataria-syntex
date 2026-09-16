@@ -3,13 +3,12 @@
  * version out?". ONE state shape and ONE surface set (banner for
  * non-blocking, blocking dialog for the 426 floor) for every host.
  *
- * - Web/PWA: the custom service worker (src/main/sw.ts) installs a new deploy
- *   sequentially, posts ks:sw-progress messages (turned into the Settings
- *   progress readout) and applies itself — precache, then skipWaiting() and
- *   clients.claim(). A routine deploy therefore needs no user action at all
- *   and renders no surface: the running tab picks the fresh shell up on its
- *   next navigation. A hidden update check runs hourly so long-lived tabs
- *   find deploys.
+ * - Web: no service worker. Freshness rides plain HTTP caching (index.html
+ *   revalidates on every navigation, hashed assets are immutable), so a
+ *   routine deploy needs no user action at all and renders no surface: the
+ *   running tab picks the fresh shell up on its next navigation, reload, or
+ *   reopen. The boot manifest check below fills the Settings version line
+ *   and arms the force-update floor.
  * - Electron Windows/Linux: status is pushed over the kc:update:* IPC bridge
  *   (electron/updater.ts) — silent background download with byte progress,
  *   "restart to update" when staged.
@@ -110,11 +109,8 @@ function artifactFor(manifest: LatestManifest): string | null {
     : null;
 }
 
-/** Poll cadence for the manifest host — launch + every 4h. */
+/** Manifest poll cadence — boot + every 4h on every host. */
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
-
-/** Hidden service-worker update probe for long-lived tabs. */
-const SW_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
 const DISMISS_KEY = "updates.dismissedVersion";
 
@@ -161,9 +157,9 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         }
         return res.kind === "error" ? "error" : "up-to-date";
       }
-      // Web and macOS Electron read the same published manifest. (Web
-      // additionally learns about deploys from the SW itself — the manifest
-      // read only fills the Settings version line and the 426 floor.)
+      // Web and macOS Electron read the same published manifest to fill the
+      // Settings version line and arm the 426 floor. Web deploys otherwise
+      // apply silently through revalidated index.html — no prompt, no reload.
       const manifest = await fetchManifest();
       if (!manifest) return "error";
       // The sentinel ("no breaking change shipped") is dropped inside
@@ -236,10 +232,10 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       await desktop.restartToUpdate();
       return;
     }
-    // Web/PWA: routine deploys apply on their own — sw.ts self-activates and
-    // the next navigation is network-first, so it serves the fresh shell with
-    // no prompt and no forced reload. The only case left is a server-required
-    // (426) floor, where the shell on screen cannot reach the API at all: one
+    // Web: routine deploys apply on their own — index.html revalidates on
+    // every navigation, so the next load runs the fresh shell with no prompt
+    // and no forced reload. The only case left is a server-required (426)
+    // floor, where the shell on screen cannot reach the API at all: one
     // clean reload picks up the deployed build and re-arms the gate.
     if (get().requiredMinVersion) window.location.reload();
   },
@@ -275,102 +271,13 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 }));
 
-// ── Web/PWA service-worker flow ─────────────────────────────────────────────
-
-type SwProgressEvent =
-  | {
-      type: "ks:sw-progress";
-      stage: "install";
-      done: number;
-      totalFiles: number;
-      bytes: number;
-      totalBytes: number;
-    }
-  | { type: "ks:sw-progress"; stage: "done" }
-  | { type: "ks:sw-progress"; stage: "error" };
-
-function isSwProgressEvent(value: unknown): value is SwProgressEvent {
-  if (value === null || typeof value !== "object") return false;
-  const rec = value as Record<string, unknown>;
-  if (rec.type !== "ks:sw-progress") return false;
-  return (
-    rec.stage === "install" || rec.stage === "done" || rec.stage === "error"
-  );
-}
-
-function handleSwProgress(event: SwProgressEvent): void {
-  if (event.stage === "error") {
-    // Install failed — the running build keeps working and the hourly probe
-    // retries. The readout simply never appears.
-    clearInstallProgress();
-    return;
-  }
-  if (event.stage === "done") {
-    clearInstallProgress();
-    return;
-  }
-  // Install phase: the deploy streams into the precache in the background.
-  // The Settings readout is the only surface it ever gets — a routine deploy
-  // never prompts, banners, or claims the tab.
-  if (!useUpdates.getState().latestVersion) {
-    void useUpdates.getState().checkNow();
-  }
-  const percent =
-    event.totalBytes > 0
-      ? (event.bytes / event.totalBytes) * 100
-      : (event.done / event.totalFiles) * 100;
-  useUpdates.setState({
-    status: "downloading",
-    progress: { percent, totalBytes: event.totalBytes },
-  });
-}
-
-async function registerServiceWorker(): Promise<void> {
-  if (!("serviceWorker" in navigator)) return;
-  // Progress only: the worker owns the whole apply flow (precache →
-  // skipWaiting → claim), so the page never posts SKIP_WAITING and never
-  // reloads on controllerchange.
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    const data: unknown = event.data;
-    if (isSwProgressEvent(data)) handleSwProgress(data);
-  });
-  try {
-    await navigator.serviceWorker.register("/sw.js");
-  } catch {
-    // Registration blocked/unsupported — the app still works online; the
-    // manifest check keeps arming the 426 floor.
-  }
-}
-
-/** The install readout must never freeze on a stale percent — finished,
- * failed or superseded installs all clear it. */
-function clearInstallProgress(): void {
-  useUpdates.setState({ progress: null, status: "idle" });
-}
-
-/** Launch-time wiring: SW registration (web), the macOS poller, IPC events.
+/** Launch-time wiring: the manifest poller (every host) + IPC events.
  * StrictMode mounts App twice in dev — wire exactly once. */
 let updateChecksWired = false;
 
 export function initUpdateChecks(): void {
   if (updateChecksWired) return;
   updateChecksWired = true;
-  // The Android WebView must never register the PWA worker — there is no
-  // navigation-time update check inside the native shell, and the bundle is
-  // replaced by cap sync, not by the worker. It polls the manifest like the
-  // macOS flow instead.
-  if (desktopBridge() === null && detectHost() !== "android") {
-    void registerServiceWorker();
-    // Long-lived tabs: browsers only check for a new worker on navigation, so
-    // a standalone PWA window left open for days would never see a deploy.
-    // The hourly probe covers that — silently: a deploy applies itself.
-    setInterval(() => {
-      void navigator.serviceWorker?.getRegistrations().then((regs) => {
-        for (const reg of regs) void reg.update();
-      });
-    }, SW_CHECK_INTERVAL_MS);
-    return;
-  }
   if (detectHost() === "android") {
     // The WebView can still be running the bundle from the APK that was
     // replaced (its cached copy is not invalidated by an install) — self-heal

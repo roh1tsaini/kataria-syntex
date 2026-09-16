@@ -1,7 +1,7 @@
 /**
  * Shell seam: the one place the business core meets its host.
  *
- * app-core is shared by every shell (web/PWA, Electron desktop, Android).
+ * app-core is shared by every shell (web, Electron desktop, Android).
  * Each shell configures it exactly once at boot with a PlatformAdapter that
  * answers "where am I, where is the bearer token, is the network up, where
  * does state persist". Nothing inside app-core touches window, document,

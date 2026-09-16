@@ -10,7 +10,7 @@ import { cn } from "@/ui/lib/cn";
 
 /**
  * Electron window chrome, blended (design.md §2.7.1): there is no bar — the
- * app surface runs to every window edge. Three pieces, Electron-only (web/PWA
+ * app surface runs to every window edge. Three pieces, Electron-only (web
  * renders nothing):
  *
  * - TitleBar: an invisible drag strip across the top 3.5rem. On shell routes

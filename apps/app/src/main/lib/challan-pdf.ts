@@ -2,7 +2,7 @@
  * Challan PDF — client-side glue around the shared template: loads the
  * bundled Inter TTFs, builds the HTML for the local render, and saves the
  * finished file. The host transport lives here: Electron renders with its
- * own Chromium over the IPC bridge (fully offline); web/PWA fetches the
+ * own Chromium over the IPC bridge (fully offline); web fetches the
  * server-rendered copy; the Android shell opens the same copy in the
  * system share sheet (see sharePdfOnAndroid in lib/platform.ts). Inter
  * (OFL) is fetched from locally bundled assets — no CDN, no system fallback.
@@ -67,8 +67,8 @@ function saveBlob(blob: Blob, filename: string): void {
 /**
  * Downloads the challan PDF — the one place that branches on where it runs.
  * Electron renders the sheet with its own Chromium (fully offline) and writes
- * it through a native save dialog; web/PWA fetch the server-rendered copy and
- * hand it to the browser's downloader.
+ * it through a native save dialog; web fetches the server-rendered copy and
+ * hands it to the browser's downloader.
  *
  * `saved` is false only when the user dismissed the desktop save dialog.
  */

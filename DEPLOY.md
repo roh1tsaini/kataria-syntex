@@ -183,6 +183,6 @@ on :3000 — the frontend expects it via `adb reverse` or dev proxy),
 bun run typecheck && bun run lint && bun run format:check && bun run build
 ```
 
-Web/PWA, Electron and Android render one bundle (`apps/app`); the Android
+Web, Electron and Android render one bundle (`apps/app`); the Android
 shell typechecks and syncs separately
 (`bunx tsc --noEmit` + `bunx cap sync android` inside `apps/android`).

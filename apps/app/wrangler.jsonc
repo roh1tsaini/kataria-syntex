@@ -10,6 +10,12 @@
     // The worker answers /api/*; every other path that misses a static file
     // serves index.html so SPA deep links (e.g. /challans) work.
     "not_found_handling": "single-page-application",
+    // Worker-first for the dynamic prefixes: the worker (worker.ts) owns
+    // /api/* (Hono) and /releases/* (R2) by contract, never by accident of
+    // no static file colliding with them. Without this a file added under
+    // dist/api/ or dist/releases/ would silently shadow the API or the
+    // installers with static bytes or the SPA fallback.
+    "run_worker_first": ["/api/*", "/releases/*"],
   },
   "d1_databases": [
     {

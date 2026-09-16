@@ -31,7 +31,7 @@ function isRealtimeUpgrade(request: AnyRequest): boolean {
 // answer JSON not_found from the app itself, never the SPA. /releases/*
 // streams objects out of the R2 release bucket (public, cache-split by key).
 // Everything else falls through to the static assets layer, whose
-// not_found_handling serves the SPA's index.html (deep links, PWA routes).
+// not_found_handling serves the SPA's index.html (deep links, app routes).
 //
 // The double-casts bridge two Request/Response typings that coexist in this
 // tsconfig: lib.dom (shared with the client bundle) and workers-types (this

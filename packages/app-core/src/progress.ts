@@ -1,7 +1,6 @@
 /**
  * Update-download progress plumbing shared by every shell's update store
- * (web/PWA service-worker installs, Electron's electron-updater, Android's
- * APK downloader). Percent comes straight from the source; the readout pairs
+ * (Electron's electron-updater, Android's APK downloader). Percent comes straight from the source; the readout pairs
  * it with the total size — nothing transferring, no ETA.
  */
 

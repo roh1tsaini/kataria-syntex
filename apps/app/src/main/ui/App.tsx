@@ -112,7 +112,7 @@ function Home() {
 }
 
 /** "/" when signed out — the two-path entry screen (plain browser only).
- * Installed contexts (Electron, standalone PWA) ARE the app: they
+ * Native shells (Electron, Android) ARE the app: they
  * skip the marketing screen and go straight to sign-in. Signed-in users get
  * the full shell (this route sits outside the layout's guest redirect). */
 function EntryOrHome() {
@@ -131,8 +131,7 @@ function EntryOrHome() {
 }
 
 /** Native shells ARE the installed app — /download has nothing to offer
- * them, so it sends them to sign-in instead. Browsers (and the web PWA
- * flow) keep the page. */
+ * them, so it sends them to sign-in instead. Browsers keep the page. */
 function DownloadOrAuth() {
   if (isNative()) return <Navigate to="/auth" replace />;
   return <DownloadPage />;
@@ -148,9 +147,9 @@ export function App() {
     // resolves — the live fetch overwrites whatever the cache holds.
     hydrateMastersCache();
     void bootstrap();
-    // Update wiring for every host: web registers the service worker and its
-    // hourly probe (a deploy applies itself — no surface, no reload); the
-    // Android bundle check, native pollers and Electron events start here.
+    // Update wiring for every host: the boot manifest check + 4h poll (a web
+    // deploy applies itself on the next navigation — no surface, no reload);
+    // the Android bundle check, native pollers and Electron events start here.
     initUpdateChecks();
   }, [bootstrap]);
 

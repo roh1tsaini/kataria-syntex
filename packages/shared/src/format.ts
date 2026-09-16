@@ -1,6 +1,6 @@
 /**
  * Human-readable formatting for update/download progress — one source of
- * truth for every shell (web/PWA banner, blocking dialog, Settings row,
+ * truth for every shell (blocking dialog, Settings row,
  * Electron toast copy, Android update surfaces).
  *
  * The readout shows percent and total size only — "34% · 38.1 MB". How much

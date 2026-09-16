@@ -64,9 +64,8 @@ if (desktop) {
   }
 }
 
-// PWA service worker registration lives in store/updates.ts. The app://
-// scheme in Electron has no service-worker privilege, so nothing registers
-// there.
+// No service worker anywhere: web freshness rides the HTTP cache headers
+// (public/_headers) — index.html revalidates on every navigation.
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");

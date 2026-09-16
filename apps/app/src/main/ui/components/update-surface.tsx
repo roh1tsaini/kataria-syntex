@@ -7,8 +7,8 @@
  *   builds cannot self-install), with a dismiss that defers the notice until
  *   the next version ships.
  *
- * Web/PWA and Android have no surface at all: the service worker applies the
- * deploy itself, and Android's APK install is a deliberate action in Settings.
+ * Web and Android have no surface at all: the next navigation runs the fresh
+ * web build, and Android's APK install is a deliberate action in Settings.
  */
 import { type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";

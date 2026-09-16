@@ -14,14 +14,14 @@ bun run lint       # required gate
 
 ## Workspaces
 
-| Path                | What                                                                  |
-| ------------------- | --------------------------------------------------------------------- |
-| `apps/app`          | Internal business app (web/PWA + Electron + the Android shell bundle) |
-| `apps/android`      | Android Capacitor shell over the `apps/app` bundle                    |
-| `apps/web`          | Public showcase website                                               |
-| `packages/app-core` | Shared business core (API client, stores, offline engine)             |
-| `packages/shared`   | Shared domain types, yarn/shade data, validation                      |
-| `packages/tsconfig` | Shared TS config presets                                              |
+| Path                | What                                                              |
+| ------------------- | ----------------------------------------------------------------- |
+| `apps/app`          | Internal business app (web + Electron + the Android shell bundle) |
+| `apps/android`      | Android Capacitor shell over the `apps/app` bundle                |
+| `apps/web`          | Public showcase website                                           |
+| `packages/app-core` | Shared business core (API client, stores, offline engine)         |
+| `packages/shared`   | Shared domain types, yarn/shade data, validation                  |
+| `packages/tsconfig` | Shared TS config presets                                          |
 
 The Android shell renders the same built `apps/app` bundle — one product,
 three shells, no separate Android UI (`AGENTS.md` Section 2.3). Its native project

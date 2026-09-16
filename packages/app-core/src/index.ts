@@ -1,6 +1,6 @@
 /**
  * @kataria-syntex/app-core — the business core shared by every shell
- * (web/PWA + Electron + the Capacitor Android shell, all in apps/app).
+ * (web + Electron + the Capacitor Android shell, all in apps/app).
  *
  * Owns: the API client, zustand stores, the offline engine (outbox, sync,
  * conflicts), error copy, toasts (sink-based), and page-cache invalidation.

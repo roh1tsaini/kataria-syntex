@@ -4,7 +4,7 @@ declare global {
   interface Window {
     /**
      * Present only inside the Electron shell (exposed by electron/preload.ts
-     * via contextBridge). Web/PWA never sees this.
+     * via contextBridge). Web never sees this.
      */
     desktop?: DesktopBridge;
   }

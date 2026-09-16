@@ -7,7 +7,7 @@ apply plugin: 'com.android.application'
 def propsFile = rootProject.file('keystore.properties')
 
 // App version comes from apps/app/package.json — the single source of truth
-// shared by the web/PWA build, Electron and this Android shell. versionCode
+// shared by the web build, Electron and this Android shell. versionCode
 // derives from semver (major*10000 + minor*100 + patch) so every bump
 // increases it monotonically; Android rejects updates that don't.
 def appVersionParts = new groovy.json.JsonSlurper()

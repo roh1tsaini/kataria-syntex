@@ -1,11 +1,11 @@
 /**
  * Entry screen — what a logged-out visitor sees at "/" in a plain browser.
- * Two paths, nothing else: sign in here (web/PWA) or install it on this
+ * Two paths, nothing else: sign in here (web) or install it on this
  * device. Platform detection only names the install button; the download
  * page keeps every platform reachable. No taglines, no helper copy.
  *
- * Installed contexts (Electron, standalone PWA) never render this
- * — App.tsx sends them straight to /auth.
+ * Native shells (Electron, Android) never render this — App.tsx sends them
+ * straight to /auth.
  */
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";

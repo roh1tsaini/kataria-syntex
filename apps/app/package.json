@@ -1,6 +1,6 @@
 {
   "name": "@kataria-syntex/biz-app",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "minAppVersion": "0.0.0",
   "private": true,
   "type": "module",
@@ -67,7 +67,6 @@
     "tw-animate-css": "^1.4.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.0",
-    "vite-plugin-pwa": "^1.3.0",
     "wrangler": "^4.127.1"
   },
   "engines": {

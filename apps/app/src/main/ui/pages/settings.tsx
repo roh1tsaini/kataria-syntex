@@ -488,8 +488,8 @@ function SettingsPanel() {
 
 /** "Check for updates" row — manual check, plus the deliberate install action
  * only on hosts that need one (macOS dmg, Android APK, Windows/Linux restart).
- * Web needs no action at all: the service worker applies the deploy itself and
- * the fresh shell arrives on the next navigation. */
+ * Web needs no action at all: index.html revalidates on every navigation, so
+ * the fresh shell arrives on the next load with no prompt and no reload. */
 function UpdateRow() {
   const checkNow = useUpdates((s) => s.checkNow);
   const installUpdate = useUpdates((s) => s.installUpdate);

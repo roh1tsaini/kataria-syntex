@@ -110,13 +110,6 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
       Save button sit outside the company-details `<form>`; Enter inside a
       prefix/digits/suffix input silently fires `saveCompany` and saves
       nothing numbering-related.
-- [ ] **A22 · `UpdateDialog` on web can become an undismissable dead end.**
-      `ui/components/update-dialog.tsx:93` → `store/updates.ts:239` —
-      `installUpdate()` on web now does only `if (requiredMinVersion)
-window.location.reload()`. If the 426 floor fires before the SW has
-      precached the new build (install failed, deploy too fresh), the reload
-      re-serves the old shell, 426s again, and the button can never work —
-      with no error shown.
 - [ ] **A23 · `site.url` falls back to a `workers.dev` subdomain.**
       `apps/web/src/content/site.ts:9` — `NEXT_PUBLIC_SITE_URL` is set in
       neither `wrangler.jsonc` nor the CI workflow, so the fallback is the

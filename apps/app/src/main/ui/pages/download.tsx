@@ -5,9 +5,9 @@
  *
  * Artifacts download through the browser itself: the card is a plain link to
  * the /releases/* URL, the browser's own download bar shows progress, and
- * this page shows none. A blob hand-rolled in-page would race the service
- * worker's precache for a big file and keep a copy of the installer in
- * memory; the browser's downloader is better at it and needs no UI here.
+ * this page shows none. A blob hand-rolled in-page would keep a copy of the
+ * installer in memory; the browser's downloader is better at it and needs
+ * no UI here.
  *
  * The manifest is fetched with cache: no-store so a release published inside
  * the browser's 60s max-age window is picked up on the next page load, not
@@ -151,10 +151,12 @@ function PlatformCard({
             </p>
           </div>
           {href ? (
-            // A plain anchor: the browser's own download manager owns the
-            // transfer and its progress. No in-page UI to keep in sync.
+            // A plain anchor with download: the browser's own download manager
+            // owns the transfer and its progress, and the tab never navigates
+            // to the artifact URL — an HTML response there (fallback, error)
+            // downloads as a file instead of replacing this page with a 404.
             <Button asChild variant={recommended ? "default" : "outline"}>
-              <a href={href}>
+              <a href={href} download>
                 <Download className="size-4" aria-hidden />
                 Download
               </a>

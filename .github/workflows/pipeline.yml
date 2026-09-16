@@ -33,7 +33,7 @@ permissions:
 env:
   ACTIONS_ARTIFACT_RETENTION_DAYS: 3
   # NOTE: VITE_API_URL is deliberately NOT set here. The deploy job builds
-  # the web/PWA SPA same-origin; a baked API origin there must stay scoped to
+  # the web SPA same-origin; a baked API origin there must stay scoped to
   # the desktop job below (the repo variable APP_URL is a bare FQDN, and a
   # scheme-less origin turns every fetch() URL relative — app shows offline).
 

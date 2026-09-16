@@ -14,7 +14,7 @@ Then work ONLY on that target until told otherwise. Never change the other
 workspace "while you're in there".
 
 **Business-app exception — parity is always in scope.** The business app is
-one bundle in three shells: `apps/app` (web/PWA + Electron) and `apps/android`
+one bundle in three shells: `apps/app` (web + Electron) and `apps/android`
 (a Capacitor 8 WebView that renders that same built bundle at the `≤sm`
 breakpoint). There is no separate Android UI, so a feature, UI, copy, motion,
 or business-flow change lands on every shell by landing on the web bundle
@@ -34,7 +34,7 @@ Only the owner can scope a change to one shell, in writing.
 
 | Path                | What                                                                                                                                   | Stack                                                                                                |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `apps/app`          | Internal business app — web/PWA + Electron desktop (challans, job work, stock, packing, reports)                                       | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · PWA + Electron |
+| `apps/app`          | Internal business app — web + Electron desktop (challans, job work, stock, packing, reports)                                           | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · Web + Electron |
 | `apps/android`      | Internal business app — Android shell around the `apps/app` bundle                                                                     | Capacitor 8 + the `apps/app` React 19/Vite bundle · shares `packages/app-core`                       |
 | `apps/web`          | Public showcase website                                                                                                                | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                      |
 | `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                                            | TypeScript                                                                                           |
@@ -45,7 +45,7 @@ Only the owner can scope a change to one shell, in writing.
 
 | Platform | Shell                                | Session storage                   |
 | -------- | ------------------------------------ | --------------------------------- |
-| Web/PWA  | Browser                              | HttpOnly cookie                   |
+| Web      | Browser                              | HttpOnly cookie                   |
 | Desktop  | Electron (`apps/app`)                | OS keychain via IPC + safeStorage |
 | Mobile   | Capacitor 8 WebView (`apps/android`) | `@capacitor/preferences`          |
 
@@ -61,7 +61,7 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
   same built bundle inside a Capacitor WebView; the adapter branches on
   `detectHost()`. Platform differences live ONLY there. Never branch on
   platform elsewhere.
-- A change is "done" for apps/app only when web/PWA still works; desktop
+- A change is "done" for apps/app only when web still works; desktop
   (Electron) must stay compiling against the same renderer bundle. Business
   logic changes must build in `apps/app` + `apps/android` — they share
   `packages/app-core`. Breaking one shell to fix another is not a fix.
@@ -94,7 +94,7 @@ Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
 ## 2.3 Web ↔ Android parity (mandatory for every business-app change)
 
 **One bundle, one UI.** The business app is ONE product: `apps/app` is a
-React 19 + Vite SPA served as web/PWA, wrapped by Electron (desktop), and
+React 19 + Vite SPA served as web, wrapped by Electron (desktop), and
 wrapped by `apps/android` — a Capacitor 8 WebView that renders the same built
 bundle at the `≤sm` breakpoint. **There is no separate Android UI, nothing to
 port, nothing to mirror — parity is structural.** A UI change is a web
@@ -217,7 +217,7 @@ bun run build:apk    # cap sync + gradle assembleRelease (needs the Android SDK)
    `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
    (builder hoisting), drizzle v1 RC (ahead of stable).
 10. **One bundle, three shells.** The business app is one SPA bundle rendered
-    by web/PWA, Electron and the `apps/android` WebView — there is no separate
+    by web, Electron and the `apps/android` WebView — there is no separate
     Android UI, so every feature, UI, copy, motion, or business-flow change
     lands on every shell by landing on the web bundle (Section 2.3). Docs updated in
     the same change, verification run per Section 2.4. Only the owner can scope a
@@ -345,19 +345,18 @@ code and the owner's word are the truth.
   scripts, manifests) is revalidated (`max-age=0, must-revalidate`) or
   short-TTL. API responses are always `no-store`. apps/app's concrete
   policy lives in `apps/app/APP.md` Section 14.2.
-- Client caches (module-level, store, SW runtime) are keyed by account/
+- Client caches (module-level, store, runtime) are keyed by account/
   workspace and wiped on logout/401/account switch (`lib/data-caches.ts` in
   apps/app). Stale-while-revalidate UIs must still refetch on mount.
-- The service worker never force-reloads a tab and never caches `/api/*`. A
-  deploy applies itself (`skipWaiting` + `clients.claim`) and reaches a tab on
-  its next navigation; a blocking dialog is reserved for a required version
+- There is no service worker. A deploy reaches a tab on its next navigation
+  through revalidated HTML; a blocking dialog is reserved for a required version
   floor.
-- **Routine updates are background work, with no surface.** Browser/PWA and
+- **Routine updates are background work, with no surface.** Browser and
   Windows/Linux deploys apply on the next navigation (desktop installs on
   quit); Android manifest checks stay silent and expose the APK action in
   Settings, with one system notification per release pointing at it; only the
   macOS dmg prompt announces. Only a server `426
-update_required` floor may block work. Keep HTML and `/sw.js` revalidated,
+update_required` floor may block work. Keep HTML revalidated,
   cache only content-hashed assets as immutable, and never make users clear
   browser data to receive a normal release.
 - **A stale chunk is a reload, not an error.** Route chunks are hashed, so a
@@ -380,7 +379,7 @@ update_required` floor may block work. Keep HTML and `/sw.js` revalidated,
 
 - `bun run typecheck && bun run lint && bun run format:check && bun run
 build` all green from repo root, AND the feature verified by actually
-  running it. The web renderer (web/PWA + Electron) must still compile as
+  running it. The web renderer (web + Electron) must still compile as
   one bundle, and the Android app (apps/android) must still typecheck and
   sync (`cd apps/android && bunx tsc --noEmit && bunx cap sync android`) —
   CI runs `gradle assembleRelease` for the signed APK.

@@ -2,7 +2,7 @@
  * Offline core: the local read caches.
  *
  * Everything persists in the adapter's synchronous KV store — localStorage
- * on web/PWA/Electron, MMKV on Android — so one implementation serves all
+ * on web/Electron, MMKV on Android — so one implementation serves all
  * targets. Sizes are tiny (JSON records).
  *
  * This is a *read* cache only: masters, company config, and the session
