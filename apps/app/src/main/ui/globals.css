@@ -893,6 +893,25 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Phone floating menu circle (§2.7.1) — fixed top-left, over content, above
+   the top safe area. Hidden on ≥md where the header row owns navigation. */
+.phone-menu-float {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 16px;
+  z-index: 40;
+}
+.menu-float-circle {
+  background: var(--card);
+  box-shadow: var(--shadow-overlay), var(--specular);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .menu-float-circle {
+    background: color-mix(in oklch, var(--card) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
 .capsule-surface {
   background: var(--card);
   box-shadow: var(--shadow-overlay), var(--specular);
@@ -913,7 +932,8 @@
     backdrop-filter: none !important;
     background-color: var(--background) !important;
   }
-  .capsule-surface {
+  .capsule-surface,
+  .menu-float-circle {
     backdrop-filter: none;
     background: var(--card);
   }

@@ -221,8 +221,11 @@ title bar — the app surface runs to every window edge. The system bar never
 appears on any platform.
 
 - Layout: the sidebar is full window height (its brand row is the window's
-  top-left corner); the header is the full-height content column's top row.
-  Their `h-14` bottom borders form one continuous line across the window.
+  top-left corner); the header is the full-height content column's top row
+  (desktop only — below `md` there is no header bar, just a menu circle
+  fixed at the top-left over content with 16px padding plus the status-bar
+  inset, so page content needs `pt-16` clearance). Their `h-14` bottom
+  borders form one continuous line across the window.
   On phones with a status-bar inset the header grows by
   `env(safe-area-inset-top)` (inline height, paddingTop inset) so the
   content box stays 56px — padding alone would shrink it under border-box

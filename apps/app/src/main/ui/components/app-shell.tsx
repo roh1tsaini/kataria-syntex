@@ -508,10 +508,27 @@ function MobileDrawerContent({
 function HeaderBar({
   sections,
   onOpenMobile,
+  floating = false,
 }: {
   sections: NavSection[];
   onOpenMobile: () => void;
+  floating?: boolean;
 }) {
+  if (floating) {
+    return (
+      <div className="phone-menu-float md:hidden">
+        <CircleButton
+          size="touch"
+          aria-label="Open navigation menu"
+          title="Open navigation menu"
+          onClick={onOpenMobile}
+          className="menu-float-circle"
+        >
+          <Menu className="size-5" aria-hidden />
+        </CircleButton>
+      </div>
+    );
+  }
   const location = useLocation();
   const company = useAuth((s) => s.company);
 
@@ -531,7 +548,7 @@ function HeaderBar({
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/85 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))] supports-[backdrop-filter]:bg-background/70"
+      className="sticky top-0 z-30 hidden items-center gap-2 border-b border-border bg-background/85 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))] supports-[backdrop-filter]:bg-background/70 md:flex"
       style={{
         ...dragStyle,
         // Fixed h-14 plus the status-bar inset: paddingTop alone would shrink
@@ -540,24 +557,10 @@ function HeaderBar({
         paddingTop: "env(safe-area-inset-top, 0px)",
       }}
     >
-      <CircleButton
-        onClick={onOpenMobile}
-        className="shrink-0 md:hidden"
-        style={noDragStyle}
-        aria-label="Open navigation menu"
-        title="Open navigation menu"
-      >
-        <Menu aria-hidden />
-      </CircleButton>
-
-      <div className="hidden min-w-0 items-center gap-2 md:flex">
+      <div className="flex min-w-0 items-center gap-2">
         <div className="truncate text-[13px] font-medium tracking-tight text-foreground">
           {currentLabel}
         </div>
-      </div>
-
-      <div className="min-w-0 flex-1 truncate text-center text-[13px] font-medium tracking-tight md:hidden">
-        {currentLabel}
       </div>
 
       {/* Interactive islands stay clickable inside the draggable header. */}
@@ -906,7 +909,14 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           <HeaderBar
             sections={sections}
             onOpenMobile={() => setMobileOpen(true)}
+            floating
           />
+          <div className="hidden md:block">
+            <HeaderBar
+              sections={sections}
+              onOpenMobile={() => setMobileOpen(true)}
+            />
+          </div>
           <OfflineBanner />
 
           <div ref={scrollRef} className="shell-scroll">
@@ -914,7 +924,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
               <AnimatePresence mode="wait" initial={false}>
                 <PageTransition
                   key={location.pathname}
-                  className="mx-auto w-full max-w-[75rem] px-4 pt-6 pb-28 sm:px-6 md:pb-8 xl:px-8"
+                  className="mx-auto w-full max-w-[75rem] px-4 pt-16 pb-28 sm:px-6 md:pt-6 md:pb-8 xl:px-8"
                 >
                   <Suspense
                     fallback={

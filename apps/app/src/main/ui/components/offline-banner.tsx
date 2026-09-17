@@ -25,7 +25,7 @@ export function OfflineBanner() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2, ease: EASE_OUT }}
-          className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2 text-sm font-medium text-warning"
+          className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning/10 py-2 pr-4 pl-16 text-sm font-medium text-warning md:px-4 md:pl-4"
           role="status"
         >
           <CloudOff className="size-4" aria-hidden />
