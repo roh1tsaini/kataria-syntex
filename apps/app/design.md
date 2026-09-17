@@ -223,6 +223,10 @@ appears on any platform.
 - Layout: the sidebar is full window height (its brand row is the window's
   top-left corner); the header is the full-height content column's top row.
   Their `h-14` bottom borders form one continuous line across the window.
+  On phones with a status-bar inset the header grows by
+  `env(safe-area-inset-top)` (inline height, paddingTop inset) so the
+  content box stays 56px — padding alone would shrink it under border-box
+  and push touch targets over the hairline.
 - Drag regions: the header row itself is `-webkit-app-region: drag` (its
   free middle moves the window; double-click toggles maximize via
   HTCAPTION). Interactive islands inside it — menu circle, right text

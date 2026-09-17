@@ -531,14 +531,16 @@ function HeaderBar({
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))] supports-[backdrop-filter]:bg-background/70"
+      className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/85 px-4 pr-[calc(1rem+var(--wc-w))] backdrop-blur-xl sm:pl-6 sm:pr-[calc(1.5rem+var(--wc-w))] supports-[backdrop-filter]:bg-background/70"
       style={{
         ...dragStyle,
+        // Fixed h-14 plus the status-bar inset: paddingTop alone would shrink
+        // the content box and push a 44px touch target over the hairline.
+        height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
         paddingTop: "env(safe-area-inset-top, 0px)",
       }}
     >
       <CircleButton
-        size="touch"
         onClick={onOpenMobile}
         className="shrink-0 md:hidden"
         style={noDragStyle}
