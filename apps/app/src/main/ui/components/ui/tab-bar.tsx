@@ -74,7 +74,7 @@ export function TabBar({ items, pathname, onMore, hidden }: TabBarProps) {
     />
   );
   const itemClass =
-    "btn-motion relative grid size-11 shrink-0 place-items-center rounded-full active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+    "btn-motion relative grid size-11 shrink-0 place-items-center rounded-full active:bg-muted active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
   const popClass =
     reduceMotion || popKey === null
       ? undefined

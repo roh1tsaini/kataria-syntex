@@ -82,7 +82,7 @@ export function DatePicker({
               e.stopPropagation();
               onChange?.("");
             }}
-            className="btn-motion absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-muted-foreground touch-44 hover:bg-muted hover:text-foreground active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:right-2 sm:size-10"
+            className="btn-motion absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-muted-foreground touch-44 hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:right-2 sm:size-10"
             aria-label="Clear date"
           >
             <X className="size-3.5" />

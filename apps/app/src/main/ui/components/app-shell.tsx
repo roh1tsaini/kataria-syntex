@@ -10,30 +10,20 @@ import {
   useRef,
   useCallback,
 } from "react";
-import {
-  NavLink,
-  useLocation,
-  useNavigate,
-  Link,
-  Outlet,
-} from "react-router-dom";
+import { NavLink, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Building2,
-  CalendarDays,
   ChevronDown,
   LogOut,
+  Menu,
   Moon,
-  Plus,
   Sun,
   PanelLeftClose,
   PanelLeftOpen,
-  Wifi,
-  WifiOff,
   X,
 } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { Button } from "@/ui/components/ui/button";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { TabBar, type TabBarItem } from "@/ui/components/ui/tab-bar";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
@@ -46,7 +36,6 @@ import {
   isPackerOnlyWorkspace,
   useNetworkState,
   useRealtime,
-  useSync,
 } from "@kataria-syntex/app-core";
 import {
   isItemActive,
@@ -406,8 +395,8 @@ function UserFooter({ compact }: { compact?: boolean }) {
   );
 }
 
-/** Mobile full-screen nav: brand header, FY/sync strip, roomy nav, footer
- * with identity left and the one primary action right. */
+/** Mobile full-screen nav: brand header, roomy nav, footer with identity
+ * left and theme/logout actions right. */
 function MobileDrawerContent({
   sections,
   pathname,
@@ -422,12 +411,9 @@ function MobileDrawerContent({
   const user = useAuth((s) => s.user);
   const workspace = useAuth((s) => s.workspace);
   const company = useAuth((s) => s.company);
-  const currentFy = useAuth((s) => s.currentFy);
-  const online = useSync((s) => s.online);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const can = useCanSee();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loggingOut, setLoggingOut] = useState(false);
   const toggleGroup = (to: string) =>
@@ -453,11 +439,8 @@ function MobileDrawerContent({
             <div className="truncate text-2xl font-bold tracking-[-0.022em]">
               KS Biz App
             </div>
-            <div className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-              <span className="truncate">
-                {company?.name ?? workspace?.name ?? COMPANY_DETAILS.name}
-              </span>
-              {roleBadge(workspace?.isPrimaryAdmin)}
+            <div className="mt-1 truncate text-[13px] text-muted-foreground">
+              {company?.name ?? workspace?.name ?? COMPANY_DETAILS.name}
             </div>
           </div>
           <CircleButton
@@ -468,26 +451,6 @@ function MobileDrawerContent({
           >
             <X aria-hidden />
           </CircleButton>
-        </div>
-
-        <div className="mt-4 flex min-h-11 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-xs">
-          <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-            <CalendarDays className="size-3.5" aria-hidden />
-            <span>FY {currentFy?.label ?? "—"}</span>
-          </span>
-          <span className="flex min-h-11 items-center gap-1.5 font-semibold text-primary">
-            {online ? (
-              <>
-                <Wifi className="size-3.5 text-success" aria-hidden />
-                <span>Online</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="size-3.5 text-warning" aria-hidden />
-                <span>Offline</span>
-              </>
-            )}
-          </span>
         </div>
       </div>
 
@@ -537,14 +500,6 @@ function MobileDrawerContent({
             </CircleButton>
           </ButtonCapsule>
         </div>
-        {can(["create_challan"]) && (
-          <Button asChild variant="accent" className="mt-3 w-full">
-            <Link to="/challans/new" onClick={onClose}>
-              <Plus className="size-4" aria-hidden />
-              New challan
-            </Link>
-          </Button>
-        )}
       </div>
     </div>
   );
@@ -558,10 +513,7 @@ function HeaderBar({
   onOpenMobile: () => void;
 }) {
   const location = useLocation();
-  const user = useAuth((s) => s.user);
   const company = useAuth((s) => s.company);
-  const currentFy = useAuth((s) => s.currentFy);
-  const online = useSync((s) => s.online);
 
   const currentLabel = (() => {
     for (const section of sections) {
@@ -585,26 +537,16 @@ function HeaderBar({
         paddingTop: "env(safe-area-inset-top, 0px)",
       }}
     >
-      <button
-        type="button"
+      <CircleButton
+        size="touch"
         onClick={onOpenMobile}
-        className="relative grid size-11 shrink-0 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+        className="shrink-0 md:hidden"
         style={noDragStyle}
         aria-label="Open navigation menu"
+        title="Open navigation menu"
       >
-        <Avatar className="size-8 bg-muted text-xs font-medium text-foreground">
-          <AvatarFallback>
-            {user?.name.slice(0, 1).toUpperCase() ?? "K"}
-          </AvatarFallback>
-        </Avatar>
-        <span
-          className={cn(
-            "absolute bottom-0.5 right-0.5 size-2 rounded-full ring-2 ring-background",
-            online ? "bg-success" : "bg-warning",
-          )}
-          aria-hidden
-        />
-      </button>
+        <Menu aria-hidden />
+      </CircleButton>
 
       <div className="hidden min-w-0 items-center gap-2 md:flex">
         <div className="truncate text-[13px] font-medium tracking-tight text-foreground">
@@ -621,14 +563,6 @@ function HeaderBar({
         className="ml-auto flex min-w-0 items-center gap-3"
         style={noDragStyle}
       >
-        <span className="hidden items-center gap-1.5 text-xs font-medium text-muted-foreground xl:inline-flex">
-          <CalendarDays className="size-3.5" aria-hidden />
-          FY {currentFy?.label ?? "—"}
-        </span>
-        <span
-          className="hidden h-4 w-px bg-border xl:inline-block"
-          aria-hidden
-        />
         <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Building2 className="size-3 shrink-0" aria-hidden />
           <span className="hidden truncate max-w-[140px] min-[380px]:inline">

@@ -176,9 +176,8 @@ no text-transform on body copy.
   `bg-background/70` where backdrop-filter is supported), never `bg-card` —
   one flat wash, no double surface against the sidebar's card.
   `prefers-reduced-transparency` falls back to solid.
-- Header right side: the FY and company are bare muted text separated by a
-  hairline divider (`h-4 w-px bg-border`, xl only) — no bordered chips, no
-  boxed backgrounds in the chrome row.
+- Header right side: the company name is bare muted text — no bordered
+  chips, no boxed backgrounds in the chrome row.
 
 ### 2.7 Icon buttons & capsules (app-wide)
 
@@ -186,7 +185,10 @@ New-Apple (iOS 26 / macOS Tahoe) control grammar: hardware curvature informs
 controls, and actions that sit together share one grouped background.
 
 - **One lone small icon button = a circle.** `rounded-full`, hairline border,
-  transparent at rest, `bg-muted` on hover, press `scale(0.9)`. Size 32px on
+  transparent at rest, `bg-muted` on hover and on `:active` press (touch has
+  no hover — the active fill is the press feedback), press `scale(0.9)`.
+  The OS tap highlight is transparent globally (`globals.css`) — it paints a
+  square over the bounding box and ignores the circle. Size 32px on
   desktop, 44px (`touch`) on coarse pointers.
 - **Two or more adjacent icon buttons = one capsule.** `rounded-full`
   container, `bg-muted/60`, `p-1`, `gap-1`; every button inside stays a
@@ -242,7 +244,7 @@ appears on any platform.
   Their `h-14` bottom borders form one continuous line across the window.
 - Drag regions: the header row itself is `-webkit-app-region: drag` (its
   free middle moves the window; double-click toggles maximize via
-  HTCAPTION). Interactive islands inside it — avatar button, right text
+  HTCAPTION). Interactive islands inside it — menu circle, right text
   stack — are `no-drag`. Chrome-less routes (auth, print, scan, 404) drag
   from the invisible fixed strip (`h-14`, `z-20`) laid across the top by
   the TitleBar component. The sidebar is click-only — the whole `<aside>`
@@ -370,18 +372,16 @@ layout — never one generic shape for all pages.
 - Mobile: single column, cards; ≥sm: grids (`minmax(0,1fr)`); ≥xl: data grids
   up to 4 columns. Card grids keep equal heights (`grid` + stretch).
 - Mobile nav: floating shortcuts (Section 2.7.2) plus one full-screen nav
-  drawer, opened from More or the header avatar. Desktop: left sidebar.
+  drawer, opened from More or the header menu circle. Desktop: left sidebar.
   Drawer and sidebar share the same items, order and icons.
 - Full-screen nav drawer: covers
   the viewport (`inset-0`, `bg-background`), slides from the left 280ms
   `EASE_DRAWER`, exits 20% faster, no scrim (nothing remains visible to tap).
   Closed by X, Escape or navigation. Layout top→bottom: brand title
-  (`text-2xl`, 700, −0.022em, "KS Biz App") with workspace + role line, a
-  touch close circle top-right, an FY + sync
-  status strip (hairline border, `bg-card`, tap opens sync), the roomy nav
+  (`text-2xl`, 700, −0.022em, "KS Biz App") with workspace line, a
+  touch close circle top-right, the roomy nav
   list, and a pinned footer: identity (avatar 36px + name + workspace) left,
-  a theme-toggle + log-out circle capsule right, and the `New challan`
-  primary action full-width below. Nav rows in the drawer use
+  a theme-toggle + log-out circle capsule right. Nav rows in the drawer use
   the roomy ladder: `min-h-12`, 15px labels, `size-5` icons, `gap-3`,
   `rounded-md` selection (never circles), subs `min-h-11`/13px under an
   `ml-5` rule. Reduced-motion collapses to opacity.

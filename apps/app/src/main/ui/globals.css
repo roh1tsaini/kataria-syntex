@@ -394,14 +394,12 @@
     outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent);
     outline-offset: 2px;
   }
-  /* Better tap highlight and touch affordance on mobile */
+  /* No OS tap square: the highlight paints the bounding box and ignores
+     border-radius, so circle buttons flash square on touch. Press feedback
+     comes from each control's own :active fill + scale instead. */
   a,
   button {
-    -webkit-tap-highlight-color: color-mix(
-      in oklch,
-      var(--a-strong) 14%,
-      transparent
-    );
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
