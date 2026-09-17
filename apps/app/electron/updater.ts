@@ -34,6 +34,12 @@ export type UpdateStatus =
 
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
+/** True once update-downloaded fires for the current staging. The renderer
+ *  only asks for a restart when its own state says "ready" (same event), so
+ *  this is the second half of that handshake: a restart with nothing staged
+ *  would just quit into the same old build, so it is ignored instead. */
+let staged = false;
+
 /** True when the packaged feed exists (KC_UPDATE_FEED baked). Dev builds
  * and misconfigured bundles stay idle instead of spamming errors. */
 function feedConfigured(): boolean {
@@ -80,9 +86,12 @@ export function initUpdater(
   });
 
   autoUpdater.on("checking-for-update", () => broadcast({ kind: "checking" }));
-  autoUpdater.on("update-available", (info) =>
-    broadcast({ kind: "available", version: info.version ?? "" }),
-  );
+  autoUpdater.on("update-available", (info) => {
+    // A newer build supersedes whatever was staged — the old installer must
+    // not be what a restart applies.
+    staged = false;
+    broadcast({ kind: "available", version: info.version ?? "" });
+  });
   autoUpdater.on("update-not-available", () =>
     broadcast({ kind: "not-available" }),
   );
@@ -95,9 +104,10 @@ export function initUpdater(
       bytesPerSecond: progress.bytesPerSecond,
     }),
   );
-  autoUpdater.on("update-downloaded", (info) =>
-    broadcast({ kind: "ready", version: info.version ?? "" }),
-  );
+  autoUpdater.on("update-downloaded", (info) => {
+    staged = true;
+    broadcast({ kind: "ready", version: info.version ?? "" });
+  });
   autoUpdater.on("error", () => {
     // Background checks fail silently (offline desktops are normal); the
     // renderer surfaces the failure only for its manual Settings check.
@@ -118,7 +128,11 @@ export function initUpdater(
   });
   ipcMain.handle("kc:update:restart", (event) => {
     if (!isTrusted(event)) return;
-    autoUpdater.quitAndInstall();
+    // Restart only into a staged build. Without this a restart raced with a
+    // failed or superseded download just quits into the same old build —
+    // on a force-update floor that reads as "the update button closed my
+    // app and changed nothing".
+    if (staged) autoUpdater.quitAndInstall();
   });
 
   // Silent check. checkForUpdatesAndNotify() would raise an OS notification —

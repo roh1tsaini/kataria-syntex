@@ -16,11 +16,13 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
 
 /**
  * In-app APK self-update. A WebView cannot fire the Android package
@@ -28,8 +30,15 @@ import java.net.URL;
  * and hands it to the system installer through the FileProvider content URI
  * (no external-storage permission needed — the URI grant carries access).
  *
- * Single-flight: a second installApk while one is in flight is rejected, so
- * the JS store never runs two downloads against one progress surface.
+ * Two steps, split on purpose:
+ * - downloadApk stages bytes only. It never opens settings and never
+ *   launches the installer, so the JS poller can call it from the background
+ *   with no user gesture.
+ * - installApk hands a staged file to the system installer. It is tap-driven
+ *   only: the unknown-sources settings page opens exclusively from here.
+ *
+ * Single-flight: a second op while one is in flight is rejected, so the JS
+ * store never runs two downloads against one progress surface.
  */
 @CapacitorPlugin(name = "Installer")
 public class InstallerPlugin extends Plugin {
@@ -37,31 +46,86 @@ public class InstallerPlugin extends Plugin {
     private static final String MIME_APK = "application/vnd.android.package-archive";
     private static final int BUFFER_SIZE = 64 * 1024;
     private static final long PROGRESS_THROTTLE_MS = 200;
+    private static final String DEFAULT_FILENAME = "ks-biz-app.apk";
 
-    private PluginCall activeCall = null;
+    private PluginCall activeOp = null;
 
+    /** Claims the single-flight slot; rejects the call when one is in flight. */
+    private synchronized boolean claimOp(PluginCall call) {
+        if (activeOp != null) {
+            call.reject("already_in_progress");
+            return false;
+        }
+        activeOp = call;
+        return true;
+    }
+
+    private File stagedFile(String filename) {
+        String name =
+            filename == null || filename.isEmpty() ? DEFAULT_FILENAME : filename;
+        return new File(new File(getContext().getCacheDir(), "updates"), name);
+    }
+
+    /**
+     * Background staging: streams the release APK into app-private cache and
+     * verifies its SHA-256 when the manifest carries one. Never opens
+     * settings, never launches the installer. Rejects "artifact_missing" /
+     * "download_failed" / "integrity_failed" / "already_in_progress".
+     */
     @PluginMethod
-    public void installApk(PluginCall call) {
+    public void downloadApk(PluginCall call) {
         String url = call.getString("url");
         if (url == null || url.isEmpty()) {
             call.reject("artifact_missing");
             return;
         }
-        synchronized (this) {
-            if (activeCall != null) {
-                call.reject("already_in_progress");
-                return;
+        if (!claimOp(call)) return;
+        String filename = call.getString("filename", DEFAULT_FILENAME);
+        String sha256 = call.getString("sha256", "");
+        // Plugin.execute runs on the bridge background executor — the method
+        // itself was called on the main thread, which must never block.
+        execute(() -> {
+            try {
+                File apk = downloadToCache(url, filename);
+                if (sha256 != null && !sha256.isEmpty()
+                    && !verifySha256(apk, sha256)) {
+                    // A corrupt or substituted artifact must never reach the
+                    // installer — drop it so the next attempt stages fresh.
+                    // noinspection ResultOfMethodCallIgnored
+                    apk.delete();
+                    finishCall(call, "integrity_failed", null);
+                    return;
+                }
+                finishCall(call, null, null);
+            } catch (Exception e) {
+                finishCall(call, "download_failed", e);
             }
-            activeCall = call;
+        });
+    }
+
+    /**
+     * Tap-driven install: hands the staged APK to the system package
+     * installer. Rejects "not_staged" when the cache no longer holds the
+     * file (evicted since staging — the caller stages again, then retries),
+     * "install_permission_required" when the user must allow installs from
+     * this app first, and "install_unavailable" / "already_in_progress".
+     */
+    @PluginMethod
+    public void installApk(PluginCall call) {
+        File apk = stagedFile(call.getString("filename", DEFAULT_FILENAME));
+        if (!apk.isFile()) {
+            call.reject("not_staged");
+            return;
         }
+        if (!claimOp(call)) return;
         if (!canInstallPackages()) {
             // Android 8+ gates installs on a per-app op. The settings page is
             // the exact screen; after the user allows it, pressing Update
-            // again retries the download from scratch (nothing is staged).
+            // again retries from the staged file (nothing re-downloads).
             openUnknownSourcesSettings(call);
             return;
         }
-        startDownload(call, url);
+        launchInstaller(call, apk);
     }
 
     private boolean canInstallPackages() {
@@ -87,31 +151,19 @@ public class InstallerPlugin extends Plugin {
         // The settings page never reports back a result — re-read the op and
         // either proceed or surface the allow-in-settings copy in the dialog.
         if (canInstallPackages()) {
-            String url = call.getString("url");
-            if (url == null || url.isEmpty()) {
-                finishCall(call, "artifact_missing", null);
+            File apk = stagedFile(call.getString("filename", DEFAULT_FILENAME));
+            if (!apk.isFile()) {
+                finishCall(call, "not_staged", null);
                 return;
             }
-            startDownload(call, url);
+            launchInstaller(call, apk);
         } else {
             finishCall(call, "install_permission_required", null);
         }
     }
 
-    private void startDownload(PluginCall call, String url) {
-        String filename = call.getString("filename", "ks-biz-app.apk");
-        // Plugin.execute runs on the bridge background executor — the method
-        // itself was called on the main thread, which must never block.
-        execute(() -> {
-            try {
-                downloadToCache(call, url, filename);
-            } catch (Exception e) {
-                finishCall(call, "download_failed", e);
-            }
-        });
-    }
-
-    private void downloadToCache(PluginCall call, String url, String filename)
+    /** Streams the artifact into app-private cache, returning the staged file. */
+    private File downloadToCache(String url, String filename)
         throws Exception {
         File dir = new File(getContext().getCacheDir(), "updates");
         if (!dir.exists() && !dir.mkdirs()) {
@@ -148,7 +200,30 @@ public class InstallerPlugin extends Plugin {
             conn.disconnect();
         }
         emitProgress(written, total);
-        launchInstaller(call, target);
+        return target;
+    }
+
+    /** SHA-256 of a staged file, lowercase hex — compared against the manifest. */
+    private boolean verifySha256(File apk, String expected) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (
+                InputStream in = new FileInputStream(apk)
+            ) {
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int read;
+                while ((read = in.read(buffer)) != -1) {
+                    digest.update(buffer, 0, read);
+                }
+            }
+            StringBuilder hex = new StringBuilder();
+            for (byte b : digest.digest()) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString().equalsIgnoreCase(expected.trim());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void emitProgress(long bytes, long total) {
@@ -191,7 +266,7 @@ public class InstallerPlugin extends Plugin {
 
     private void finishCall(PluginCall call, String code, Exception e) {
         synchronized (this) {
-            if (activeCall == call) activeCall = null;
+            if (activeOp == call) activeOp = null;
         }
         if (code == null) {
             call.resolve();

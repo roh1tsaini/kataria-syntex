@@ -674,19 +674,28 @@ export type ApkProgress = { bytes: number; total: number };
  *  not an npm package). Declared locally so browsers never import
  *  @capacitor/core eagerly. */
 type InstallerPlugin = {
-  installApk(options: { url: string; filename?: string }): Promise<void>;
+  downloadApk(options: {
+    url: string;
+    filename?: string;
+    sha256?: string;
+  }): Promise<void>;
+  installApk(options: { filename?: string }): Promise<void>;
   addListener(
     event: "progress",
     listener: (progress: ApkProgress) => void,
   ): Promise<{ remove: () => Promise<void> }>;
 };
 
-type InstallerManifest = {
+/** Staged APK filename — one slot in app-private cache, shared by the native
+ *  side (InstallerPlugin.DEFAULT_FILENAME) and every caller below. */
+const STAGED_APK_FILENAME = "ks-biz-app.apk";
+
+export type InstallerManifest = {
   version: string;
-  android?: { apk?: string };
+  android?: { apk?: string; sha256?: string; size?: number };
 };
 
-async function fetchInstallerManifest(
+export async function fetchInstallerManifest(
   apiBase: string,
 ): Promise<InstallerManifest | null> {
   try {
@@ -706,39 +715,104 @@ async function fetchInstallerManifest(
   }
 }
 
-/**
- * Streams the release APK into app-private cache and hands it to the system
- * package installer. onProgress fires as chunks land. Throws
- * "manifest_unavailable" / "artifact_missing" / "download_failed" /
- * "install_permission_required" (user must allow installs from this app,
- * then retry) / "install_unavailable" — the update store maps these to its
- * status, the blocking dialog explains the permission one.
- */
-export async function downloadAndInstallApk(
-  apiBase: string,
-  onProgress: (progress: ApkProgress) => void,
-): Promise<void> {
-  if (detectHost() !== "android") throw new Error("android_only");
-  if (!apiBase) throw new Error("manifest_unavailable");
-  const manifest = await fetchInstallerManifest(apiBase);
-  if (!manifest) throw new Error("manifest_unavailable");
+/** Version whose APK sits verified in app-private cache (survives restarts).
+ *  Cleared when superseded by a newer manifest or after a cache eviction;
+ *  retained after launching the installer so backing out of it keeps the
+ *  Settings action. The marker alone never proves the file is there — the
+ *  cache can be evicted — so the install step still handles "not_staged" by
+ *  staging again. */
+const STAGED_KEY = "android.stagedApkVersion";
+
+export function readStagedApkVersion(): string | null {
+  try {
+    return localStorage.getItem(STAGED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStagedApkVersion(version: string): void {
+  try {
+    localStorage.setItem(STAGED_KEY, version);
+  } catch {
+    // Storage unavailable — staging still works, it just re-downloads next
+    // launch instead of being reused.
+  }
+}
+
+export function clearStagedApkVersion(): void {
+  try {
+    localStorage.removeItem(STAGED_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** Capacitor reject codes surface as the Error message — the store switches
+ *  on "not_staged" to stage again after a cache eviction. */
+export function pluginErrorCode(error: unknown): string | null {
+  return error instanceof Error ? error.message : null;
+}
+
+async function installer(): Promise<InstallerPlugin> {
+  const { registerPlugin } = await import("@capacitor/core");
+  return registerPlugin<InstallerPlugin>("Installer");
+}
+
+function apkUrl(apiBase: string, manifest: InstallerManifest): string {
   const apk = manifest.android?.apk;
   if (typeof apk !== "string" || !apk.startsWith("/releases/")) {
     throw new Error("artifact_missing");
   }
-  const { registerPlugin } = await import("@capacitor/core");
-  const installer = registerPlugin<InstallerPlugin>("Installer");
-  const handle = await installer.addListener("progress", onProgress);
+  return `${apiBase}${apk}`;
+}
+
+/**
+ * Background staging: downloads the manifest's APK into app-private cache
+ * and verifies its SHA-256 when the manifest carries one. Never opens
+ * settings, never launches the installer — safe from the background poller
+ * with no user gesture. Skips the download when this exact version is
+ * already staged. onProgress fires as chunks land. Throws
+ * "manifest_unavailable" / "artifact_missing" / "download_failed" /
+ * "integrity_failed".
+ */
+export async function ensureAndroidStaging(
+  apiBase: string,
+  manifest: InstallerManifest,
+  onProgress: (progress: ApkProgress) => void,
+): Promise<void> {
+  if (detectHost() !== "android") throw new Error("android_only");
+  if (!apiBase) throw new Error("manifest_unavailable");
+  if (readStagedApkVersion() === manifest.version) return;
+  const url = apkUrl(apiBase, manifest);
+  const sha256 = manifest.android?.sha256;
+  const plugin = await installer();
+  const handle = await plugin.addListener("progress", onProgress);
   try {
-    await installer.installApk({
-      url: `${apiBase}${apk}`,
-      filename: "ks-biz-app.apk",
+    await plugin.downloadApk({
+      url,
+      filename: STAGED_APK_FILENAME,
+      ...(typeof sha256 === "string" && sha256 ? { sha256 } : {}),
     });
   } finally {
     await handle.remove().catch(() => {
       // listener already gone — the download result stands on its own
     });
   }
+  writeStagedApkVersion(manifest.version);
+}
+
+/**
+ * Tap-driven install: hands the staged APK to the system package installer.
+ * The unknown-sources settings page opens exclusively from here — never from
+ * a background poll. Throws "not_staged" (cache evicted since staging —
+ * stage again, then retry) / "install_permission_required" (user must allow
+ * installs from this app, then retry) / "install_unavailable".
+ */
+export async function installStagedAndroidApk(): Promise<void> {
+  if (detectHost() !== "android") throw new Error("android_only");
+  const plugin = await installer();
+  await plugin.installApk({ filename: STAGED_APK_FILENAME });
 }
 
 // ── Android PDF share ────────────────────────────────────────────────────────

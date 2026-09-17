@@ -28,8 +28,11 @@
  *   app/android/<*.apk>
  *   app/android/latest.json                — version + minVersion (only when
  *                                            a breaking change shipped) + paths
+ *                                            + the APK's sha256/size (the
+ *                                            on-device stager verifies them)
  */
 import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, basename } from "node:path";
 
 const ACCOUNT = process.env.CF_ACCOUNT_ID ?? "";
@@ -291,13 +294,24 @@ function compareSemver(a: string, b: string): number {
 // undismissable update dialog for nothing (apps/app#A0). Absence is the
 // unambiguous "no floor".
 const publishedMinVersion = readMinVersion();
+// The Android manifest carries the APK's SHA-256 + size so the on-device
+// stager verifies bytes before they can reach the system installer. A
+// manifest without them (older release) simply skips verification.
+const apkBytes = apk === undefined ? null : readFileSync(apk);
 const manifest = {
   version: VERSION,
   ...(hasUpdateFloor(publishedMinVersion)
     ? { minVersion: publishedMinVersion }
     : {}),
   releasedAt: new Date().toISOString(),
-  android: apk ? { apk: `/releases/${keyFor(apk, "android")}` } : {},
+  android:
+    apk && apkBytes
+      ? {
+          apk: `/releases/${keyFor(apk, "android")}`,
+          sha256: createHash("sha256").update(apkBytes).digest("hex"),
+          size: apkBytes.length,
+        }
+      : {},
   desktop: {
     ...(winSetup
       ? { win: `/releases/${keyFor(winSetup, "desktop/win")}` }

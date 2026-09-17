@@ -3,6 +3,8 @@
  * update store carries a requiredMinVersion (server 426 or published
  * minVersion). Undismissable by design: the API carries no backward
  * compatibility, so a client below the floor has nothing useful to do.
+ * On web this is a last resort — the store reloads once silently first,
+ * and the dialog only appears when the reloaded shell is still stale.
  *
  * The action follows the host: web reloads (index.html revalidates, so the
  * reload runs the new build), Electron quit-and-installs (or re-downloads
