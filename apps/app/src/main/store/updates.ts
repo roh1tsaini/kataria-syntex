@@ -25,12 +25,21 @@
  * Force updates (server 426 / published minVersion) set `requiredMinVersion`,
  * which the blocking dialog in ui/components/update-dialog.tsx renders
  * undismissably — except on web, where markRequired reloads once silently
- * first and only arms the dialog when the reloaded shell is still stale. The non-blocking banner can be dismissed — the dismissal
+ * first and only arms the dialog when the reloaded shell is still stale. A
+ * floor is armed only when it is ABOVE the running build (`floorAppliesTo`):
+ * a published manifest keeps carrying `minVersion` for every later release,
+ * so arming on the raw value would block clients that are already current
+ * and leave the dialog's only action with nothing to install. The server's
+ * 426 needs no such test — it measures the announced version itself.
+ *
+ * `failure` carries WHICH step failed, so the dialog never blames the
+ * connection for a release that simply is not published yet. The
+ * non-blocking banner can be dismissed — the dismissal
  * remembers the version, so the banner stays gone until the NEXT version
  * ships instead of nagging on every load.
  */
 import { create } from "zustand";
-import { compareSemver, hasUpdateFloor } from "@kataria-syntex/shared";
+import { compareSemver, floorAppliesTo } from "@kataria-syntex/shared";
 import {
   apiOrigin,
   setUpdateRequiredHandler,
@@ -48,17 +57,43 @@ import {
   pluginErrorCode,
   readStagedApkVersion,
   reloadOnStaleAndroidBundle,
+  usesManifestUpdateFlow,
 } from "@/lib/platform";
+
+/**
+ * Which step of an update attempt failed. One vocabulary for every shell —
+ * the blocking dialog maps it to copy and nothing else inspects it, so a
+ * release that is not published yet can never read as "no network".
+ */
+export type UpdateFailure =
+  /** The release manifest itself could not be read. */
+  | "manifest_unavailable"
+  /** The server's floor is ahead of what is published — nothing to install. */
+  | "publish_pending"
+  /** The download failed, or the feed has no such artifact. */
+  | "download_failed"
+  /** Bytes arrived but failed verification. */
+  | "integrity_failed"
+  /** Android would not hand the APK to its installer. */
+  | "install_blocked"
+  /** The shell never answered — retryable, not broken. */
+  | "stalled"
+  /** The Electron updater feed errored. */
+  | "check_failed";
 
 export type UpdateState = {
   /** Latest version published to /releases, when known. */
   latestVersion: string | null;
-  /** Server floor (minAppVersion). Non-null ⇒ blocking dialog must show. */
+  /** Floor this client is below (server 426 / published minVersion). Non-null
+   *  ⇒ blocking dialog must show. Never set for a floor the running build
+   *  already satisfies — see markRequired. */
   requiredMinVersion: string | null;
   /** Coarse status for the Settings row / banner. */
   status: "idle" | "checking" | "downloading" | "ready" | "error";
   /** Live download/install progress — null when nothing is in flight. */
   progress: UpdateProgress | null;
+  /** Why the last attempt failed — null when nothing failed. */
+  failure: UpdateFailure | null;
   /** True while a manual (Settings) check is in flight. */
   checking: boolean;
   /** Host-specific artifact URL from the manifest (macOS dmg). */
@@ -106,11 +141,6 @@ async function fetchManifest(): Promise<LatestManifest | null> {
   }
 }
 
-/** macOS Electron reports as desktop but updates via manifest + dmg. */
-function usesManifestFlow(): boolean {
-  return desktopBridge()?.platform === "darwin";
-}
-
 /** The manifest artifact this host installs. */
 function artifactFor(manifest: LatestManifest): string | null {
   const mac = manifest.desktop?.mac;
@@ -145,11 +175,51 @@ async function stageAndroidInBackground(
         },
       });
     });
-    useUpdates.setState({ status: "ready", progress: null });
+    useUpdates.setState({ status: "ready", progress: null, failure: null });
     void notifyAndroidUpdateAvailable(manifest.version);
-  } catch {
-    useUpdates.setState({ status: "error", progress: null });
+  } catch (error) {
+    useUpdates.setState({
+      status: "error",
+      progress: null,
+      failure: androidFailure(error),
+    });
   }
+}
+
+/** How long a tap-driven Android install may stay unanswered before the
+ *  dialog offers a retry instead of a permanently disabled button. Android
+ *  can kill the process behind the install-permission settings screen, which
+ *  loses the plugin's callback and leaves that promise un-settled forever. */
+const INSTALL_WATCHDOG_MS = 5 * 60 * 1000;
+
+function withInstallWatchdog<T>(work: () => Promise<T>): Promise<T> {
+  const running = work();
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error("stalled")),
+      INSTALL_WATCHDOG_MS,
+    );
+    running.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+}
+
+/** Native reject codes → the failure vocabulary the dialog renders. Anything
+ *  unmapped is a download failure, the only step with no better name. */
+const ANDROID_FAILURES: Record<string, UpdateFailure> = {
+  manifest_unavailable: "manifest_unavailable",
+  artifact_missing: "download_failed",
+  download_failed: "download_failed",
+  integrity_failed: "integrity_failed",
+  not_staged: "install_blocked",
+  install_permission_required: "install_blocked",
+  install_unavailable: "install_blocked",
+  already_in_progress: "stalled",
+  stalled: "stalled",
+};
+
+function androidFailure(error: unknown): UpdateFailure {
+  const code = pluginErrorCode(error);
+  return (code && ANDROID_FAILURES[code]) || "download_failed";
 }
 
 const DISMISS_KEY = "updates.dismissedVersion";
@@ -198,6 +268,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   requiredMinVersion: null,
   status: "idle",
   progress: null,
+  failure: null,
   checking: false,
   downloadUrl: null,
   dismissedVersion: readDismissedVersion(),
@@ -207,38 +278,61 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
     set({ checking: true });
     try {
       const desktop = desktopBridge();
-      if (desktop && !usesManifestFlow()) {
+      if (desktop && !usesManifestUpdateFlow()) {
         const res = await desktop.checkForUpdate();
         if (res.kind === "available") {
           // autoDownload is on in the shell — the "downloading" event follows
           // immediately; "ready" must wait for update-downloaded, not fire
           // while the installer is still on the wire.
-          set({ latestVersion: res.version, status: "idle", progress: null });
+          set({
+            latestVersion: res.version,
+            status: "idle",
+            progress: null,
+            failure: null,
+          });
           return "available";
         }
         if (res.kind === "ready") {
-          set({ latestVersion: res.version, status: "ready", progress: null });
+          set({
+            latestVersion: res.version,
+            status: "ready",
+            progress: null,
+            failure: null,
+          });
           return "available";
         }
-        return res.kind === "error" ? "error" : "up-to-date";
+        // A feed that errors means the update service itself is unreachable —
+        // say that, never "up to date".
+        if (res.kind === "error") {
+          set({ failure: "check_failed" });
+          return "error";
+        }
+        set({ failure: null });
+        return "up-to-date";
       }
       // Web and macOS Electron read the same published manifest to fill the
       // Settings version line and arm the 426 floor. Web deploys otherwise
       // apply silently through revalidated index.html — no prompt, no reload.
       const manifest = await fetchManifest();
-      if (!manifest) return "error";
-      // The sentinel ("no breaking change shipped") is dropped inside
-      // markRequired — see hasUpdateFloor.
+      if (!manifest) {
+        // The manifest is the whole update path on these hosts: a check that
+        // cannot read it is a failure, not "up to date".
+        set({ failure: "manifest_unavailable" });
+        return "error";
+      }
+      // markRequired decides whether this floor applies to THIS build (the
+      // manifest keeps carrying minVersion forever, see floorAppliesTo).
       if (manifest.minVersion) get().markRequired(manifest.minVersion);
       set({
         latestVersion: manifest.version,
         downloadUrl: artifactFor(manifest),
+        failure: null,
       });
       if (compareSemver(manifest.version, __APP_VERSION__) > 0) {
         // macOS arms the banner (dmg download). On web there is nothing to
         // download and nothing to prompt — the deploy applies itself, so the
         // state stays idle and no surface can misfire.
-        if (usesManifestFlow()) set({ status: "ready" });
+        if (usesManifestUpdateFlow()) set({ status: "ready", failure: null });
         // Android stages the APK in the background the moment the poll finds
         // it, on whatever network the device is on — bytes only, never the
         // installer or its permission screen. Those stay one explicit tap
@@ -256,7 +350,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
           ) {
             // Staged before a restart: the verified APK is already in
             // app-private cache.
-            set({ status: "ready", progress: null });
+            set({ status: "ready", progress: null, failure: null });
           } else {
             // Installed, superseded, or never staged — an old marker (if
             // any) no longer describes the cache.
@@ -267,6 +361,16 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         }
         return "available";
       }
+      // Nothing newer is published. A floor this build does not satisfy is
+      // not installable yet — the release that lifts it is still publishing.
+      // Withholding that distinction is what made the dialog blame the
+      // network for a release that simply was not out.
+      const armed = get().requiredMinVersion;
+      if (armed && floorAppliesTo(armed, __APP_VERSION__)) {
+        set({ failure: "publish_pending" });
+        return "error";
+      }
+      set({ failure: null });
       return "up-to-date";
     } finally {
       set({ checking: false });
@@ -283,6 +387,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       set({
         status: "downloading",
         progress: { percent: 0, totalBytes: 0 },
+        failure: null,
       });
       const onProgress = ({
         bytes,
@@ -304,42 +409,76 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
           const manifest = await fetchInstallerManifest(apiOrigin());
           if (!manifest) throw new Error("manifest_unavailable");
           if (compareSemver(manifest.version, __APP_VERSION__) <= 0) {
-            throw new Error("artifact_missing");
+            // Nothing newer is published than what is running. Exactly two
+            // honest readings, never a download error: this build already
+            // satisfies the floor — the dialog was armed by a release the
+            // server has since moved past — so stand it down; or the
+            // release that lifts the floor is still publishing, so say so.
+            const armed = get().requiredMinVersion;
+            const satisfied = !armed || !floorAppliesTo(armed, __APP_VERSION__);
+            set({
+              latestVersion: manifest.version,
+              progress: null,
+              ...(satisfied
+                ? {
+                    status: "idle" as const,
+                    requiredMinVersion: null,
+                    failure: null,
+                  }
+                : {
+                    status: "error" as const,
+                    failure: "publish_pending" as const,
+                  }),
+            });
+            return;
           }
           set({ latestVersion: manifest.version });
           await ensureAndroidStaging(apiOrigin(), manifest, onProgress);
         }
-        try {
-          await installStagedAndroidApk();
-        } catch (error) {
-          // App-private cache evicted since staging — drop the stale marker,
-          // stage once more from the manifest, then install. Any other
-          // failure (permission, unavailable) stands.
-          if (pluginErrorCode(error) !== "not_staged") throw error;
-          clearStagedApkVersion();
-          const manifest = await fetchInstallerManifest(apiOrigin());
-          if (!manifest) throw new Error("manifest_unavailable");
-          set({ latestVersion: manifest.version });
-          await ensureAndroidStaging(apiOrigin(), manifest, onProgress);
-          await installStagedAndroidApk();
-        }
-        // The system installer owns the screen from here — "ready" keeps
-        // the Settings row actionable for anyone who backs out of it, and
-        // the notification summons the tap that opens it.
-        set({ status: "ready", progress: null });
-        const done = get().latestVersion;
-        if (done) void notifyAndroidUpdateAvailable(done);
-      } catch {
-        set({ status: "error", progress: null });
+        // Bounded: a tap that Android never answers must come back as a
+        // retryable failure, not a permanently disabled button. Only the
+        // install step is wrapped — staging has its own native connect/read
+        // timeouts and may legitimately run for minutes on slow mobile data.
+        await withInstallWatchdog(async () => {
+          try {
+            await installStagedAndroidApk();
+          } catch (error) {
+            // App-private cache evicted since staging — drop the stale marker,
+            // stage once more from the manifest, then install. Any other
+            // failure (permission, unavailable) stands.
+            if (pluginErrorCode(error) !== "not_staged") throw error;
+            clearStagedApkVersion();
+            const manifest = await fetchInstallerManifest(apiOrigin());
+            if (!manifest) throw new Error("manifest_unavailable");
+            set({ latestVersion: manifest.version });
+            await ensureAndroidStaging(apiOrigin(), manifest, onProgress);
+            await installStagedAndroidApk();
+          }
+          // The system installer owns the screen from here — "ready" keeps
+          // the Settings row actionable for anyone who backs out of it, and
+          // the notification summons the tap that opens it.
+          set({ status: "ready", progress: null, failure: null });
+          const done = get().latestVersion;
+          if (done) void notifyAndroidUpdateAvailable(done);
+        });
+      } catch (error) {
+        set({
+          status: "error",
+          progress: null,
+          failure: androidFailure(error),
+        });
       }
       return;
     }
     const desktop = desktopBridge();
     if (desktop) {
-      if (usesManifestFlow()) {
-        // macOS: hand the published dmg to the OS browser.
+      if (usesManifestUpdateFlow()) {
+        // macOS: hand the published dmg to the OS browser. No artifact in the
+        // manifest means there is nothing to hand over — surface that instead
+        // of a tap that appears to do nothing.
         const url = get().downloadUrl;
         if (url) await desktop.openReleaseUrl(url);
+        else set({ failure: "manifest_unavailable" });
         return;
       }
       // Windows/Linux: restart only when the new build is staged. Quitting
@@ -355,11 +494,17 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
       set({
         status: "downloading",
         progress: { percent: 0, totalBytes: 0 },
+        failure: null,
       });
       try {
         const res = await desktop.checkForUpdate();
         if (res.kind === "ready") {
-          set({ latestVersion: res.version, status: "ready", progress: null });
+          set({
+            latestVersion: res.version,
+            status: "ready",
+            progress: null,
+            failure: null,
+          });
         } else if (res.kind === "available") {
           // autoDownload is on in the shell — progress events follow and
           // flip the state to ready; staying "downloading" keeps the dialog
@@ -368,12 +513,12 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         } else if (res.kind === "not-available") {
           // Feed says current: nothing to stage. Back to idle so the next
           // tap retries instead of spinning on a download that never comes.
-          set({ status: "idle", progress: null });
+          set({ status: "idle", progress: null, failure: null });
         } else {
-          set({ status: "error", progress: null });
+          set({ status: "error", progress: null, failure: "check_failed" });
         }
       } catch {
-        set({ status: "error", progress: null });
+        set({ status: "error", progress: null, failure: "check_failed" });
       }
       return;
     }
@@ -386,10 +531,20 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   markRequired: (minVersion) => {
+    // An armed floor the running build already satisfies must not survive —
+    // it can outlive its own release (someone installed the update while the
+    // dialog was up, or the server's floor moved back). Checked BEFORE the
+    // new value, so a stale manifest can never quiet a solved dialog.
+    const armed = get().requiredMinVersion;
+    if (armed && !floorAppliesTo(armed, __APP_VERSION__)) {
+      set({ requiredMinVersion: null });
+    }
     // The only setter of the floor — guard here, not at every consumer. A
     // published manifest carries the sentinel when no breaking change has
-    // shipped; storing it would arm the undismissable dialog for nothing.
-    if (!hasUpdateFloor(minVersion)) return;
+    // shipped, AND keeps carrying a real minVersion for every later release.
+    // So a floor this build is already above is not a floor: arming it would
+    // block a current client whose dialog then has nothing to install.
+    if (!floorAppliesTo(minVersion, __APP_VERSION__)) return;
     // Web heals a floor silently: the fresh shell is one reload away
     // (index.html revalidates), so reload once per floor version instead of
     // blocking. Native shells cannot self-refresh — they fall through to
@@ -446,6 +601,9 @@ export function initUpdateChecks(): void {
     void initAndroidUpdateNotifications();
   }
   void useUpdates.getState().checkNow();
+  // Deliberate fire-and-forget: a failed check lands in the store (`failure`
+  // drives the dialog's copy and the Settings row's hint), so there is no
+  // caller-side catch to write.
   setInterval(() => void useUpdates.getState().checkNow(), CHECK_INTERVAL_MS);
 
   const desktop = desktopBridge();
@@ -457,24 +615,31 @@ export function initUpdateChecks(): void {
           latestVersion: s.version,
           status: "idle",
           progress: null,
+          failure: null,
         });
       } else if (s.kind === "ready") {
         useUpdates.setState({
           latestVersion: s.version,
           status: "ready",
           progress: null,
+          failure: null,
         });
       } else if (s.kind === "downloading") {
         useUpdates.setState({
           status: "downloading",
           progress: { percent: s.percent, totalBytes: s.total },
+          failure: null,
         });
       } else if (s.kind === "error") {
         // A failed background staging must surface: without this the store
         // sits on a stale "downloading" forever and the dialog spins with
-        // no download behind it. The dialog's error copy tells the user to
-        // check the connection and retry.
-        useUpdates.setState({ status: "error", progress: null });
+        // no download behind it. The reason travels with it, so the dialog
+        // says the feed failed rather than blaming the user's connection.
+        useUpdates.setState({
+          status: "error",
+          progress: null,
+          failure: "check_failed",
+        });
       }
     });
   }
@@ -499,5 +664,9 @@ export function showUpdateBanner(): boolean {
   // web tab picks up the fresh shell on its next navigation; Android keeps a
   // downloaded release discoverable from Settings. Neither interrupts work.
   if (desktopBridge() === null) return false;
-  return usesManifestFlow() && s.status === "ready";
+  // macOS only, and only with a dmg to offer — a banner whose button has no
+  // artifact behind it is a dead end.
+  return (
+    usesManifestUpdateFlow() && s.status === "ready" && s.downloadUrl !== null
+  );
 }

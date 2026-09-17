@@ -217,7 +217,12 @@ the shells do it identically.
   Android stages each newer release in the background (verified download, no
   prompt) and announces it once with a system notification (tap → Settings);
   the APK install itself is always an explicit tap. Only a force-update floor
-  (server `426` / published `minVersion`) blocks native shells (`update-dialog.tsx`).
+  blocks native shells (`update-dialog.tsx`) — and a floor applies only to a
+  client whose build is BELOW it (`floorAppliesTo`): a published manifest
+  carries `minVersion` for every later release, so an already-current client
+  must never see the dialog, let alone tap an action that has nothing to
+  install. A failed attempt names its step (`failure` in the update store) —
+  a release that is still publishing says so instead of blaming the network.
 - **Deep links** — Android only. `kataria://` and `https://<origin>/login/scan/<code>`
   are registered as intent filters in `AndroidManifest.xml` and routed by
   `initAndroidDeepLinks()` (wired before first render so a cold-start link
@@ -260,7 +265,12 @@ sync` copies the built bundle and the plugin list into it.
   `abiFilters 'armeabi-v7a', 'arm64-v8a'`. `manifestPlaceholders.APP_HOST`
   comes from the `-PAPP_HOST` gradle property (CI passes the same
   `vars.APP_URL` the bundle bakes as `VITE_API_URL`; local builds default to
-  `localhost` so the manifest still merges).
+  `localhost` so the manifest still merges) — the same value is a
+  `buildConfigField` the installer plugin pins downloads to. The release
+  artifact is named `Kataria-Syntex-Biz-App-<version>.apk` by the
+  `androidComponents` block: artifacts are served with a year-long immutable
+  TTL, so an unversioned name would let any HTTP cache hand back a previous
+  release's bytes (and the manifest's SHA-256 check would then reject them).
 - `AndroidManifest.xml` — `allowBackup="false"`: the cached masters and
   company profile are business data and must not ride Android's cloud or
   device-transfer backups. Three permissions: `INTERNET` (API calls),
@@ -268,7 +278,7 @@ sync` copies the built bundle and the plugin list into it.
   (in-app APK self-update).
 - Signing — `keystore.properties` is written by CI from the
   `ANDROID_KEY_BASE64` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` repo
-  secrets and wired into the release build by `plugins/with-signing.ts`. A
+  secrets and read by `build.gradle`'s release signing config. A
   lost keystore means uninstall/reinstall on every device — keep the
   original `.p12` and its password somewhere durable outside GitHub.
 - `InstallerPlugin.java` (native, registered in `MainActivity`, no npm
@@ -276,14 +286,24 @@ sync` copies the built bundle and the plugin list into it.
   `downloadApk` stages `manifest.android.apk` into app-private cache with
   byte progress and verifies its manifest SHA-256 — bytes only, never
   settings, never the installer, so the manifest poll runs it in the
-  background with no Settings visit and no WiFi gate; `installApk` hands the
-  staged file to the installer via the FileProvider content URI and runs on
-  an explicit tap only. Android still requires that tap, so the staging
-  landing fires one notification; Settings keeps the action for anyone who
-  dismissed it. The staged version persists across restarts (no
-  re-download); a cache eviction stages again on the next tap. First install
-  asks once for "install unknown apps" (`REQUEST_INSTALL_PACKAGES`); denial
-  surfaces the allow-in-settings copy in the blocking dialog.
+  background with no Settings visit and no WiFi gate. Bytes land on a
+  `.part` file and are renamed into the staged name only after they verify
+  (and never for an empty body), so neither a dropped connection nor a
+  substituted artifact can sit where `installApk` looks. The URL must be
+  https on the app's own release origin (`BuildConfig.APP_HOST`); the
+  staged filename is sanitized to one `.apk` in that directory — a
+  tampered renderer can point the installer at nothing.
+  `installApk` hands the staged file to the installer via the FileProvider
+  content URI and runs on an explicit tap only. Android still requires that
+  tap, so the staging landing fires one notification; Settings keeps the
+  action for anyone who dismissed it. The staged version persists across
+  restarts (no re-download); a cache eviction stages again on the next tap.
+  First install asks once for "install unknown apps"
+  (`REQUEST_INSTALL_PACKAGES`); denial surfaces the allow-in-settings copy
+  in the blocking dialog. The single-flight slot survives a lost settings
+  callback: Android can kill the process behind that screen, so the plugin
+  takes a stale slot over after five minutes (and the tap gives up after
+  the same window) instead of wedging every later attempt.
 - Baked-origin build requirement — the WebView serves the bundle from
   `https://localhost`, which is NOT the API. Without a baked origin every
   fetch resolves against the bundle origin, `/api/health` answers the SPA
@@ -630,7 +650,8 @@ copy, or commit them. Secrets enter only as env read at use site.
   (and manual dispatch): `gate` (typecheck + lint + format + build) first;
   then `deploy` (app: build SPA → ensure D1 exists (auto-provision, inject
   real id into `wrangler.jsonc`) → apply migrations → ensure `ks-releases`
-  bucket exists → `wrangler deploy`; website: same for its worker + inquiry
+  bucket exists → wait for a published release that satisfies the floor →
+  `wrangler deploy`; website: same for its worker + inquiry
   DB), `desktop` (win-x64, mac-arm64, linux-x64) and `android` APK (from
   `apps/android`: build `apps/app` → `cap sync android` → `assembleRelease`;
   native project committed under `apps/android/android/`) in parallel; then
@@ -655,13 +676,30 @@ per-platform paths, and the APK's `sha256`/`size` (the on-device stager
 verifies its SHA-256; size is informational); the /download page, Android poller and macOS check
 all read it.
 
-| Shell          | Update mechanism                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web            | No service worker — index.html revalidates on every navigation, so the next load, reload, or reopen runs the fresh build with no prompt and no reload. The boot manifest check fills the Settings version line; a force-update floor reloads once silently, and only a client still stale after that reload shows the blocking dialog.                                                                                                                                                                                                                                                                                                                                                                                 |
-| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — silent check at launch + every 4h, silent download, one-click NSIS installs invisibly on quit (`autoInstallOnAppQuit`). No OS notification, no setup UI, no in-app prompt; Settings carries the deliberate restart. Closing the window is the quit that applies it                                                                                                                                                                                                                                                                                                                                                                                       |
-| Electron Mac   | Unsigned builds can't self-install — manifest poll; a dismissible title-bar banner (deferred until the next version) offers the dmg, opened via the OS browser (`openReleaseUrl`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Android        | Manifest poll (launch + every 4h) stages a newer APK (download + SHA-256 verify) on any network the moment it finds one — bytes only, never the installer or its permission screen, no Settings visit, no WiFi gate. The system installer still needs one tap (an OS limit, not an app one), so the staging finishing fires one notification pointing at it; Settings keeps the action for anyone who dismissed it. Staging persists across restarts; a cache eviction stages again on the next tap. A required server floor remains blocking — see BACKLOG C1. Boot compares the native versionName with the executing bundle (`reloadOnStaleAndroidBundle`) so a replaced APK can never leave a stale bundle running |
+Two rules keep a floor honest:
+
+1. **A floor applies only to a client below it** (`floorAppliesTo` in
+   `packages/shared/src/semver.ts`). A published manifest keeps carrying
+   `minVersion` for every later release, so arming on the raw value would
+   block clients that are already current — and their dialog action would
+   find nothing to install. `markRequired` drops a floor the running build
+   satisfies (and stands an armed dialog down when it is outlived).
+2. **The floor must be satisfiable.** CI guards it twice: the gate job fails
+   when `minAppVersion > version`, and `deploy` waits (bounded) for a
+   published release at or above the floor before the worker ships it —
+   `publish-releases.ts` refuses a release below its own floor. Without
+   these, a failed publish leaves the server locking every older client out
+   with nothing to install; the client-side answer in that window is the
+   dialog's "still being published — try again in a minute" copy, never a
+   "check your connection" dead end.
+
+| Shell          | Update mechanism                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web            | No service worker — index.html revalidates on every navigation, so the next load, reload, or reopen runs the fresh build with no prompt and no reload. The boot manifest check fills the Settings version line; a force-update floor reloads once silently, and only a client still stale after that reload shows the blocking dialog.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Electron Win   | `electron-updater` generic feed `/releases/app/desktop/win` — silent check at launch + every 4h, silent download, one-click NSIS installs invisibly on quit (`autoInstallOnAppQuit`). No OS notification, no setup UI, no in-app prompt; Settings carries the deliberate restart. Closing the window is the quit that applies it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Electron Mac   | Unsigned builds can't self-install — manifest poll; a dismissible title-bar banner (deferred until the next version) offers the dmg, opened via the OS browser (`openReleaseUrl`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Android        | Manifest poll (launch + every 4h) stages a newer APK (download + SHA-256 verify) on any network the moment it finds one — bytes only, never the installer or its permission screen, no Settings visit, no WiFi gate. The system installer still needs one tap (an OS limit, not an app one), so the staging finishing fires one notification pointing at it; Settings keeps the action for anyone who dismissed it. Staging persists across restarts; a cache eviction stages again on the next tap. A floor this build is below stays blocking; a floor it satisfies never arms, and a tap with nothing newer published says "still being published" instead of failing. Boot compares the native versionName with the executing bundle (`reloadOnStaleAndroidBundle`) so a replaced APK can never leave a stale bundle running |
 
 Per-shell behaviour contract lives in Section 5.1; the table below is the
 delivery mechanism. APK install path detail is in Section 5.1; the

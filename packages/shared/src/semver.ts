@@ -35,6 +35,25 @@ export function hasUpdateFloor(minVersion: string | null | undefined): boolean {
   return compareSemver(minVersion, NO_UPDATE_FLOOR) > 0;
 }
 
+/**
+ * True only when a floor actually applies to the build that is running:
+ * a real floor AND one this build is below.
+ *
+ * A published manifest keeps carrying `minVersion` for every later release
+ * (`minAppVersion` is never reset), so a floor that the running build already
+ * satisfies must not raise the blocking dialog — it has nothing to install.
+ * The server's own `426` needs no such check: it measures the client's
+ * announced version and only fires below the floor.
+ */
+export function floorAppliesTo(
+  minVersion: string | null | undefined,
+  runningVersion: string,
+): boolean {
+  if (typeof minVersion !== "string") return false;
+  if (!hasUpdateFloor(minVersion)) return false;
+  return compareSemver(minVersion, runningVersion) > 0;
+}
+
 function parse(v: string): [number, number, number] {
   const parts = v.trim().replace(/^v/, "").split(".");
   const num = (s: string | undefined) => {

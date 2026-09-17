@@ -64,6 +64,21 @@ jobs:
       - name: Build
         run: bun run build
 
+      # AGENTS.md Section 4.0.1: version and minAppVersion bump together. A
+      # floor above the version being shipped can never be satisfied by any
+      # installable release — every client below it would be answered 426 with
+      # nothing to install. Caught here in seconds, not after a build.
+      - name: Version floor is satisfiable
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -r .version apps/app/package.json)
+          MIN=$(jq -r '.minAppVersion // "0.0.0"' apps/app/package.json)
+          if [ "$(printf '%s\n%s\n' "$VERSION" "$MIN" | sort -V | tail -1)" != "$VERSION" ]; then
+            echo "::error::minAppVersion ($MIN) is above version ($VERSION) — bump version to the floor or above it."
+            exit 1
+          fi
+          echo "version $VERSION satisfies floor $MIN"
+
   deploy:
     name: "Deploy to Cloudflare"
     # Deploys to the single production workers — no PR previews.
@@ -130,6 +145,37 @@ jobs:
               --data '{"name":"ks-releases"}' "$API" | jq -r '.success')
             if [ "$CREATED" != "true" ]; then echo "Failed to create ks-releases bucket (check token R2 permissions)" >&2; exit 1; fi
           fi
+
+      # The worker bakes minAppVersion and answers 426 to every client below
+      # it, and the native builds publish in parallel with this job — so a
+      # deploy must never outrun the release that satisfies the floor. This
+      # passes immediately for an ordinary push (the live manifest is already
+      # at or above the floor); when a breaking change raised the floor it
+      # waits for the parallel publish instead of locking every older client
+      # out with nothing to install. A floor of 0.0.0 means the gate is off.
+      - name: Version floor is published
+        if: ${{ vars.APP_URL != '' }}
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          set -euo pipefail
+          MIN=$(jq -r '.minAppVersion // "0.0.0"' apps/app/package.json)
+          if [ "$MIN" = "0.0.0" ] || [ -z "$MIN" ]; then
+            echo "no version floor — nothing to wait for"
+            exit 0
+          fi
+          MANIFEST="https://${APP_URL#*://}/releases/app/android/latest.json"
+          for attempt in $(seq 1 45); do
+            LIVE=$(curl -fsS --max-time 20 "$MANIFEST" 2>/dev/null | jq -r '.version // empty' || true)
+            if [ -n "$LIVE" ] && [ "$(printf '%s\n%s\n' "$MIN" "$LIVE" | sort -V | tail -1)" = "$LIVE" ]; then
+              echo "published v$LIVE satisfies floor $MIN"
+              exit 0
+            fi
+            echo "waiting for a release at or above $MIN (published: ${LIVE:-none}) — attempt $attempt/45"
+            sleep 60
+          done
+          echo "::error::No published release satisfies minAppVersion $MIN — clients below it would be locked out with nothing to install. Fix the publish job, then re-run."
+          exit 1
 
       - name: Deploy app worker
         uses: cloudflare/wrangler-action@v4

@@ -149,11 +149,6 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
 - [ ] **A28 · Electron PDF partition allows `data:`/`blob:` with no CSP.**
       `electron/main.ts:410` — mitigated (HTML is app-generated, validated
       `<!DOCTYPE html>`, ≤10MB, `javascript: false`) but not closed.
-- [ ] **A29 · `InstallerPlugin.java` has no origin allowlist on `installApk`.**
-      `:44` — the JS side validates `startsWith("/releases/")`, but the
-      plugin accepts any `https://` URL and hands it to the system
-      installer: an arbitrary-APK-install primitive if the renderer is ever
-      compromised.
 - [ ] **A30 · `challan_has_returns` check is TOCTOU on update and delete.**
       `lib/document-pipeline.ts:1207` — SELECT then later batch; a return
       recorded in the gap hits a non-cascading FK and the batch fails as a
@@ -166,11 +161,12 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
       reads.
 - [ ] **A39 · Platform branches outside the adapter.**
       `ui/App.tsx:10,136`, `ui/pages/settings.tsx:14,183`,
-      `ui/components/update-dialog.tsx:13,26,85`, `store/updates.ts:34-39`,
-      `lib/challan-pdf.ts:23-27` call `detectHost()` / `desktopBridge()` /
-      `isNative()` directly; the rule is differences live only in
-      `lib/platform.ts`. Export `isPlainBrowser` / `isNative` / Android
-      helpers from the adapter and keep `detectHost` private to it.
+      `store/updates.ts:34-39`, `lib/challan-pdf.ts:23-27` call
+      `detectHost()` / `desktopBridge()` / `isNative()` directly; the rule is
+      differences live only in `lib/platform.ts` (update-dialog.tsx already
+      does — its action and copy come from `updateAction()`). Export
+      `isPlainBrowser` / `isNative` / Android helpers from the adapter and
+      keep `detectHost` private to it.
 - [ ] **A40 · Business facts hardcoded in components.**
       `shared/challan-html.ts:60-62,374-377` (`ROWS_PER_PAGE=12`, `210x148`,
       `Subject to SURAT jurisdiction`, `Please do not mix different lots`)
@@ -180,8 +176,9 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
 - [ ] **A41 · Silent / unhandled promises on boot and refresh paths.**
       `ui/App.tsx:149` (`void bootstrap()` with no catch),
       `ui/components/app-shell.tsx:701` (`refreshCompany().catch(()=>{})`
-      swallows), `store/updates.ts:289` (`void checkNow()`). Surface via
-      `friendlyError`/toast or document as deliberate fire-and-forget.
+      swallows). Surface via `friendlyError`/toast or document as deliberate
+      fire-and-forget. (`store/updates.ts` is done: its boot/interval checks
+      are documented fire-and-forget and land in the store's `failure`.)
 
 ### Low
 
@@ -206,11 +203,6 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
 - [ ] **A35 · `deleteCookie` omits `httpOnly`/`sameSite`.**
       `routes/auth-session.ts:45,91` — Hono overwrites the attributes, so
       the cleared cookie is set without them.
-- [ ] **A36 · `update-dialog.tsx:97` swaps the button label to
-      "Downloading…".** `ui/button.tsx:46` defines `loading` as disabled +
-      dim + `aria-busy`, "the label never changes and nothing is injected" —
-      the label change duplicates the signal on the one undismissable
-      surface.
 - [ ] **A46 · OTP/session token randomness has modulo bias.**
       `lib/token.ts:27-28,41-43` (`buf[0] % 1_000_000`, `b % 31`) — tiny
       but on the auth path; use rejection sampling.
@@ -237,7 +229,7 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
 
 ### Cross-cutting notes
 
-- **The 426 version gate is now armed.** `minAppVersion` is `0.19.1` in
+- **The 426 version gate is armed.** `minAppVersion` is `0.19.1` in
   `apps/app/package.json` (bumped with the `already_registered` code
   rename), so `VERSION_GATE_ENABLED` is true and stale clients get
   `update_required` on every gated call.

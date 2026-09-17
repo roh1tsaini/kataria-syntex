@@ -1,18 +1,24 @@
 /**
  * Blocking update dialog — rendered once in App and shown whenever the
- * update store carries a requiredMinVersion (server 426 or published
- * minVersion). Undismissable by design: the API carries no backward
- * compatibility, so a client below the floor has nothing useful to do.
- * On web this is a last resort — the store reloads once silently first,
- * and the dialog only appears when the reloaded shell is still stale.
+ * update store carries a requiredMinVersion (server 426, or a published
+ * minVersion this build is below). Undismissable by design: the API carries
+ * no backward compatibility, so a client below the floor has nothing useful
+ * to do.
  *
- * The action follows the host: web reloads (index.html revalidates, so the
- * reload runs the new build), Electron quit-and-installs (or re-downloads
- * on macOS), Android downloads the APK and hands it to the system
- * installer.
+ * The action AND the copy come from the host's update action
+ * (`updateAction()` in lib/platform.ts): web reloads (index.html
+ * revalidates, so the reload runs the new build), Windows/Linux restart into
+ * the silently staged build, macOS downloads the published dmg through the
+ * OS browser, Android hands the staged APK to the system installer. Nothing
+ * here branches on platform.
+ *
+ * A failed attempt explains itself: the store's `failure` names the step
+ * that failed, so a release that is not published yet never reads as "no
+ * network".
  */
 import { useUpdates } from "@/store/updates";
-import { detectHost } from "@/lib/platform";
+import type { UpdateFailure } from "@/store/updates";
+import { updateAction, type UpdateAction } from "@/lib/platform";
 import { Button } from "@/ui/components/ui/button";
 import { ProgressBar } from "@/ui/components/progress-bar";
 import {
@@ -24,38 +30,54 @@ import {
 } from "@/ui/components/ui/dialog";
 import { RefreshCw } from "lucide-react";
 
-function actionCopy(): { title: string; description: string; cta: string } {
-  const host = detectHost();
-  if (host === "electron") {
-    return {
-      title: "Update required",
-      description:
-        "This version can no longer reach the server. The new version installs when the app restarts.",
-      cta: "Restart and update",
-    };
-  }
-  if (host === "android") {
-    return {
-      title: "Update required",
-      description:
-        "This version can no longer reach the server. Install the latest version to continue.",
-      cta: "Update app",
-    };
-  }
-  return {
-    title: "Update required",
+/** One line per host: what the tap does, and therefore what it must say. */
+const COPY: Record<UpdateAction, { description: string; cta: string }> = {
+  reload: {
     description:
       "A required update is ready to install. Reload the page to continue.",
     cta: "Reload now",
-  };
-}
+  },
+  restart: {
+    description:
+      "This version can no longer reach the server. The new version installs when the app restarts.",
+    cta: "Restart and update",
+  },
+  download: {
+    description:
+      "This version can no longer reach the server. Download the new version to continue.",
+    cta: "Download update",
+  },
+  install: {
+    description:
+      "This version can no longer reach the server. Install the latest version to continue.",
+    cta: "Update app",
+  },
+};
+
+/** Which step failed, in plain terms. Being specific matters here: the old
+ *  catch-all blamed the connection for a release that was not published. */
+const FAILURE_COPY: Record<UpdateFailure, string> = {
+  manifest_unavailable:
+    "Couldn't reach the update service. Check your connection, then try again.",
+  check_failed:
+    "Couldn't reach the update service. Check your connection, then try again.",
+  publish_pending:
+    "The required update is still being published. Try again in a minute.",
+  download_failed: "The download didn't finish. Try again.",
+  integrity_failed: "The download didn't verify. Try again.",
+  install_blocked:
+    "Allow installs from this app in the settings Android opened, then try again. The first install also runs a Play Protect scan — this APK is the official Kataria Syntex release; choose Install anyway.",
+  stalled: "Android didn't come back from the install screen. Try again.",
+};
 
 export function UpdateDialog() {
   const requiredMinVersion = useUpdates((s) => s.requiredMinVersion);
   const installUpdate = useUpdates((s) => s.installUpdate);
   const status = useUpdates((s) => s.status);
   const progress = useUpdates((s) => s.progress);
-  const copy = actionCopy();
+  const failure = useUpdates((s) => s.failure);
+  const action = updateAction();
+  const copy = COPY[action];
   const busy = status === "downloading";
 
   return (
@@ -72,7 +94,7 @@ export function UpdateDialog() {
             <RefreshCw className="size-5" aria-hidden />
           </div>
           <DialogHeader className="gap-1">
-            <DialogTitle>{copy.title}</DialogTitle>
+            <DialogTitle>Update required</DialogTitle>
             <DialogDescription>{copy.description}</DialogDescription>
           </DialogHeader>
         </div>
@@ -84,9 +106,7 @@ export function UpdateDialog() {
         )}
         {status === "error" && (
           <p className="text-center text-xs text-muted-foreground">
-            {detectHost() === "android"
-              ? "If Android opened install settings, allow installs from this app, then try again. The first install also runs a Play Protect scan — this APK is the official Kataria Syntex release; choose Install anyway. Otherwise check your connection."
-              : "Check your connection, then try again."}
+            {failure ? FAILURE_COPY[failure] : "Try again."}
           </p>
         )}
         <Button
@@ -95,7 +115,7 @@ export function UpdateDialog() {
           disabled={busy}
           loading={busy}
         >
-          {busy ? "Downloading…" : copy.cta}
+          {copy.cta}
         </Button>
       </DialogContent>
     </Dialog>

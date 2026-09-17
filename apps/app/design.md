@@ -402,8 +402,17 @@ Android banner file.
   downloads the APK itself, and Settings carries the install action.
 - **Update gate (`update-dialog.tsx`)** — the one undismissable dialog:
   `hideClose`, no outside/Escape dismiss, icon + title + one-line
-  description + single action button. While the update downloads it gains a
-  centered 12px tabular readout (`formatUpdateProgress`: percent · size).
+  description + single action button. Action AND copy come from the host's
+  update action (`updateAction()` in platform.ts, never a host check in the
+  component): web `Reload now`, Windows/Linux `Restart and update`, macOS
+  `Download update` (no self-install — macOS gets its own line, not the
+  restart copy), Android `Update app`. While the update downloads it gains a
+  centered 12px tabular readout (`formatUpdateProgress`: percent · size) and
+  the button dims via `loading` — the label never changes. A failed attempt
+  renders one honest line from the store's `failure` (the release is still
+  publishing; the download didn't finish/verify; Android needs the install
+  permission; the shell never answered) — a "check your connection" line is
+  only for a step that actually could not reach the update service.
   Forced update only — never reuse this pattern for anything dismissable.
   At `≤sm` (including the Android shell) it renders as an undismissable
   bottom sheet against the same contract.

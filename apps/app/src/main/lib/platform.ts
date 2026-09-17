@@ -86,6 +86,29 @@ export function isPlainBrowser(): boolean {
   return detectHost() === "web";
 }
 
+/** macOS Electron reports as desktop but has no self-install path (unsigned
+ *  builds cannot be replaced by electron-updater), so it is the one socket
+ *  that updates by downloading the published dmg through the release
+ *  manifest instead of an updater feed. */
+export function usesManifestUpdateFlow(): boolean {
+  return desktopBridge()?.platform === "darwin";
+}
+
+/** What a forced update offers on this host — the dialog's copy and its
+ *  action both come from this, so no UI file branches on platform:
+ *  - `reload` (web): index.html revalidates, so a reload runs the fresh shell;
+ *  - `restart` (Windows/Linux): restart into the silently staged build;
+ *  - `download` (macOS): hand the published dmg to the OS browser;
+ *  - `install` (Android): hand the staged APK to the system installer. */
+export type UpdateAction = "reload" | "restart" | "download" | "install";
+
+export function updateAction(): UpdateAction {
+  const host = detectHost();
+  if (host === "android") return "install";
+  if (host !== "electron") return "reload";
+  return usesManifestUpdateFlow() ? "download" : "restart";
+}
+
 /** Human-readable device label for the offline device identity. Reads the
  * user-agent directly so no other module sniffs the UA for platform
  * decisions. */

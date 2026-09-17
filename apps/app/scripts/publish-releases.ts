@@ -8,10 +8,18 @@
  * app/ (the 10 GB free tier stays empty; caches stay valid because artifact
  * filenames are versioned and only the manifests keep stable URLs).
  *
- * Artifact naming contract: electron-builder.yml's artifactName patterns
- * produce dash-named files; the same name is the R2 key and the filename
- * referenced inside latest*.yml. No renaming happens anywhere — builder
- * output, stored object and updater manifest all agree by construction.
+ * Artifact naming contract: electron-builder.yml's artifactName patterns and
+ * the Android module's output name (app/build.gradle) all carry the version,
+ * so the same name is the R2 key and the filename referenced inside
+ * latest*.yml. No renaming happens anywhere — builder output, stored object
+ * and updater manifest all agree by construction. Versioned names are what
+ * make the year-long immutable TTL on artifacts correct: a stable name (an
+ * old app-release.apk) could be served from a cache long after a newer
+ * release replaced it.
+ *
+ * Two pre-flight guards run before anything is written to R2: the APK's name
+ * must carry VERSION, and VERSION must be at or above minAppVersion (a
+ * release has to satisfy its own floor).
  *
  * Env:
  *   CF_ACCOUNT_ID, CF_API_TOKEN  — R2 edit token (Workers R2 Storage Edit)
@@ -25,7 +33,7 @@
  *   app/desktop/win/<setup>.exe[.blockmap] + latest.yml
  *   app/desktop/linux/<*.AppImage>         + latest-linux.yml
  *   app/desktop/mac/<*.dmg>                (no yml — unsigned, no updater)
- *   app/android/<*.apk>
+ *   app/android/Kataria-Syntex-Biz-App-<version>.apk
  *   app/android/latest.json                — version + minVersion (only when
  *                                            a breaking change shipped) + paths
  *                                            + the APK's sha256/size (the
@@ -219,6 +227,34 @@ if (missing.length) {
   fail(`Missing artifacts in ${DIST}: ${missing.map(([n]) => n).join(", ")}`);
 }
 
+// The APK's own name carries the version (apps/android/android/app/
+// build.gradle). Artifacts are served with a year-long immutable TTL, so an
+// unversioned name — the old app-release.apk — let any HTTP cache hand back a
+// previous release's bytes while the manifest advertised a new sha256, and
+// the on-device verifier then rejected the wrong bytes. Fail here rather than
+// publish something a cache can poison.
+if (apk && !basename(apk).includes(VERSION)) {
+  fail(
+    `APK ${basename(apk)} does not carry v${VERSION} — the release build must ` +
+      `name it Kataria-Syntex-Biz-App-${VERSION}.apk.`,
+  );
+}
+
+// A release has to satisfy its own floor. Publishing vX.Y.Z while
+// minAppVersion asks for more would advertise a floor no installable release
+// meets: clients below it would be locked out by the server with nothing to
+// install (AGENTS.md Section 4.0.1).
+const publishedMinVersion = readMinVersion();
+if (
+  hasUpdateFloor(publishedMinVersion) &&
+  compareSemver(VERSION, publishedMinVersion) < 0
+) {
+  fail(
+    `version ${VERSION} is below minAppVersion ${publishedMinVersion} — ` +
+      "bump version in apps/app/package.json to the floor or above it.",
+  );
+}
+
 // 1) Upload versioned artifacts (immutable cache) + blockmaps + updater ymls.
 const ARTIFACT_CACHE = "public, max-age=31536000, immutable";
 const uploads: Array<{ key: string; file: string }> = [];
@@ -292,8 +328,7 @@ function compareSemver(a: string, b: string): number {
 // minVersion is omitted entirely when no breaking change has shipped:
 // "0.0.0" is a truthy string, so a client reading it as a floor raises the
 // undismissable update dialog for nothing (apps/app#A0). Absence is the
-// unambiguous "no floor".
-const publishedMinVersion = readMinVersion();
+// unambiguous "no floor". Read and validated above, before any R2 write.
 // The Android manifest carries the APK's SHA-256 + size so the on-device
 // stager verifies bytes before they can reach the system installer. A
 // manifest without them (older release) simply skips verification.
