@@ -189,13 +189,15 @@ the shells do it identically.
 - **Session storage** — web keeps the session in an HttpOnly cookie; Android
   in `@capacitor/preferences` under `auth.token.v1`; Electron in the OS
   keychain via `safeStorage` through the `kc:*` IPC bridge.
-- **Company settings surface** — one component, two presentations, decided by
+- **Settings surface** — one component, two presentations, decided by
   the `md` breakpoint and never by host: desktop web and Electron render
-  `/settings` as a large top-anchored window over a blurred app
-  (`settings-window.tsx`); phone web and the Android WebView render the same
-  content as a full page. Closing the window navigates back, so `/settings`
-  never leaves an empty content area; `/settings` as the launch URL falls
-  back to home because there is no history to pop.
+  `/settings` (Appearance, Updates, Devices) as a large top-anchored window
+  over a blurred app (`settings-window.tsx`) with a left settings nav and the
+  selected detail on the right; phone web and the Android WebView render the
+  same content stacked as a full page. Closing the window navigates back, so
+  `/settings` never leaves an empty content area; `/settings` as the launch
+  URL falls back to home because there is no history to pop. Company profile,
+  numbering and financial years live under Masters as the Company tab.
 - **Offline KV** — web/Electron use `localStorage` (`offline.*.v1` keys);
   Android uses `@capacitor/preferences` behind a session map
   (`androidMemory`) because Preferences is async and the offline engine reads
@@ -371,20 +373,20 @@ Middleware: query-stripped logger (tokens ride URLs) · secureHeaders ·
 CORS allow-list — the native shells' fixed origin (`https://localhost`, the Capacitor WebView origin) is allowed in code; `CORS_ORIGIN` env adds third-party origins such as the website (comma-separated — credentials on) ·
 client IP from `CF-Connecting-IP` (or rightmost XFF when `TRUST_PROXY=1`).
 
-| Route                                           | Gate                                                         |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| `/health` · `/health/db`                        | —                                                            |
-| `/auth/*` lookup·otp·verify·password·session·qr | —                                                            |
-| `/members`                                      | requireAuth + resolveMember                                  |
-| `/company`                                      | manage_settings (row lazy-created)                           |
-| `/masters/*`                                    | manage_masters · 409 `in_use` on delete                      |
-| `/recipes` (+ versions/restore)                 | manage_masters write · member read                           |
-| `/challans` (+ `/:id/pdf`)                      | create/edit/delete_challan · `?type&fy&q` · page 25, max 100 |
-| `/returns`                                      | create_return/edit_return                                    |
-| `/raw-material`                                 | create_raw_material/edit_raw_material                        |
-| `/packing`                                      | create_packing/edit_packing                                  |
-| `/stock` · `/stock/movements`                   | view_stock                                                   |
-| `/reports/*` · `/dashboard`                     | view_reports                                                 |
+| Route                                           | Gate                                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------------------- |
+| `/health` · `/health/db`                        | —                                                                      |
+| `/auth/*` lookup·otp·verify·password·session·qr | —                                                                      |
+| `/members`                                      | requireAuth + resolveMember                                            |
+| `/company`                                      | manage_settings (row lazy-created)                                     |
+| `/masters/*`                                    | manage_masters (Company tab: manage_settings) · 409 `in_use` on delete |
+| `/recipes` (+ versions/restore)                 | manage_masters write · member read                                     |
+| `/challans` (+ `/:id/pdf`)                      | create/edit/delete_challan · `?type&fy&q` · page 25, max 100           |
+| `/returns`                                      | create_return/edit_return                                              |
+| `/raw-material`                                 | create_raw_material/edit_raw_material                                  |
+| `/packing`                                      | create_packing/edit_packing                                            |
+| `/stock` · `/stock/movements`                   | view_stock                                                             |
+| `/reports/*` · `/dashboard`                     | view_reports                                                           |
 
 Server modules are testable without HTTP; routes stay thin.
 

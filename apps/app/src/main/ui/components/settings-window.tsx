@@ -7,7 +7,7 @@ import { cn } from "@/ui/lib/cn";
 import { EASE_OUT, MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 
 /**
- * Company settings as a big window on desktop (design.md §3): pinned near the
+ * App settings as a big window on desktop (design.md §3): pinned near the
  * top of the viewport, the app behind it dimmed and blurred. Small screens
  * render the children directly as the page — one surface, breakpoint-decided,
  * so every shell renders the same content (design.md §4.1, AGENTS.md §2.3).

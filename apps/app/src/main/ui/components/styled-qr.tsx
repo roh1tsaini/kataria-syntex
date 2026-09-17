@@ -2,8 +2,13 @@ import { useEffect, useRef } from "react";
 import QRCodeStyling from "qr-code-styling";
 import { useTheme } from "@/ui/hooks/use-theme";
 
-/** Pixel size of the QR drawing — fills the frame minus its padding (the quiet zone). */
-const QR_SIZE = 176;
+/** Canvas resolution of the QR drawing — deliberately large. The library floors
+ * modules to whole pixels and centers the remainder, so a small canvas leaves
+ * a data-dependent lump of dead white inside the drawing (up to ~14px a side
+ * at production payload lengths on a 176px canvas). A large canvas shrinks
+ * that remainder to a fraction of a displayed pixel; the host CSS owns the
+ * display size, so output stays crisp at any scale. */
+const QR_CANVAS = 1000;
 
 /** Reads the --qr-ink token as device rgb (oklch never reaches the canvas). */
 function resolveInk(): string {
@@ -33,8 +38,8 @@ export function StyledQrCode({ data }: { data: string }) {
     const qr = new QRCodeStyling({
       type: "svg",
       shape: "square",
-      width: QR_SIZE,
-      height: QR_SIZE,
+      width: QR_CANVAS,
+      height: QR_CANVAS,
       margin: 0,
       data,
       qrOptions: { errorCorrectionLevel: "M" },

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import {
+  Building2,
   Factory,
   Layers,
   Pencil,
@@ -42,6 +43,7 @@ import {
   FieldLabel,
 } from "@/ui/components/ui/field";
 import { Card, CardContent } from "@/ui/components/ui/card";
+import { CompanyTab } from "@/ui/components/company-tab";
 import { Badge } from "@/ui/components/ui/badge";
 import {
   Dialog,
@@ -83,6 +85,7 @@ const TABS = [
   { key: "jobWorkers", label: "Job workers", icon: Factory },
   { key: "deniers", label: "Deniers", icon: Layers },
   { key: "suppliers", label: "Suppliers", icon: Truck },
+  { key: "company", label: "Company", icon: Building2 },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -468,18 +471,41 @@ function MasterTab<I extends { id: string; name: string }, In>({
 }
 
 export function MastersPage() {
-  const canManage = usePermission()("manage_masters");
+  const can = usePermission();
+  const canManage = can("manage_masters");
+  const canCompany = can("manage_settings");
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Company lives here until a dedicated home exists — settings managers
+  // without masters access still need it, so the route stays open to either
+  // permission and tabs filter to what the workspace may see.
+  const visibleTabs = useMemo(
+    () => TABS.filter((t) => (t.key === "company" ? canCompany : canManage)),
+    [canCompany, canManage],
+  );
+
   const tabParam = searchParams.get("tab");
-  const tab: TabKey = TABS.some((t) => t.key === tabParam)
+  const tab: TabKey = visibleTabs.some((t) => t.key === tabParam)
     ? (tabParam as TabKey)
-    : "customers";
+    : ((visibleTabs[0]?.key ?? "customers") as TabKey);
 
   const selectTab = (key: TabKey) => {
-    setSearchParams(key === "customers" ? {} : { tab: key });
+    setSearchParams(
+      key === (visibleTabs[0]?.key ?? "customers") ? {} : { tab: key },
+    );
   };
+
+  // A bookmarked ?tab= the workspace may not see (or a stale param) must not
+  // linger in the URL while another tab shows — normalize it to the tab shown.
+  useEffect(() => {
+    if (tabParam !== null && !visibleTabs.some((t) => t.key === tabParam)) {
+      setSearchParams(
+        tab === (visibleTabs[0]?.key ?? "customers") ? {} : { tab },
+        { replace: true },
+      );
+    }
+  }, [tabParam, visibleTabs, tab, setSearchParams]);
 
   const customers = useMasters((s) => s.customers);
   const customersLoading = useMasters((s) => s.customersLoading);
@@ -681,12 +707,14 @@ export function MastersPage() {
     meta: (i) => [i.phone, i.address, i.gstin].filter(Boolean).join(" · "),
   };
 
+  if (visibleTabs.length === 0) return <Navigate to="/" replace />;
+
   return (
     <>
       <PageHeader
         eyebrow="Reference data"
         title="Masters"
-        description="Customers, job workers, suppliers and deniers used across challans."
+        description="Parties, deniers and company profile used across challans."
       />
 
       <Tabs
@@ -696,7 +724,7 @@ export function MastersPage() {
       >
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none scroll-fade">
           <TabsList className="w-max sm:w-auto">
-            {TABS.map((t) => (
+            {visibleTabs.map((t) => (
               <TabsTrigger key={t.key} value={t.key}>
                 <t.icon className="size-4" aria-hidden />
                 {t.label}
@@ -705,34 +733,43 @@ export function MastersPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="customers" className="mt-4">
-          <MasterTab
-            config={customerConfig}
-            canManage={canManage}
-            label="Customers"
-          />
-        </TabsContent>
-        <TabsContent value="jobWorkers" className="mt-4">
-          <MasterTab
-            config={jobWorkerConfig}
-            canManage={canManage}
-            label="Job workers"
-          />
-        </TabsContent>
-        <TabsContent value="deniers" className="mt-4">
-          <MasterTab
-            config={denierConfig}
-            canManage={canManage}
-            label="Deniers"
-          />
-        </TabsContent>
-        <TabsContent value="suppliers" className="mt-4">
-          <MasterTab
-            config={supplierConfig}
-            canManage={canManage}
-            label="Suppliers"
-          />
-        </TabsContent>
+        {canManage && (
+          <>
+            <TabsContent value="customers" className="mt-4">
+              <MasterTab
+                config={customerConfig}
+                canManage={canManage}
+                label="Customers"
+              />
+            </TabsContent>
+            <TabsContent value="jobWorkers" className="mt-4">
+              <MasterTab
+                config={jobWorkerConfig}
+                canManage={canManage}
+                label="Job workers"
+              />
+            </TabsContent>
+            <TabsContent value="deniers" className="mt-4">
+              <MasterTab
+                config={denierConfig}
+                canManage={canManage}
+                label="Deniers"
+              />
+            </TabsContent>
+            <TabsContent value="suppliers" className="mt-4">
+              <MasterTab
+                config={supplierConfig}
+                canManage={canManage}
+                label="Suppliers"
+              />
+            </TabsContent>
+          </>
+        )}
+        {canCompany && (
+          <TabsContent value="company" className="mt-4">
+            <CompanyTab />
+          </TabsContent>
+        )}
       </Tabs>
     </>
   );

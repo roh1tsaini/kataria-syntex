@@ -705,7 +705,12 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     if (isPacker) return PACKER_SECTIONS;
     return SECTIONS.map((s) => ({
       ...s,
-      items: s.items.filter((i) => can(i.permissions)),
+      items: s.items
+        .filter((i) => can(i.permissions))
+        .map((i) => ({
+          ...i,
+          subItems: i.subItems?.filter((sub) => can(sub.permissions)),
+        })),
     })).filter((s) => s.items.length > 0);
   }, [isPacker, can]);
 

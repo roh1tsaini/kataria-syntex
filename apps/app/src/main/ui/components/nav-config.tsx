@@ -21,7 +21,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth, type Permission } from "@kataria-syntex/app-core";
-export type SubNavItem = { to: string; label: string };
+export type SubNavItem = {
+  to: string;
+  label: string;
+  permissions?: Permission[];
+};
 export type NavItem = {
   to: string;
   label: string;
@@ -159,12 +163,33 @@ export const SECTIONS: NavSection[] = [
         to: "/masters",
         label: "Master Data",
         icon: BookOpen,
-        permissions: ["manage_masters"],
+        permissions: ["manage_masters", "manage_settings"],
         subItems: [
-          { to: "/masters?tab=customers", label: "Customers" },
-          { to: "/masters?tab=jobWorkers", label: "Job Workers" },
-          { to: "/masters?tab=suppliers", label: "Suppliers" },
-          { to: "/masters?tab=deniers", label: "Deniers" },
+          {
+            to: "/masters?tab=customers",
+            label: "Customers",
+            permissions: ["manage_masters"],
+          },
+          {
+            to: "/masters?tab=jobWorkers",
+            label: "Job Workers",
+            permissions: ["manage_masters"],
+          },
+          {
+            to: "/masters?tab=suppliers",
+            label: "Suppliers",
+            permissions: ["manage_masters"],
+          },
+          {
+            to: "/masters?tab=deniers",
+            label: "Deniers",
+            permissions: ["manage_masters"],
+          },
+          {
+            to: "/masters?tab=company",
+            label: "Company",
+            permissions: ["manage_settings"],
+          },
         ],
       },
     ],
@@ -186,7 +211,7 @@ export const SECTIONS: NavSection[] = [
       },
       {
         to: "/settings",
-        label: "Company Settings",
+        label: "Settings",
         icon: Settings,
         permissions: ["manage_settings"],
       },

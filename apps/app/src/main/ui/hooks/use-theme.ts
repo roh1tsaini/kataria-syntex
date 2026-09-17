@@ -3,6 +3,8 @@ import { reportThemeBackground } from "@/lib/platform";
 
 export type Theme = "light" | "dark";
 
+export type ThemePreference = "light" | "dark" | "system";
+
 const THEME_KEY = "kataria-challan-theme";
 
 function systemTheme(): Theme {
@@ -35,6 +37,10 @@ function apply(theme: Theme) {
   reportBackground();
 }
 
+function readPreference(): ThemePreference {
+  return readStoredTheme() ?? "system";
+}
+
 /** Applies the persisted (or system) theme before first paint (see also /theme-init.js). */
 export function initTheme() {
   current = readStoredTheme() ?? systemTheme();
@@ -65,6 +71,13 @@ if (typeof window !== "undefined") {
       apply(current);
       emit();
     });
+  // Another tab changed the preference — re-resolve and re-render here.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== THEME_KEY) return;
+    current = readStoredTheme() ?? systemTheme();
+    apply(current);
+    emit();
+  });
 }
 
 export function useTheme() {
@@ -73,6 +86,23 @@ export function useTheme() {
     () => current,
     () => current,
   );
+  const preference = useSyncExternalStore(
+    subscribe,
+    readPreference,
+    readPreference,
+  );
+
+  const setTheme = useCallback((mode: ThemePreference) => {
+    try {
+      if (mode === "system") localStorage.removeItem(THEME_KEY);
+      else localStorage.setItem(THEME_KEY, mode);
+    } catch {
+      // Storage unavailable (private mode) — theme still applies for this session.
+    }
+    current = mode === "system" ? systemTheme() : mode;
+    apply(current);
+    emit();
+  }, []);
 
   const toggleTheme = useCallback(() => {
     const next: Theme = current === "dark" ? "light" : "dark";
@@ -86,5 +116,5 @@ export function useTheme() {
     emit();
   }, []);
 
-  return { theme, toggleTheme };
+  return { theme, preference, setTheme, toggleTheme };
 }

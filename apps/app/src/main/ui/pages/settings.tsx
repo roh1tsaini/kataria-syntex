@@ -1,69 +1,144 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Save } from "lucide-react";
+import {
+  Monitor,
+  MonitorSmartphone,
+  Moon,
+  Palette,
+  RefreshCw,
+  Search,
+  Sun,
+  type LucideIcon,
+} from "lucide-react";
 import { useUpdates } from "@/store/updates";
 import { detectHost } from "@/lib/platform";
-import { fmtDate } from "@/ui/lib/format";
-import {
-  useAuth,
-  usePermission,
-  type Numbering,
-  type NumberingType,
-  friendlyError,
-  toastError,
-  toastSuccess,
-} from "@kataria-syntex/app-core";
-import { PageHeader } from "@/ui/components/page-header";
-import { ProgressBar } from "@/ui/components/progress-bar";
+import { useTheme, type ThemePreference } from "@/ui/hooks/use-theme";
 import { SettingsWindow } from "@/ui/components/settings-window";
-import { Button } from "@/ui/components/ui/button";
-import { Input } from "@/ui/components/ui/input";
-import { Label } from "@/ui/components/ui/label";
-import { Card } from "@/ui/components/ui/card";
-import { Badge } from "@/ui/components/ui/badge";
 import { Skeleton } from "@/ui/components/motion";
-import { MorphGroup, MorphPanel } from "@/ui/components/morph";
+import { Button } from "@/ui/components/ui/button";
+import { Card } from "@/ui/components/ui/card";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/ui/components/ui/input-group";
+import { Label } from "@/ui/components/ui/label";
+import { ProgressBar } from "@/ui/components/progress-bar";
+import { cn } from "@/ui/lib/cn";
 
-const TYPE_LABELS: Record<keyof Numbering, string> = {
-  sales: "Sales challan",
-  outward: "Job work outward",
-  packing_s: "Packing (Sale)",
-  packing_j: "Packing (Job Work)",
-  raw: "Raw Material",
+type SectionId = "appearance" | "updates" | "devices";
+
+const SECTION_ORDER: SectionId[] = ["appearance", "updates", "devices"];
+
+const SECTION_META: Record<
+  SectionId,
+  { label: string; description: string; icon: LucideIcon; keywords: string }
+> = {
+  appearance: {
+    label: "Appearance",
+    description: "Theme for this device.",
+    icon: Palette,
+    keywords: "theme dark light system display",
+  },
+  updates: {
+    label: "Updates",
+    description: "Version and new releases.",
+    icon: RefreshCw,
+    keywords: "version update upgrade release about",
+  },
+  devices: {
+    label: "Devices",
+    description: "Signed-in sessions on this account.",
+    icon: MonitorSmartphone,
+    keywords: "devices sessions login approve revoke",
+  },
 };
 
-const TYPE_HINTS: Record<keyof Numbering, string> = {
-  sales: "Shown as CH/001 on sales challans",
-  outward: "Shown as JW/001 on job-work challans",
-  packing_s: "Shown as PKG/S/001 on sale packing",
-  packing_j: "Shown as PKG/J/001 on job-work packing",
-  raw: "Shown as RM/001 on raw material entries",
-};
+const DevicesPanel = lazy(() =>
+  import("@/ui/components/devices-panel").then((m) => ({
+    default: m.DevicesPanel,
+  })),
+);
 
-/** iOS-style grouped section: header copy above a 12px-radius card of rows. */
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
+const THEME_OPTIONS: {
+  value: ThemePreference;
+  label: string;
+  hint: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    value: "system",
+    label: "System",
+    hint: "Follows your device",
+    icon: Monitor,
+  },
+  { value: "light", label: "Light", hint: "Bright surfaces", icon: Sun },
+  { value: "dark", label: "Dark", hint: "Dim surfaces", icon: Moon },
+];
+
+function AppearancePanel() {
+  const { preference, setTheme } = useTheme();
   return (
-    <section>
-      <div className="px-1">
-        <h2 className="text-[15px] font-semibold leading-[1.3] tracking-[-0.01em]">
-          {title}
-        </h2>
-        {description && (
-          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        )}
+    <Card className="overflow-hidden">
+      <div className="border-b border-border px-4 py-3">
+        <div className="text-sm font-semibold">Theme</div>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Applies on this device only.
+        </p>
       </div>
-      <div className="mt-3">{children}</div>
-    </section>
+      <div
+        role="radiogroup"
+        aria-label="Theme"
+        className="grid gap-2 p-4 sm:grid-cols-3"
+      >
+        {THEME_OPTIONS.map((opt) => {
+          const active = preference === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => setTheme(opt.value)}
+              className={cn(
+                "btn-motion flex min-h-11 flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left touch-44",
+                active
+                  ? "border-accent-foreground/30 bg-accent text-accent-foreground"
+                  : "border-border bg-card [@media(hover:hover)]:hover:bg-muted/60",
+              )}
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                <opt.icon className="size-4" aria-hidden />
+                {opt.label}
+              </span>
+              <span
+                className={cn(
+                  "text-xs",
+                  active
+                    ? "text-accent-foreground/80"
+                    : "text-muted-foreground",
+                )}
+              >
+                {opt.hint}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function UpdatesPanel() {
+  return (
+    <Card>
+      <SettingsRow label="Version">
+        <span className="font-mono text-[13px] font-semibold tabular-nums text-primary">
+          v{__APP_VERSION__}
+        </span>
+      </SettingsRow>
+      <UpdateRow />
+    </Card>
   );
 }
 
@@ -77,7 +152,7 @@ function SettingsRow({
   htmlFor?: string;
   label: string;
   hint?: string;
-  children?: ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 border-b border-border px-4 py-3 last:border-b-0 sm:min-h-11 sm:flex-row sm:items-center sm:gap-4 sm:py-2">
@@ -89,400 +164,6 @@ function SettingsRow({
       </div>
       {children}
     </div>
-  );
-}
-
-function NumberingGroup({
-  type,
-  value,
-  onChange,
-  disabled,
-}: {
-  type: keyof Numbering;
-  value: NumberingType;
-  onChange: (v: NumberingType) => void;
-  disabled: boolean;
-}) {
-  const preview = `${value.prefix}${"1".padStart(value.minDigits, "0")}${value.suffix}`;
-  return (
-    <MorphPanel
-      id={type}
-      className="shrink-0"
-      summary={
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold">{TYPE_LABELS[type]}</div>
-            <div className="mt-0.5 truncate text-xs text-muted-foreground">
-              {TYPE_HINTS[type]}
-            </div>
-          </div>
-          <span className="shrink-0 rounded-sm bg-muted px-2.5 py-1 font-mono text-[13px] font-semibold text-primary">
-            {preview}
-          </span>
-        </div>
-      }
-      contentClassName="p-0"
-    >
-      <div className="border-t border-border">
-        <SettingsRow htmlFor={`${type}-prefix`} label="Prefix">
-          <Input
-            id={`${type}-prefix`}
-            value={value.prefix}
-            onChange={(e) => onChange({ ...value, prefix: e.target.value })}
-            maxLength={10}
-            placeholder="CH/"
-            disabled={disabled}
-            className="h-10 w-full font-mono sm:w-36"
-          />
-        </SettingsRow>
-        <SettingsRow htmlFor={`${type}-digits`} label="Min digits">
-          <Input
-            id={`${type}-digits`}
-            type="number"
-            min={1}
-            max={6}
-            value={value.minDigits}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                minDigits: Math.min(
-                  6,
-                  Math.max(1, Number(e.target.value) || 1),
-                ),
-              })
-            }
-            disabled={disabled}
-            className="h-10 w-full tabular-nums sm:w-36"
-          />
-        </SettingsRow>
-        <SettingsRow htmlFor={`${type}-suffix`} label="Suffix">
-          <Input
-            id={`${type}-suffix`}
-            value={value.suffix}
-            onChange={(e) => onChange({ ...value, suffix: e.target.value })}
-            maxLength={10}
-            placeholder="/26-27"
-            disabled={disabled}
-            className="h-10 w-full font-mono sm:w-36"
-          />
-        </SettingsRow>
-      </div>
-    </MorphPanel>
-  );
-}
-
-export function SettingsPage() {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
-  return (
-    <SettingsWindow
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) return;
-        // The route renders only the window on desktop — closing it must land
-        // on a real page, not an empty content area at /settings. A direct
-        // landing on the URL (typed, deep link) has no history to pop, and a
-        // no-op back there would leave the shell blank until the next nav.
-        if (window.history.length > 1) navigate(-1);
-        else navigate("/", { replace: true });
-      }}
-      label="Company settings"
-    >
-      {/* Desktop: own scroller + padding (portal-mounted, outside the shell's
-          .shell-scroll container). Mobile: bare — the shell's PageTransition
-          already supplies the page gutter, so padding here would double it. */}
-      <div className="settings-window-scroll px-6 pb-8 pt-6 max-md:overflow-visible max-md:p-0 sm:px-8">
-        <SettingsPanel />
-      </div>
-    </SettingsWindow>
-  );
-}
-
-function SettingsPanel() {
-  const isPrimaryAdmin = useAuth((s) => s.workspace?.isPrimaryAdmin);
-  const can = usePermission();
-  const company = useAuth((s) => s.company);
-  const currentFy = useAuth((s) => s.currentFy);
-  const financialYears = useAuth((s) => s.financialYears);
-  const saveCompany = useAuth((s) => s.saveCompany);
-  const saveNumbering = useAuth((s) => s.saveNumbering);
-
-  const [details, setDetails] = useState({
-    name: "",
-    gstin: "",
-    pan: "",
-    address: "",
-    phone1: "",
-    phone2: "",
-  });
-  const [numbering, setNumbering] = useState<Numbering | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // True once the user edits anything — concurrent store refreshes
-  // (AppShell, other pages) must not clobber half-typed values.
-  const [dirty, setDirty] = useState(false);
-
-  useEffect(() => {
-    if (company && !dirty) {
-      setDetails({
-        name: company.name,
-        gstin: company.gstin,
-        pan: company.pan,
-        address: company.address,
-        phone1: company.phone1,
-        phone2: company.phone2,
-      });
-      setNumbering(company.numbering);
-    }
-  }, [company, dirty]);
-
-  const canEdit = isPrimaryAdmin === true || can("manage_settings");
-
-  const editDetails = (patch: Partial<typeof details>) => {
-    setDetails((d) => ({ ...d, ...patch }));
-    setDirty(true);
-  };
-
-  const editNumbering = (patch: Partial<Numbering>) => {
-    setNumbering((n) => (n ? { ...n, ...patch } : n));
-    setDirty(true);
-  };
-
-  const run = async (fn: () => Promise<void>, success: string) => {
-    setError(null);
-    setBusy(true);
-    try {
-      await fn();
-      setDirty(false);
-      toastSuccess(success);
-    } catch (err) {
-      const msg = friendlyError(err);
-      setError(msg);
-      toastError("Could not save", msg);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="Company profile"
-        title="Company settings"
-        description={
-          canEdit
-            ? "Your company details and how challan numbers are generated."
-            : "Read-only — only the owner can change these settings."
-        }
-      />
-
-      {error && (
-        <p className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-
-      <div className="mt-6 space-y-6">
-        <Section
-          title="Company details"
-          description="Printed on challans and used as your business identity."
-        >
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(() => saveCompany(details), "Company details saved.");
-            }}
-          >
-            <Card className="overflow-hidden">
-              <SettingsRow htmlFor="c-name" label="Company name">
-                <Input
-                  id="c-name"
-                  value={details.name}
-                  onChange={(e) => editDetails({ name: e.target.value })}
-                  required
-                  disabled={!canEdit}
-                  className="h-10 w-full sm:w-64"
-                />
-              </SettingsRow>
-              <SettingsRow htmlFor="c-gstin" label="GSTIN">
-                <Input
-                  id="c-gstin"
-                  value={details.gstin}
-                  onChange={(e) => editDetails({ gstin: e.target.value })}
-                  maxLength={15}
-                  placeholder="27ABCDE1234F1Z5"
-                  disabled={!canEdit}
-                  className="h-10 w-full font-mono sm:w-64"
-                />
-              </SettingsRow>
-              <SettingsRow htmlFor="c-pan" label="PAN">
-                <Input
-                  id="c-pan"
-                  value={details.pan}
-                  onChange={(e) =>
-                    editDetails({ pan: e.target.value.toUpperCase() })
-                  }
-                  maxLength={10}
-                  placeholder="ABCDE1234F"
-                  disabled={!canEdit}
-                  className="h-10 w-full font-mono sm:w-64"
-                />
-              </SettingsRow>
-              <SettingsRow htmlFor="c-address" label="Address">
-                <Input
-                  id="c-address"
-                  value={details.address}
-                  onChange={(e) => editDetails({ address: e.target.value })}
-                  maxLength={300}
-                  placeholder="Full address"
-                  disabled={!canEdit}
-                  className="h-10 w-full sm:w-64"
-                />
-              </SettingsRow>
-              <SettingsRow htmlFor="c-phone1" label="Phone 1">
-                <Input
-                  id="c-phone1"
-                  value={details.phone1}
-                  onChange={(e) => editDetails({ phone1: e.target.value })}
-                  maxLength={20}
-                  disabled={!canEdit}
-                  className="h-10 w-full sm:w-64"
-                />
-              </SettingsRow>
-              <SettingsRow htmlFor="c-phone2" label="Phone 2">
-                <Input
-                  id="c-phone2"
-                  value={details.phone2}
-                  onChange={(e) => editDetails({ phone2: e.target.value })}
-                  maxLength={20}
-                  disabled={!canEdit}
-                  className="h-10 w-full sm:w-64"
-                />
-              </SettingsRow>
-              {canEdit && (
-                <div className="flex justify-end border-t border-border px-4 py-3">
-                  <Button
-                    type="submit"
-                    loading={busy}
-                    disabled={!details.name.trim()}
-                  >
-                    <Save aria-hidden />
-                    Save details
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </form>
-        </Section>
-
-        <Section
-          title="Document numbering"
-          description="One format for all years — each financial year restarts the sequence at 1 automatically."
-        >
-          {numbering ? (
-            <MorphGroup className="flex flex-col gap-3">
-              <NumberingGroup
-                type="sales"
-                value={numbering.sales}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ sales: v })}
-              />
-              <NumberingGroup
-                type="outward"
-                value={numbering.outward}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ outward: v })}
-              />
-              <NumberingGroup
-                type="packing_s"
-                value={numbering.packing_s}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ packing_s: v })}
-              />
-              <NumberingGroup
-                type="packing_j"
-                value={numbering.packing_j}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ packing_j: v })}
-              />
-              <NumberingGroup
-                type="raw"
-                value={numbering.raw}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ raw: v })}
-              />
-              {canEdit && (
-                <Button
-                  className="self-start"
-                  loading={busy}
-                  onClick={() =>
-                    void run(() => saveNumbering(numbering), "Numbering saved.")
-                  }
-                >
-                  <Save aria-hidden />
-                  Save numbering
-                </Button>
-              )}
-            </MorphGroup>
-          ) : (
-            <div className="flex flex-col gap-3" aria-hidden>
-              <Skeleton className="h-44 rounded-lg" />
-              <Skeleton className="h-44 rounded-lg" />
-              <Skeleton className="h-44 rounded-lg" />
-            </div>
-          )}
-        </Section>
-
-        <Section
-          title="Financial years"
-          description="Indian financial years (Apr 1 – Mar 31). Years are created automatically when the first challan falls in them — nothing to set up."
-        >
-          <Card>
-            {currentFy && (
-              <div className="flex min-h-11 items-center justify-between gap-4 border-b border-border px-4 py-2.5 last:border-b-0">
-                <span className="text-sm font-medium">Current year</span>
-                <span className="flex items-center gap-2.5">
-                  <span className="text-xs tabular-nums text-muted-foreground">
-                    {fmtDate(currentFy.startsAt)} – {fmtDate(currentFy.endsAt)}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="border-accent/25 bg-accent/10 text-accent-foreground tabular-nums"
-                  >
-                    {currentFy.label}
-                  </Badge>
-                </span>
-              </div>
-            )}
-            {financialYears.map((fy) => (
-              <div
-                key={fy.label}
-                className="flex min-h-11 items-center justify-between gap-4 border-b border-border px-4 py-2.5 last:border-b-0"
-              >
-                <span className="text-sm font-medium tabular-nums">
-                  {fy.label}
-                </span>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {fmtDate(fy.startsAt)} – {fmtDate(fy.endsAt)}
-                </span>
-              </div>
-            ))}
-          </Card>
-        </Section>
-
-        <Section title="About">
-          <Card>
-            <SettingsRow label="Version">
-              <span className="font-mono text-[13px] font-semibold tabular-nums text-primary">
-                v{__APP_VERSION__}
-              </span>
-            </SettingsRow>
-            <UpdateRow />
-          </Card>
-        </Section>
-      </div>
-    </>
   );
 }
 
@@ -559,5 +240,121 @@ function UpdateRow() {
         )}
       </div>
     </SettingsRow>
+  );
+}
+
+export function SettingsPage() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(true);
+  const [section, setSection] = useState<SectionId>("appearance");
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return SECTION_ORDER;
+    return SECTION_ORDER.filter((id) =>
+      `${SECTION_META[id].label} ${SECTION_META[id].description} ${SECTION_META[id].keywords}`
+        .toLowerCase()
+        .includes(needle),
+    );
+  }, [query]);
+
+  const active = SECTION_META[section];
+
+  return (
+    <SettingsWindow
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) return;
+        // The route renders only the window on desktop — closing it must land
+        // on a real page, not an empty content area at /settings. A direct
+        // landing on the URL (typed, deep link) has no history to pop, and a
+        // no-op back there would leave the shell blank until the next nav.
+        if (window.history.length > 1) navigate(-1);
+        else navigate("/", { replace: true });
+      }}
+      label="Settings"
+    >
+      {/* Desktop: sidebar + detail share the window body — the sidebar holds
+          its place while only the detail scrolls. Mobile: stacked page flow
+          inside the shell's own scroller (PageTransition supplies padding). */}
+      <div className="flex min-h-0 flex-1 overflow-hidden max-md:block max-md:overflow-visible">
+        <aside
+          aria-label="Settings sections"
+          className="flex w-60 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border p-3 max-md:w-full max-md:overflow-visible max-md:border-r-0 max-md:border-b max-md:p-0 max-md:pb-4"
+        >
+          <InputGroup>
+            <InputGroupAddon align="inline-start">
+              <Search className="size-4 text-muted-foreground" aria-hidden />
+            </InputGroupAddon>
+            <InputGroupInput
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search settings"
+              aria-label="Search settings"
+            />
+          </InputGroup>
+          <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
+            {filtered.map((id) => {
+              const meta = SECTION_META[id];
+              const selected = id === section;
+              const Icon = meta.icon;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-current={selected}
+                  onClick={() => setSection(id)}
+                  className={cn(
+                    "btn-motion flex min-h-11 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] touch-44",
+                    selected
+                      ? "bg-accent font-medium text-accent-foreground"
+                      : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">{meta.label}</span>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="px-2.5 py-3 text-[13px] text-muted-foreground">
+                Nothing matches “{query}”.
+              </p>
+            )}
+          </nav>
+        </aside>
+
+        <div className="settings-window-scroll min-w-0 flex-1 px-6 pb-8 pt-6 max-md:overflow-visible max-md:p-0 max-md:pt-4 md:px-8">
+          <div className="px-1">
+            <h1 className="text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] sm:text-base">
+              {active.label}
+            </h1>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+              {active.description}
+            </p>
+          </div>
+          <div className="mt-4">
+            {section === "appearance" && <AppearancePanel />}
+            {section === "updates" && <UpdatesPanel />}
+            {section === "devices" && (
+              <Suspense
+                fallback={
+                  <div aria-hidden className="space-y-2">
+                    <Skeleton className="h-16 rounded-lg" />
+                    <Skeleton className="h-16 rounded-lg" />
+                    <Skeleton className="h-16 rounded-lg" />
+                  </div>
+                }
+              >
+                <DevicesPanel />
+              </Suspense>
+            )}
+          </div>
+        </div>
+      </div>
+    </SettingsWindow>
   );
 }

@@ -255,7 +255,7 @@ export function App() {
                 <Route
                   path="masters"
                   element={
-                    <ProtectedRoute requirePermission="manage_masters">
+                    <ProtectedRoute>
                       <MastersPage />
                     </ProtectedRoute>
                   }

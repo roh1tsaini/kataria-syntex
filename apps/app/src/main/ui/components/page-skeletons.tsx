@@ -15,20 +15,6 @@ import { cn } from "@/ui/lib/cn";
 
 /* Shared primitives ------------------------------------------------------- */
 
-function Row({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-4 border-b border-border px-4 py-2.5 last:border-b-0",
-        className,
-      )}
-    >
-      <Skeleton className="h-3 w-24" />
-      <Skeleton className="h-10 w-full sm:w-64" />
-    </div>
-  );
-}
-
 function CardStrip({ className }: { className?: string }) {
   return (
     <div
@@ -494,7 +480,7 @@ function MastersSkeleton() {
       <PageHeaderSkeleton desc={false} />
       {/* Tab groups use the underline grammar, not segmented pills. */}
       <div className="mt-6 flex h-11 w-max items-center gap-1 border-b border-border sm:h-10">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="mx-2.5 h-4 w-16" />
         ))}
       </div>
@@ -558,22 +544,19 @@ function ColorsSkeleton() {
 
 function SettingsSkeleton() {
   return (
-    <>
-      <PageHeaderSkeleton />
-      <div className="mt-6 space-y-6">
-        {Array.from({ length: 3 }).map((_, s) => (
-          <div key={s}>
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="mt-1 h-3 w-72" />
-            <div className="mt-3 overflow-hidden rounded-lg border border-border bg-card">
-              {Array.from({ length: s === 2 ? 3 : 4 }).map((_, i) => (
-                <Row key={i} />
-              ))}
-            </div>
-          </div>
+    <div className="flex gap-4">
+      <div className="hidden w-60 shrink-0 flex-col gap-2 md:flex">
+        <Skeleton className="h-10 w-full" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
         ))}
       </div>
-    </>
+      <div className="min-w-0 flex-1">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="mt-1 h-3 w-72" />
+        <Skeleton className="mt-4 h-44 w-full rounded-lg" />
+      </div>
+    </div>
   );
 }
 
