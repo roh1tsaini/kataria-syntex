@@ -371,6 +371,8 @@ challansRoute.get("/:id/pdf", async (c) => {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="challan-${safeNumber}.pdf"`,
+        "Cache-Control": "no-store, private",
+        Pragma: "no-cache",
       },
     });
   } catch (err) {

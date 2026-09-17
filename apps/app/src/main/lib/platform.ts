@@ -20,8 +20,6 @@ import {
 import type { DesktopBridge } from "../../../electron/preload";
 import { bytesToBase64 } from "../../shared/base64";
 
-export type { Host };
-
 /** Minimal shape of the Capacitor native bridge (v8 exposes
  *  window.Capacitor with isNativePlatform/getPlatform). Declared locally so
  *  this bundle never imports @capacitor/core eagerly — browsers have no
@@ -128,8 +126,7 @@ export function detectPlatformLabel(): string {
  * in the printed page. Web and desktop only — Android cannot print the live
  * page, so callers route it through shareChallanPdfOnAndroid instead, which hands
  * the rendered PDF to the native PrintManager (see challans-print.tsx). */
-export async function printPage(name = "Document"): Promise<void> {
-  void name;
+export async function printPage(): Promise<void> {
   try {
     await document.fonts.ready;
   } catch {

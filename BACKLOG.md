@@ -23,6 +23,15 @@ when it ships; history lives in git.
       lives only in a surface that disappears. Decide: add inline
       confirmation at the highest-traffic triggers (saves, deletes, sync),
       or accept the banner as the only signal.
+- [ ] **B8 · Packing exclusive-consumption: code or docs?**
+      `apps/app/APP.md` Section 6 (sales-challan row, packing rule) and the
+      Section 7 unique-index bullet claim sales items consume packing lines
+      exclusively via a `challan_item_sources` UNIQUE backstop — but no such
+      table exists in `src/server/db/schema.ts` and `challan_items` carries
+      no packing link (verified 2026-09-17). Either the enforcement was
+      removed and the docs must drop it, or the feature is missing and
+      double-selling one packed line is possible. Decide which, then one
+      agent executes.
 
 ## 1b. Findings from the 2026-09-14 full audit (all verified by reading code)
 
@@ -97,7 +106,7 @@ constraint failed` into a 409 only when `input.offline` is set, and
       prints on a challan; the submit gate at :242 only tests `name.trim()`.
 - [ ] **A18 · `POST /api/members/invite` has no rate-limit budget.**
       `routes/members.ts:36` — returns three distinguishable outcomes
-      (`phone_already_registered` 409 / `attached: true` / `attached:
+      (`already_registered` 409 / `attached: true` / `attached:
 false`), an enumeration oracle, but unlike `/lookup` it never calls
       `consumeBudget`.
 - [ ] **A19 · `POST /api/challans/:id/pdf` has no permission gate.**
@@ -149,6 +158,30 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
       `lib/document-pipeline.ts:1207` — SELECT then later batch; a return
       recorded in the gap hits a non-cascading FK and the batch fails as a
       500 on a path with no FK catch (unlike `masters.ts:159`).
+- [ ] **A38 · Masters GET routes are ungated (reads open, writes gated).**
+      `routes/masters.ts:313-328` — the five master-list GETs have no
+      `requirePermission` while POST/PUT/DELETE do; `recipes GET /` needs
+      `manage_masters` but `GET /:id` and `/:id/versions` do not. Likely
+      intentional (pickers need reads) — confirm and comment, or gate
+      reads.
+- [ ] **A39 · Platform branches outside the adapter.**
+      `ui/App.tsx:10,136`, `ui/pages/settings.tsx:14,183`,
+      `ui/components/update-dialog.tsx:13,26,85`, `store/updates.ts:34-39`,
+      `lib/challan-pdf.ts:23-27` call `detectHost()` / `desktopBridge()` /
+      `isNative()` directly; the rule is differences live only in
+      `lib/platform.ts`. Export `isPlainBrowser` / `isNative` / Android
+      helpers from the adapter and keep `detectHost` private to it.
+- [ ] **A40 · Business facts hardcoded in components.**
+      `shared/challan-html.ts:60-62,374-377` (`ROWS_PER_PAGE=12`, `210x148`,
+      `Subject to SURAT jurisdiction`, `Please do not mix different lots`)
+      and `ui/pages/colors.tsx:76` (`UNIT_PRESETS`) belong in
+      `packages/shared` per the repo rule — move the constants and copy
+      there.
+- [ ] **A41 · Silent / unhandled promises on boot and refresh paths.**
+      `ui/App.tsx:149` (`void bootstrap()` with no catch),
+      `ui/components/app-shell.tsx:701` (`refreshCompany().catch(()=>{})`
+      swallows), `store/updates.ts:289` (`void checkNow()`). Surface via
+      `friendlyError`/toast or document as deliberate fire-and-forget.
 
 ### Low
 
@@ -178,13 +211,17 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
       dim + `aria-busy`, "the label never changes and nothing is injected" —
       the label change duplicates the signal on the one undismissable
       surface.
+- [ ] **A46 · OTP/session token randomness has modulo bias.**
+      `lib/token.ts:27-28,41-43` (`buf[0] % 1_000_000`, `b % 31`) — tiny
+      but on the auth path; use rejection sampling.
+- [ ] **A47 · Vite dev server binds `0.0.0.0` with a tunnel allowlist.**
+      `vite.config.ts:80-84,94-97` (`host: "0.0.0.0"`,
+      `allowedHosts: [".trycloudflare.com"]`) exposes dev to LAN/tunnel.
+      Dev-only; default to `localhost` unless `KC_DEV_LAN=1`.
 - [ ] **A37 · `packing-import-dialog.tsx:148` rows lack checkbox semantics.**
       Each row is a `<div onClick>` with no `role="checkbox"`,
       `aria-checked`, or keyboard handler — the 44px hit area reads as
       inert content to screen readers.
-- [ ] **A43 · Map.get non-null `!`s.** `document-pipeline.ts`
-      (`:164,366,564,921`) rely on validation-by-convention — return a
-      found-or-error shape instead of asserting.
 - [ ] **A44 · Web `robots.ts:6` allows everything** with no `disallow`, so
       `/api/inquiry` is exposed to crawlers. The 3.7MB of design-compare
       galleries (`challan`/`sticker`/`report-styles-compare.html` under
@@ -200,11 +237,14 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
 
 ### Cross-cutting notes
 
-- **The 426 version gate is compiled out.** `minAppVersion` is `0.0.0` in
-  `apps/app/package.json`, so `VERSION_GATE_ENABLED` is false and every
-  request from any build passes. Presumably deliberate until a breaking
-  release cuts — confirm, since it means `update-dialog.tsx` isn't
-  reachable from the server side today.
+- **The 426 version gate is now armed.** `minAppVersion` is `0.19.1` in
+  `apps/app/package.json` (bumped with the `already_registered` code
+  rename), so `VERSION_GATE_ENABLED` is true and stale clients get
+  `update_required` on every gated call.
+- **OTP per-IP budgets are in-memory short-circuits over D1 ceilings.**
+  Verified 2026-09-17: isolate rotation only regains the 10-requests /
+  30-verifies per-15-min IP slice; per-identifier hourly/daily/global
+  ceilings in D1 still hold. Accepted as layered design, not a hole.
 - **Invariant enforcement is one-layered in three places** (membership
   uniqueness, colors `stockType`, master archive-or-delete):
   a rule assumed by the consumer but enforced only by one producer. That
@@ -273,6 +313,14 @@ Each item lists the files, the risk, and what "done" requires.
 - [ ] **C4 · Offline sync integration test.** The conflict → resubmit →
       settled path (queue loss / double-sync risk) has no integration test
       covering it.
+- [ ] **C5 · Dedupe the mirrored helpers.** `scripts/publish-releases.ts`
+      re-implements `hasUpdateFloor`/`compareSemver`/`CONTENT_TYPES` from
+      `packages/shared` and `src/server/lib/releases.ts` (drift hazard);
+      `ChallanType` is declared in both `shared/challan-html.ts` and
+      `app-core` challans store; `sharePdfOnAndroid` vs
+      `shareChallanPdfOnAndroid` overlap in `lib/platform.ts`;
+      `electron/build.ts` vs `electron/dev.ts` duplicate the main+preload
+      Bun build. Unify behind one home per helper when touching the area.
 
 ### Explicitly deferred (recommendation: never, unless forced)
 

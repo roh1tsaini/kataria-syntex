@@ -61,7 +61,7 @@ membersRoute.post("/invite", requirePermission("manage_members"), async (c) => {
       .select({ workspaceId: memberships.workspaceId })
       .from(memberships)
       .where(eq(memberships.userId, existingUser.id));
-    if (memRows.length > 0) return apiError(c, "phone_already_registered", 409);
+    if (memRows.length > 0) return apiError(c, "already_registered", 409);
     await attachExistingUser(db, existingUser.id, member.workspaceId, perms);
     return c.json({ ok: true, attached: true });
   }

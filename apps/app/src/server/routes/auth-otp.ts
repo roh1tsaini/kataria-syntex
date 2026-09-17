@@ -145,6 +145,11 @@ authOtpRoute.post("/otp/verify", async (c) => {
 
 // ── Signup — account auto-created after OTP verify; members never see this ──
 
+function isUniqueUserConflict(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /UNIQUE constraint failed.*users\.(phone|email)/is.test(msg);
+}
+
 authOtpRoute.post("/signup", async (c) => {
   const parsed = signupSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return badRequest(c, "invalid_request");
@@ -199,47 +204,57 @@ authOtpRoute.post("/signup", async (c) => {
     // CAS consume: another signup with the same identifier may have won.
     if (!(await consumePendingMembership(db, pending.id)))
       return apiError(c, "invite_invalid", 400);
-    await db.batch([
-      db.insert(users).values(userValues),
-      db.insert(memberships).values({
-        userId,
-        workspaceId: pending.workspaceId,
-        isPrimaryAdmin: false,
-        joinedAt: nowIso,
-      }),
-      ...pending.permissions.map((perm) =>
-        db.insert(memberPermissions).values({
+    try {
+      await db.batch([
+        db.insert(users).values(userValues),
+        db.insert(memberships).values({
           userId,
           workspaceId: pending.workspaceId,
-          permission: perm,
+          isPrimaryAdmin: false,
+          joinedAt: nowIso,
         }),
-      ),
-    ]);
+        ...pending.permissions.map((perm) =>
+          db.insert(memberPermissions).values({
+            userId,
+            workspaceId: pending.workspaceId,
+            permission: perm,
+          }),
+        ),
+      ]);
+    } catch (err) {
+      if (isUniqueUserConflict(err)) return apiError(c, "user_exists", 409);
+      throw err;
+    }
   } else {
     const workspaceId = generateId();
-    await db.batch([
-      db.insert(users).values(userValues),
-      db.insert(workspaces).values({
-        id: workspaceId,
-        name: workspaceName,
-        createdBy: userId,
-        createdAt: nowIso,
-      }),
-      db.insert(memberships).values({
-        userId,
-        workspaceId,
-        isPrimaryAdmin: true,
-        joinedAt: nowIso,
-      }),
-      db.insert(companies).values({
-        id: generateId(),
-        workspaceId,
-        name: workspaceName,
-        numbering: DEFAULT_NUMBERING_JSON,
-        updatedAt: nowIso,
-        updatedBy: userId,
-      }),
-    ]);
+    try {
+      await db.batch([
+        db.insert(users).values(userValues),
+        db.insert(workspaces).values({
+          id: workspaceId,
+          name: workspaceName,
+          createdBy: userId,
+          createdAt: nowIso,
+        }),
+        db.insert(memberships).values({
+          userId,
+          workspaceId,
+          isPrimaryAdmin: true,
+          joinedAt: nowIso,
+        }),
+        db.insert(companies).values({
+          id: generateId(),
+          workspaceId,
+          name: workspaceName,
+          numbering: DEFAULT_NUMBERING_JSON,
+          updatedAt: nowIso,
+          updatedBy: userId,
+        }),
+      ]);
+    } catch (err) {
+      if (isUniqueUserConflict(err)) return apiError(c, "user_exists", 409);
+      throw err;
+    }
   }
 
   const { token, deviceId } = await issueSession(c, db, userId);

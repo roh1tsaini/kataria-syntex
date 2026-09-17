@@ -106,7 +106,8 @@ const emptyRow = (): ItemRow => ({
 });
 
 // Keyed by workspace id so one account's entries never leak into another's.
-// Registered so account resets (logout/401) wipe it — see lib/data-caches.
+// Registered so account resets (logout/401) wipe it — see registerDataCache
+// in @kataria-syntex/app-core.
 const returnsCache: Record<string, ReturnEntry[] | null> = {};
 registerDataCache(() => {
   for (const key of Object.keys(returnsCache)) delete returnsCache[key];

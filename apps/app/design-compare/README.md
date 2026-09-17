@@ -4,6 +4,10 @@ Finished, verified design directions for the app's printed documents. **The
 live templates keep their current presentation until the owner picks a
 direction for each.** Nothing here is wired into the app.
 
+Counts here are authoritative: ten challan-sheet (A–J), ten carton-sticker
+(S-A–S-J) and ten sales-report (R1–R10) directions. `design.md` Section
+2.4.1 and `APP.md` Section 13 point here.
+
 Three artifacts; the challan and sticker galleries hold ten directions
 each, the report gallery holds ten formats in both orientations:
 
@@ -12,6 +16,17 @@ each, the report gallery holds ten formats in both orientations:
 | Delivery challan sheet (A5 landscape)           | `challan-styles-compare.html` | A Refined Classic · B Modern Minimal · C Bold Corporate · D Heritage Ledger · E Editorial Mono · F Ticket Rail · G Carbon Copy · H Swiss Grid · I Soft Rounded · J Framed Certificate              |
 | Carton sticker (A4, 6-up, 2 × 3)                | `sticker-styles-compare.html` | S-A Refined Classic · S-B Modern Minimal · S-C Bold Industrial · S-D Centered Vintage · S-E Hero Carton · S-F Split Panel · S-G Dotted Ledger · S-H Corner Tag · S-I Zebra Rows · S-J Ticket Split |
 | Sales challan report (A4, portrait + landscape) | `report-styles-compare.html`  | R1 Classic Register · R2 Modern Minimal · R3 Executive KPI · R4 Bold Band · R5 Ledger Ruled · R6 Soft Rounded · R7 Ticket Header · R8 Editorial Mono · R9 Day Groups · R10 Statement               |
+
+## Pick status
+
+Nothing picked yet — every direction below is pending. When the owner names
+one, its row flips to picked and the live template takes its style.
+
+| Artifact                 | Directions                              | Status  |
+| ------------------------ | --------------------------------------- | ------- |
+| Delivery challan (A–J)   | A B C D E F G H I J                     | pending |
+| Carton sticker (S-A–S-J) | S-A S-B S-C S-D S-E S-F S-G S-H S-I S-J | pending |
+| Sales report (R1–R10)    | R1 R2 R3 R4 R5 R6 R7 R8 R9 R10          | pending |
 
 ## View
 
@@ -72,7 +87,7 @@ keep the light totals panel"):
 2. Re-render sample PDFs through the Electron pipeline and re-verify: exact
    page size, no clipping, single- and multi-page (challan) and full 6-up
    sheets (sticker).
-3. Update this folder's status, `design.md` Section 2.4.1 and `APP.md` Section 12.
+3. Update this folder's status, `design.md` Section 2.4.1 and `APP.md` Section 13.
 4. Delete this folder — the style then lives only in the template.
 
 Note: sticker printing has no pipeline in the app yet; building it is a

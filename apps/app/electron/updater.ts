@@ -10,7 +10,7 @@
  *   starts here. The renderer polls the same published manifest the
  *   /download page reads and offers the dmg download (kc:open-external).
  */
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
 import { autoUpdater } from "electron-updater";
 
 // Baked at build time by electron/build.ts alongside KC_API_ORIGIN —
@@ -46,15 +46,20 @@ function broadcast(status: UpdateStatus): void {
   }
 }
 
-export function initUpdater(getWin: () => BrowserWindow | null): void {
-  void getWin;
-
-  ipcMain.handle("kc:update:version", () => app.getVersion());
+export function initUpdater(
+  isTrusted: (event: IpcMainInvokeEvent) => boolean,
+): void {
+  ipcMain.handle("kc:update:version", (event) =>
+    isTrusted(event) ? app.getVersion() : "",
+  );
 
   // macOS + dev builds: the renderer's manifest check owns updates.
+  // Idle is the only answer on this path, trusted or not.
   if (process.platform === "darwin" || !feedConfigured()) {
     ipcMain.handle("kc:update:check", () => ({ kind: "idle" }) as UpdateStatus);
-    ipcMain.handle("kc:update:restart", () => {});
+    ipcMain.handle("kc:update:restart", (event) => {
+      if (!isTrusted(event)) return;
+    });
     return;
   }
 
@@ -99,7 +104,8 @@ export function initUpdater(getWin: () => BrowserWindow | null): void {
     broadcast({ kind: "error", message: "update_check_failed" });
   });
 
-  ipcMain.handle("kc:update:check", async (): Promise<UpdateStatus> => {
+  ipcMain.handle("kc:update:check", async (event): Promise<UpdateStatus> => {
+    if (!isTrusted(event)) return { kind: "idle" };
     try {
       const res = await autoUpdater.checkForUpdates();
       const v = res?.updateInfo?.version ?? "";
@@ -110,7 +116,10 @@ export function initUpdater(getWin: () => BrowserWindow | null): void {
       return { kind: "error", message: "update_check_failed" };
     }
   });
-  ipcMain.handle("kc:update:restart", () => autoUpdater.quitAndInstall());
+  ipcMain.handle("kc:update:restart", (event) => {
+    if (!isTrusted(event)) return;
+    autoUpdater.quitAndInstall();
+  });
 
   // Silent check. checkForUpdatesAndNotify() would raise an OS notification —
   // the desktop shell never interrupts: the download is background work and

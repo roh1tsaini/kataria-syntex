@@ -11,6 +11,13 @@ Single maintained doc for the business app. Kept current with the code —
   fix the doc or the code — never let both drift.
 - Current state only: describe what IS. No past talk, no change history.
 
+Contents: 1 What this is · 2 Monorepo (+ source map) · 3 Tech stack ·
+5 Platforms (5.1 per-platform behaviour, 5.2 Android project, 5.3 update
+mechanisms) · 6 Domain · 7 Database · 8 API · 9 Auth · 10 Permissions ·
+11 Offline (reads) · 12 Realtime · 13 PDFs · 14 App UI · 15 Infra & deploy ·
+16 Updates & versioning · 17 Caching · 18 Dev & test · 19 Pointers.
+(There is no Section 4: the source map lives under Section 2.)
+
 ---
 
 ## 1 · What this is
@@ -19,12 +26,10 @@ Internal app for Kataria Syntex (yarn dyeing + trading):
 sales challans, job-work challans + returns, raw material purchase,
 packing, stock ledger, reports, color recipes.
 
-One SPA bundle for web, Electron desktop and Android. The Android app is
-a Capacitor shell (`apps/android`) that loads this same bundle — one
-renderer, three shells, no separate Android UI (Section 5.1). All shells share the
-business core (`packages/app-core`): API client,
-stores, offline read cache + network reachability. Backend = Hono on
-Cloudflare Workers + D1 (SQLite).
+One SPA bundle, three shells — behaviour contract in Section 5. Backend =
+Hono on Cloudflare Workers + D1 (SQLite); shared business core =
+`packages/app-core` (API client, stores, offline read cache + network
+reachability).
 
 ```
 purchase → job-work OUT (dyeing) → return → packing → sales challan
@@ -81,25 +86,7 @@ AND the feature works when run. Web, Electron and Android compile as one
 renderer bundle; `apps/android` typechecks and syncs (`bunx cap sync android`)
 against the same `packages/app-core`.
 
-## 3 · Tech stack
-
-Latest stable majors; never downgrade to escape a break.
-
-| Layer       | Tech                                                                                                                                                |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend    | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)                                                                            |
-| Styling     | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2                                                                              |
-| API         | Hono 4 · zod 4 at every boundary                                                                                                                    |
-| Data        | Drizzle ORM + drizzle-kit · Cloudflare D1                                                                                                           |
-| Realtime    | Durable Objects (SQLite class, no storage used) — WebSocket fan-out per workspace                                                                   |
-| PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                                                        |
-| Desktop     | Electron 43 · electron-builder 26                                                                                                                   |
-| Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline read cache + network reachability (web + Electron here, Android in `apps/android`) |
-| Android     | `apps/android` — Capacitor 8 shell loading this bundle (official `@capacitor/*` plugins)                                                            |
-| QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                                                  |
-| CI          | GitHub Actions (`pipeline.yml`: gate → deploy + desktop + android → R2)                                                                             |
-
-## 4 · Source map
+### Source map
 
 ```
 apps/app/
@@ -140,6 +127,24 @@ Request path:
 SPA → same-origin `/api/*` (Vite proxy in dev) → Worker → Hono
 → `requireAuth` → `resolveMember` → `requirePermission` → lib module → D1.
 
+## 3 · Tech stack
+
+Latest stable majors; never downgrade to escape a break.
+
+| Layer       | Tech                                                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend    | React 19 · react-router-dom 7 · zustand 5 · Vite 8 (SWC) · TS 7 (strict)                                                                            |
+| Styling     | Tailwind v4 · Radix primitives (shadcn pattern) · motion 12 · sonner 2                                                                              |
+| API         | Hono 4 · zod 4 at every boundary                                                                                                                    |
+| Data        | Drizzle ORM + drizzle-kit · Cloudflare D1                                                                                                           |
+| Realtime    | Durable Objects (SQLite class, no storage used) — WebSocket fan-out per workspace                                                                   |
+| PDF         | shared HTML template → Chromium: Browser Run (server) + printToPDF (desktop)                                                                        |
+| Desktop     | Electron 43 · electron-builder 26                                                                                                                   |
+| Shared core | `@kataria-syntex/app-core` — API client, zustand stores, offline read cache + network reachability (web + Electron here, Android in `apps/android`) |
+| Android     | `apps/android` — Capacitor 8 shell loading this bundle (official `@capacitor/*` plugins)                                                            |
+| QR          | qr-code-styling (show: rounded dots, extra-rounded eyes) · jsqr (scan) · input-otp                                                                  |
+| CI          | GitHub Actions (`pipeline.yml`: gate → deploy + desktop + android → R2)                                                                             |
+
 ## 5 · Platforms
 
 Platform differences live in each shell's `PlatformAdapter`
@@ -167,7 +172,7 @@ Build targets (fixed by owner):
 
 Electron renders challan PDFs locally via `kc:render-pdf` (printToPDF);
 Android fetches the server-rendered PDF and opens the system share sheet
-via `@capacitor/filesystem` + `@capacitor/share` — see Section 5.1 and Section 12.
+via `@capacitor/filesystem` + `@capacitor/share` — see Section 5.1 and Section 13.
 
 ### 5.1 · Per-platform behavior
 
@@ -293,6 +298,14 @@ published manifest with brand glyphs (`ui/components/brand-icons.tsx`) and
 the login screen links to `/download`. Signed-in users never see the entry
 screen. Native shells are unaffected.
 
+### 5.3 · Update mechanisms
+
+Behaviour contract per shell (no prompts, install-on-quit, APK in Settings)
+is in the Section 5.1 bullets above. Mechanism detail — feed URLs, poll
+intervals, the APK stream, the bundle self-heal — lives in the Section 16
+table. This section states what differs; Section 16 states how it is
+delivered.
+
 ## 6 · Domain: documents
 
 Six modules. Counters live on the FY row, allocated by CAS retry
@@ -340,11 +353,11 @@ applied by CI on deploy (`db:migrate:local` locally).
 
 **30 tables** (Drizzle, `src/server/db/schema.ts`):
 
-| Group               | Tables                                                                                                                                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Tenancy & auth (10) | `workspaces` · `memberships` · `member_permissions` · `users` · `devices` · `sessions` · `otp_codes` · `login_attempts` · `qr_logins` · `invites`                                                            |
-| Masters (10)        | `companies` · `financial_years` · `customers` · `job_workers` · `suppliers` · `deniers` · `colors` · `color_recipes` · `color_recipe_ingredients` · `color_recipe_versions`                                  |
-| Documents (10)      | `challans` · `challan_items` · `job_work_returns` · `job_work_return_items` · `raw_material_entries` · `raw_material_items` · `packing_entries` · `packing_items` · `challan_item_sources` · `stock_entries` |
+| Group               | Tables                                                                                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenancy & auth (11) | `workspaces` · `memberships` · `member_permissions` · `users` · `devices` · `sessions` · `otp_codes` · `login_attempts` · `qr_logins` · `invites` · `rate_limits`                   |
+| Masters (10)        | `companies` · `financial_years` · `customers` · `job_workers` · `suppliers` · `deniers` · `colors` · `color_recipes` · `color_recipe_ingredients` · `color_recipe_versions`         |
+| Documents (9)       | `challans` · `challan_items` · `job_work_returns` · `job_work_return_items` · `raw_material_entries` · `raw_material_items` · `packing_entries` · `packing_items` · `stock_entries` |
 
 Conventions:
 
@@ -373,20 +386,20 @@ Middleware: query-stripped logger (tokens ride URLs) · secureHeaders ·
 CORS allow-list — the native shells' fixed origin (`https://localhost`, the Capacitor WebView origin) is allowed in code; `CORS_ORIGIN` env adds third-party origins such as the website (comma-separated — credentials on) ·
 client IP from `CF-Connecting-IP` (or rightmost XFF when `TRUST_PROXY=1`).
 
-| Route                                           | Gate                                                                   |
-| ----------------------------------------------- | ---------------------------------------------------------------------- |
-| `/health` · `/health/db`                        | —                                                                      |
-| `/auth/*` lookup·otp·verify·password·session·qr | —                                                                      |
-| `/members`                                      | requireAuth + resolveMember                                            |
-| `/company`                                      | manage_settings (row lazy-created)                                     |
-| `/masters/*`                                    | manage_masters (Company tab: manage_settings) · 409 `in_use` on delete |
-| `/recipes` (+ versions/restore)                 | manage_masters write · member read                                     |
-| `/challans` (+ `/:id/pdf`)                      | create/edit/delete_challan · `?type&fy&q` · page 25, max 100           |
-| `/returns`                                      | create_return/edit_return                                              |
-| `/raw-material`                                 | create_raw_material/edit_raw_material                                  |
-| `/packing`                                      | create_packing/edit_packing                                            |
-| `/stock` · `/stock/movements`                   | view_stock                                                             |
-| `/reports/*` · `/dashboard`                     | view_reports                                                           |
+| Route                                            | Gate                                                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `/health` · `/health/db`                         | —                                                                      |
+| `/auth/*` lookup·otp·verify·password·session·qr  | —                                                                      |
+| `/members`                                       | requireAuth + resolveMember                                            |
+| `/company`                                       | manage_settings (row lazy-created)                                     |
+| `/masters/*`                                     | manage_masters (Company tab: manage_settings) · 409 `in_use` on delete |
+| `/recipes` (+ versions/restore)                  | manage_masters write · member read                                     |
+| `/challans` (+ `/:id/pdf`)                       | create/edit/delete_challan · `?type&fy&q` · page 25, max 100           |
+| `/returns`                                       | create_return/edit_return                                              |
+| `/raw-material`                                  | create_raw_material/edit_raw_material                                  |
+| `/packing`                                       | create_packing/edit_packing                                            |
+| `/stock`                                         | view_stock                                                             |
+| `/reports/*` (dashboard at `/reports/dashboard`) | view_reports                                                           |
 
 Server modules are testable without HTTP; routes stay thin.
 
@@ -434,8 +447,6 @@ drives routing. Zod at the boundary; dummy-hash on unknown user (no timing leak)
 - Dummy-hash burn for unknown users (anti-enumeration).
 - Lockout: 10 fails / 15 min per identifier+device; ×10 for the identifier
   across all devices (an attacker can't lock the owner out).
-- Open decision: hashing algorithm — scrypt vs PBKDF2. Owner picks;
-  then update code + this line.
 
 **Sessions**
 
@@ -475,7 +486,7 @@ blanks the pickers or an offline-restarted device. It lives in
 `packages/app-core/src/offline/` and persists through the shell adapter's
 synchronous KV storage — localStorage on web/Electron (`offline.*.v1`
 keys), `@capacitor/preferences` on Android (behind a session map hydrated at
-boot; see Section 5). Same cache, same behavior everywhere.
+boot; see Section 5.1). Same cache, same behavior everywhere.
 
 - Cached: masters (customers, job workers, suppliers, deniers, colors),
   company + numbering + per-FY counters, session profile, device identity.
@@ -497,7 +508,7 @@ save attempted while unreachable surfaces the go-online message with the
 form kept intact. The read cache above is the only thing that survives
 offline.
 
-### 11.1 · Realtime
+## 12 · Realtime
 
 Server push on top of the poll paths — an upgrade, never a dependency: if
 the socket is down, lists stay correct through the 30 s heartbeat and
@@ -531,7 +542,7 @@ refetch-on-mount.
   offline); web and Android fetch the server-rendered copy. Both paths
   render the SAME HTML template with inlined Inter → visually identical.
 
-## 12 · PDFs
+## 13 · PDFs
 
 - One template: `src/shared/challan-html.ts` — an A5-landscape HTML document
   (masthead, party band, 12-row items table per sheet, totals, terms +
@@ -551,46 +562,34 @@ refetch-on-mount.
   (`document.fonts.ready`), then `window.print()`. Android downloads the
   server PDF and opens the system share sheet via the Android branch of
   `src/main/lib/platform.ts` (`sharePdfOnAndroid`).
-- Restyles pending in `design-compare/`: 14 challan-sheet directions (A–N),
-  12 carton-sticker directions (S-A–S-L), and 14 sales-report formats
-  (R1–R14, each in both A4 orientations). Its README has status + the pick
-  workflow; live templates unchanged.
+- Restyles are staged as finished directions in `design-compare/` — ten
+  challan-sheet (A–J), ten carton-sticker (S-A–S-J) and ten sales-report
+  (R1–R10) directions, all pending owner picks. Counts and pick status live
+  in its README (the single authority); the live templates don't change
+  until a pick lands.
 
-## 13 · App UI
+## 14 · App UI
 
-`design.md` is the design system — read before any UI change. Tokens live in
-`ui/globals.css`; never fork per-page styles. NO spinners anywhere —
-skeleton shimmer only. Motion from `ui/lib/motion.ts`; exits mirror entries;
-`prefers-reduced-motion` respected. 44px touch targets; dark mode considered.
-
-**Shell**
-
-- Desktop: fixed sidebar `w-60` ↔ collapsed rail `w-14` (Ctrl+B, persisted).
-- Mobile: translucent header + bottom tab bar + drawer; sync badge on tabs.
-- Sections: Operations · Stock · Reports · Color Organiser · Masters ·
-  Administration (+ `PACKER_SECTIONS` = packing-only mode).
+`design.md` is the design system — the visual contract for every screen.
+This section lists only the route map and the functional shape of each
+area; radii, spacing, motion, shells and states live in `design.md`.
 
 **Routes** (all `React.lazy`, one chunk per page; guard renders login inline)
 
-`/auth` · `/login/scan/:code` · `/` (dashboard or packing) ·
-`/challans` (+ editor/detail/`/:id/print`) · `/outward` (same) · `/returns` ·
-`/raw-material` · `/stock/raw` · `/stock/dyed` · `/packing?type=sale|job_work` ·
-`/colors` · `/reports/*` · `/masters` · `/members` · `/devices` · `/settings`
+/auth · /login/scan/:code · / (dashboard or packing) ·
+/challans (+ editor/detail/:id/print) · /outward (same) · /returns ·
+/raw-material · /stock/raw · /stock/dyed · /packing?type=sale|job_work ·
+/colors · /reports/* · /masters · /members · /devices · /settings
 
-**Dashboard**: FlowCards (Sent · Returned · In Stock Raw · In Stock Dyed ·
-Sold) · period fy | 30d | all with Δ% vs previous · stats (challans issued,
-packages, net kg, job-work sendings) · dispatch bars + customer donut
-(top 5 + Other) · recent 6 challans + quick links.
+Functional areas: dashboard (flow cards, period stats, dispatch charts,
+recent challans); 7 reports (job-work-balance, over-receipts,
+stock-summary, sales-register, job-work-register, transaction-log,
+party-summary) with from/to picker and per-workspace column toggles;
+stock grouped denier × color × lot with `q` filter; desktop sidebar ↔
+mobile header + bottom tabs + drawer, with packing-only mode for packer
+workspaces.
 
-**Reports (7)**: job-work-balance · over-receipts · stock-summary ·
-sales-register · job-work-register · transaction-log · party-summary.
-From/to picker; column toggles persisted per workspace
-(`reports.hiddenCols:<workspaceId>`); skeleton/empty/error states everywhere.
-
-**Stock pages**: raw | dyed, grouped denier × color × lot, `q` filter,
-lot chips, color dots, negative-balance alert.
-
-## 14 · Infra & deploy
+## 15 · Infra & deploy
 
 Cloudflare free tier only. No VM, no Docker, no paid tiers. Anything beyond
 this baseline needs an explicit owner question first.
@@ -638,7 +637,7 @@ copy, or commit them. Secrets enter only as env read at use site.
   Requires `APP_URL` repo variable; `CLOUDFLARE_API_TOKEN` needs **Workers
   R2 Storage Edit**.
 
-## 14.1 · Updates & versioning
+## 16 · Updates & versioning
 
 Single source of truth: `apps/app/package.json` — `version` (this release)
 and `minAppVersion` (breaking-change floor; `0.0.0` = gate off). The server
@@ -657,9 +656,10 @@ all read it.
 | Electron Linux | Same as Windows against `/releases/app/desktop/linux`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Android        | Manifest poll (launch + every 4h) downloads a newer APK on any network the moment it finds one — no Settings visit, no WiFi gate. The system installer still needs one tap (an OS limit, not an app one), so the download finishing fires one notification pointing at it; Settings keeps the action for anyone who dismissed it. A required server floor remains blocking — see BACKLOG C1. Boot compares the native versionName with the executing bundle (`reloadOnStaleAndroidBundle`) so a replaced APK can never leave a stale bundle running |
 
-Per-shell behaviour detail and the APK install path live in Section 5.1; the
-update-announcement notification, the APK stream and the bundle self-heal are
-all described there.
+Per-shell behaviour contract lives in Section 5.1; the table below is the
+delivery mechanism. APK install path detail is in Section 5.1; the
+update-announcement notification, the APK stream and the bundle self-heal
+are all described there.
 
 Settings → About carries the manual "Check for updates" row; on web that row
 is a readout plus the manual check, with no install action at all. Only the
@@ -682,17 +682,17 @@ a forced update. Breaking-change protocol lives in AGENTS.md Section 4.0.1: bump
 zero lock-in (plain SQLite export, static bundles, env config) · minimal
 footprint · minimal maintenance.
 
-## 14.2 · Caching policy (mandatory, every layer)
+## 17 · Caching policy (mandatory, every layer)
 
 Three layers cache in apps/app. Each has one owner and one contract — never
 let a cache outlive the data it mirrors, and never add a new cache without
 stating its invalidation story here.
 
-| Layer                 | Owner / file                                         | Policy                                                                                                                                                                                                                                                                                                                  |
-| --------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| HTTP — static assets  | `public/_headers` (deployed into `dist/` by Vite)    | `index.html` + unhashed files (icons, `theme-init.js`, fonts): `max-age=0, must-revalidate`. Hashed `/assets/*`: `max-age=31536000, immutable`. Only content-hashed URLs may be `immutable`. Deploys are atomic (Workers publishes every file together), so HTML never references missing or mixed-revision assets.     |
-| HTTP — API + releases | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                                               |
-| Client data           | app-core: zustand stores + `src/data-caches.ts`      | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), `@capacitor/preferences` on Android. |
+| Layer                 | Owner / file                                                      | Policy                                                                                                                                                                                                                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP — static assets  | `public/_headers` (deployed into `dist/` by Vite)                 | `index.html` + unhashed files (icons, `theme-init.js`, fonts): `max-age=0, must-revalidate`. Hashed `/assets/*`: `max-age=31536000, immutable`. Only content-hashed URLs may be `immutable`. Deploys are atomic (Workers publishes every file together), so HTML never references missing or mixed-revision assets.     |
+| HTTP — API + releases | `src/server/index.ts` middleware · `lib/releases.ts`              | Every `/api/*` response: `Cache-Control: no-store` (set after `next()`). Release manifests `max-age=60`; versioned artifacts `immutable`.                                                                                                                                                                               |
+| Client data           | app-core: zustand stores + `packages/app-core/src/data-caches.ts` | Module caches (stock/packing/raw/returns/reports/dashboard cards) are stale-while-revalidate keyed by workspaceId, registered via `registerDataCache`, wiped on logout/401/fresh login. Persisted offline state rides the shell adapter's KV storage: localStorage (web/Electron), `@capacitor/preferences` on Android. |
 
 Rules that keep this from regressing:
 
@@ -717,20 +717,20 @@ Rules that keep this from regressing:
    sets its own cache headers — custom protocols are cached against the
    request URL otherwise.
 
-## 15 · Dev & test
+## 18 · Dev & test
 
 - Local D1 = `.wrangler/state/v3/d1/…sqlite` (plain SQLite — readable).
   `bun run db:migrate:local` applies migrations.
 - Local workerd verifies: `/api/health`, `/api/health/db`, SPA serving,
   JSON 404s, migrations.
-- **OTP testing budget**: 5 sends/identifier/hour, 12/day — an identifier at
-  the daily cap is locked out until the oldest row ages out (24 h). Plan test
-  sends or reuse an existing session. Global cap 300/day applies too.
+- **OTP testing budget**: limits in Section 9 — an identifier at the daily
+  cap is locked out until the oldest row ages out (24 h). Plan test sends
+  or reuse an existing session.
 - Dev user: phone `+91 63515 70979` — no password, OTP-only.
 - QR login needs a second logged-in device (any camera) to approve.
 - Dev logs (`api*.log`) are throwaway and gitignored — never commit them.
 
-## 16 · Pointers
+## 19 · Pointers
 
 - `design.md` — design system (mandatory read for UI work).
 - ADRs are recorded in code comments: ADR-0001 (permission model, no fixed

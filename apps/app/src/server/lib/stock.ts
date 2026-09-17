@@ -30,6 +30,13 @@ type StockItem = {
   netWt: number;
 };
 
+/** Thrown when a colour validated but vanished before the stock snapshot. */
+export class StockRaceError extends Error {
+  constructor() {
+    super("invalid_color");
+  }
+}
+
 export async function buildChallanStockStatements(
   d: Queryable,
   workspaceId: string,
@@ -58,6 +65,9 @@ export async function buildChallanStockStatements(
   const stockTypeById = new Map(rows.map((r) => [r.id, r.stockType]));
   return items.map((i) => {
     // No colour on the item = grey/undyed yarn — raw stock, never dyed.
+    // A colour id that validated but now misses means it was archived
+    // mid-write — fail as invalid_color, never silently split to raw.
+    if (i.colorId && !stockTypeById.has(i.colorId)) throw new StockRaceError();
     const stockType = i.colorId
       ? (stockTypeById.get(i.colorId) ?? "raw")
       : "raw";

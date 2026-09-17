@@ -15,19 +15,19 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { UpdateStatus } from "./updater";
 
-export type DesktopApiInit = {
+type DesktopApiInit = {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
   timeoutMs?: number;
 };
 
-export type DesktopApiResponse = {
+type DesktopApiResponse = {
   status: number;
   body: unknown;
 };
 
-export type DesktopDownloadResponse = {
+type DesktopDownloadResponse = {
   status: number;
   /** Base64 body for 2xx responses, null otherwise. */
   base64: string | null;

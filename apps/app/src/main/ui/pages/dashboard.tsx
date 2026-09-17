@@ -317,7 +317,8 @@ function StatCard({
 type FlowCard = { label: string; value: number; unit: string; link: string };
 
 // Keyed by workspace id so one account's cards never leak into another's.
-// Registered so account resets (logout/401) wipe it — see lib/data-caches.
+// Registered so account resets (logout/401) wipe it — see registerDataCache
+// in @kataria-syntex/app-core.
 let cachedFlowCards: Record<string, FlowCard[]> = {};
 registerDataCache(() => {
   cachedFlowCards = {};

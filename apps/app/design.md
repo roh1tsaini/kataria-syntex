@@ -15,6 +15,14 @@
 > web rendering. This document stays the single source of truth for every
 > visual value on every shell.
 
+Contents: 1 Principles · 2 Foundations (2.1 spacing, 2.2 radius, 2.3
+control heights, 2.4 type, 2.4.1 print & PDF, 2.4.2 numbers & dates, 2.5
+color, 2.6 shadows, 2.7 icon buttons, 2.7.1 phone nav, 2.7.2 window chrome,
+2.8 app identity) · 3 Components · 3.1 skeletons · 3.2 notification banner
+· 3.3 update surfaces · 3.4 entry/download · 4 Layout (4.1 Android shell) ·
+5 Motion (5.1 morph) · 6 Accessibility · 7 Codebase map · 8 Checklist ·
+9 Currency.
+
 ## 1. Principles
 
 1. **Calm.** Nothing moves without a reason. Whitespace is the design.
@@ -206,33 +214,6 @@ controls, and actions that sit together share one grouped background.
   responsive cluster becomes separate desktop text buttons, outline links
   restore their individual borders at that breakpoint.
 
-### 2.7.2 Floating phone navigation
-
-- Below `md`, a centered capsule holds permitted Challans and Raw Stock
-  shortcuts (Packing when Stock is unavailable) plus More. More opens the
-  full navigation drawer and stays available for workspace/account actions.
-  With no shortcuts, More is a single circle. Shortcuts stay in the same order
-  across routes; the drawer holds every permitted destination.
-- Every item is a 44px circle with a 20px icon and an accessible name.
-  Active fill moves using the shared `SPRING` layout transition; selected
-  icons use a 260ms 0.82→1.14→1 pulse on selection, not on initial mount.
-  Reduced motion uses a static selection and no icon pulse.
-- Surface: 4px inset, 12px bottom clearance plus safe area, card 78% opacity,
-  static 12px backdrop blur with 1.4 saturation, hairline border and overlay
-  shadow. Unsupported/reduced-transparency environments use a solid card.
-  Never animate blur or run an idle animation loop.
-- Content keeps its `pb-28` reservation below `md`. Mobile sticky actions sit
-  above the navigation footprint: `3.25rem` (item plus capsule inset), 2px
-  border, 12px bottom clearance and the bottom safe area. Their own padding
-  is 12px vertically and 16px horizontally; the safe area is counted only in
-  the bottom offset. This reservation stays stable while editing, so focus
-  changes do not move the actions. At `sm` and above, actions remain in flow.
-- The bar is hidden while the navigation drawer is open and while editing a
-  field. Native window controls retain their platform edge-click behavior.
-- Primitive: `ui/circle-button.tsx` — `CircleButton`, `ButtonCapsule`.
-- Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
-  with a `size-5` icon. One treatment everywhere.
-
 ### 2.7.1 Window chrome — Electron desktop (blended, no bar)
 
 Frameless window, blended app-drawn chrome like Claude/VS Code: there is no
@@ -303,6 +284,34 @@ appears on any platform.
   OS window controls, and a confirm/update dialog must always sit above the
   settings window.
 
+### 2.7.2 Floating phone navigation
+
+- Below `md`, a centered capsule holds permitted Challans and Raw Stock
+  shortcuts (Packing when Stock is unavailable) plus More. More opens the
+  full navigation drawer and stays available for workspace/account actions.
+  With no shortcuts, More is a single circle. Shortcuts stay in the same order
+  across routes; the drawer holds every permitted destination.
+- Every item is a 44px circle with a 20px icon and an accessible name.
+  Active fill moves using the shared `SPRING` layout transition; selected
+  icons use a 260ms 0.82→1.14→1 pulse on selection, not on initial mount.
+  Reduced motion uses a static selection and no icon pulse.
+- Surface: 4px inset, 12px bottom clearance plus safe area, card 78% opacity,
+  static 12px backdrop blur with 1.4 saturation, hairline border and overlay
+  shadow. Unsupported/reduced-transparency environments use a solid card.
+  Never animate blur or run an idle animation loop.
+- Content keeps its `pb-28` reservation below `md`. Mobile sticky actions sit
+  above the navigation footprint: `3.25rem` (item plus capsule inset), 2px
+  border, 12px bottom clearance and the bottom safe area. Their own padding
+  is 12px vertically and 16px horizontally; the safe area is counted only in
+  the bottom offset. This reservation stays stable while editing, so focus
+  changes do not move the actions. At `sm` and above, actions remain in flow.
+- The bar is hidden while the navigation drawer is open and while editing a
+  field. Native window controls retain their platform edge-click behavior.
+- Primitive: `src/main/ui/components/ui/circle-button.tsx` — `CircleButton`,
+  `ButtonCapsule`.
+- Content icon tiles: `size-10 rounded-lg bg-muted text-muted-foreground`
+  with a `size-5` icon. One treatment everywhere.
+
 ### 2.8 App identity (names — never invent variants)
 
 | Form  | Value                    | Used for                                                                                            |
@@ -316,25 +325,25 @@ placeholders, fallbacks) — never the app name.
 
 ## 3. Component specs (ui/*)
 
-| Component                                            | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button                                               | Radii/heights from Section 2.2/Section 2.3. Press: `scale(0.97)` @100ms on `:active` via `.btn-motion`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| CircleButton / ButtonCapsule                         | App-wide icon actions (Section 2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent icon actions join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail); direct children lose their individual borders. Never for navigation rows.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Input/Select/Textarea/DatePicker                     | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Card                                                 | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Dialog                                               | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Settings window (`settings-window.tsx`)              | App settings renders as a large window at `md`+, not a centered dialog: pinned below the chrome strip (`top: calc(3.5rem + 12px)`), `max-w-[56rem]`, `max-h-[calc(100dvh-5rem)]` with its own internal scroller, radius 16px, `--shadow-overlay`. Same scrim as Dialog (40% + 4px blur) covers the app beneath; the window's own close is a `CircleButton` top-right. Enter/exit on `MORPH`/`MORPH_EXIT`, reduced-motion collapses to opacity. At `≤sm` the nav stacks above the selected detail as the page — one surface, breakpoint-decided, no platform branch (Section 4.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Dropdown/Popover                                     | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Tabs                                                 | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Badge                                                | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Notification banner                                  | Top-centre card stack, radius 12px, card surface, hairline border, overlay shadow, auto-dismiss. Drops from the top edge on `EASE_OUT` — 380ms in, 300ms out (overrides sonner's 400ms `ease`); exits mirror entries. A tinted status glyph sits left of a 14px semibold title with an optional 13px muted description, and that second line always renders. Dwell 4000ms success / 8000ms error (Material 3's 4–10s band). Max 3 visible; the sync engine reports a whole queue as one banner with a count rather than one per challan (`packages/app-core/src/offline/sync.ts`). Dismiss by the close button or a swipe. Web renders it with sonner at `position="top-center"` (`ui/components/toast.tsx` + the sink in `main.tsx`); the Android counterpart is `src/ui/toast-overlay.tsx` (Section 4.1).                                                                                                                                                                                                                                                                                                                                                           |
-| Empty states                                         | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Skeletons                                            | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (Section 3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Tables                                               | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Update banner (`update-surface.tsx`)                 | Full-width strip directly under the title bar, `border-b` + `bg-accent/10`, min-h 44px, 13px copy + 32px action button. Animates height+opacity (Section 5), mirrors on exit. It is limited to the macOS download flow, the one case that cannot self-install. Web, Windows/Linux and Android render no routine update surface at all — the next navigation runs the fresh web build, Android downloads the APK itself, and Settings carries the install action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Update gate (`update-dialog.tsx`)                    | The one undismissable dialog: `hideClose`, no outside/Escape dismiss, icon + title + one-line description + single action button. While the update downloads it gains a centered 12px tabular readout (`formatUpdateProgress`: percent · size). Forced update only — never reuse this pattern for anything dismissable. The Android app renders it as an undismissable bottom sheet against the same contract (Section 4.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Progress bar (`progress-bar.tsx`)                    | Download/install progress — track `bg-muted` h-2 radius-full, fill `bg-primary` width 0–100% with `transition-[width] duration-200 ease-out` (no JS animation loop: the store already throttles samples and a CSS transition absorbs their spacing). Readout is `formatUpdateProgress` (percent · total size) in `tabular-nums` 12px muted — no transferred bytes, no ETA. `role="progressbar"` + `aria-valuenow`; a `totalBytes` of 0 means unknown and the bar shows an indeterminate shimmer instead of a lying 0%. Never a spinner (Section 2.2).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Entry / download pages (`entry.tsx`, `download.tsx`) | Pre-auth surfaces sharing the auth header lockup (44px "K" tile + 17px semibold name) on the ambient wash (`.entry-stage` + `EntryWash`). Entry is bare and copy-free: centered lockup, `Sign in` default button, hairline "or" divider, `Install for {platform}` outline button (plain browsers only) — no card, no taglines, no helper text. Download keeps the same wash behind the version line + platform cards. Platform cards reuse Card + brand glyphs (`brand-icons.tsx`, currentColor fill, 20px) and float as frosted glass on the wash (`.glass-card`: translucent card + backdrop blur, solid under `prefers-reduced-transparency`); recommended card gets the accent border, never a solid fill. Detection is cosmetic — every card stays clickable. Each card's Download button is a plain anchor to its `/releases/*` URL — the browser's own download bar owns progress and the card shows none (a blob hand-rolled in-page would hold the whole installer in memory). Install/download is plain-browser only (`isPlainBrowser()` in platform.ts): Electron and Android ARE the app — entry never renders for them and /download redirects to /auth. |
+| Component                                            | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button                                               | Radii/heights from Section 2.2/Section 2.3. Press: `scale(0.97)` @100ms on `:active` via `.btn-motion`. Variants: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons.                                                                                                                                                  |
+| CircleButton / ButtonCapsule                         | App-wide icon actions (Section 2.7). Lone = circle 32px (44px touch), hairline border, press `scale(0.9)` @100ms via `.btn-motion`. Adjacent icon actions join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail); direct children lose their individual borders. Never for navigation rows.                                                                                                                                                                                                                                                     |
+| Input/Select/Textarea/DatePicker                     | Height 40px, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                                                                                                                                                                                        |
+| Card                                                 | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Dialog                                               | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                                                                                                                                                                                          |
+| Settings window (`settings-window.tsx`)              | App settings renders as a large window at `md`+, not a centered dialog: pinned below the chrome strip (`top: calc(3.5rem + 12px)`), `max-w-[56rem]`, `max-h-[calc(100dvh-5rem)]` with its own internal scroller, radius 16px, `--shadow-overlay`. Same scrim as Dialog (40% + 4px blur) covers the app beneath; the window's own close is a `CircleButton` top-right. Enter/exit on `MORPH`/`MORPH_EXIT`, reduced-motion collapses to opacity. At `≤sm` the nav stacks above the selected detail as the page — one surface, breakpoint-decided, no platform branch (Section 4.1). |
+| Dropdown/Popover                                     | Anchored to trigger, scale from the trigger edge (transform-origin), fade + scale 0.97→1, ≤180ms. Items 36px tall, radius 8px inset.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Tabs                                                 | Underline indicator that slides (layout animation), not cross-fade swaps. 40px tall, labels 13–15px medium.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Badge                                                | 11px semibold, radius 8px, soft tint + ink in tables; solid fills stay outside tables. Heights unified at 20/22px.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Notification banner                                  | Top-centre card stack — full contract in Section 3.2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Empty states                                         | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Skeletons                                            | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (Section 3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Tables                                               | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Update banner (`update-surface.tsx`)                 | macOS-only download strip — full contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Update gate (`update-dialog.tsx`)                    | The one undismissable dialog — full contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Progress bar (`progress-bar.tsx`)                    | Download/install progress — track `bg-muted` h-2 radius-full, fill `bg-primary` width 0–100% with `transition-[width] duration-200 ease-out` (no JS animation loop: the store already throttles samples and a CSS transition absorbs their spacing). Readout is `formatUpdateProgress` (percent · total size) in `tabular-nums` 12px muted — no transferred bytes, no ETA. `role="progressbar"` + `aria-valuenow`; a `totalBytes` of 0 means unknown and the bar shows an indeterminate shimmer instead of a lying 0%. Never a spinner (Section 3.1).                             |
+| Entry / download pages (`entry.tsx`, `download.tsx`) | Pre-auth surfaces on the ambient wash — full contract in Section 3.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ### 3.1 Loading skeletons — every screen gets its own shape
 
@@ -362,6 +371,57 @@ layout — never one generic shape for all pages.
   (globals.css collapses it under `prefers-reduced-motion`); tokens only,
   no raw colors; a new screen ships with its own skeleton entry in
   `routeSkeleton` in the same change.
+
+### 3.2 Notification banner
+
+Top-centre card stack: radius 12px, card surface, hairline border, overlay
+shadow, auto-dismiss. Drops from the top edge on `EASE_OUT` — 380ms in,
+300ms out (overrides sonner's 400ms `ease`; see Section 5); exits mirror
+entries. A tinted status glyph sits left of a 14px semibold title with an
+optional 13px muted description, and that second line always renders.
+Dwell 4000ms success / 8000ms error (Material 3's 4–10s band). Max 3
+visible; the sync engine reports a whole queue as one banner with a count
+rather than one per challan (`packages/app-core/src/offline/sync.ts`).
+Dismiss by the close button or a swipe. Every shell renders the same banner
+through the shared bundle (sonner at `position="top-center"`,
+`ui/components/toast.tsx` + the sink in `main.tsx`) — there is no separate
+Android banner file.
+
+### 3.3 Update surfaces
+
+- **Update banner (`update-surface.tsx`)** — full-width strip directly under
+  the title bar, `border-b` + `bg-accent/10`, min-h 44px, 13px copy + 32px
+  action button. Animates height+opacity (Section 5), mirrors on exit. It is
+  limited to the macOS download flow, the one case that cannot
+  self-install. Web, Windows/Linux and Android render no routine update
+  surface at all — the next navigation runs the fresh web build, Android
+  downloads the APK itself, and Settings carries the install action.
+- **Update gate (`update-dialog.tsx`)** — the one undismissable dialog:
+  `hideClose`, no outside/Escape dismiss, icon + title + one-line
+  description + single action button. While the update downloads it gains a
+  centered 12px tabular readout (`formatUpdateProgress`: percent · size).
+  Forced update only — never reuse this pattern for anything dismissable.
+  At `≤sm` (including the Android shell) it renders as an undismissable
+  bottom sheet against the same contract.
+
+### 3.4 Entry / download pages (`entry.tsx`, `download.tsx`)
+
+Pre-auth surfaces sharing the auth header lockup (44px "K" tile + 17px
+semibold name) on the ambient wash (`.entry-stage` + `EntryWash`). Entry is
+bare and copy-free: centered lockup, `Sign in` default button, hairline
+"or" divider, `Install for {platform}` outline button (plain browsers
+only) — no card, no taglines, no helper text. Download keeps the same wash
+behind the version line + platform cards. Platform cards reuse Card +
+brand glyphs (`brand-icons.tsx`, currentColor fill, 20px) and float as
+frosted glass on the wash (`.glass-card`: translucent card + backdrop
+blur, solid under `prefers-reduced-transparency`); the recommended card
+gets the accent border, never a solid fill. Detection is cosmetic — every
+card stays clickable. Each card's Download button is a plain anchor to its
+`/releases/*` URL — the browser's own download bar owns progress and the
+card shows none (a blob hand-rolled in-page would hold the whole installer
+in memory). Install/download is plain-browser only (`isPlainBrowser()` in
+platform.ts): Electron and Android ARE the app — entry never renders for
+them and /download redirects to /auth.
 
 ## 4. Layout
 
@@ -407,16 +467,15 @@ the web layout at the `≤sm` breakpoint (Section 4). Rebuilding the bundle and 
 Platform differences live only in `src/main/lib/platform.ts`, branched on
 `detectHost() === "android"`: token storage, KV hydration, network/activity
 listeners, deep links, PDF share, APK self-update. A platform branch anywhere
-else is a bug, and an Android-only visual value is a bug (Section 2).
-
-- The update gate is the same dialog — it renders as an undismissable bottom
-  sheet at ≤sm (Section 3), after a server-required update only.
-- Routine APK availability stays in Settings; one system notification per
-  release points at it (`@capacitor/local-notifications`, tap → Updates) —
-  OS chrome, not an in-app surface.
-- Printing is web/desktop: Android shares the rendered PDF instead
-  (`shareChallanPdfOnAndroid` in platform.ts), because no maintained
-  Capacitor plugin can print a file.
+else is a bug, and an Android-only visual value is a bug (Section 2). The
+behavioural half of each difference (what happens, per shell) lives in
+`APP.md` Section 5.1 — this document keeps only the visual contract: the
+phone renders the web layout at the `≤sm` breakpoint (Section 4), the
+update gate renders as an undismissable bottom sheet (Section 3.3),
+routine APK availability stays in Settings with one system notification
+per release (OS chrome, not an in-app surface), and Android shares the
+rendered PDF instead of printing (no maintained Capacitor plugin can
+print a file).
 
 ## 5. Motion grammar
 
@@ -428,8 +487,8 @@ Presets live in `src/main/ui/lib/motion.ts` — import them, never re-derive.
 | `EASE_IN_OUT`   | `cubic-bezier(0.65,0,0.35,1)`                     | symmetric repositions                   |
 | `EASE_DRAWER`   | `cubic-bezier(0.32,0.72,0,1)`                     | sheets/drawers                          |
 | `SPRING`        | spring, bounce 0, 0.38s                           | default for anything touchable          |
-| `MORPH`         | alias of `SPRING`                                 | morph entrances (Section 5.6)           |
-| `MORPH_EXIT`    | spring, bounce 0, 0.3s                            | morph exits — ~20% faster (Section 5.6) |
+| `MORPH`         | alias of `SPRING`                                 | morph entrances (Section 5.1)           |
+| `MORPH_EXIT`    | spring, bounce 0, 0.3s                            | morph exits — ~20% faster (Section 5.1) |
 | `DRAWER_SPRING` | spring, bounce 0.12, 0.36s                        | ONLY momentum-driven (flicked sheets)   |
 | Durations       | 120 press / 140 fast / 200 base / ≤400ms anything | —                                       |
 
@@ -437,8 +496,7 @@ Rules:
 
 1. **Animate transform + opacity only.** Never width/height/top/left/margin.
    Size changes use `grid-template-rows` animation, never `height` tweens —
-   except measured height/layout under Section 5.6 (transform-corrected; the
-   Android counterpart animates measured height there).
+   except measured height/layout under Section 5.1 (transform-corrected).
    One exception: the desktop app rail may tween `width` (200ms
    `EASE_DRAWER`) when it expands on hover.
 2. **Enter and exit are the same path reversed.** Slide in from right → dismiss
@@ -465,11 +523,11 @@ Rules:
 
 **Third-party surfaces** ship their own animation timing. Sonner's toasts
 default to 400ms `ease`; `globals.css` overrides the toast transition to
-`EASE_OUT` (380ms in / 300ms out) so the notification banner matches this
-grammar. Any third-party animated surface gets the same override — never a
+`EASE_OUT` so the notification banner (Section 3.2) matches this grammar.
+Any third-party animated surface gets the same override — never a
 documented exception.
 
-### 5.6 Morph — pill ⇄ card
+### 5.1 Morph — pill ⇄ card
 
 One surface grows from its collapsed row into the expanded card and back —
 the same element at both sizes, never a close-then-open swap.
@@ -506,7 +564,7 @@ the same element at both sizes, never a close-then-open swap.
 | ---------------------------------------------- | ---------------------------------------------------------------- |
 | Tokens (color/radius/shadow/ease)              | `src/main/ui/globals.css`                                        |
 | Motion presets                                 | `src/main/ui/lib/motion.ts`                                      |
-| Morph kit (pill ⇄ card, Section 5.6)           | `src/main/ui/components/morph.tsx`                               |
+| Morph kit (pill ⇄ card, Section 5.1)           | `src/main/ui/components/morph.tsx`                               |
 | Reveal/Stagger/Skeleton/PageTransition         | `src/main/ui/components/motion.tsx`                              |
 | Per-screen route skeletons (Section 3.1)       | `src/main/ui/components/page-skeletons.tsx`                      |
 | Shared table skeleton                          | `src/main/ui/components/table-skeleton.tsx`                      |

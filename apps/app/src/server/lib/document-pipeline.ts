@@ -55,6 +55,7 @@ import {
   buildChallanStockStatements,
   buildRawStockStatements,
   buildReturnStockStatements,
+  StockRaceError,
 } from "./stock";
 import { generateId } from "./token";
 
@@ -119,6 +120,16 @@ type ValidatedMasters = Exclude<
   { error: ApiCode }
 >;
 
+// validateMasters guarantees every requested id is present, but a concurrent
+// archive between validate and snapshot would make .get() miss. Throw a
+// domain error so the caller returns invalid_denier/color (400), never a
+// TypeError panic (500).
+class MasterRaceError extends Error {
+  constructor(readonly code: ApiCode) {
+    super(code);
+  }
+}
+
 async function resolveSupplier(
   d: Queryable,
   workspaceId: string,
@@ -142,8 +153,10 @@ function buildRawItems(
   nowIso: string,
 ) {
   return rawItems.map((i, idx) => {
-    const denier = validated.denierById.get(i.denierId)!;
-    const color = validated.colorById.get(i.colorId)!;
+    const denier = validated.denierById.get(i.denierId);
+    if (!denier) throw new MasterRaceError("invalid_denier");
+    const color = validated.colorById.get(i.colorId);
+    if (!color) throw new MasterRaceError("invalid_color");
     return {
       id: generateId(),
       entryId,
@@ -198,7 +211,13 @@ export async function createRawMaterial(
   } = await allocatedNumber(d, workspaceId, date, "raw");
   const nowIso = new Date().toISOString();
   const entryId = generateId();
-  const items = buildRawItems(validated, input.items, entryId, nowIso);
+  let items: RawItemRow[];
+  try {
+    items = buildRawItems(validated, input.items, entryId, nowIso);
+  } catch (err) {
+    if (err instanceof MasterRaceError) return { error: err.code };
+    throw err;
+  }
 
   await d.batch([
     d.insert(rawMaterialEntries).values({
@@ -277,7 +296,13 @@ export async function updateRawMaterial(
   }
 
   const nowIso = new Date().toISOString();
-  const items = buildRawItems(validated, input.items, existing.id, nowIso);
+  let items: RawItemRow[];
+  try {
+    items = buildRawItems(validated, input.items, existing.id, nowIso);
+  } catch (err) {
+    if (err instanceof MasterRaceError) return { error: err.code };
+    throw err;
+  }
 
   await d.batch([
     d
@@ -343,8 +368,10 @@ function buildPackingItems(
   nowIso: string,
 ) {
   return packingItemsIn.map((i, idx) => {
-    const denier = validated.denierById.get(i.denierId)!;
-    const color = validated.colorById.get(i.colorId)!;
+    const denier = validated.denierById.get(i.denierId);
+    if (!denier) throw new MasterRaceError("invalid_denier");
+    const color = validated.colorById.get(i.colorId);
+    if (!color) throw new MasterRaceError("invalid_color");
     return {
       id: generateId(),
       entryId,
@@ -394,7 +421,13 @@ export async function createPacking(
   } = await allocatedNumber(d, workspaceId, date, numType);
   const nowIso = new Date().toISOString();
   const entryId = generateId();
-  const items = buildPackingItems(validated, input.items, entryId, nowIso);
+  let items: PackingItemRow[];
+  try {
+    items = buildPackingItems(validated, input.items, entryId, nowIso);
+  } catch (err) {
+    if (err instanceof MasterRaceError) return { error: err.code };
+    throw err;
+  }
 
   await d.batch([
     d.insert(packingEntries).values({
@@ -457,7 +490,13 @@ export async function updatePacking(
   if ("error" in validated) return { error: validated.error };
 
   const nowIso = new Date().toISOString();
-  const items = buildPackingItems(validated, input.items, existing.id, nowIso);
+  let items: PackingItemRow[];
+  try {
+    items = buildPackingItems(validated, input.items, existing.id, nowIso);
+  } catch (err) {
+    if (err instanceof MasterRaceError) return { error: err.code };
+    throw err;
+  }
 
   // Delete old items, recreate — one atomic D1 batch, no reads in between.
   await d.batch([
@@ -540,8 +579,10 @@ function buildReturnItems(
   for (const [cid, bal] of balances)
     remainingByChallan.set(cid, round3(bal.sent - bal.returned));
   return returnItems.map((i, idx) => {
-    const denier = validated.denierById.get(i.denierId)!;
-    const color = validated.colorById.get(i.colorId)!;
+    const denier = validated.denierById.get(i.denierId);
+    if (!denier) throw new MasterRaceError("invalid_denier");
+    const color = validated.colorById.get(i.colorId);
+    if (!color) throw new MasterRaceError("invalid_color");
     const remainingBefore = remainingByChallan.get(i.challanId) ?? 0;
     const overReceipt = i.netWt > remainingBefore;
     const overReceiptQty = overReceipt
@@ -717,13 +758,19 @@ export async function createReturn(
   const returnId = generateId();
   const challanIds = [...new Set(input.items.map((i) => i.challanId))];
   const balances = await getChallanBalances(d, challanIds);
-  const items = buildReturnItems(
-    validated,
-    input.items,
-    balances,
-    returnId,
-    nowIso,
-  );
+  let items: ReturnItemRow[];
+  try {
+    items = buildReturnItems(
+      validated,
+      input.items,
+      balances,
+      returnId,
+      nowIso,
+    );
+  } catch (err) {
+    if (err instanceof MasterRaceError) return { error: err.code };
+    throw err;
+  }
 
   await d.batch([
     d.insert(jobWorkReturns).values({
@@ -791,13 +838,19 @@ export async function updateReturn(
   const nowIso = new Date().toISOString();
   const challanIds = [...new Set(input.items.map((i) => i.challanId))];
   const balances = await getChallanBalances(d, challanIds, existing.id);
-  const items = buildReturnItems(
-    validated,
-    input.items,
-    balances,
-    existing.id,
-    nowIso,
-  );
+  let items: ReturnItemRow[];
+  try {
+    items = buildReturnItems(
+      validated,
+      input.items,
+      balances,
+      existing.id,
+      nowIso,
+    );
+  } catch (err) {
+    if (err instanceof MasterRaceError) return { error: err.code };
+    throw err;
+  }
 
   // Delete old items + stock movements, then recreate — one atomic D1 batch,
   // no reads in between.
@@ -896,10 +949,13 @@ async function buildChallanItems(
   ];
   const validated = await validateMasters(d, workspaceId, denierIds, colorIds);
   if ("error" in validated) return { error: validated.error, items: [] };
-  const items = rawItems.map((i, idx) => {
-    const denier = validated.denierById.get(i.denierId)!;
+  const items: ChallanItemRow[] = [];
+  for (const [idx, i] of rawItems.entries()) {
+    const denier = validated.denierById.get(i.denierId);
+    if (!denier) return { error: "invalid_denier", items: [] };
     const color = i.colorId ? validated.colorById.get(i.colorId) : null;
-    return {
+    if (i.colorId && !color) return { error: "invalid_color", items: [] };
+    items.push({
       id: generateId(),
       challanId,
       seq: idx + 1,
@@ -917,8 +973,8 @@ async function buildChallanItems(
       boxes: i.boxes,
       netWt: round3(i.netWt),
       createdAt: nowIso,
-    };
-  });
+    });
+  }
   return { items };
 }
 
@@ -1077,7 +1133,7 @@ export async function createChallan(
     updatedAt: nowIso,
   };
 
-  const stockStmts = await buildChallanStockStatements(
+  const stockBuilt = await buildChallanStockStatements(
     d,
     workspaceId,
     challanId,
@@ -1085,7 +1141,12 @@ export async function createChallan(
     input.date,
     nowIso,
     input.type,
-  );
+  ).catch((err: unknown) => {
+    if (err instanceof StockRaceError) return null;
+    throw err;
+  });
+  if (!stockBuilt) return { error: "invalid_color" as const };
+  const stockStmts = stockBuilt;
   try {
     await d.batch([
       d.insert(challans).values(row),
@@ -1215,7 +1276,7 @@ export async function updateChallan(
   const t = challanTotals(built.items);
 
   // Recreate stock movements: delete old, create new — one atomic batch.
-  const stockStmts = await buildChallanStockStatements(
+  const stockBuiltUpdate = await buildChallanStockStatements(
     d,
     workspaceId,
     existing.id,
@@ -1223,7 +1284,12 @@ export async function updateChallan(
     input.date,
     nowIso,
     existing.type as "sales" | "outward",
-  );
+  ).catch((err: unknown) => {
+    if (err instanceof StockRaceError) return null;
+    throw err;
+  });
+  if (!stockBuiltUpdate) return { error: "invalid_color" as const };
+  const stockStmts = stockBuiltUpdate;
 
   // The response is built from known values — no read-back of what was just
   // written.

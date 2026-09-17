@@ -23,7 +23,7 @@ import {
 } from "../auth/session";
 
 export type AuthEnv = { Bindings: Env; Variables: AuthVariables };
-export type AuthCtx = Context<AuthEnv>;
+type AuthCtx = Context<AuthEnv>;
 
 export const SESSION_COOKIE = "kc_session";
 const SESSION_MAX_AGE = Math.floor(SESSION_TTL_MS / 1000);

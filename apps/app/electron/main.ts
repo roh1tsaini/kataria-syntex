@@ -661,7 +661,7 @@ async function onReady(): Promise<void> {
   });
 
   registerIpc();
-  initUpdater(() => mainWindow);
+  initUpdater(isTrustedSender);
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

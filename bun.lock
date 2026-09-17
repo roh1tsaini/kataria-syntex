@@ -40,7 +40,7 @@
     },
     "apps/app": {
       "name": "@kataria-syntex/biz-app",
-      "version": "0.17.0",
+      "version": "0.19.1",
       "dependencies": {
         "@kataria-syntex/app-core": "*",
         "@kataria-syntex/shared": "*",

@@ -104,7 +104,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
         .finally(() => setPrinting(false));
       return;
     }
-    void printPage(kind.singular);
+    void printPage();
   }, [id, detail, kind.singular]);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
       // Web/desktop: open the print preview immediately. Android is skipped —
       // its flow starts from the button, not from a sheet opened on load.
       if (!isAndroidShell()) {
-        const t = setTimeout(() => void printPage(kind.singular), 350);
+        const t = setTimeout(() => void printPage(), 350);
         return () => clearTimeout(t);
       }
     }

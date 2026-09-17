@@ -19,7 +19,7 @@ const API_CODES = [
   "invalid_credentials",
   "invalid_code",
   "user_exists",
-  "phone_already_registered",
+  "already_registered",
   "invite_invalid",
   "workspace_name_required",
   "no_workspace",

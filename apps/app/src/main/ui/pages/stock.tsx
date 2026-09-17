@@ -42,7 +42,8 @@ type StockGroup = {
 };
 
 // Keyed by workspace id so one account's stock never leaks into another's.
-// Registered so account resets (logout/401) wipe it — see lib/data-caches.
+// Registered so account resets (logout/401) wipe it — see registerDataCache
+// in @kataria-syntex/app-core.
 const stockCache: Record<
   string,
   Record<"raw" | "dyed", StockGroup[] | null>

@@ -38,8 +38,6 @@ import {
   reloadOnStaleAndroidBundle,
 } from "@/lib/platform";
 
-export type { UpdateProgress };
-
 export type UpdateState = {
   /** Latest version published to /releases, when known. */
   latestVersion: string | null;

@@ -22,7 +22,7 @@ const SERVER_MESSAGES = {
   multiple_memberships:
     "Something's wrong with this account's workspace membership. Contact support.",
   invalid_permissions: "Your access changed. Re-open this page.",
-  phone_already_registered: "This phone/email is already part of a workspace.",
+  already_registered: "This phone/email is already part of a workspace.",
   already_pending: "That person is already waiting to join a workspace.",
   // auth / otp
   invalid_code: "Wrong code. Try again.",

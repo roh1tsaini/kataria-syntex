@@ -145,7 +145,7 @@ function ReportGrid() {
 
 // Keyed by "workspaceId:reportId[?query]" so one account's rows never leak
 // into another's. Registered so account resets (logout/401) wipe it — see
-// lib/data-caches.
+// registerDataCache in @kataria-syntex/app-core.
 type ReportResponse = {
   items: Record<string, unknown>[];
   /** Total matching rows before the server's cap (transaction-log only). */
