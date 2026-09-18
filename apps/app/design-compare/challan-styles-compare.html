@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Delivery challan — 39 formats, pick one</title>
+    <title>Delivery challan — 45 formats, pick one</title>
     <style>
       @font-face {
         font-family: Inter;
@@ -1029,7 +1029,7 @@
         text-align: center;
       }
 
-      /* ── format picker ── */
+      /* ── format picker — sticky chrome ── */
       html.js .dir {
         display: none;
       }
@@ -1043,12 +1043,13 @@
         position: sticky;
         top: 0;
         z-index: 60;
-        margin: 0 -20px 24px;
-        padding: 10px 20px 11px;
-        background: rgba(23, 24, 28, 0.94);
-        -webkit-backdrop-filter: blur(14px);
-        backdrop-filter: blur(14px);
-        border-bottom: 1px solid #2b2d34;
+        margin: 0 -28px 32px;
+        padding: 14px 28px 15px;
+        background: rgba(16, 17, 20, 0.82);
+        -webkit-backdrop-filter: blur(20px) saturate(1.5);
+        backdrop-filter: blur(20px) saturate(1.5);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.5);
       }
       .picker-row {
         display: flex;
@@ -1056,7 +1057,7 @@
         gap: 6px;
         overflow-x: auto;
         scrollbar-width: thin;
-        padding-bottom: 3px;
+        padding: 2px;
       }
       .picker-row::-webkit-scrollbar {
         height: 5px;
@@ -1071,9 +1072,9 @@
         align-items: baseline;
         gap: 7px;
         padding: 7px 13px;
-        border: 1px solid #34373f;
+        border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 999px;
-        background: #1d1f24;
+        background: rgba(255, 255, 255, 0.04);
         color: #b9bcc5;
         font-family: Inter, sans-serif;
         font-size: 11px;
@@ -1083,11 +1084,12 @@
         transition:
           background 0.15s,
           color 0.15s,
-          border-color 0.15s;
+          border-color 0.15s,
+          box-shadow 0.15s;
       }
       .pbtn:hover {
         color: #fff;
-        border-color: #4b4f5a;
+        background: rgba(255, 255, 255, 0.09);
       }
       .pbtn .code {
         font-weight: 800;
@@ -1097,6 +1099,7 @@
         background: #fff;
         border-color: #fff;
         color: #17181c;
+        box-shadow: 0 4px 14px -4px rgba(255, 255, 255, 0.35);
       }
       .pbtn[aria-pressed="true"] .code {
         color: #52525b;
@@ -1109,37 +1112,42 @@
         flex: none;
         color: #6b6e78;
         font-size: 10px;
-        margin-left: 6px;
+        margin-left: 8px;
         letter-spacing: 0.02em;
       }
       .viewbar {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 12px;
+        margin-bottom: 13px;
+        flex-wrap: wrap;
       }
       .seg {
         display: inline-flex;
-        background: #1d1f24;
-        border: 1px solid #34373f;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 999px;
-        padding: 2px;
+        padding: 3px;
         gap: 2px;
       }
       .seg button {
         border: 0;
         background: none;
-        color: #b9bcc5;
+        color: #9aa0ab;
         font:
           600 11px Inter,
           sans-serif;
-        padding: 7px 14px;
+        padding: 6px 14px;
         border-radius: 999px;
         cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
       }
       .seg button[aria-pressed="true"] {
         background: #fff;
         color: #17181c;
+        box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.45);
       }
       .seg button:focus-visible {
         outline: 2px solid #8ab4ff;
@@ -1148,6 +1156,7 @@
       .viewcount {
         color: #8b8e98;
         font-size: 11px;
+        font-variant-numeric: tabular-nums;
       }
       .stepper {
         margin-left: auto;
@@ -1159,15 +1168,18 @@
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        border: 1px solid #34373f;
-        background: #1d1f24;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
         color: #fff;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 15px;
         line-height: 1;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
       }
       .stepper button:hover {
-        border-color: #4b4f5a;
+        background: rgba(255, 255, 255, 0.12);
       }
       .stepper button:focus-visible {
         outline: 2px solid #8ab4ff;
@@ -1193,6 +1205,7 @@
           background: #fff;
         }
       }
+
 
       /* ── K · Barcode Depot ── */
       .vK {
@@ -2615,116 +2628,147 @@
       html.light-canvas .dir-label span {
         color: #64748b;
       }
+
+      html.light-canvas.view-grid .dir {
+        background: #fff;
+        border-color: #e2e8f0;
+      }
       html.light-canvas .picker {
-        background: rgba(248, 249, 251, 0.94);
-        border-bottom-color: #cbd5e1;
+        background: rgba(248, 249, 251, 0.85);
+        border-bottom-color: #e2e8f0;
+        box-shadow: 0 12px 32px -16px rgba(15, 23, 42, 0.18);
       }
       html.light-canvas .pbtn {
         background: #fff;
-        border-color: #cbd5e1;
+        border-color: #e2e8f0;
         color: #334155;
       }
       html.light-canvas .pbtn:hover {
-        border-color: #94a3b8;
+        background: #f1f5f9;
         color: #0f172a;
+      }
+      html.light-canvas .pbtn .code {
+        color: #94a3b8;
       }
       html.light-canvas .pbtn[aria-pressed="true"] {
         background: #0f172a;
         color: #fff;
         border-color: #0f172a;
+        box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.4);
+      }
+      html.light-canvas .pbtn[aria-pressed="true"] .code {
+        color: #cbd5e1;
+      }
+      html.light-canvas .seg {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
       }
       html.light-canvas .seg button {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
-        color: #475569;
+        color: #64748b;
       }
       html.light-canvas .seg button:hover {
         color: #0f172a;
       }
       html.light-canvas .seg button[aria-pressed="true"] {
-        background: #fff;
-        border-color: #94a3b8;
-        color: #0f172a;
+        background: #0f172a;
+        color: #fff;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.35);
       }
       html.light-canvas .quick-jump select {
         background: #fff;
-        border-color: #cbd5e1;
+        border-color: #e2e8f0;
         color: #0f172a;
       }
       html.light-canvas .stepper button,
-      html.light-canvas .tools-group button {
-        background: #fff;
-        border-color: #cbd5e1;
-        color: #334155;
-      }
-      html.light-canvas .tools-group button.active {
-        background: #0f172a;
-        color: #fff;
-        border-color: #0f172a;
-      }
-      html.light-canvas.view-grid .dir {
+      html.light-canvas .icon-btn {
         background: #fff;
         border-color: #e2e8f0;
+        color: #334155;
       }
-
-      /* ── Modern Toolbar Additions ── */
+      html.light-canvas .stepper button:hover,
+      html.light-canvas .icon-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      html.light-canvas .zoom-seg {
+        border-color: #e2e8f0;
+      }
+      html.light-canvas .zoom-btn {
+        color: #64748b;
+      }
+      html.light-canvas .zoom-btn:hover {
+        color: #0f172a;
+      }
+      html.light-canvas .zoom-btn.active {
+        background: #0f172a;
+        color: #fff;
+      }
+      html.light-canvas .viewcount {
+        color: #64748b;
+      }
       .quick-jump select {
-        background: #1e2026;
-        border: 1px solid #34373f;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         color: #e2e8f0;
         font-family: Inter, sans-serif;
         font-size: 11px;
         font-weight: 600;
-        padding: 5px 12px;
+        padding: 6px 14px;
         cursor: pointer;
         outline: none;
+        max-width: 230px;
       }
       .quick-jump select:focus {
-        border-color: #3b82f6;
+        border-color: #8ab4ff;
       }
       .tools-group {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-left: auto;
       }
       .zoom-seg {
         display: inline-flex;
-        border: 1px solid #34373f;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         overflow: hidden;
       }
       .zoom-btn {
-        background: #17181c;
+        background: transparent;
         border: none;
         color: #94a3b8;
         font-family: Inter, sans-serif;
         font-size: 10px;
         font-weight: 600;
-        padding: 4px 8px;
+        padding: 5px 10px;
         cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
       }
       .zoom-btn:hover {
         color: #fff;
       }
       .zoom-btn.active {
-        background: #3b82f6;
+        background: rgba(255, 255, 255, 0.14);
         color: #fff;
       }
       .icon-btn {
-        background: #1e2026;
-        border: 1px solid #34373f;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         color: #cbd5e1;
         font-family: Inter, sans-serif;
         font-size: 11px;
         font-weight: 600;
-        padding: 5px 11px;
+        padding: 6px 13px;
         cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
       }
       .icon-btn:hover {
-        border-color: #60a5fa;
+        background: rgba(255, 255, 255, 0.12);
         color: #fff;
       }
 
@@ -3175,10 +3219,524 @@
       .vAM .s-panel {
         border: 0.15mm solid #666;
       }
+
+
+
+
+
+
+
+      /* ── AN · Hairline Ledger ── */
+      .vAN .mast {
+        grid-template-columns: 1fr auto 1fr;
+        align-items: baseline;
+      }
+      .vAN .doc-title {
+        order: 3;
+        text-align: right;
+        font-size: 6.4pt;
+        letter-spacing: 0.22em;
+        color: #a1a1aa;
+      }
+      .vAN .co-name {
+        font-size: 15pt;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .vAN .copies {
+        display: none;
+      }
+      .vAN .mrule {
+        border-top: 0.1mm solid #d4d4d8;
+        margin-top: 2.4mm;
+      }
+      .vAN .party {
+        border: none;
+        border-bottom: 0.1mm solid #d4d4d8;
+        padding: 2mm 0;
+      }
+      .vAN .p-gstin {
+        background: none;
+        padding: 0;
+        color: #a1a1aa;
+        font-weight: 500;
+      }
+      .vAN .p-meta {
+        border-left: none;
+        flex-direction: row;
+        gap: 8mm;
+        align-items: baseline;
+      }
+      .vAN .m-label {
+        color: #b3b3b8;
+        font-weight: 500;
+      }
+      .vAN .m-val {
+        font-weight: 500;
+      }
+      .vAN table {
+        border: none;
+      }
+      .vAN th {
+        background: none;
+        color: #a1a1aa;
+        font-size: 5.6pt;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        border-bottom: 0.25mm solid #111;
+        padding: 1.6mm 1mm;
+      }
+      .vAN td {
+        height: 5.4mm;
+        line-height: 5.4mm;
+        border-bottom: 0.1mm solid #ececee;
+      }
+      .vAN tbody tr {
+        border-bottom: none;
+      }
+      .vAN tbody tr:last-child td {
+        border-bottom: 0.1mm solid #ececee;
+      }
+      .vAN .s-panel {
+        background: none;
+        border-top: 0.25mm solid #111;
+        border-radius: 0;
+        padding: 2mm 0 0;
+      }
+      .vAN .t-row .l {
+        color: #a1a1aa;
+        font-weight: 500;
+      }
+      .vAN .t-row .v {
+        font-weight: 600;
+      }
+      .vAN .t-net {
+        border-top: 0.1mm solid #d4d4d8;
+        margin-top: 1.4mm;
+        padding-top: 1.4mm;
+      }
+      .vAN .t-net .v {
+        font-weight: 600;
+      }
+      .vAN .foot {
+        border-top: 0.1mm solid #d4d4d8;
+      }
+      .vAN .f-line {
+        border-top: 0.1mm solid #71717a;
+      }
+
+      /* ── AO · Rail ── */
+      .vAO {
+        border-left: 2.2mm solid #111;
+        padding-left: 7mm;
+      }
+      .vAO .mast {
+        grid-template-columns: 1fr;
+        gap: 0.6mm;
+      }
+      .vAO .co {
+        text-align: left;
+      }
+      .vAO .doc-title {
+        font-size: 6.2pt;
+        letter-spacing: 0.24em;
+        color: #71717a;
+        order: -1;
+      }
+      .vAO .co-name {
+        font-size: 19pt;
+        letter-spacing: -0.015em;
+      }
+      .vAO .copies {
+        flex-direction: row;
+        gap: 4mm;
+        margin-top: 1mm;
+      }
+      .vAO .copy i {
+        width: 2.6mm;
+
+      }
+      /* ── AP · Pill Tag ── */
+      .vAP .mast {
+        grid-template-columns: 1fr auto;
+      }
+      .vAP .co {
+        text-align: left;
+      }
+      .vAP .doc-title {
+        order: 2;
+        background: #111;
+        color: #fff;
+        border-radius: 999px;
+        padding: 1.2mm 4mm;
+        font-size: 6.2pt;
+        letter-spacing: 0.18em;
+        text-align: center;
+      }
+      .vAP .doc-title br {
+        display: block;
+      }
+      .vAP .copies {
+        display: none;
+      }
+      .vAP .mrule {
+        border-top: 0.2mm solid #e4e4e7;
+        margin-top: 2.4mm;
+      }
+      .vAP .party {
+        border: 0.2mm solid #e4e4e7;
+        border-radius: 2.4mm;
+        overflow: hidden;
+        margin-top: 2mm;
+      }
+      .vAP .p-gstin {
+        background: #111;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0.6mm 2.6mm;
+        font-size: 6pt;
+      }
+      .vAP .p-meta {
+        border-left: 0.2mm solid #e4e4e7;
+      }
+      .vAP .m-val {
+        background: #f4f4f5;
+        border-radius: 999px;
+        padding: 0.8mm 3mm;
+        display: inline-block;
+        font-weight: 800;
+      }
+      .vAP th {
+        background: none;
+        color: #71717a;
+        font-size: 5.8pt;
+        letter-spacing: 0.14em;
+        border-bottom: 0.3mm solid #111;
+      }
+      .vAP table {
+        border: none;
+        margin-top: 2.4mm;
+      }
+      .vAP tbody tr:nth-child(even) td {
+        background: #fafafa;
+      }
+      .vAP td {
+        border-bottom: none;
+      }
+      .vAP tbody tr {
+        border-bottom: none;
+      }
+      .vAP tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .vAP .s-panel {
+        background: #111;
+        border-radius: 2.4mm;
+        padding: 2.4mm 3.2mm;
+      }
+      .vAP .t-row .l {
+        color: #a1a1aa;
+      }
+      .vAP .t-row .v {
+        color: #fff;
+      }
+      .vAP .t-net {
+        border-top: 0.15mm solid #3f3f46;
+      }
+      .vAP .t-net span {
+        color: #fff;
+      }
+      .vAP .t-net .v {
+        color: #fff;
+      }
+      .vAP .foot {
+        border-top: 0.2mm solid #e4e4e7;
+      }
+
+      /* ── AQ · Outline Type ── */
+      .vAQ .mast {
+        grid-template-columns: 1fr;
+        text-align: center;
+
+      }
+      /* ── AR · Slate Card ── */
+      .vAR {
+        background: #f1f3f5;
+        padding: 5mm 7mm;
+      }
+      .vAR .mast {
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.6mm;
+        padding: 3mm 4mm;
+        grid-template-columns: 32mm 1fr 30mm;
+      }
+      .vAR .mrule {
+        display: none;
+      }
+      .vAR .party {
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.6mm;
+        margin-top: 2.4mm;
+        overflow: hidden;
+      }
+      .vAR .p-meta {
+        border-left: 0.2mm solid #e2e8f0;
+      }
+      .vAR .p-gstin {
+        background: #eef2f7;
+        border-radius: 999px;
+        padding: 0.5mm 2.4mm;
+      }
+      .vAR table {
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.6mm;
+        margin-top: 2.4mm;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+      }
+      .vAR th {
+        background: #f8fafc;
+        color: #475569;
+        border-bottom: 0.2mm solid #e2e8f0;
+        font-size: 5.8pt;
+        letter-spacing: 0.12em;
+      }
+      .vAR td {
+        border-bottom: 0.1mm solid #eef2f7;
+      }
+      .vAR tbody tr {
+        border-bottom: none;
+      }
+      .vAR .s-panel {
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.6mm;
+      }
+      .vAR .t-row .l {
+        color: #64748b;
+      }
+      .vAR .t-net {
+        border-top: 0.2mm solid #e2e8f0;
+      }
+      .vAR .t-net .v {
+        color: #0f172a;
+      }
+      .vAR .foot {
+        border-top: none;
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.6mm;
+        padding: 2.6mm 3.4mm;
+        margin-top: 2.4mm;
+      }
+      .vAR .f-line {
+        border-top-color: #cbd5e1;
+      }
+
+      /* ── AS · Dotted Memo ── */
+      .vAS {
+        font-family: "Courier New", Courier, monospace;
+      }
+      .vAS .co-name {
+        font-family: inherit;
+        font-size: 15pt;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+      }
+      .vAS .doc-title {
+        font-family: inherit;
+        letter-spacing: 0.2em;
+      }
+      .vAS .mrule {
+        border-top: none;
+        border-bottom: 0.25mm dotted #71717a;
+        margin-top: 2mm;
+      }
+      .vAS .party {
+        border: none;
+        border-bottom: 0.25mm dotted #71717a;
+        padding-bottom: 1.6mm;
+      }
+      .vAS .p-meta {
+        border-left: none;
+        flex-direction: row;
+        gap: 6mm;
+      }
+      .vAS .p-gstin {
+        float: right;
+        font-family: inherit;
+        font-size: 5.9pt;
+        letter-spacing: 0.02em;
+        margin-top: 0.8mm;
+      }
+      .vAS table {
+        border: none;
+      }
+      .vAS th {
+        background: none;
+        color: #111;
+        font-family: inherit;
+        font-size: 6.4pt;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        border-bottom: 0.25mm dotted #111;
+      }
+      .vAS td {
+        font-family: inherit;
+        font-size: 7.6pt;
+        border-bottom: 0.15mm dotted #d4d4d8;
+        height: 4.6mm;
+        line-height: 4.6mm;
+      }
+      .vAS tbody tr {
+        border-bottom: none;
+      }
+      .vAS tbody tr:last-child td {
+        border-bottom: 0.25mm dotted #111;
+      }
+      .vAS .s-panel {
+        background: none;
+        border-top: 0.25mm dotted #111;
+        border-radius: 0;
+        font-family: inherit;
+      }
+      .vAS .t-net {
+        border-top: 0.25mm dotted #111;
+      }
+      .vAS .foot {
+        border-top: 0.25mm dotted #111;
+      }
+      .vAS .f-line {
+        border-top: 0.25mm dotted #71717a;
+      }
+      .vAS .f-terms h4,
+      .vAS .f-terms ol {
+        font-family: inherit;
+      }
+
+        gap: 1mm;
+      }
+      .vAQ .doc-title {
+        display: none;
+      }
+      .vAQ .co-name {
+        font-size: 26pt;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: transparent;
+        -webkit-text-stroke: 0.35mm #111;
+        line-height: 0.95;
+      }
+      .vAQ .co-sub {
+        letter-spacing: 0.12em;
+        font-size: 5.8pt;
+      }
+      .vAQ .copies {
+        flex-direction: row;
+        justify-self: center;
+        gap: 5mm;
+        margin-top: 0.8mm;
+      }
+      .vAQ .mrule {
+        border-top: 0.5mm solid #111;
+        margin-top: 2.6mm;
+      }
+      .vAQ .party {
+        border: none;
+        border-bottom: 0.5mm solid #111;
+        padding: 1.6mm 0;
+      }
+      .vAQ .p-name {
+        font-size: 13pt;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+      .vAQ .p-meta {
+        border-left: 0.3mm solid #111;
+      }
+      .vAQ th {
+        background: none;
+        color: #111;
+        border-bottom: 0.5mm solid #111;
+        font-size: 6pt;
+        font-weight: 800;
+      }
+      .vAQ table {
+        border: none;
+        border-bottom: 0.5mm solid #111;
+      }
+      .vAQ td {
+        border-bottom: 0.1mm solid #d4d4d8;
+      }
+      .vAQ tbody tr {
+        border-bottom: none;
+      }
+      .vAQ .s-panel {
+        background: none;
+        border: 0.3mm solid #111;
+        border-radius: 0;
+      }
+      .vAQ .t-net {
+        border-top: 0.3mm solid #111;
+      }
+      .vAQ .t-net .v {
+        font-size: 12pt;
+        letter-spacing: 0.02em;
+      }
+      .vAQ .foot {
+        border-top: 0.5mm solid #111;
+      }
+
+        height: 2.6mm;
+      }
+      .vAO .mrule {
+        border-top: 0.3mm solid #111;
+        margin-top: 2.2mm;
+      }
+      .vAO .party {
+        border: none;
+        border-bottom: 0.15mm solid #e4e4e7;
+      }
+      .vAO .p-meta {
+        border-left: none;
+        flex-direction: row;
+        gap: 7mm;
+        align-items: baseline;
+      }
+      .vAO th {
+        background: none;
+        color: #111;
+        font-size: 6pt;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        border-bottom: 0.5mm solid #111;
+      }
+      .vAO table {
+        border: none;
+      }
+      .vAO td {
+        border-bottom: 0.15mm solid #e4e4e7;
+      }
+      .vAO tbody tr {
+        border-bottom: none;
+      }
+      .vAO .s-panel {
+        background: #f4f4f5;
+        border-left: 1.2mm solid #111;
+        border-radius: 0;
+      }
+      .vAO .t-net {
+        border-top-color: #d4d4d8;
+      .vAO .foot {
+        border-top: 0.3mm solid #111;
     </style>
   </head>
   <body>
-    <h1>Delivery challan — 39 formats, pick one</h1>
+    <h1>Delivery challan — 45 formats, pick one</h1>
     <p class="note">
       Same jobwork challan data on every sheet (12 rows shown; all formats
       paginate at 12 rows/page). All grayscale-safe for mono printers. Terms,
@@ -6881,6 +7439,16 @@
             "Micro Dot Matrix",
             "Retro modern matrix slip · tractor feed pin holes · QR code stamp",
           ],
+          [
+            "AN",
+            "Hairline Ledger",
+            "Ultra-thin rules · airy spacing · quiet labels",
+          ],
+          ["AO", "Rail", "Bold left rail · clean column · dark totals panel"],
+          ["AP", "Pill Tag", "Rounded chips · dark totals card · soft rows"],
+          ["AQ", "Outline Type", "Outlined display name · heavy top rules"],
+          ["AR", "Slate Card", "Soft gray canvas · floating white cards"],
+          ["AS", "Dotted Memo", "Monospace memo · dotted separators"],
         ];
 
         variants.forEach(function ([code, name, description]) {

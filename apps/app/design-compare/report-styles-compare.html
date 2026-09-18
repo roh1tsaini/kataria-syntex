@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Sales challan report — 34 formats × portrait + landscape</title>
+    <title>Sales challan report — 40 formats × portrait + landscape</title>
     <style>
       @font-face {
         font-family: Inter;
@@ -684,7 +684,7 @@
         border-top: 0.15mm solid #d4d4d8;
       }
 
-      /* ── format picker ── */
+      /* ── format picker — sticky chrome ── */
       html.js .dir {
         display: none;
       }
@@ -698,12 +698,13 @@
         position: sticky;
         top: 0;
         z-index: 60;
-        margin: 0 -20px 24px;
-        padding: 10px 20px 11px;
-        background: rgba(23, 24, 28, 0.94);
-        -webkit-backdrop-filter: blur(14px);
-        backdrop-filter: blur(14px);
-        border-bottom: 1px solid #2b2d34;
+        margin: 0 -28px 32px;
+        padding: 14px 28px 15px;
+        background: rgba(16, 17, 20, 0.82);
+        -webkit-backdrop-filter: blur(20px) saturate(1.5);
+        backdrop-filter: blur(20px) saturate(1.5);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.5);
       }
       .picker-row {
         display: flex;
@@ -711,7 +712,7 @@
         gap: 6px;
         overflow-x: auto;
         scrollbar-width: thin;
-        padding-bottom: 3px;
+        padding: 2px;
       }
       .picker-row::-webkit-scrollbar {
         height: 5px;
@@ -726,9 +727,9 @@
         align-items: baseline;
         gap: 7px;
         padding: 7px 13px;
-        border: 1px solid #34373f;
+        border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 999px;
-        background: #1d1f24;
+        background: rgba(255, 255, 255, 0.04);
         color: #b9bcc5;
         font-family: Inter, sans-serif;
         font-size: 11px;
@@ -738,11 +739,12 @@
         transition:
           background 0.15s,
           color 0.15s,
-          border-color 0.15s;
+          border-color 0.15s,
+          box-shadow 0.15s;
       }
       .pbtn:hover {
         color: #fff;
-        border-color: #4b4f5a;
+        background: rgba(255, 255, 255, 0.09);
       }
       .pbtn .code {
         font-weight: 800;
@@ -752,6 +754,7 @@
         background: #fff;
         border-color: #fff;
         color: #17181c;
+        box-shadow: 0 4px 14px -4px rgba(255, 255, 255, 0.35);
       }
       .pbtn[aria-pressed="true"] .code {
         color: #52525b;
@@ -760,34 +763,46 @@
         outline: 2px solid #8ab4ff;
         outline-offset: 2px;
       }
+      .pk-hint {
+        flex: none;
+        color: #6b6e78;
+        font-size: 10px;
+        margin-left: 8px;
+        letter-spacing: 0.02em;
+      }
       .viewbar {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 12px;
+        margin-bottom: 13px;
+        flex-wrap: wrap;
       }
       .seg {
         display: inline-flex;
-        background: #1d1f24;
-        border: 1px solid #34373f;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 999px;
-        padding: 2px;
+        padding: 3px;
         gap: 2px;
       }
       .seg button {
         border: 0;
         background: none;
-        color: #b9bcc5;
+        color: #9aa0ab;
         font:
           600 11px Inter,
           sans-serif;
-        padding: 7px 14px;
+        padding: 6px 14px;
         border-radius: 999px;
         cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
       }
       .seg button[aria-pressed="true"] {
         background: #fff;
         color: #17181c;
+        box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.45);
       }
       .seg button:focus-visible {
         outline: 2px solid #8ab4ff;
@@ -796,6 +811,7 @@
       .viewcount {
         color: #8b8e98;
         font-size: 11px;
+        font-variant-numeric: tabular-nums;
       }
       .stepper {
         margin-left: auto;
@@ -807,15 +823,18 @@
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        border: 1px solid #34373f;
-        background: #1d1f24;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
         color: #fff;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 15px;
         line-height: 1;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
       }
       .stepper button:hover {
-        border-color: #4b4f5a;
+        background: rgba(255, 255, 255, 0.12);
       }
       .stepper button:focus-visible {
         outline: 2px solid #8ab4ff;
@@ -824,13 +843,7 @@
       html.js.all .stepper {
         display: none;
       }
-      .pk-hint {
-        flex: none;
-        color: #6b6e78;
-        font-size: 10px;
-        margin-left: 6px;
-        letter-spacing: 0.02em;
-      }
+
       @media (max-width: 760px) {
         .pbtn .name,
         .viewcount,
@@ -847,6 +860,7 @@
           background: #fff;
         }
       }
+
 
       /* ── R11 · Analytics ── */
       .R11 .co {
@@ -1690,116 +1704,149 @@
       html.light-canvas .dir-label span {
         color: #64748b;
       }
+
+      html.light-canvas.view-grid .dir {
+        background: #fff;
+        border-color: #e2e8f0;
+      }
       html.light-canvas .picker {
-        background: rgba(248, 249, 251, 0.94);
-        border-bottom-color: #cbd5e1;
+        background: rgba(248, 249, 251, 0.85);
+        border-bottom-color: #e2e8f0;
+        box-shadow: 0 12px 32px -16px rgba(15, 23, 42, 0.18);
       }
       html.light-canvas .pbtn {
         background: #fff;
-        border-color: #cbd5e1;
+        border-color: #e2e8f0;
         color: #334155;
       }
       html.light-canvas .pbtn:hover {
-        border-color: #94a3b8;
+        background: #f1f5f9;
         color: #0f172a;
+      }
+      html.light-canvas .pbtn .code {
+        color: #94a3b8;
       }
       html.light-canvas .pbtn[aria-pressed="true"] {
         background: #0f172a;
         color: #fff;
         border-color: #0f172a;
+        box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.4);
+      }
+      html.light-canvas .pbtn[aria-pressed="true"] .code {
+        color: #cbd5e1;
+      }
+      html.light-canvas .seg {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
       }
       html.light-canvas .seg button {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
-        color: #475569;
+        color: #64748b;
       }
       html.light-canvas .seg button:hover {
         color: #0f172a;
       }
       html.light-canvas .seg button[aria-pressed="true"] {
-        background: #fff;
-        border-color: #94a3b8;
-        color: #0f172a;
+        background: #0f172a;
+        color: #fff;
+        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.35);
       }
       html.light-canvas .quick-jump select {
         background: #fff;
-        border-color: #cbd5e1;
+        border-color: #e2e8f0;
         color: #0f172a;
       }
       html.light-canvas .stepper button,
-      html.light-canvas .tools-group button {
-        background: #fff;
-        border-color: #cbd5e1;
-        color: #334155;
-      }
-      html.light-canvas .tools-group button.active {
-        background: #0f172a;
-        color: #fff;
-        border-color: #0f172a;
-      }
-      html.light-canvas.view-grid .dir {
+      html.light-canvas .icon-btn {
         background: #fff;
         border-color: #e2e8f0;
+        color: #334155;
+      }
+      html.light-canvas .stepper button:hover,
+      html.light-canvas .icon-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      html.light-canvas .zoom-seg {
+        border-color: #e2e8f0;
+      }
+      html.light-canvas .zoom-btn {
+        color: #64748b;
+      }
+      html.light-canvas .zoom-btn:hover {
+        color: #0f172a;
+      }
+      html.light-canvas .zoom-btn.active {
+        background: #0f172a;
+        color: #fff;
+      }
+      html.light-canvas .viewcount {
+        color: #64748b;
       }
 
-      /* ── Modern Toolbar Additions ── */
+      /* ── picker widgets: quick-jump, zoom, theme ── */
       .quick-jump select {
-        background: #1e2026;
-        border: 1px solid #34373f;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         color: #e2e8f0;
         font-family: Inter, sans-serif;
         font-size: 11px;
         font-weight: 600;
-        padding: 5px 12px;
+        padding: 6px 14px;
         cursor: pointer;
         outline: none;
+        max-width: 230px;
       }
       .quick-jump select:focus {
-        border-color: #3b82f6;
+        border-color: #8ab4ff;
       }
       .tools-group {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-left: auto;
       }
       .zoom-seg {
         display: inline-flex;
-        border: 1px solid #34373f;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         overflow: hidden;
       }
       .zoom-btn {
-        background: #17181c;
+        background: transparent;
         border: none;
         color: #94a3b8;
         font-family: Inter, sans-serif;
         font-size: 10px;
         font-weight: 600;
-        padding: 4px 8px;
+        padding: 5px 10px;
         cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
       }
       .zoom-btn:hover {
         color: #fff;
       }
       .zoom-btn.active {
-        background: #3b82f6;
+        background: rgba(255, 255, 255, 0.14);
         color: #fff;
       }
       .icon-btn {
-        background: #1e2026;
-        border: 1px solid #34373f;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         color: #cbd5e1;
         font-family: Inter, sans-serif;
         font-size: 11px;
         font-weight: 600;
-        padding: 5px 11px;
+        padding: 6px 13px;
         cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
       }
       .icon-btn:hover {
-        border-color: #60a5fa;
+        background: rgba(255, 255, 255, 0.12);
         color: #fff;
       }
 
@@ -2092,10 +2139,286 @@
         border-top: 0.3mm double #111;
         border-bottom: 0.3mm double #111;
       }
+
+
+
+
+
+      /* ── R-AN · Hairline Ledger ── */
+      .R-AN .mast {
+        border-bottom: 0.1mm solid #d4d4d8;
+        padding-bottom: 3mm;
+        margin-bottom: 4mm;
+      }
+      .R-AN .co {
+        font-weight: 500;
+        letter-spacing: 0.02em;
+      }
+      .R-AN .filter b {
+        font-weight: 600;
+        letter-spacing: 0.14em;
+      }
+      .R-AN .stamp {
+        color: #a1a1aa;
+      }
+      .R-AN .stamp b {
+        color: #52525b;
+        font-weight: 500;
+      }
+      .R-AN th {
+        background: none;
+        color: #a1a1aa;
+        font-size: 5.8pt;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        border-bottom: 0.25mm solid #111;
+        padding: 2mm 1.4mm;
+      }
+      .R-AN td {
+        border-bottom: 0.1mm solid #ececee;
+        padding: 2mm 1.4mm;
+      }
+      .R-AN .total td {
+        background: none;
+        border-top: 0.25mm solid #111;
+        border-bottom: none;
+        font-weight: 600;
+      }
+      .R-AN .pfoot {
+        border-top: 0.1mm solid #d4d4d8;
+      }
+
+      /* ── R-AO · Rail ── */
+      .R-AO {
+        box-shadow: inset 3mm 0 0 #111;
+      }
+      .R-AO .mast {
+        padding-left: 2mm;
+        margin-bottom: 4mm;
+      }
+      .R-AO .co {
+        font-weight: 800;
+        letter-spacing: -0.015em;
+      }
+      .R-AO .filter b {
+        letter-spacing: 0.2em;
+      }
+      .R-AO th {
+        background: none;
+        color: #111;
+        font-weight: 800;
+        font-size: 6.2pt;
+        letter-spacing: 0.14em;
+        border-bottom: 0.5mm solid #111;
+        padding: 2mm 1.4mm;
+      }
+      .R-AO td {
+        border-bottom: 0.15mm solid #e4e4e7;
+      }
+      .R-AO .total td {
+        background: #f4f4f5;
+        border-top: none;
+        border-bottom: none;
+        box-shadow: inset 0.8mm 0 0 #111;
+      }
+      .R-AO .pfoot {
+        border-top: 0.3mm solid #111;
+      }
+
+      /* ── R-AP · Pill Tag ── */
+      .R-AP .mast {
+        margin-bottom: 4mm;
+      }
+      .R-AP .filter b {
+        background: #111;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0.8mm 3.2mm;
+        letter-spacing: 0.16em;
+        font-size: 6.4pt;
+      }
+      .R-AP .stamp b {
+        background: #f4f4f5;
+        border-radius: 999px;
+        padding: 0.7mm 2.8mm;
+        display: inline-block;
+      }
+      .R-AP thead th {
+        background: none;
+        color: #71717a;
+        font-size: 5.8pt;
+        letter-spacing: 0.14em;
+        border-bottom: 0.3mm solid #111;
+      }
+      .R-AP tbody tr:nth-child(even) td {
+        background: #fafafa;
+      }
+      .R-AP td {
+        border-bottom: none;
+      }
+      .R-AP .total td {
+        background: #111;
+        color: #fff;
+        border-top: none;
+      }
+      .R-AP .total td:first-child {
+        border-radius: 2mm 0 0 2mm;
+      }
+      .R-AP .total td:last-child {
+        border-radius: 0 2mm 2mm 0;
+      }
+      .R-AP .pfoot {
+        border-top: 0.2mm solid #e4e4e7;
+      }
+
+      /* ── R-AQ · Outline Type ── */
+      .R-AQ .mast {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.6mm;
+        margin-bottom: 4mm;
+      }
+      .R-AQ .co {
+        font-size: 24pt;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: transparent;
+        -webkit-text-stroke: 0.3mm #111;
+        line-height: 1;
+      }
+      .R-AQ.port .co {
+        font-size: 19pt;
+      }
+      .R-AQ .filter {
+        text-align: center;
+      }
+      .R-AQ .stamp {
+        text-align: center;
+        display: flex;
+        gap: 4mm;
+      }
+      .R-AQ .stamp b {
+        display: inline;
+      }
+      .R-AQ th {
+        background: none;
+        color: #111;
+        font-weight: 800;
+        font-size: 6pt;
+        letter-spacing: 0.12em;
+        border-top: 0.5mm solid #111;
+        border-bottom: 0.5mm solid #111;
+        padding: 2mm 1.4mm;
+      }
+      .R-AQ td {
+        border-bottom: 0.1mm solid #d4d4d8;
+      }
+      .R-AQ .total td {
+        background: none;
+        border-top: 0.5mm solid #111;
+        border-bottom: 0.5mm solid #111;
+        font-size: 9pt;
+
+      }
+      /* ── R-AR · Slate Card ── */
+      .R-AR {
+        background: #f1f3f5;
+      }
+      .R-AR .mast {
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.4mm;
+        padding: 3mm 4mm;
+        margin-bottom: 3mm;
+      }
+      .R-AR .co {
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .R-AR table {
+        background: #fff;
+        border: 0.2mm solid #e2e8f0;
+        border-radius: 2.4mm;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+      }
+      .R-AR thead th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 5.8pt;
+        letter-spacing: 0.12em;
+        border-bottom: 0.2mm solid #e2e8f0;
+        padding: 2mm 1.4mm;
+      }
+      .R-AR td {
+        border-bottom: 0.1mm solid #eef2f7;
+      }
+      .R-AR .total td {
+        background: #0f172a;
+        color: #fff;
+        border-top: none;
+        border-bottom: none;
+      }
+      .R-AR .total .tlabel {
+        color: #e2e8f0;
+      }
+      .R-AR .pfoot {
+        color: #94a3b8;
+        border-top: none;
+      }
+
+      /* ── R-AS · Dotted Memo ── */
+      .R-AS {
+        font-family: "Courier New", Courier, monospace;
+      }
+      .R-AS .co {
+        font-family: inherit;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+      }
+      .R-AS .filter,
+      .R-AS .stamp,
+      .R-AS .pfoot {
+        font-family: inherit;
+      }
+      .R-AS .mast {
+        border-bottom: 0.25mm dotted #71717a;
+        padding-bottom: 2.4mm;
+        margin-bottom: 3mm;
+      }
+      .R-AS th {
+        font-family: inherit;
+        background: none;
+        color: #111;
+        font-weight: 700;
+        font-size: 6.4pt;
+        letter-spacing: 0.1em;
+        border-bottom: 0.25mm dotted #111;
+        padding: 1.8mm 1.4mm;
+      }
+      .R-AS td {
+        font-family: inherit;
+        border-bottom: 0.15mm dotted #d4d4d8;
+      }
+      .R-AS .total td {
+        font-family: inherit;
+        background: none;
+        border-top: 0.25mm dotted #111;
+        border-bottom: 0.25mm dotted #111;
+      }
+      .R-AS .pfoot {
+        border-top: 0.25mm dotted #71717a;
+      }
+
+      }
+      .R-AQ .pfoot {
+        border-top: 0.5mm solid #111;
     </style>
   </head>
   <body>
-    <h1>Sales challan report — 34 formats × portrait + landscape</h1>
+    <h1>Sales challan report — 40 formats × portrait + landscape</h1>
     <p class="note">
       Same report data as your reference (SRE 08082026.pdf): 11 cartons of
       challan 267, party-wise, one date, grand total. Every format comes in both
@@ -7842,6 +8165,24 @@
             "Fine Certificate",
             "Gallery double outline · formal Kataria seal",
           ],
+          [
+            "R-AN",
+            "Hairline Ledger",
+            "Ultra-thin rules · airy spacing · quiet labels",
+          ],
+          ["R-AO", "Rail", "Bold left rail · heavy header rule · inset totals"],
+          [
+            "R-AP",
+            "Pill Tag",
+            "Pill report title · soft zebra rows · dark totals pill",
+          ],
+          [
+            "R-AQ",
+            "Outline Type",
+            "Outlined display masthead · heavy framing rules",
+          ],
+          ["R-AR", "Slate Card", "Soft gray canvas · floating white cards"],
+          ["R-AS", "Dotted Memo", "Monospace memo · dotted separators"],
         ];
         variants.forEach(function (item) {
           var code = item[0],
