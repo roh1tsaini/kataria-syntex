@@ -26,7 +26,7 @@ export type Numbering = NumberingConfig;
 /**
  * Formats a challan number: prefix + padded seq + suffix / FY short.
  * e.g. 7 + CH/ + 3 + "2026-27" → "CH/007/27"
- * Shared single source — server and offline both import from here.
+ * Single source for challan numbering formatting.
  *
  * @internal Also reachable through formatNumberForType, the unified
  * client formatter.
@@ -73,27 +73,4 @@ export function formatNumberForType(
     return formatChallanNumber(numbering, type, seq, fyLabel);
   }
   return formatEntryNumber(numbering, type, seq);
-}
-
-/**
- * Best-effort inverse of formatChallanNumber: extracts the numeric seq
- * from a number string using the current numbering config.
- * Returns null when the shape doesn't match.
- */
-export function parseSeqFromNumber(
-  numbering: Numbering,
-  type: "sales" | "outward",
-  challanNumber: string,
-  fyLabel: string,
-): number | null {
-  const { prefix, suffix, minDigits } = numbering[type];
-  const tail = `/${fyLabel.split("-")[1] ?? fyLabel}`;
-  let s = challanNumber;
-  if (!s.startsWith(prefix)) return null;
-  s = s.slice(prefix.length);
-  const stem = suffix + tail;
-  if (!s.endsWith(stem)) return null;
-  s = s.slice(0, -stem.length);
-  if (!/^\d+$/.test(s) || s.length < minDigits) return null;
-  return Number.parseInt(s, 10);
 }

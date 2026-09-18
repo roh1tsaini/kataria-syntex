@@ -209,16 +209,13 @@ challansRoute.post("/", requirePermission("create_challan"), async (c) => {
     c.get("auth").userId,
     parsed.data,
   );
-  if ("error" in result)
-    return c.json(
-      {
-        error: result.error,
-        ...("suggestion" in result && result.suggestion
-          ? { suggestion: result.suggestion }
-          : {}),
-      },
-      "status" in result ? (result.status as 409) : 400,
+  if ("error" in result) {
+    return apiError(
+      c,
+      result.error,
+      "status" in result && result.status ? result.status : 400,
     );
+  }
   publishChanges(
     c.env,
     c.executionCtx,
@@ -287,18 +284,26 @@ challansRoute.delete("/:id", requirePermission("delete_challan"), async (c) => {
     .where(eq(jobWorkReturnItems.challanId, existing.id));
   if (returnRows.length > 0) return apiError(c, "challan_has_returns", 409);
 
-  await db.batch([
-    db
-      .delete(stockEntries)
-      .where(
-        and(
-          eq(stockEntries.sourceRefId, existing.id),
-          eq(stockEntries.workspaceId, workspaceId),
+  try {
+    await db.batch([
+      db
+        .delete(stockEntries)
+        .where(
+          and(
+            eq(stockEntries.sourceRefId, existing.id),
+            eq(stockEntries.workspaceId, workspaceId),
+          ),
         ),
-      ),
-    db.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
-    db.delete(challans).where(eq(challans.id, existing.id)),
-  ]);
+      db.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
+      db.delete(challans).where(eq(challans.id, existing.id)),
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/FOREIGN KEY constraint failed/i.test(msg)) {
+      return apiError(c, "challan_has_returns", 409);
+    }
+    throw err;
+  }
   publishChanges(
     c.env,
     c.executionCtx,

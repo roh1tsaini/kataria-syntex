@@ -1,7 +1,7 @@
 import { type Context } from "hono";
 
 import { z } from "zod";
-import { setCookie } from "hono/cookie";
+import { setCookie, deleteCookie } from "hono/cookie";
 import { and, eq } from "drizzle-orm";
 import { type Db } from "../lib/db";
 import type { Env } from "../env";
@@ -113,6 +113,15 @@ export function setSessionCookie(c: AuthCtx, token: string) {
     sameSite: "Lax",
     path: "/",
     maxAge: SESSION_MAX_AGE,
+  });
+}
+
+export function clearSessionCookie(c: AuthCtx) {
+  deleteCookie(c, SESSION_COOKIE, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: isHttpsRequest(c) || c.env.APP_ENV === "production",
   });
 }
 

@@ -222,6 +222,15 @@ function AddMemberForm() {
   );
 }
 
+function permsEqual(
+  a: readonly Permission[],
+  b: readonly Permission[],
+): boolean {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a);
+  return b.every((p) => setA.has(p));
+}
+
 function MemberRow({
   member,
   canManage,
@@ -235,7 +244,7 @@ function MemberRow({
   canManage: boolean;
   isPrimaryAdmin: boolean;
   busy: boolean;
-  onPermissionsChange: (perms: Permission[]) => void;
+  onPermissionsChange: (perms: Permission[]) => Promise<boolean>;
   onRemove: () => void;
   onTransfer: () => void;
 }) {
@@ -243,11 +252,29 @@ function MemberRow({
   const [draftPerms, setDraftPerms] = useState<Permission[]>(
     member.permissions,
   );
+  const [basePerms, setBasePerms] = useState<Permission[]>(member.permissions);
+
+  useEffect(() => {
+    if (!editing) {
+      setDraftPerms(member.permissions);
+      setBasePerms(member.permissions);
+    }
+  }, [member.permissions, editing]);
+
+  const hasConflict = editing && !permsEqual(member.permissions, basePerms);
 
   const togglePerm = (perm: Permission) => {
     setDraftPerms((prev) =>
       prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm],
     );
+  };
+
+  const handleSave = async () => {
+    const ok = await onPermissionsChange(draftPerms);
+    if (ok) {
+      setEditing(false);
+      setBasePerms(draftPerms);
+    }
   };
 
   return (
@@ -297,8 +324,15 @@ function MemberRow({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setEditing(!editing);
-                    setDraftPerms(member.permissions);
+                    if (editing) {
+                      setDraftPerms(member.permissions);
+                      setBasePerms(member.permissions);
+                      setEditing(false);
+                    } else {
+                      setDraftPerms(member.permissions);
+                      setBasePerms(member.permissions);
+                      setEditing(true);
+                    }
                   }}
                   disabled={busy}
                 >
@@ -322,6 +356,23 @@ function MemberRow({
       </div>
       {editing && (
         <div className="mt-3 space-y-3 rounded-lg border border-border bg-muted/50 p-4">
+          {hasConflict && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-warning/25 bg-warning/10 p-2.5 text-xs text-warning">
+              <span>Permissions were updated on another device.</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setDraftPerms(member.permissions);
+                  setBasePerms(member.permissions);
+                }}
+              >
+                Load latest
+              </Button>
+            </div>
+          )}
           <div className="flex flex-wrap gap-1.5">
             {BUNDLES.map((b) => (
               <Button
@@ -364,10 +415,7 @@ function MemberRow({
           </div>
           <Button
             size="sm"
-            onClick={() => {
-              onPermissionsChange(draftPerms);
-              setEditing(false);
-            }}
+            onClick={() => void handleSave()}
             disabled={busy || draftPerms.length === 0}
           >
             Save permissions
@@ -404,16 +452,18 @@ export function MembersPage() {
     memberId: string,
     fn: () => Promise<void>,
     success?: string,
-  ) => {
+  ): Promise<boolean> => {
     setError(null);
     setBusyId(memberId);
     try {
       await fn();
       if (success) toastSuccess(success);
+      return true;
     } catch (err) {
       const msg = friendlyError(err);
       setError(msg);
       toastError("Action failed", msg);
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -476,7 +526,7 @@ export function MembersPage() {
                     isPrimaryAdmin={isPrimaryAdmin}
                     busy={busyId === m.id}
                     onPermissionsChange={(perms) =>
-                      void run(
+                      run(
                         m.id,
                         () => updateMemberPermissions(m.id, perms),
                         `${m.name}'s permissions updated.`,

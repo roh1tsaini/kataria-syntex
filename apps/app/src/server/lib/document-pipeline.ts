@@ -12,13 +12,10 @@
  */
 
 import { and, asc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
-import type { BatchItem } from "drizzle-orm/batch";
 import {
   challanTotals,
-  formatChallanNumber,
   formatNumberForType,
   fyForDate,
-  parseSeqFromNumber,
   round3,
   type ApiCode,
   type ChallanBody,
@@ -699,9 +696,10 @@ export async function jobWorkBalances(
 }
 
 /**
- * Batched balance for N challans at once: two grouped SUM queries total,
- * regardless of N. `excludeReturnId` drops one return's items (edit path —
- * its old items still exist until the batch commits).
+ * Batched balance for N challans at once: reads challan header sent weights
+ * and one grouped SUM query for returns, regardless of N. `excludeReturnId`
+ * drops one return's items (edit path — its old items still exist until the
+ * batch commits).
  */
 async function getChallanBalances(
   d: Queryable,
@@ -714,17 +712,14 @@ async function getChallanBalances(
 
   const sentRows = await d
     .select({
-      challanId: challanItems.challanId,
-      total: sql<number>`COALESCE(SUM(${challanItems.netWt}), 0)`.mapWith(
-        Number,
-      ),
+      id: challans.id,
+      totalNetWt: challans.totalNetWt,
     })
-    .from(challanItems)
-    .where(inArray(challanItems.challanId, challanIds))
-    .groupBy(challanItems.challanId);
+    .from(challans)
+    .where(inArray(challans.id, challanIds));
   for (const r of sentRows) {
-    const cur = result.get(r.challanId);
-    if (cur) cur.sent = round3(r.total);
+    const cur = result.get(r.id);
+    if (cur) cur.sent = r.totalNetWt;
   }
 
   const returnedMap = await returnedTotalsByChallan(
@@ -980,7 +975,7 @@ async function buildChallanItems(
 
 export type ChallanResult =
   | { ok: true; challan: ChallanRow; items: ChallanItemRow[] }
-  | { error: ApiCode; suggestion?: string; status?: 409 };
+  | { error: ApiCode; status?: 400 | 404 | 409 };
 
 export async function createChallan(
   d: Db,
@@ -990,16 +985,16 @@ export async function createChallan(
 ): Promise<ChallanResult> {
   const date = toDate(input.date);
 
-  // Idempotency: an offline clientRef that already exists answers with the
-  // stored challan instead of creating a duplicate.
-  if (input.offline) {
+  // Idempotency: a clientRef that already exists answers with the stored
+  // challan instead of creating a duplicate.
+  if (input.clientRef) {
     const rows = await d
       .select()
       .from(challans)
       .where(
         and(
           eq(challans.workspaceId, workspaceId),
-          eq(challans.clientRef, input.offline.clientRef),
+          eq(challans.clientRef, input.clientRef),
         ),
       );
     const row = rows[0];
@@ -1030,83 +1025,9 @@ export async function createChallan(
   const company = await getOrCreateCompany(d, workspaceId);
   const config = parseNumbering(company.numbering);
 
-  let challanNumber: string;
-  let fyId: string;
-  let fyCatchUp: BatchItem<"sqlite"> | null = null;
-  if (
-    input.offline?.challanNumber != null &&
-    input.offline.seq != null &&
-    input.offline.fyLabel != null
-  ) {
-    const fyRow = await getOrCreateFyForDate(d, workspaceId, date);
-    const fy = fyRow;
-    if (fyRow.label !== input.offline.fyLabel) return { error: "fy_mismatch" };
-    // Device-issued numbers must parse back to the claimed seq under the
-    // workspace's numbering config — an arbitrary string would otherwise be
-    // stored verbatim and inflate the FY counter.
-    if (
-      parseSeqFromNumber(
-        config,
-        input.type,
-        input.offline.challanNumber,
-        fyRow.label,
-      ) !== input.offline.seq
-    )
-      return { error: "invalid_challan" };
-    const clash = await d
-      .select({ id: challans.id })
-      .from(challans)
-      .where(
-        and(
-          eq(challans.workspaceId, workspaceId),
-          eq(challans.financialYearId, fy.id),
-          eq(challans.challanNumber, input.offline.challanNumber),
-        ),
-      );
-    if (clash.length) {
-      const counter =
-        input.type === "sales" ? fyRow.salesNext : fyRow.outwardNext;
-      return {
-        error: "challan_number_conflict",
-        suggestion: formatChallanNumber(
-          config,
-          input.type,
-          counter,
-          fyRow.label,
-        ),
-        status: 409 as const,
-      };
-    }
-    challanNumber = input.offline.challanNumber;
-    fyId = fy.id;
-    // Device-issued number: catch the counter up monotonically (no CAS —
-    // it only ever moves forward) in the same batch as the inserts.
-    const next = input.offline.seq + 1;
-    fyCatchUp =
-      input.type === "sales"
-        ? d
-            .update(financialYears)
-            .set({
-              salesNext: sql`max(${financialYears.salesNext}, ${next})`,
-            })
-            .where(eq(financialYears.id, fy.id))
-        : d
-            .update(financialYears)
-            .set({
-              outwardNext: sql`max(${financialYears.outwardNext}, ${next})`,
-            })
-            .where(eq(financialYears.id, fy.id));
-  } else {
-    const alloc = await allocatedNumber(
-      d,
-      workspaceId,
-      date,
-      input.type,
-      config,
-    );
-    challanNumber = alloc.number;
-    fyId = alloc.fyId;
-  }
+  const alloc = await allocatedNumber(d, workspaceId, date, input.type, config);
+  const challanNumber = alloc.number;
+  const fyId = alloc.fyId;
 
   const totals = challanTotals(items);
   const row = {
@@ -1128,7 +1049,7 @@ export async function createChallan(
     totalTareWt: totals.totalTareWt,
     totalNetWt: totals.totalNetWt,
     createdBy: userId,
-    clientRef: input.offline?.clientRef ?? null,
+    clientRef: input.clientRef ?? null,
     createdAt: nowIso,
     updatedAt: nowIso,
   };
@@ -1147,24 +1068,11 @@ export async function createChallan(
   });
   if (!stockBuilt) return { error: "invalid_color" as const };
   const stockStmts = stockBuilt;
-  try {
-    await d.batch([
-      d.insert(challans).values(row),
-      ...items.map((it) => d.insert(challanItems).values(it)),
-      ...stockStmts,
-      // Order irrelevant: the catch-up touches financial_years, whose row
-      // already exists — it cannot conflict with the challan inserts.
-      ...(fyCatchUp ? [fyCatchUp] : []),
-    ]);
-  } catch (err) {
-    // The pre-batch clash check is TOCTOU — a concurrent insert can still
-    // win. Surface the lost race as the same 409/conflict shape.
-    const msg = err instanceof Error ? err.message : String(err);
-    if (input.offline && /UNIQUE constraint failed/i.test(msg)) {
-      return { error: "challan_number_conflict", status: 409 as const };
-    }
-    throw err;
-  }
+  await d.batch([
+    d.insert(challans).values(row),
+    ...items.map((it) => d.insert(challanItems).values(it)),
+    ...stockStmts,
+  ]);
   return { ok: true as const, challan: row, items };
 }
 
@@ -1310,20 +1218,28 @@ export async function updateChallan(
     updatedAt: nowIso,
   };
 
-  await d.batch([
-    d.update(challans).set(updated).where(eq(challans.id, existing.id)),
-    d
-      .delete(stockEntries)
-      .where(
-        and(
-          eq(stockEntries.sourceRefId, existing.id),
-          eq(stockEntries.workspaceId, workspaceId),
+  try {
+    await d.batch([
+      d.update(challans).set(updated).where(eq(challans.id, existing.id)),
+      d
+        .delete(stockEntries)
+        .where(
+          and(
+            eq(stockEntries.sourceRefId, existing.id),
+            eq(stockEntries.workspaceId, workspaceId),
+          ),
         ),
-      ),
-    d.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
-    ...built.items.map((i) => d.insert(challanItems).values(i)),
-    ...stockStmts,
-  ]);
+      d.delete(challanItems).where(eq(challanItems.challanId, existing.id)),
+      ...built.items.map((i) => d.insert(challanItems).values(i)),
+      ...stockStmts,
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/FOREIGN KEY constraint failed/i.test(msg)) {
+      return { error: "challan_has_returns", status: 409 };
+    }
+    throw err;
+  }
 
   return {
     ok: true,

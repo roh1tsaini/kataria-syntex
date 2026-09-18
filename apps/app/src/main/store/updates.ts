@@ -48,11 +48,12 @@ import {
 import {
   clearStagedApkVersion,
   desktopBridge,
-  detectHost,
   ensureAndroidStaging,
   fetchInstallerManifest,
   initAndroidUpdateNotifications,
   installStagedAndroidApk,
+  isAndroid,
+  isPlainBrowser,
   notifyAndroidUpdateAvailable,
   pluginErrorCode,
   readStagedApkVersion,
@@ -342,7 +343,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
         // re-poll (the user hasn't installed yet, so the manifest is still
         // "newer") must not stage it again; the persisted marker also
         // survives restarts, so a staged release is never re-downloaded.
-        if (detectHost() === "android" && get().status !== "ready") {
+        if (isAndroid() && get().status !== "ready") {
           const staged = readStagedApkVersion();
           if (
             staged === manifest.version &&
@@ -378,7 +379,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
   },
 
   installUpdate: async () => {
-    if (detectHost() === "android") {
+    if (isAndroid()) {
       // Tap-driven: installs the staged APK, staging first when nothing is
       // staged for the known release. A second tap while bytes stream is a
       // no-op, and the native side single-flights too. Only this path can
@@ -550,7 +551,7 @@ export const useUpdates = create<UpdateState>()((set, get) => ({
     // blocking. Native shells cannot self-refresh — they fall through to
     // the dialog. So does a web client that already reloaded for this floor
     // and still gets 426 (the deploy hasn't reached the edge yet).
-    if (detectHost() === "web") {
+    if (isPlainBrowser()) {
       if (floorReloadPending) return;
       if (!floorReloadAttempted(minVersion)) {
         floorReloadPending = true;
@@ -592,7 +593,7 @@ let updateChecksWired = false;
 export function initUpdateChecks(): void {
   if (updateChecksWired) return;
   updateChecksWired = true;
-  if (detectHost() === "android") {
+  if (isAndroid()) {
     // The WebView can still be running the bundle from the APK that was
     // replaced (its cached copy is not invalidated by an install) — self-heal
     // before the manifest poll, since a bundle/APK mismatch also breaks the

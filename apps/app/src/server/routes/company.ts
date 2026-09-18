@@ -15,6 +15,7 @@ import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import type { NumberingConfig } from "../db/schema";
 import { apiError } from "../lib/api-error";
+import { gstinSchema, panSchema } from "@kataria-syntex/shared";
 
 export const companyRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -22,15 +23,8 @@ companyRoute.use("*", requireAuth, resolveMember());
 
 const detailsSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  gstin: z.string().trim().max(15).optional().default(""),
-  pan: z
-    .string()
-    .trim()
-    .length(10)
-    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN")
-    .optional()
-    .or(z.literal(""))
-    .default(""),
+  gstin: gstinSchema,
+  pan: panSchema,
   address: z.string().trim().max(300).optional().default(""),
   phone1: z.string().trim().max(20).optional().default(""),
   phone2: z.string().trim().max(20).optional().default(""),

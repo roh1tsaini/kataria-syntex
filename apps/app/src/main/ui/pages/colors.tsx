@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ArchiveInsteadOfDeleteError } from "@kataria-syntex/app-core";
+import { UNIT_PRESETS } from "@kataria-syntex/shared";
 import {
   usePermission,
   useMasters,
@@ -73,8 +74,6 @@ import {
 import { useDialogDiscard } from "@/ui/hooks/use-dirty-guard";
 import { cn } from "@/ui/lib/cn";
 
-const UNIT_PRESETS = ["g", "mg", "kg", "mL", "L", "%"] as const;
-
 type IngredientDraft = {
   key: string;
   name: string;
@@ -83,7 +82,7 @@ type IngredientDraft = {
   custom: boolean;
 };
 
-const newKey = () => Math.random().toString(36).slice(2);
+const newKey = () => crypto.randomUUID();
 
 function draftFromUnit(unit: string): { unit: string; custom: boolean } {
   return (UNIT_PRESETS as readonly string[]).includes(unit)

@@ -480,15 +480,6 @@
     box-shadow: none;
     outline: none;
   }
-  /* Border-only focus — no halo, so nothing can clip at container edges. */
-  [data-slot="input-group"]:has(
-    [data-slot="input-group-control"]:focus-visible
-  ),
-  [data-slot="input-group"]:focus-within {
-    border-color: var(--ring);
-    box-shadow: none;
-    outline: none;
-  }
 
   .table-row {
     transition: background-color 140ms ease;

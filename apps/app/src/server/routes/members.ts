@@ -18,6 +18,7 @@ import {
   setMemberPermissions,
 } from "../auth/members";
 import { apiError } from "../lib/api-error";
+import { consumeBudget } from "../lib/rate-limit";
 
 export const membersRoute = new Hono<PermsEnv & { Bindings: Env }>();
 
@@ -48,6 +49,26 @@ membersRoute.post("/invite", requirePermission("manage_members"), async (c) => {
   if (perms.length === 0) return apiError(c, "invalid_permissions", 400);
 
   const db = getDb(c.env.DB);
+
+  // Rate-limit invites to prevent bulk account enumeration / identifier probing:
+  // 30 invites per 10 minutes per workspace, and 5 per 10 minutes per identifier.
+  if (
+    !(await consumeBudget(
+      db,
+      `invite:ws:${member.workspaceId}`,
+      30,
+      10 * 60 * 1000,
+    ))
+  ) {
+    return apiError(c, "rate_limited", 429);
+  }
+
+  if (
+    !(await consumeBudget(db, `invite:id:${ident.value}`, 5, 10 * 60 * 1000))
+  ) {
+    return apiError(c, "rate_limited", 429);
+  }
+
   const column = ident.type === "phone" ? users.phone : users.email;
   const existingRows = await db
     .select()

@@ -1,17 +1,11 @@
 import { Hono } from "hono";
-import { deleteCookie } from "hono/cookie";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "../lib/db";
 import { devices, sessions } from "../db/schema";
 
 import { requireAuth } from "../auth/session";
 import { toIso } from "../lib/datetime";
-import {
-  authPayload,
-  SESSION_COOKIE,
-  isHttpsRequest,
-  type AuthEnv,
-} from "./auth-shared";
+import { authPayload, clearSessionCookie, type AuthEnv } from "./auth-shared";
 import { apiError } from "../lib/api-error";
 
 export const authSessionRoute = new Hono<AuthEnv>();
@@ -42,7 +36,7 @@ authSessionRoute.post("/logout", requireAuth, async (c) => {
     .update(sessions)
     .set({ revokedAt: toIso(new Date()) })
     .where(eq(sessions.id, auth.sessionId));
-  deleteCookie(c, SESSION_COOKIE, { path: "/", secure: isHttpsRequest(c) });
+  clearSessionCookie(c);
   return c.json({ ok: true });
 });
 
@@ -90,7 +84,7 @@ authSessionRoute.delete("/devices/:id", requireAuth, async (c) => {
     .where(eq(sessions.deviceId, deviceId));
 
   if (deviceId === auth.deviceId) {
-    deleteCookie(c, SESSION_COOKIE, { path: "/", secure: isHttpsRequest(c) });
+    clearSessionCookie(c);
   }
   return c.json({ ok: true, revokedCurrent: deviceId === auth.deviceId });
 });

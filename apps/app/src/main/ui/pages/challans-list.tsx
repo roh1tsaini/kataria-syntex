@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 
 import { countLabel, TableSkeleton } from "@/ui/components/table-skeleton";
 import {
-  AlertTriangle,
   ArrowUpRight,
   CalendarDays,
   ChevronLeft,
@@ -67,7 +66,7 @@ import {
 import { Skeleton } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
 
-import { fmtBoxes, fmtWt } from "@/ui/lib/format";
+import { fmtBoxes, fmtDate, fmtWt } from "@/ui/lib/format";
 import { type ChallanKind } from "./challans-shared";
 
 function RowMenu({ kind, challan }: { kind: ChallanKind; challan: Challan }) {
@@ -460,15 +459,9 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                               aria-hidden
                             />
                           </Link>
-                          {c.conflict ? (
-                            <span className="ml-1.5 inline-flex items-center gap-1 rounded-sm border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-destructive">
-                              <AlertTriangle className="size-2.5" aria-hidden />
-                              Clash
-                            </span>
-                          ) : null}
                         </td>
                         <td className="py-2.5 pr-3 font-medium tabular-nums text-muted-foreground whitespace-nowrap">
-                          {c.date}
+                          {fmtDate(c.date)}
                         </td>
                         <td className="py-2.5 pr-3 max-w-[200px]">
                           <div className="truncate font-semibold">
@@ -528,15 +521,6 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                             >
                               {c.fyLabel}
                             </Badge>
-                            {c.conflict ? (
-                              <span className="inline-flex items-center gap-1 rounded-sm border border-destructive/20 bg-destructive/10 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-destructive">
-                                <AlertTriangle
-                                  className="size-2.5"
-                                  aria-hidden
-                                />{" "}
-                                Clash
-                              </span>
-                            ) : null}
                           </div>
                           <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CalendarDays
@@ -544,7 +528,7 @@ export function ChallanListPage({ kind }: { kind: ChallanKind }) {
                               aria-hidden
                             />
                             <span className="font-medium tabular-nums">
-                              {c.date}
+                              {fmtDate(c.date)}
                             </span>
                             <span
                               className="size-1 rounded-full bg-border shrink-0"

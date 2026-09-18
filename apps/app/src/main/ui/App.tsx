@@ -146,6 +146,8 @@ export function App() {
     // Boots masters pickers from the offline cache; safe before bootstrap
     // resolves — the live fetch overwrites whatever the cache holds.
     hydrateMastersCache();
+    // Bootstrap is fully self-contained: catches network errors, 401s, and
+    // falls back to cached session + company or guest status (no unhandled rejections).
     void bootstrap();
     // Update wiring for every host: the boot manifest check + 4h poll (a web
     // deploy applies itself on the next navigation — no surface, no reload);

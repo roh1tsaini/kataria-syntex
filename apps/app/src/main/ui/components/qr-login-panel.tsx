@@ -52,7 +52,14 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   useEffect(() => {
     if (!pairing) return;
     let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const schedule = () => {
+      if (cancelled) return;
+      timer = setTimeout(() => {
+        void tick();
+      }, POLL_INTERVAL_MS);
+    };
 
     const tick = async () => {
       if (cancelled) return;
@@ -60,27 +67,30 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
       // UI already shows as expired.
       if (Date.now() >= new Date(pairing.expiresAt).getTime()) {
         setPolling("expired");
-        if (timer) clearInterval(timer);
         return;
       }
       try {
         const status = await pollQrLogin(pairing.code);
         if (cancelled) return;
-        if (status === "ok") return;
-        if (status !== "pending") {
+        if (status === "ok") {
+          // Session applied to store; stop polling immediately.
+          return;
+        }
+        if (status === "pending") {
+          schedule();
+        } else {
           setPolling(status);
-          if (timer) clearInterval(timer);
         }
       } catch {
-        // transient network error — keep polling
+        // Transient network error — retry on next interval without overlap.
+        schedule();
       }
     };
 
     void tick();
-    timer = setInterval(() => void tick(), POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
-      if (timer) clearInterval(timer);
+      if (timer) clearTimeout(timer);
     };
   }, [pairing, pollQrLogin]);
 

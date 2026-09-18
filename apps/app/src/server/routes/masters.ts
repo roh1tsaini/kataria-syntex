@@ -23,6 +23,7 @@ import { resolveMember, requirePermission, type PermsEnv } from "../auth/perms";
 import { requireAuth } from "../auth/session";
 import { apiError } from "../lib/api-error";
 import { publishChanges } from "../realtime/publish";
+import { gstinSchema } from "@kataria-syntex/shared";
 
 // Colors and deniers are referenced two different ways: by FK (recipes, and the
 // four *_items tables that carry color_id/denier_id) and by the snapshot
@@ -261,7 +262,7 @@ const customerBody = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().max(20).optional().default(""),
   address: z.string().trim().max(300).optional().default(""),
-  gstin: z.string().trim().max(15).optional().default(""),
+  gstin: gstinSchema,
 });
 
 const jobWorkerBody = z.object({
@@ -285,7 +286,7 @@ const supplierBody = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().max(20).optional().default(""),
   address: z.string().trim().max(300).optional().default(""),
-  gstin: z.string().trim().max(15).optional().default(""),
+  gstin: gstinSchema,
 });
 
 type MasterTable = SQLiteTable & {
@@ -310,6 +311,10 @@ function registerMaster<TInput>(
   ) => Record<string, unknown>,
   toUpdateFields: (parsed: TInput, nowIso: string) => Record<string, unknown>,
 ) {
+  // Master lists are open to all authenticated workspace members (requireAuth +
+  // resolveMember applied at router root) so dropdown pickers across challans,
+  // packing, returns, and raw materials function. Mutations below are gated
+  // by requirePermission("manage_masters").
   mastersRoute.get(`/${path}`, async (c) => {
     const db = getDb(c.env.DB);
     const rows = await db

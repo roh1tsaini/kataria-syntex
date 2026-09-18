@@ -80,7 +80,7 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
-    host: "0.0.0.0",
+    host: process.env.KC_DEV_LAN === "1" ? "0.0.0.0" : "localhost",
     allowedHosts: [".trycloudflare.com"],
     proxy: {
       "/api": {
@@ -93,7 +93,7 @@ export default defineConfig({
   },
   preview: {
     port: 1420,
-    host: "0.0.0.0",
+    host: process.env.KC_DEV_LAN === "1" ? "0.0.0.0" : "localhost",
     allowedHosts: [".trycloudflare.com"],
     proxy: {
       "/api": {

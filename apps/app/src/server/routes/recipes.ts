@@ -91,8 +91,10 @@ function isUniqueRecipeConflict(err: unknown): boolean {
   );
 }
 
-/** Workspace-scoped list of recipes with color/denier names joined in. */
-recipesRoute.get("/", requirePermission("manage_masters"), async (c) => {
+/** Workspace-scoped list of recipes with color/denier names joined in.
+ * All authenticated workspace members may read recipes (for pickers and detail
+ * links); mutations stay manage_masters-gated per APP.md §7. */
+recipesRoute.get("/", async (c) => {
   const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);
   const rows = await db

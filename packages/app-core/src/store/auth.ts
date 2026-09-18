@@ -7,6 +7,7 @@ import {
   cacheSession,
   clearAccountCache,
   clearSessionCache,
+  readCompany,
   readSession,
 } from "../offline/core";
 import { invalidateDataCaches } from "../data-caches";
@@ -273,10 +274,18 @@ export const useAuth = create<AuthState>()((set, get) => ({
     // starts usable, then /auth/me reconciles with the server.
     const cached = readSession();
     if (cached && current()) {
+      const cachedComp = readCompany();
       set({
         status: "authed",
         user: cached.user,
         workspace: cachedWorkspace(cached.workspace),
+        ...(cachedComp
+          ? {
+              company: cachedComp.company,
+              currentFy: cachedComp.currentFy,
+              financialYears: cachedComp.financialYears,
+            }
+          : {}),
       });
     }
     try {
@@ -287,13 +296,21 @@ export const useAuth = create<AuthState>()((set, get) => ({
     } catch (err) {
       if (err instanceof ApiError && err.isNetworkError) {
         // Server unreachable: a device that signed in before stays usable
-        // offline with its cached profile (challan creation is queued).
+        // offline with its cached profile.
         const cached = readSession();
         if (cached && current()) {
+          const cachedComp = readCompany();
           set({
             status: "authed",
             user: cached.user,
             workspace: cachedWorkspace(cached.workspace),
+            ...(cachedComp
+              ? {
+                  company: cachedComp.company,
+                  currentFy: cachedComp.currentFy,
+                  financialYears: cachedComp.financialYears,
+                }
+              : {}),
           });
           return;
         }
@@ -496,54 +513,42 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   refreshCompany: async () => {
-    const res = await api<{
-      company: Company;
-      currentFy: FinancialYearInfo;
-      financialYears: (FinancialYearInfo & {
-        salesNext?: number;
-        outwardNext?: number;
-        packingSaleNext?: number;
-        packingJobNext?: number;
-        rawNext?: number;
-      })[];
-    }>("/company", {});
-    set({
-      company: res.company,
-      currentFy: res.currentFy,
-      financialYears: res.financialYears,
-    });
-    // Read cache: company + numbering config + per-FY next counters, so a
-    // device that restarts offline still shows its company details. Numbers
-    // are issued by the server now, so its counters are taken as-is.
-    const counters: Record<
-      string,
-      {
-        sales: number;
-        outward: number;
-        packing_s: number;
-        packing_j: number;
-        raw: number;
+    try {
+      const res = await api<{
+        company: Company;
+        currentFy: FinancialYearInfo;
+        financialYears: (FinancialYearInfo & {
+          salesNext?: number;
+          outwardNext?: number;
+          packingSaleNext?: number;
+          packingJobNext?: number;
+          rawNext?: number;
+        })[];
+      }>("/company", {});
+      set({
+        company: res.company,
+        currentFy: res.currentFy,
+        financialYears: res.financialYears,
+      });
+      cacheCompany({
+        company: res.company,
+        currentFy: res.currentFy,
+        financialYears: res.financialYears,
+      });
+    } catch (err) {
+      if (err instanceof ApiError && err.isNetworkError) {
+        const cached = readCompany();
+        if (cached) {
+          set({
+            company: cached.company,
+            currentFy: cached.currentFy,
+            financialYears: cached.financialYears,
+          });
+          return;
+        }
       }
-    > = {};
-    for (const fy of res.financialYears) {
-      counters[fy.label] = {
-        sales: fy.salesNext ?? 1,
-        outward: fy.outwardNext ?? 1,
-        packing_s: fy.packingSaleNext ?? 1,
-        packing_j: fy.packingJobNext ?? 1,
-        raw: fy.rawNext ?? 1,
-      };
+      throw err;
     }
-    cacheCompany({
-      name: res.company.name,
-      gstin: res.company.gstin,
-      pan: res.company.pan,
-      address: res.company.address,
-      phone1: res.company.phone1,
-      phone2: res.company.phone2,
-      numbering: res.company.numbering,
-      counters,
-    });
   },
 
   saveCompany: async (input) => {

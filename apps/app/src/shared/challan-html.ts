@@ -12,7 +12,7 @@
  * bundled ?url assets; identical bytes everywhere.
  */
 
-export type SheetItem = {
+type SheetItem = {
   boxNo: string;
   lotNo: string;
   cheese: number;
@@ -55,11 +55,18 @@ export type SheetDetail = {
   jobWorker: SheetParty | null;
 };
 
-export type ChallanType = "sales" | "outward";
+import {
+  type ChallanType,
+  CHALLAN_ROWS_PER_PAGE,
+  CHALLAN_SHEET_WIDTH_MM,
+  CHALLAN_SHEET_HEIGHT_MM,
+  CHALLAN_TERMS_AND_CONDITIONS,
+} from "@kataria-syntex/shared";
+export type { ChallanType };
 
-const ROWS_PER_PAGE = 12;
-export const SHEET_W_MM = 210;
-export const SHEET_H_MM = 148;
+const ROWS_PER_PAGE = CHALLAN_ROWS_PER_PAGE;
+export const SHEET_W_MM = CHALLAN_SHEET_WIDTH_MM;
+export const SHEET_H_MM = CHALLAN_SHEET_HEIGHT_MM;
 
 const fmtWt3 = (n: number) => (Number.isFinite(n) ? n.toFixed(3) : "0.000");
 const fmtInt = (n: number) =>
@@ -372,8 +379,7 @@ function footer(
   <div class="terms">
     <h3>Terms &amp; Conditions</h3>
     <ol>
-      <li>Please do not mix different lots.</li>
-      <li>Subject to SURAT jurisdiction.</li>
+      ${CHALLAN_TERMS_AND_CONDITIONS.map((term) => `<li>${esc(term)}</li>`).join("")}
     </ol>
   </div>
   <div class="sign-cell">
@@ -432,6 +438,7 @@ export function buildChallanHtml(input: ChallanHtmlInput): string {
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:; script-src 'none';">
 <title>Challan ${escapeHtml(input.detail.challan.challanNumber)}</title>
 <style>${docCss(input.fonts)}</style>
 </head>

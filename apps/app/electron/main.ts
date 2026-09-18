@@ -408,16 +408,25 @@ function registerIpc(): void {
 const PDF_PARTITION = "kc-pdf";
 
 function hardenPdfSession(): void {
-  session
-    .fromPartition(PDF_PARTITION)
-    .webRequest.onBeforeRequest((details, callback) => {
-      const local =
-        details.url.startsWith("file:") ||
-        details.url.startsWith("data:") ||
-        details.url.startsWith("blob:") ||
-        details.url.startsWith("about:");
-      callback({ cancel: !local });
+  const pdfSession = session.fromPartition(PDF_PARTITION);
+  pdfSession.webRequest.onBeforeRequest((details, callback) => {
+    const local =
+      details.url.startsWith("file:") ||
+      details.url.startsWith("data:") ||
+      details.url.startsWith("blob:") ||
+      details.url.startsWith("about:");
+    callback({ cancel: !local });
+  });
+  pdfSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [
+          "default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:; script-src 'none';",
+        ],
+      },
     });
+  });
 }
 
 /**

@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useUpdates } from "@/store/updates";
-import { detectHost } from "@/lib/platform";
+import { isPlainBrowser } from "@/lib/platform";
 import { useTheme, type ThemePreference } from "@/ui/hooks/use-theme";
 import { SettingsWindow } from "@/ui/components/settings-window";
 import { Skeleton } from "@/ui/components/motion";
@@ -180,7 +180,7 @@ function UpdateRow() {
   const progress = useUpdates((s) => s.progress);
   const [result, setResult] = useState<string | null>(null);
 
-  const web = detectHost() === "web";
+  const web = isPlainBrowser();
   const installable = !web && latestVersion !== null && status === "ready";
   const downloading = status === "downloading";
   // A deploy streaming on web is a readout, not an action — there is nothing

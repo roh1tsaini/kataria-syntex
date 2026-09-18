@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
-  AlertTriangle,
   ArrowLeft,
   CalendarDays,
   Download,
@@ -39,7 +38,7 @@ import {
 import { Skeleton } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
 
-import { fmtBoxes, fmtWt } from "@/ui/lib/format";
+import { fmtBoxes, fmtDate, fmtWt } from "@/ui/lib/format";
 import { type ChallanKind } from "./challans-shared";
 
 export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
@@ -195,20 +194,11 @@ export function ChallanDetailRoute({ kind }: { kind: ChallanKind }) {
               <Badge variant="secondary" className="font-medium tabular-nums">
                 FY {challan.fyLabel}
               </Badge>
-              {challan.conflict ? (
-                <Badge
-                  variant="outline"
-                  className="border-destructive/30 bg-destructive/10 text-destructive gap-1"
-                >
-                  <AlertTriangle className="size-3" aria-hidden />
-                  Clash
-                </Badge>
-              ) : null}
             </div>
             <p className="page-desc mt-2 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="size-3.5" aria-hidden />
-                {challan.date}
+                {fmtDate(challan.date)}
               </span>
               <span
                 className="hidden sm:inline size-1 rounded-full bg-border"

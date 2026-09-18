@@ -7,22 +7,18 @@ import type {
   ChallanBody,
   ChallanDto,
   ChallanItemDto,
+  ChallanType,
 } from "@kataria-syntex/shared";
 
-export type ChallanType = "sales" | "outward";
+export type { ChallanType };
 
 // Server DTO shapes live in @kataria-syntex/shared — one truth for routes and
 // this store.
 export type ChallanItem = ChallanItemDto;
 
-export type Challan = Omit<ChallanDto, "workspaceId"> & {
-  /** Set when the server reports a challan-number clash (409) — two users took
-   * the same number at once. `suggestion` carries the next-free number. */
-  conflict?: boolean;
-  suggestion?: string;
-};
+export type Challan = Omit<ChallanDto, "workspaceId">;
 
-export type ChallanInput = Omit<ChallanBody, "offline">;
+export type ChallanInput = Omit<ChallanBody, "clientRef">;
 
 export type ChallanDetail = {
   challan: Challan;
@@ -219,7 +215,7 @@ export const useChallans = create<ChallansState>()((set, get) => {
       // the editor surfaces as a go-online message while keeping the form.
       const res = await api<{ challan: Challan }>("/challans", {
         method: "POST",
-        body: { ...input, offline: { clientRef } },
+        body: { ...input, clientRef },
       });
       void get().refresh();
       return res.challan;

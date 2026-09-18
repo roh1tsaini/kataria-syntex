@@ -8,7 +8,7 @@ import { devices, sessions } from "../db/schema";
 import { generateId, generateToken, sha256Hex } from "../lib/token";
 import { apiError } from "../lib/api-error";
 
-export type AuthContext = {
+type AuthContext = {
   userId: string;
   sessionId: string;
   deviceId: string;

@@ -28,6 +28,7 @@ import {
   toastSuccess,
   ArchiveInsteadOfDeleteError,
 } from "@kataria-syntex/app-core";
+import { isValidGstin } from "@kataria-syntex/shared";
 import { PageHeader } from "@/ui/components/page-header";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -109,6 +110,7 @@ type TabConfig<I, In> = {
   fields: FieldDef[];
   draftFromItem: (item: I | null) => Record<string, string>;
   draftToInput: (draft: Record<string, string>) => In;
+  validate?: (draft: Record<string, string>) => string | null;
   meta: (item: I) => string;
   empty: string;
   singular: string;
@@ -143,6 +145,13 @@ function MasterFormDialog<I extends { id: string }, In>({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (config.validate) {
+      const vErr = config.validate(draft);
+      if (vErr) {
+        setError(vErr);
+        return;
+      }
+    }
     setBusy(true);
     try {
       const input = config.draftToInput(draft);
@@ -222,10 +231,17 @@ function MasterFormDialog<I extends { id: string }, In>({
                     maxLength={f.maxLength}
                     required={f.key === "name"}
                     value={draft[f.key] ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, [f.key]: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const val =
+                        f.key === "gstin"
+                          ? e.target.value.toUpperCase()
+                          : e.target.value;
+                      setDraft((d) => ({ ...d, [f.key]: val }));
+                    }}
                     placeholder={f.placeholder}
+                    className={
+                      f.key === "gstin" ? "font-mono uppercase" : undefined
+                    }
                     aria-invalid={!!error}
                     aria-describedby={error ? "master-error" : undefined}
                   />
@@ -575,11 +591,18 @@ export function MastersPage() {
       address: i?.address ?? "",
       gstin: i?.gstin ?? "",
     }),
+    validate: (d) => {
+      const gstin = d.gstin?.trim();
+      if (gstin && !isValidGstin(gstin)) {
+        return "Invalid GSTIN format (e.g. 27ABCDE1234F1Z5)";
+      }
+      return null;
+    },
     draftToInput: (d) => ({
       name: d.name.trim(),
-      phone: d.phone,
-      address: d.address,
-      gstin: d.gstin,
+      phone: d.phone.trim(),
+      address: d.address.trim(),
+      gstin: d.gstin.trim().toUpperCase(),
     }),
     meta: (i) => [i.phone, i.address, i.gstin].filter(Boolean).join(" · "),
   };
@@ -698,11 +721,18 @@ export function MastersPage() {
       address: i?.address ?? "",
       gstin: i?.gstin ?? "",
     }),
+    validate: (d) => {
+      const gstin = d.gstin?.trim();
+      if (gstin && !isValidGstin(gstin)) {
+        return "Invalid GSTIN format (e.g. 27ABCDE1234F1Z5)";
+      }
+      return null;
+    },
     draftToInput: (d) => ({
       name: d.name.trim(),
-      phone: d.phone,
-      address: d.address,
-      gstin: d.gstin,
+      phone: d.phone.trim(),
+      address: d.address.trim(),
+      gstin: d.gstin.trim().toUpperCase(),
     }),
     meta: (i) => [i.phone, i.address, i.gstin].filter(Boolean).join(" · "),
   };

@@ -217,3 +217,7 @@ export function isLightShade(hex: string): boolean {
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance > 0.55;
 }
+
+/** Standard measurement unit presets for recipe ingredients. */
+export const UNIT_PRESETS = ["g", "mg", "kg", "mL", "L", "%"] as const;
+export type UnitPreset = (typeof UNIT_PRESETS)[number];

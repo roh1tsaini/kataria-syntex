@@ -186,7 +186,7 @@ the shells do it identically.
   through to the identifier form (`ui/pages/auth.tsx`).
 - **Challan PDF output** — web/desktop call `window.print()` on a print page
   (`ui/pages/challans-print.tsx`); Android shares the server-rendered PDF
-  through the system share sheet (`shareChallanPdfOnAndroid`), because no
+  through the system share sheet (`sharePdfOnAndroid`), because no
   maintained Capacitor plugin prints a file. The button reads "Share / Save
   PDF" on Android, "Print / Save as PDF" elsewhere; the print page's
   auto-fire (350 ms after load) is skipped on Android so a sheet never opens
@@ -337,19 +337,18 @@ delivered.
 Six modules. Counters live on the FY row, allocated by CAS retry
 (lost race → 409 `challan_number_conflict`).
 
-| #   | Document           | Captures                                                             | Writes                                              | Counter                              |
-| --- | ------------------ | -------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------ |
-| 1   | Raw material entry | supplier, challan no, denier/color, net kg, cones, packing, lot      | `raw_material_entries` + items                      | `rawNext`                            |
-| 2   | Job-work challan   | job worker, denier, sacks, net kg, cones (no shade yet)              | `challans` (outward) + items                        | `outwardNext`                        |
-| 3   | Job-work return    | job worker, free `invoiceNo`, items → outward challans, over-receipt | `job_work_returns` + items                          | — (free text)                        |
-| 4   | Packing entry      | type `sale` (dyed) \| `job_work` (raw), sacks/cones, gross−tare      | `packing_entries` + items                           | `packingSaleNext` / `packingJobNext` |
-| 5   | Sales challan      | customer, FY, auto number, items consume packing (exclusive)         | `challans` (sales) + items + `challan_item_sources` | `salesNext`                          |
-| 6   | Color Organiser    | recipe per color + denier: ingredients (g/mg/custom), temp °C, time  | `color_recipes` + ingredients + versions            | —                                    |
+| #   | Document           | Captures                                                             | Writes                                   | Counter                              |
+| --- | ------------------ | -------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------ |
+| 1   | Raw material entry | supplier, challan no, denier/color, net kg, cones, packing, lot      | `raw_material_entries` + items           | `rawNext`                            |
+| 2   | Job-work challan   | job worker, denier, sacks, net kg, cones (no shade yet)              | `challans` (outward) + items             | `outwardNext`                        |
+| 3   | Job-work return    | job worker, free `invoiceNo`, items → outward challans, over-receipt | `job_work_returns` + items               | — (free text)                        |
+| 4   | Packing entry      | type `sale` (dyed) \| `job_work` (raw), sacks/cones, gross−tare      | `packing_entries` + items                | `packingSaleNext` / `packingJobNext` |
+| 5   | Sales challan      | customer, FY, auto number, imports packing lines                     | `challans` (sales) + items               | `salesNext`                          |
+| 6   | Color Organiser    | recipe per color + denier: ingredients (g/mg/custom), temp °C, time  | `color_recipes` + ingredients + versions | —                                    |
 
 Rules:
 
-- Packing consumption is exclusive: `challan_item_sources` has a UNIQUE
-  index on `packing_item_id` — one packed line can feed only one sale item.
+- Packing items can be imported into sales challans as item rows.
 - Job-work return items reference outward challans; over-receipt computed
   per challan (balance excludes the edited return itself).
 - Recipe saves are versioned — last 5 snapshots kept, restore allowed.

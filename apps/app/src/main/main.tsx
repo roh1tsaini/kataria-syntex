@@ -8,9 +8,9 @@ import { initTheme } from "@/ui/hooks/use-theme";
 import {
   configureWebCore,
   desktopBridge,
-  detectHost,
   hydrateAndroidStorage,
   initAndroidDeepLinks,
+  isAndroid,
 } from "@/lib/platform";
 import "@/ui/globals.css";
 
@@ -21,7 +21,7 @@ initTheme();
 configureWebCore(__APP_VERSION__);
 // Android's sync storage is a session map over async Preferences — hydrate it
 // before the first render so the offline engine never reads an empty store.
-if (detectHost() === "android") {
+if (isAndroid()) {
   await hydrateAndroidStorage();
   // Deep links (kataria:// and the release origin's /login/scan/<code>) hand
   // the app a URL on launch or resume. Wired before first render so a

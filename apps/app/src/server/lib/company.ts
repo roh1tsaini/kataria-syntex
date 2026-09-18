@@ -9,10 +9,9 @@ import {
 import {
   DEFAULT_NUMBERING,
   fyForDate as sharedFyForDate,
+  type ChallanType,
 } from "@kataria-syntex/shared";
 import { generateId } from "./token";
-
-type ChallanType = "sales" | "outward";
 
 export const DEFAULT_NUMBERING_JSON = JSON.stringify(DEFAULT_NUMBERING);
 

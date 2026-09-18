@@ -10,6 +10,7 @@ import {
   toastError,
   toastSuccess,
 } from "@kataria-syntex/app-core";
+import { isValidGstin, isValidPan } from "@kataria-syntex/shared";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
@@ -249,7 +250,29 @@ export function CompanyTab() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void run(() => saveCompany(details), "Company details saved.");
+              const gstin = details.gstin.trim();
+              if (gstin && !isValidGstin(gstin)) {
+                setError("Invalid GSTIN format (e.g. 27ABCDE1234F1Z5)");
+                return;
+              }
+              const pan = details.pan.trim();
+              if (pan && !isValidPan(pan)) {
+                setError("Invalid PAN format (e.g. ABCDE1234F)");
+                return;
+              }
+              void run(
+                () =>
+                  saveCompany({
+                    ...details,
+                    name: details.name.trim(),
+                    gstin: gstin.toUpperCase(),
+                    pan: pan.toUpperCase(),
+                    address: details.address.trim(),
+                    phone1: details.phone1.trim(),
+                    phone2: details.phone2.trim(),
+                  }),
+                "Company details saved.",
+              );
             }}
           >
             <Card className="overflow-hidden">
@@ -267,11 +290,13 @@ export function CompanyTab() {
                 <Input
                   id="c-gstin"
                   value={details.gstin}
-                  onChange={(e) => editDetails({ gstin: e.target.value })}
+                  onChange={(e) =>
+                    editDetails({ gstin: e.target.value.toUpperCase() })
+                  }
                   maxLength={15}
                   placeholder="27ABCDE1234F1Z5"
                   disabled={!canEdit}
-                  className="h-10 w-full font-mono sm:w-64"
+                  className="h-10 w-full font-mono uppercase sm:w-64"
                 />
               </SettingsRow>
               <SettingsRow htmlFor="c-pan" label="PAN">
@@ -339,50 +364,53 @@ export function CompanyTab() {
           description="One format for all years — each financial year restarts the sequence at 1 automatically."
         >
           {numbering ? (
-            <MorphGroup className="flex flex-col gap-3">
-              <NumberingGroup
-                type="sales"
-                value={numbering.sales}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ sales: v })}
-              />
-              <NumberingGroup
-                type="outward"
-                value={numbering.outward}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ outward: v })}
-              />
-              <NumberingGroup
-                type="packing_s"
-                value={numbering.packing_s}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ packing_s: v })}
-              />
-              <NumberingGroup
-                type="packing_j"
-                value={numbering.packing_j}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ packing_j: v })}
-              />
-              <NumberingGroup
-                type="raw"
-                value={numbering.raw}
-                disabled={!canEdit}
-                onChange={(v) => editNumbering({ raw: v })}
-              />
-              {canEdit && (
-                <Button
-                  className="self-start"
-                  loading={busy}
-                  onClick={() =>
-                    void run(() => saveNumbering(numbering), "Numbering saved.")
-                  }
-                >
-                  <Save aria-hidden />
-                  Save numbering
-                </Button>
-              )}
-            </MorphGroup>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (canEdit) {
+                  void run(() => saveNumbering(numbering), "Numbering saved.");
+                }
+              }}
+            >
+              <MorphGroup className="flex flex-col gap-3">
+                <NumberingGroup
+                  type="sales"
+                  value={numbering.sales}
+                  disabled={!canEdit}
+                  onChange={(v) => editNumbering({ sales: v })}
+                />
+                <NumberingGroup
+                  type="outward"
+                  value={numbering.outward}
+                  disabled={!canEdit}
+                  onChange={(v) => editNumbering({ outward: v })}
+                />
+                <NumberingGroup
+                  type="packing_s"
+                  value={numbering.packing_s}
+                  disabled={!canEdit}
+                  onChange={(v) => editNumbering({ packing_s: v })}
+                />
+                <NumberingGroup
+                  type="packing_j"
+                  value={numbering.packing_j}
+                  disabled={!canEdit}
+                  onChange={(v) => editNumbering({ packing_j: v })}
+                />
+                <NumberingGroup
+                  type="raw"
+                  value={numbering.raw}
+                  disabled={!canEdit}
+                  onChange={(v) => editNumbering({ raw: v })}
+                />
+                {canEdit && (
+                  <Button type="submit" className="self-start" loading={busy}>
+                    <Save aria-hidden />
+                    Save numbering
+                  </Button>
+                )}
+              </MorphGroup>
+            </form>
           ) : (
             <div className="flex flex-col gap-3" aria-hidden>
               <Skeleton className="h-44 rounded-lg" />

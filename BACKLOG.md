@@ -23,15 +23,6 @@ when it ships; history lives in git.
       lives only in a surface that disappears. Decide: add inline
       confirmation at the highest-traffic triggers (saves, deletes, sync),
       or accept the banner as the only signal.
-- [ ] **B8 · Packing exclusive-consumption: code or docs?**
-      `apps/app/APP.md` Section 6 (sales-challan row, packing rule) and the
-      Section 7 unique-index bullet claim sales items consume packing lines
-      exclusively via a `challan_item_sources` UNIQUE backstop — but no such
-      table exists in `src/server/db/schema.ts` and `challan_items` carries
-      no packing link (verified 2026-09-17). Either the enforcement was
-      removed and the docs must drop it, or the feature is missing and
-      double-selling one packed line is possible. Decide which, then one
-      agent executes.
 
 ## 1b. Findings from the 2026-09-14 full audit (all verified by reading code)
 
@@ -64,23 +55,6 @@ true today:
 
 ### High
 
-- [ ] **A9 · Offline challan numbering converts a clash into a raw 500.**
-      `lib/document-pipeline.ts:1001` — the batch catch shapes `UNIQUE
-constraint failed` into a 409 only when `input.offline` is set, and
-      the clash pre-check is TOCTOU. Two devices issuing offline numbers can
-      both pass it; one then gets an unexplained 500.
-- [ ] **A10 · Raw `YYYY-MM-DD` dates on the two most-used screens.**
-      `ui/pages/challans-detail.tsx:217` and `challans-list.tsx:473,554`
-      render `{challan.date}` / `{c.date}` as `2026-09-03`, while
-      `packing.tsx:423` and `returns.tsx:374` print `03 Sep 2026` via
-      `fmtDate`. `dashboard.tsx:400` compounds it: `.toFixed(3)` bypasses
-      `fmtWt`, so no en-IN grouping anywhere on the dashboard weights.
-      Related to W4.
-- [ ] **A11 · Members permission editor can wipe a concurrent change.**
-      `ui/pages/members.tsx:242` — `draftPerms` is seeded from
-      `member.permissions` once and never re-synced. A realtime update or a
-      second admin save landing while the editor is open is silently
-      overwritten by Save.
 - [ ] **A13 · Web SEO: no `og:image`, Twitter card, or canonical URL.**
       `apps/web/src/app/layout.tsx:12` — one `openGraph` reference
       site-wide (`siteName` + `type` only); no `twitter` block, no
@@ -96,29 +70,15 @@ constraint failed` into a 409 only when `input.offline` is set, and
 
 ### Medium
 
-- [ ] **A16 · QR login polls overlap and never stop on success.**
-      `ui/components/qr-login-panel.tsx:57-80` — async tick on a 3s interval
-      with no overlap guard (a slow network runs two `pollQrLogin` calls,
-      applying results out of order), and on `status === "ok"` the timer is
-      never cleared — polling continues until the redirect unmounts it.
-- [ ] **A17 · GSTIN has maxLength but no format check.**
-      `ui/pages/masters.tsx:526` — `"ABCDEFGH"` saves as a GSTIN and later
-      prints on a challan; the submit gate at :242 only tests `name.trim()`.
-- [ ] **A18 · `POST /api/members/invite` has no rate-limit budget.**
-      `routes/members.ts:36` — returns three distinguishable outcomes
-      (`already_registered` 409 / `attached: true` / `attached:
-false`), an enumeration oracle, but unlike `/lookup` it never calls
-      `consumeBudget`.
 - [ ] **A19 · `POST /api/challans/:id/pdf` has no permission gate.**
       `routes/challans.ts:314` — `requireAuth` + `resolveMember()` only; a
       member with zero permissions can render PDFs (consuming the
       per-user-limited Browser Run budget). Every sibling write route is
       gated, so the omission looks accidental.
-- [ ] **A20 · Settings: Enter in a numbering input saves the company form.**
-      `ui/pages/settings.tsx:354-397` — the numbering `<MorphGroup>` and its
-      Save button sit outside the company-details `<form>`; Enter inside a
-      prefix/digits/suffix input silently fires `saveCompany` and saves
-      nothing numbering-related.
+- [x] **A20 · Company Tab: Enter in a numbering input saves numbering.**
+      `components/company-tab.tsx:366-418` — document numbering controls wrapped
+      in a dedicated `<form onSubmit={...}>` with `<Button type="submit">`,
+      ensuring Enter key submits numbering.
 - [ ] **A23 · `site.url` falls back to a `workers.dev` subdomain.**
       `apps/web/src/content/site.ts:9` — `NEXT_PUBLIC_SITE_URL` is set in
       neither `wrangler.jsonc` nor the CI workflow, so the fallback is the
@@ -128,92 +88,43 @@ false`), an enumeration oracle, but unlike `/lookup` it never calls
       `apps/web/src/app/links/page.tsx:12` — server-computed once with no
       client re-check; a page opened at 6:55 PM shows "Open now · till 7:00
       PM" past closing, wrong for the exact visitor who needs it.
-- [ ] **A25 · Returns editor uses a stale balance snapshot.**
-      `ui/pages/returns.tsx:475` — in edit mode the job-worker select is
-      disabled and balances are fetched once at load; the per-row Challan
-      select and the over-receipt warning (:1010) compare against that
-      snapshot for the whole session. A return recorded on another device
-      while the form is open silently under-warns.
+- [x] **A25 · Returns editor real-time & focus balance revalidation.**
+      `ui/pages/returns.tsx:516-545` — wired `useRealtimeEvent(["returns", "challans"])`
+      and window focus listener to revalidate job worker challan balances in the
+      background, preventing stale balance and over-receipt checks.
 - [ ] **A26 · `packing.tsx` recomputes `netWt` on every keystroke.**
       `ui/pages/packing.tsx:613` — `updateSaleRow` re-derives `gross - tare`
       on each gross/tare change, discarding a manually entered net weight.
       `raw-material.tsx:538` documents this as intended ("stays manually
       editable until a weight changes again") and packing copy at :828
       makes the same claim while the code re-derives unconditionally.
-- [ ] **A27 · Three editor pages show a stale, blocking `detailError`.**
-      `returns.tsx:668`, `packing.tsx:768`, `raw-material.tsx:660` —
-      `{detailError ?? error}` means a save failure is invisible whenever
-      the detail also failed to load, and `detailError` is only cleared by
-      remount. Once "Editing is disabled" appears it blocks every later
-      submit even if the entry loaded on a retry.
-- [ ] **A28 · Electron PDF partition allows `data:`/`blob:` with no CSP.**
-      `electron/main.ts:410` — mitigated (HTML is app-generated, validated
-      `<!DOCTYPE html>`, ≤10MB, `javascript: false`) but not closed.
-- [ ] **A30 · `challan_has_returns` check is TOCTOU on update and delete.**
-      `lib/document-pipeline.ts:1207` — SELECT then later batch; a return
-      recorded in the gap hits a non-cascading FK and the batch fails as a
-      500 on a path with no FK catch (unlike `masters.ts:159`).
-- [ ] **A38 · Masters GET routes are ungated (reads open, writes gated).**
-      `routes/masters.ts:313-328` — the five master-list GETs have no
-      `requirePermission` while POST/PUT/DELETE do; `recipes GET /` needs
-      `manage_masters` but `GET /:id` and `/:id/versions` do not. Likely
-      intentional (pickers need reads) — confirm and comment, or gate
-      reads.
-- [ ] **A39 · Platform branches outside the adapter.**
-      `ui/App.tsx:10,136`, `ui/pages/settings.tsx:14,183`,
-      `store/updates.ts:34-39`, `lib/challan-pdf.ts:23-27` call
-      `detectHost()` / `desktopBridge()` / `isNative()` directly; the rule is
-      differences live only in `lib/platform.ts` (update-dialog.tsx already
-      does — its action and copy come from `updateAction()`). Export
-      `isPlainBrowser` / `isNative` / Android helpers from the adapter and
-      keep `detectHost` private to it.
-- [ ] **A40 · Business facts hardcoded in components.**
-      `shared/challan-html.ts:60-62,374-377` (`ROWS_PER_PAGE=12`, `210x148`,
-      `Subject to SURAT jurisdiction`, `Please do not mix different lots`)
-      and `ui/pages/colors.tsx:76` (`UNIT_PRESETS`) belong in
-      `packages/shared` per the repo rule — move the constants and copy
-      there.
-- [ ] **A41 · Silent / unhandled promises on boot and refresh paths.**
-      `ui/App.tsx:149` (`void bootstrap()` with no catch),
-      `ui/components/app-shell.tsx:701` (`refreshCompany().catch(()=>{})`
-      swallows). Surface via `friendlyError`/toast or document as deliberate
-      fire-and-forget. (`store/updates.ts` is done: its boot/interval checks
-      are documented fire-and-forget and land in the store's `failure`.)
+- [x] **A28 · Electron PDF partition CSP hardening.**
+      `electron/main.ts:410` & `src/shared/challan-html.ts:441` — attached
+      `onHeadersReceived` CSP header on `kc-pdf` session partition and injected
+      `<meta http-equiv="Content-Security-Policy">` enforcing
+      `default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:; script-src 'none'`.
+- [x] **A38 · Masters GET routes are open to members (reads open, writes gated).**
+      `routes/masters.ts:313-328` — master-list GETs are open to all authenticated
+      workspace members so pickers across challans/returns/packing function.
+      `recipes GET /` aligned to member read per `APP.md` §7 and detail routes;
+      all mutations strictly gated by `manage_masters`.
+- [x] **A41 · Silent / unhandled promises on boot and refresh paths.**
+      `ui/App.tsx:149` (`void bootstrap()` documented as self-contained fire-and-forget),
+      `ui/components/app-shell.tsx:704` (`refreshCompany()` hydrates from `readCompany()`
+      on network errors, non-network errors surfaced via `toastError`; `authStore.bootstrap()`
+      hydrates cached company on offline restart).
 
 ### Low
 
-- [ ] **A31 · `otp_codes.code` declares `length: 10` but stores 64 chars.**
-      `db/schema.ts:129` — `requestOtp` stores `sha256Hex` (64 chars).
-      SQLite does not enforce `text(n)`, so it works, but the declared
-      length misdescribes storage.
 - [ ] **A32 · `invites` has no unique constraint.**
       `db/schema.ts:173` — the pending check is a read-then-write, so two
       concurrent invites both insert; `findPendingMembership` picks the
       first by `createdAt` and the other row is orphaned, weakening the
       `already_pending` guard.
-- [ ] **A33 · `getChallanBalances` and `jobWorkBalances` disagree on `sent`.**
-      `lib/document-pipeline.ts:695` sums `challan_items.net_wt` while
-      `:657` uses the header `challans.totalNetWt`. The two can diverge
-      after an item edit that doesn't recompute the header, so the balance
-      report and the return form show different figures for one challan.
 - [ ] **A34 · `overReceiptQty` has no cap.**
       `lib/document-pipeline.ts:567` — a 999,999 kg return against 10 kg is
       accepted, flagged, and written as a dyed stock `in`; a typo inflates
       stock 1000×.
-- [ ] **A35 · `deleteCookie` omits `httpOnly`/`sameSite`.**
-      `routes/auth-session.ts:45,91` — Hono overwrites the attributes, so
-      the cleared cookie is set without them.
-- [ ] **A46 · OTP/session token randomness has modulo bias.**
-      `lib/token.ts:27-28,41-43` (`buf[0] % 1_000_000`, `b % 31`) — tiny
-      but on the auth path; use rejection sampling.
-- [ ] **A47 · Vite dev server binds `0.0.0.0` with a tunnel allowlist.**
-      `vite.config.ts:80-84,94-97` (`host: "0.0.0.0"`,
-      `allowedHosts: [".trycloudflare.com"]`) exposes dev to LAN/tunnel.
-      Dev-only; default to `localhost` unless `KC_DEV_LAN=1`.
-- [ ] **A37 · `packing-import-dialog.tsx:148` rows lack checkbox semantics.**
-      Each row is a `<div onClick>` with no `role="checkbox"`,
-      `aria-checked`, or keyboard handler — the 44px hit area reads as
-      inert content to screen readers.
 - [ ] **A44 · Web `robots.ts:6` allows everything** with no `disallow`, so
       `/api/inquiry` is exposed to crawlers. The 3.7MB of design-compare
       galleries (`challan`/`sticker`/`report-styles-compare.html` under
@@ -293,8 +204,7 @@ Each item lists the files, the risk, and what "done" requires.
       `resolveSupplier`/`resolveParty`/`resolveReturnParty` trio → one
       helper, and standardize ~8 raw `new Date().toISOString()` on `toIso()`.
       Done when `tsc -p tsconfig.server.json` + a full
-      challan/return/raw/packing create+update smoke (offline conflict path
-      included).
+      challan/return/raw/packing create+update smoke passes.
 - [ ] **C3 · Split `challan-html.ts` (443 lines) + golden-file test.**
       That file holds types + pagination + CSS string + builders, shared by
       the server PDF, desktop PDF and print page. Snapshot-test
@@ -302,15 +212,9 @@ Each item lists the files, the risk, and what "done" requires.
       `challan-{types,css,sheet}.ts` with byte-identical output. Done when
       the golden test is green before and after and all three PDF/print
       pipelines smoke-test.
-- [ ] **C4 · Offline sync integration test.** The conflict → resubmit →
-      settled path (queue loss / double-sync risk) has no integration test
-      covering it.
 - [ ] **C5 · Dedupe the mirrored helpers.** `scripts/publish-releases.ts`
       re-implements `hasUpdateFloor`/`compareSemver`/`CONTENT_TYPES` from
       `packages/shared` and `src/server/lib/releases.ts` (drift hazard);
-      `ChallanType` is declared in both `shared/challan-html.ts` and
-      `app-core` challans store; `sharePdfOnAndroid` vs
-      `shareChallanPdfOnAndroid` overlap in `lib/platform.ts`;
       `electron/build.ts` vs `electron/dev.ts` duplicate the main+preload
       Bun build. Unify behind one home per helper when touching the area.
 

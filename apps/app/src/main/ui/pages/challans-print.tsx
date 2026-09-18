@@ -15,11 +15,7 @@ import {
   friendlyError,
   toastError,
 } from "@kataria-syntex/app-core";
-import {
-  isAndroidShell,
-  printPage,
-  shareChallanPdfOnAndroid,
-} from "@/lib/platform";
+import { isAndroidShell, printPage, sharePdfOnAndroid } from "@/lib/platform";
 import { loadChallanFonts, safeFilename } from "@/lib/challan-pdf";
 import {
   SHEET_H_MM,
@@ -90,7 +86,7 @@ export function ChallanPrintRoute({ kind }: { kind: ChallanKind }) {
       setPrinting(true);
       void apiBlob(`/challans/${id}/pdf`)
         .then(async (blob) => {
-          await shareChallanPdfOnAndroid(
+          await sharePdfOnAndroid(
             new Uint8Array(await blob.arrayBuffer()),
             safeFilename(detail.challan.challanNumber),
           );

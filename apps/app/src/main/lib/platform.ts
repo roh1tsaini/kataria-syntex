@@ -86,6 +86,16 @@ export function isPlainBrowser(): boolean {
   return detectHost() === "web";
 }
 
+/** True when running inside the Electron desktop shell. */
+export function isElectron(): boolean {
+  return detectHost() === "electron";
+}
+
+/** True when running inside the Android Capacitor shell. */
+export function isAndroid(): boolean {
+  return detectHost() === "android";
+}
+
 /** macOS Electron reports as desktop but has no self-install path (unsigned
  *  builds cannot be replaced by electron-updater), so it is the one socket
  *  that updates by downloading the published dmg through the release
@@ -147,7 +157,7 @@ export function detectPlatformLabel(): string {
 /** Opens the browser print dialog. Prints the current view after the page
  * fonts are ready so the embedded Inter font is typeset, not substituted,
  * in the printed page. Web and desktop only — Android cannot print the live
- * page, so callers route it through shareChallanPdfOnAndroid instead, which hands
+ * page, so callers route it through sharePdfOnAndroid instead, which hands
  * the rendered PDF to the native PrintManager (see challans-print.tsx). */
 export async function printPage(): Promise<void> {
   try {
@@ -513,9 +523,7 @@ export async function initAndroidDeepLinks(): Promise<void> {
 
 /** True when the Capacitor shell needs its own file handling instead of the
  *  browser download / Electron save dialog. */
-export function isAndroidShell(): boolean {
-  return detectHost() === "android";
-}
+export const isAndroidShell = isAndroid;
 
 /**
  * Saves a PDF to the cache and opens the system share sheet. The WebView has
@@ -836,25 +844,6 @@ export async function installStagedAndroidApk(): Promise<void> {
   if (detectHost() !== "android") throw new Error("android_only");
   const plugin = await installer();
   await plugin.installApk({ filename: STAGED_APK_FILENAME });
-}
-
-// ── Android PDF share ────────────────────────────────────────────────────────
-
-/**
- * Shares the already-rendered challan PDF on Android. window.print() in the
- * WebView has no document to hand the system, only the live page, and there is
- * no maintained Capacitor plugin that prints a file — so Android gets the same
- * share sheet the download path uses (Drive, WhatsApp, a print app, or Save),
- * and printing stays a web/desktop capability.
- *
- * Android-only: throws "android_only" elsewhere.
- */
-export async function shareChallanPdfOnAndroid(
-  bytes: Uint8Array,
-  filename: string,
-): Promise<boolean> {
-  if (detectHost() !== "android") throw new Error("android_only");
-  return sharePdfOnAndroid(bytes, filename);
 }
 
 // ── Electron window chrome (used by title-bar.tsx) ──────────────────────────

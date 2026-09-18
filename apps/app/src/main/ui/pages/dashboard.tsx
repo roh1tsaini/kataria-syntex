@@ -398,7 +398,7 @@ function FlowCards() {
                         : "text-base font-semibold tracking-tight tabular-nums"
                     }
                   >
-                    {card.value.toFixed(3)}
+                    {fmtWt(card.value)}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {card.unit}

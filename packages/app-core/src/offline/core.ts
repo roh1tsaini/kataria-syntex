@@ -24,11 +24,8 @@ import type {
 } from "../store/masters";
 import type { Numbering } from "@kataria-syntex/shared";
 import { core } from "../adapter";
-import { randomId } from "../id";
-
 // ── Keys ────────────────────────────────────────────────────────────────────
 
-const K_DEVICE = "offline.device.v1";
 const K_MASTERS = "offline.masters.v1";
 const K_COMPANY = "offline.company.v1";
 const K_SESSION = "offline.session.v1";
@@ -48,28 +45,6 @@ function readJson<T>(key: string, guard: (v: unknown) => v is T): T | null {
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   v !== null && typeof v === "object" && !Array.isArray(v);
-
-// ── Device identity ─────────────────────────────────────────────────────────
-
-export type DeviceIdentity = { ref: string; label: string };
-
-const isDeviceIdentity = (v: unknown): v is DeviceIdentity =>
-  isObject(v) && typeof v.ref === "string" && typeof v.label === "string";
-
-export function deviceIdentity(): DeviceIdentity {
-  const stored = readJson(K_DEVICE, isDeviceIdentity);
-  if (stored) return stored;
-  const identity: DeviceIdentity = {
-    ref: randomId(),
-    label: core().deviceLabel(),
-  };
-  try {
-    core().storage.set(K_DEVICE, JSON.stringify(identity));
-  } catch {
-    // storage unavailable — identity stays for this session only
-  }
-  return identity;
-}
 
 // ── Masters cache ───────────────────────────────────────────────────────────
 
@@ -105,27 +80,14 @@ export function readMasters(): MastersCache | null {
   return readJson(K_MASTERS, isMastersCache);
 }
 
-// ── Company + counters cache ────────────────────────────────────────────────
+import type { Company, FinancialYearInfo } from "../store/auth";
+
+// ── Company + financial years cache ─────────────────────────────────────────
 
 export type CompanyCache = {
-  name: string;
-  gstin: string;
-  pan: string;
-  address: string;
-  phone1: string;
-  phone2: string;
-  numbering: Numbering;
-  /** Next seq per FY per type, as last seen from the server. */
-  counters: Record<
-    string,
-    {
-      sales: number;
-      outward: number;
-      packing_s: number;
-      packing_j: number;
-      raw: number;
-    }
-  >;
+  company: Company;
+  currentFy: FinancialYearInfo | null;
+  financialYears: FinancialYearInfo[];
   savedAt: string;
 };
 
@@ -141,7 +103,10 @@ export function cacheCompany(cache: Omit<CompanyCache, "savedAt">): void {
 }
 
 const isCompanyCache = (v: unknown): v is CompanyCache =>
-  isObject(v) && isObject(v.numbering) && isObject(v.counters);
+  isObject(v) &&
+  isObject(v.company) &&
+  typeof v.company.name === "string" &&
+  Array.isArray(v.financialYears);
 
 export function readCompany(): CompanyCache | null {
   return readJson(K_COMPANY, isCompanyCache);

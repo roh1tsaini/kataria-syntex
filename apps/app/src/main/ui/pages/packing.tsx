@@ -552,54 +552,57 @@ function PackingForm({
     Promise.all([refreshDeniers(), refreshColors()]),
   );
 
-  useEffect(() => {
+  const loadDetail = useCallback(async () => {
     if (!editId) return;
-    void (async () => {
-      setLoadingDetail(true);
-      setDetailError(null);
-      try {
-        const res = await api<{
-          entry: { type: string; date: string };
-          items: Array<Record<string, unknown>>;
-        }>(`/packing/${editId}`);
-        setDate(res.entry.date);
-        if (res.entry.type === "sale") {
-          const loaded = res.items.map((i) => ({
-            id: crypto.randomUUID(),
-            denierId: String(i.denierId ?? ""),
-            colorId: String(i.colorId ?? ""),
-            tareWt: String(i.tareWt ?? ""),
-            grossWt: String(i.grossWt ?? ""),
-            netWt: String(i.netWt ?? ""),
-            cones: String(i.cones ?? ""),
-            boxNo: String(i.boxNo ?? ""),
-            lotNo: String(i.lotNo ?? ""),
-            remarks: String(i.remarks ?? ""),
-          }));
-          if (loaded.length > 0) setSaleRows(loaded);
-        } else {
-          const loaded = res.items.map((i) => ({
-            id: crypto.randomUUID(),
-            denierId: String(i.denierId ?? ""),
-            colorId: String(i.colorId ?? ""),
-            sackWt: String(i.sackWt ?? ""),
-            sacks: String(i.sacks ?? ""),
-            netWt: String(i.netWt ?? ""),
-            cones: String(i.cones ?? ""),
-            lotNo: String(i.lotNo ?? ""),
-            remarks: String(i.remarks ?? ""),
-          }));
-          if (loaded.length > 0) setJobRows(loaded);
-        }
-      } catch {
-        // A blank prefill must never be saved over the real record — surface
-        // the failure and block submission until the original loads.
-        setDetailError("Couldn't load this entry. Editing is disabled.");
-      } finally {
-        setLoadingDetail(false);
+    setLoadingDetail(true);
+    setDetailError(null);
+    try {
+      const res = await api<{
+        entry: { type: string; date: string };
+        items: Array<Record<string, unknown>>;
+      }>(`/packing/${editId}`);
+      setDate(res.entry.date);
+      if (res.entry.type === "sale") {
+        const loaded = res.items.map((i) => ({
+          id: crypto.randomUUID(),
+          denierId: String(i.denierId ?? ""),
+          colorId: String(i.colorId ?? ""),
+          tareWt: String(i.tareWt ?? ""),
+          grossWt: String(i.grossWt ?? ""),
+          netWt: String(i.netWt ?? ""),
+          cones: String(i.cones ?? ""),
+          boxNo: String(i.boxNo ?? ""),
+          lotNo: String(i.lotNo ?? ""),
+          remarks: String(i.remarks ?? ""),
+        }));
+        if (loaded.length > 0) setSaleRows(loaded);
+      } else {
+        const loaded = res.items.map((i) => ({
+          id: crypto.randomUUID(),
+          denierId: String(i.denierId ?? ""),
+          colorId: String(i.colorId ?? ""),
+          sackWt: String(i.sackWt ?? ""),
+          sacks: String(i.sacks ?? ""),
+          netWt: String(i.netWt ?? ""),
+          cones: String(i.cones ?? ""),
+          lotNo: String(i.lotNo ?? ""),
+          remarks: String(i.remarks ?? ""),
+        }));
+        if (loaded.length > 0) setJobRows(loaded);
       }
-    })();
+      setDetailError(null);
+    } catch {
+      // A blank prefill must never be saved over the real record — surface
+      // the failure and block submission until the original loads.
+      setDetailError("Couldn't load this entry. Editing is disabled.");
+    } finally {
+      setLoadingDetail(false);
+    }
   }, [editId]);
+
+  useEffect(() => {
+    void loadDetail();
+  }, [loadDetail]);
 
   const updateSaleRow = (
     idx: number,
@@ -766,12 +769,24 @@ function PackingForm({
         </div>
       )}
 
-      {(detailError || error) && (
+      {detailError && (
+        <div
+          role="alert"
+          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
+        >
+          <p className="text-sm text-destructive">{detailError}</p>
+          <Button size="sm" variant="outline" onClick={() => void loadDetail()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {error && (
         <p
           role="alert"
           className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
         >
-          {detailError ?? error}
+          {error}
         </p>
       )}
 

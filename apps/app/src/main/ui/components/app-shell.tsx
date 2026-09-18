@@ -36,6 +36,9 @@ import {
   isPackerOnlyWorkspace,
   useNetworkState,
   useRealtime,
+  ApiError,
+  friendlyError,
+  toastError,
 } from "@kataria-syntex/app-core";
 import {
   isItemActive,
@@ -701,7 +704,13 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
   useRealtime();
 
   useEffect(() => {
-    refreshCompany().catch(() => {});
+    refreshCompany().catch((err: unknown) => {
+      // Offline fallback is handled inside refreshCompany via readCompany().
+      // Surface any unexpected non-network failures.
+      if (!(err instanceof ApiError && err.isNetworkError)) {
+        toastError("Could not load company details", friendlyError(err));
+      }
+    });
   }, [refreshCompany]);
 
   useEffect(() => {

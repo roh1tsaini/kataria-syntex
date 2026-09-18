@@ -135,7 +135,7 @@ export const otpCodes = sqliteTable(
   {
     id: text("id", { length: 36 }).primaryKey(),
     identifier: text("identifier").notNull(),
-    code: text("code", { length: 10 }).notNull(),
+    code: text("code", { length: 64 }).notNull(),
     attempts: integer("attempts").notNull().default(0),
     expiresAt: text("expires_at").notNull(),
     verifiedAt: text("verified_at"),

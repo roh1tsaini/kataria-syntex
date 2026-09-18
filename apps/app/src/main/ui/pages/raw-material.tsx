@@ -486,47 +486,50 @@ function RawMaterialForm({
     Promise.all([refreshSuppliers(), refreshDeniers(), refreshColors()]),
   );
 
-  useEffect(() => {
+  const loadDetail = useCallback(async () => {
     if (!editId) return;
-    void (async () => {
-      setLoadingDetail(true);
+    setLoadingDetail(true);
+    setDetailError(null);
+    try {
+      const res = await api<{
+        entry: RawEntry;
+        items: Array<Record<string, unknown>>;
+      }>(`/raw-material/${editId}`);
+      const e = res.entry;
+      setSupplierId(e.supplierId ?? "");
+      setSupplierChallanNo(e.supplierChallanNo ?? "");
+      setDate(e.date);
+      setNotes(e.notes ?? "");
+      const loadedRows = res.items.map((i): ItemRow => ({
+        id: crypto.randomUUID(),
+        denierId: String(i.denierId ?? ""),
+        colorId: String(i.colorId ?? ""),
+        netWt: String(i.netWt ?? ""),
+        grossWt: String(i.grossWt ?? ""),
+        tareWt: String(i.tareWt ?? ""),
+        cones: String(i.cones ?? ""),
+        lotNo: String(i.lotNo ?? ""),
+        boxNo: String(i.boxNo ?? ""),
+        packingUnit:
+          i.packingUnit === "boxes"
+            ? "boxes"
+            : i.packingUnit === "bags"
+              ? "bags"
+              : "",
+        packingCount: String(i.packingCount ?? ""),
+      }));
+      if (loadedRows.length > 0) setRows(loadedRows);
       setDetailError(null);
-      try {
-        const res = await api<{
-          entry: RawEntry;
-          items: Array<Record<string, unknown>>;
-        }>(`/raw-material/${editId}`);
-        const e = res.entry;
-        setSupplierId(e.supplierId ?? "");
-        setSupplierChallanNo(e.supplierChallanNo ?? "");
-        setDate(e.date);
-        setNotes(e.notes ?? "");
-        const loadedRows = res.items.map((i): ItemRow => ({
-          id: crypto.randomUUID(),
-          denierId: String(i.denierId ?? ""),
-          colorId: String(i.colorId ?? ""),
-          netWt: String(i.netWt ?? ""),
-          grossWt: String(i.grossWt ?? ""),
-          tareWt: String(i.tareWt ?? ""),
-          cones: String(i.cones ?? ""),
-          lotNo: String(i.lotNo ?? ""),
-          boxNo: String(i.boxNo ?? ""),
-          packingUnit:
-            i.packingUnit === "boxes"
-              ? "boxes"
-              : i.packingUnit === "bags"
-                ? "bags"
-                : "",
-          packingCount: String(i.packingCount ?? ""),
-        }));
-        if (loadedRows.length > 0) setRows(loadedRows);
-      } catch {
-        setDetailError("Couldn't load this entry. Editing is disabled.");
-      } finally {
-        setLoadingDetail(false);
-      }
-    })();
+    } catch {
+      setDetailError("Couldn't load this entry. Editing is disabled.");
+    } finally {
+      setLoadingDetail(false);
+    }
   }, [editId]);
+
+  useEffect(() => {
+    void loadDetail();
+  }, [loadDetail]);
 
   const updateRow = (idx: number, field: keyof ItemRow, value: string) => {
     setDirty(true);
@@ -658,12 +661,24 @@ function RawMaterialForm({
         </div>
       )}
 
-      {(detailError || error) && (
+      {detailError && (
+        <div
+          role="alert"
+          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
+        >
+          <p className="text-sm text-destructive">{detailError}</p>
+          <Button size="sm" variant="outline" onClick={() => void loadDetail()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {error && (
         <p
           role="alert"
           className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
         >
-          {detailError ?? error}
+          {error}
         </p>
       )}
 

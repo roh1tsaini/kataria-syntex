@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import { api } from "@kataria-syntex/app-core";
+import { cn } from "@/ui/lib/cn";
 import { Button } from "@/ui/components/ui/button";
-import { Checkbox } from "@/ui/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -145,37 +146,56 @@ export function PackingImportDialog({
                       {entry.date}
                     </span>
                   </div>
-                  {entry.items.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => toggle(item.id)}
-                      className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted transition-colors"
-                    >
-                      {/* Keyboard toggling goes through the checkbox itself;
-                          stop pointer clicks here so the row's onClick doesn't
-                          double-toggle. */}
-                      <Checkbox
-                        checked={selected.has(item.id)}
-                        onCheckedChange={() => toggle(item.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {item.denierName}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {item.colorName}
-                          </span>
+                  {entry.items.map((item) => {
+                    const isSelected = selected.has(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        role="checkbox"
+                        aria-checked={isSelected}
+                        tabIndex={0}
+                        onClick={() => toggle(item.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.preventDefault();
+                            toggle(item.id);
+                          }
+                        }}
+                        className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div
+                          aria-hidden="true"
+                          className={cn(
+                            "flex size-5 shrink-0 items-center justify-center rounded-sm border border-input bg-card transition-[border-color,background-color,box-shadow,transform] duration-150",
+                            isSelected &&
+                              "border-primary bg-primary text-primary-foreground",
+                          )}
+                        >
+                          {isSelected && (
+                            <Check
+                              className="size-3.5 stroke-[3]"
+                              aria-hidden
+                            />
+                          )}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.netWt.toFixed(3)} kg
-                          {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
-                          {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {item.denierName}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {item.colorName}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.netWt.toFixed(3)} kg
+                            {item.lotNo ? ` · Lot: ${item.lotNo}` : ""}
+                            {item.boxNo ? ` · Box: ${item.boxNo}` : ""}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ))}
             </div>

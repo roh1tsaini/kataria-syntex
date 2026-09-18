@@ -3,8 +3,7 @@ import { round3 } from "./math";
 
 /**
  * Challan domain contract — one source of truth for the request schemas and
- * the server→client DTO shapes, shared by the Hono routes, the offline sync
- * builder, and the React stores.
+ * the server→client DTO shapes, shared by the Hono routes and the React stores.
  */
 
 /** Real-calendar-date YYYY-MM-DD (rejects 2026-02-30, which Date.parse would roll to March). */
@@ -36,6 +35,8 @@ const challanItemSchema = z.object({
   netWt: z.number().positive().max(1_000_000), // kg
 });
 
+export type ChallanType = "sales" | "outward";
+
 /** POST/PUT /api/challans body. */
 export const challanBodySchema = z.object({
   type: z.enum(["sales", "outward"]).default("sales"),
@@ -45,17 +46,10 @@ export const challanBodySchema = z.object({
   notes: z.string().trim().max(500).optional().default(""),
   items: z.array(challanItemSchema).min(1).max(200),
   /**
-   * Idempotency key. Online creates send just a clientRef so a lost response
-   * can't double-create; offline syncs also carry the device-issued number.
+   * Idempotency key — retried creates with the same clientRef replay the
+   * existing challan instead of creating a duplicate.
    */
-  offline: z
-    .object({
-      clientRef: z.string().min(8).max(60),
-      challanNumber: z.string().trim().min(1).max(50).optional(),
-      seq: z.number().int().min(1).max(1_000_000).optional(),
-      fyLabel: z.string().trim().min(1).max(10).optional(),
-    })
-    .optional(),
+  clientRef: z.string().min(8).max(60).optional(),
 });
 
 export type ChallanItemInput = z.infer<typeof challanItemSchema>;
@@ -125,3 +119,14 @@ export function challanTotals(
     totalNetWt: round3(items.reduce((s, i) => s + i.netWt, 0)),
   };
 }
+
+/** Standard A5 landscape challan sheet dimensions (mm). */
+export const CHALLAN_SHEET_WIDTH_MM = 210;
+export const CHALLAN_SHEET_HEIGHT_MM = 148;
+export const CHALLAN_ROWS_PER_PAGE = 12;
+
+/** Legal terms & conditions printed on all outward/sales challans. */
+export const CHALLAN_TERMS_AND_CONDITIONS = [
+  "Please do not mix different lots.",
+  "Subject to SURAT jurisdiction.",
+] as const;

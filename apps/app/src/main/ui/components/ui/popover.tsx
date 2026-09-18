@@ -143,6 +143,7 @@ export const PopoverContent = React.forwardRef<
   const [coords, setCoords] = React.useState<{
     top: number;
     left: number;
+    side: "bottom" | "top";
   } | null>(null);
 
   React.useLayoutEffect(() => {
@@ -152,34 +153,78 @@ export const PopoverContent = React.forwardRef<
       const trigger = ctx.triggerRef.current;
       if (!trigger) return;
       const rect = trigger.getBoundingClientRect();
+      const content = ctx.contentRef.current;
+      const height =
+        content && content.offsetHeight > 0 ? content.offsetHeight : 320;
+      const width =
+        content && content.offsetWidth > 0 ? content.offsetWidth : 240;
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const padding = 8;
 
+      const availableBelow =
+        viewportHeight - rect.bottom - sideOffset - padding;
+      const availableAbove = rect.top - sideOffset - padding;
+
+      let side: "bottom" | "top" = "bottom";
       let top = rect.bottom + sideOffset;
-      let left = rect.left;
 
+      if (availableBelow < height && availableAbove > availableBelow) {
+        side = "top";
+        top = rect.top - height - sideOffset;
+      }
+
+      if (top < padding) {
+        top = padding;
+      } else if (top + height > viewportHeight - padding) {
+        top = Math.max(padding, viewportHeight - padding - height);
+      }
+
+      let left = rect.left;
       if (align === "center") {
         left = rect.left + rect.width / 2;
+        if (left - width / 2 < padding) {
+          left = padding + width / 2;
+        } else if (left + width / 2 > viewportWidth - padding) {
+          left = viewportWidth - padding - width / 2;
+        }
       } else if (align === "end") {
         left = rect.right;
+        if (left - width < padding) {
+          left = Math.min(viewportWidth - padding, padding + width);
+        } else if (left > viewportWidth - padding) {
+          left = viewportWidth - padding;
+        }
+      } else {
+        if (left + width > viewportWidth - padding) {
+          left = Math.max(padding, viewportWidth - padding - width);
+        }
+        if (left < padding) {
+          left = padding;
+        }
       }
 
-      // Flip above if close to bottom
-      const viewportHeight = window.innerHeight;
-      if (top + 340 > viewportHeight && rect.top - 340 > 0) {
-        top = rect.top - sideOffset;
-      }
-
-      setCoords({ top, left });
+      setCoords({ top, left, side });
     };
 
     updatePosition();
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
 
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && ctx.contentRef.current) {
+      ro = new ResizeObserver(() => {
+        updatePosition();
+      });
+      ro.observe(ctx.contentRef.current);
+    }
+
     return () => {
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
+      ro?.disconnect();
     };
-  }, [ctx.open, ctx.triggerRef, align, sideOffset]);
+  }, [ctx.open, ctx.triggerRef, ctx.contentRef, align, sideOffset]);
 
   // Move focus into the popover on open — keyboard users must land inside,
   // not stay on the trigger.
@@ -204,12 +249,11 @@ export const PopoverContent = React.forwardRef<
   // Alignment offset lives in the motion transform (a Tailwind translate
   // class would be overwritten by the scale animation).
   const alignX = align === "center" ? "-50%" : align === "end" ? "-100%" : "0%";
-  const origin =
-    align === "center"
-      ? "top center"
-      : align === "end"
-        ? "top right"
-        : "top left";
+  const currentSide = coords?.side ?? "bottom";
+  const verticalOrigin = currentSide === "top" ? "bottom" : "top";
+  const horizontalOrigin =
+    align === "center" ? "center" : align === "end" ? "right" : "left";
+  const origin = `${verticalOrigin} ${horizontalOrigin}`;
 
   return createPortal(
     <AnimatePresence>
@@ -236,7 +280,7 @@ export const PopoverContent = React.forwardRef<
             transformOrigin: origin,
           }}
           className={cn(
-            "z-50 w-auto rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-overlay outline-none",
+            "z-50 w-auto max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-overlay outline-none",
             className,
           )}
         >

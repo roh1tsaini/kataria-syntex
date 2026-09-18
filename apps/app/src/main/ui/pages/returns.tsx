@@ -473,44 +473,60 @@ function ReturnForm({
     Promise.all([refreshJobWorkers(), refreshDeniers(), refreshColors()]),
   );
 
-  useEffect(() => {
+  const loadDetail = useCallback(async () => {
     if (!editId) return;
-    void (async () => {
-      setLoadingDetail(true);
+    setLoadingDetail(true);
+    setDetailError(null);
+    try {
+      const res = await api<{
+        returnEntry: ReturnEntry;
+        items: Array<Record<string, unknown>>;
+      }>(`/returns/${editId}`);
+      const r = res.returnEntry;
+      setJobWorkerId(r.jobWorkerId);
+      setInvoiceNo(r.invoiceNo);
+      setDate(r.date);
+      setRemarks(r.remarks ?? "");
+      const loadedRows = res.items.map((i) => ({
+        id: crypto.randomUUID(),
+        challanId: String(i.challanId ?? ""),
+        denierId: String(i.denierId ?? ""),
+        colorId: String(i.colorId ?? ""),
+        lotNo: String(i.lotNo ?? ""),
+        netWt: String(i.netWt ?? ""),
+        cones: String(i.cones ?? ""),
+      }));
+      if (loadedRows.length > 0) setRows(loadedRows);
+      const balRes = await api<{ items: Balance[] }>(
+        `/returns/balance/${r.jobWorkerId}`,
+      );
+      setBalances(balRes.items);
       setDetailError(null);
-      try {
-        const res = await api<{
-          returnEntry: ReturnEntry;
-          items: Array<Record<string, unknown>>;
-        }>(`/returns/${editId}`);
-        const r = res.returnEntry;
-        setJobWorkerId(r.jobWorkerId);
-        setInvoiceNo(r.invoiceNo);
-        setDate(r.date);
-        setRemarks(r.remarks ?? "");
-        const loadedRows = res.items.map((i) => ({
-          id: crypto.randomUUID(),
-          challanId: String(i.challanId ?? ""),
-          denierId: String(i.denierId ?? ""),
-          colorId: String(i.colorId ?? ""),
-          lotNo: String(i.lotNo ?? ""),
-          netWt: String(i.netWt ?? ""),
-          cones: String(i.cones ?? ""),
-        }));
-        if (loadedRows.length > 0) setRows(loadedRows);
-        const balRes = await api<{ items: Balance[] }>(
-          `/returns/balance/${r.jobWorkerId}`,
-        );
-        setBalances(balRes.items);
-      } catch {
-        setDetailError("Couldn't load this return. Editing is disabled.");
-      } finally {
-        setLoadingDetail(false);
-      }
-    })();
+    } catch {
+      setDetailError("Couldn't load this return. Editing is disabled.");
+    } finally {
+      setLoadingDetail(false);
+    }
   }, [editId]);
 
+  useEffect(() => {
+    void loadDetail();
+  }, [loadDetail]);
+
   const balanceSeq = useRef(0);
+
+  const refreshBalances = useCallback(async (id: string) => {
+    if (!id) return;
+    const seq = ++balanceSeq.current;
+    try {
+      const res = await api<{ items: Balance[] }>(`/returns/balance/${id}`);
+      if (seq !== balanceSeq.current) return;
+      setBalances(res.items);
+    } catch {
+      // Keep existing balance state on background refresh failure
+    }
+  }, []);
+
   const onJobWorkerChange = async (id: string) => {
     setDirty(true);
     setJobWorkerId(id);
@@ -529,6 +545,18 @@ function ReturnForm({
       if (seq === balanceSeq.current) setBalances([]);
     }
   };
+
+  useRealtimeEvent(["returns", "challans"], () => {
+    if (jobWorkerId) void refreshBalances(jobWorkerId);
+  });
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (jobWorkerId) void refreshBalances(jobWorkerId);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [jobWorkerId, refreshBalances]);
 
   const updateRow = (idx: number, field: keyof ItemRow, value: string) => {
     setDirty(true);
@@ -666,12 +694,24 @@ function ReturnForm({
         </div>
       )}
 
-      {(detailError || error) && (
+      {detailError && (
+        <div
+          role="alert"
+          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
+        >
+          <p className="text-sm text-destructive">{detailError}</p>
+          <Button size="sm" variant="outline" onClick={() => void loadDetail()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {error && (
         <p
           role="alert"
           className="mt-4 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive"
         >
-          {detailError ?? error}
+          {error}
         </p>
       )}
 

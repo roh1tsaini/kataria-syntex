@@ -8,7 +8,7 @@ import { fyPrevLabel } from "@kataria-syntex/shared";
 
 export type Period = "fy" | "30d" | "all";
 
-export const daysAgoISO = (n: number) => {
+const daysAgoISO = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return localDateKey(d);
