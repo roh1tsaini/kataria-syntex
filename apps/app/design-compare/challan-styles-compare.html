@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Delivery challan formats — pick one</title>
+    <title>Delivery challan — 39 formats, pick one</title>
     <style>
       @font-face {
         font-family: Inter;
@@ -1101,10 +1101,6 @@
       .pbtn[aria-pressed="true"] .code {
         color: #52525b;
       }
-      .pbtn.all {
-        margin-left: 6px;
-        border-style: dashed;
-      }
       .pbtn:focus-visible {
         outline: 2px solid #8ab4ff;
         outline-offset: 2px;
@@ -1116,8 +1112,74 @@
         margin-left: 6px;
         letter-spacing: 0.02em;
       }
+      .viewbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .seg {
+        display: inline-flex;
+        background: #1d1f24;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .seg button {
+        border: 0;
+        background: none;
+        color: #b9bcc5;
+        font:
+          600 11px Inter,
+          sans-serif;
+        padding: 7px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .seg button[aria-pressed="true"] {
+        background: #fff;
+        color: #17181c;
+      }
+      .seg button:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      .viewcount {
+        color: #8b8e98;
+        font-size: 11px;
+      }
+      .stepper {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .stepper button {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #34373f;
+        background: #1d1f24;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .stepper button:hover {
+        border-color: #4b4f5a;
+      }
+      .stepper button:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      html.js.all .stepper {
+        display: none;
+      }
+
       @media (max-width: 760px) {
         .pbtn .name,
+        .viewcount,
         .pk-hint {
           display: none;
         }
@@ -1521,19 +1583,1666 @@
       .vN .f-terms h4 {
         letter-spacing: 0.08em;
       }
+      /* O–S use the same sample; every rule is scoped to the new sheets. */
+      :is(.vO, .vP, .vQ, .vR, .vS) {
+        color: #111;
+      }
+      :is(.vO, .vP, .vQ, .vR, .vS) th {
+        background: #fff;
+        color: #111;
+        letter-spacing: 0;
+        font-size: 6.5pt;
+        border-bottom: 0.25mm solid #333;
+      }
+      :is(.vO, .vP, .vQ, .vR, .vS) td {
+        font-size: 7.5pt;
+      }
+      :is(.vO, .vP, .vQ, .vR, .vS) .s-panel {
+        background: none;
+        border-radius: 0;
+      }
+      :is(.vO, .vP, .vQ, .vR, .vS)
+        :is(
+          .co-sub,
+          .p-sub,
+          .m-label,
+          .copy,
+          .s-line span,
+          .t-row .l,
+          .f-terms ol,
+          .f-cap,
+          .f-authcap
+        ) {
+        color: #555;
+      }
+      :is(.vO, .vP, .vQ, .vR, .vS) .m-label {
+        font-size: 6.5pt;
+        letter-spacing: 0.03em;
+      }
+      :is(.vO, .vP, .vQ, .vR, .vS) .copy i {
+        border-radius: 0;
+        border-color: #666;
+      }
+
+      /* O · Open Letterhead — open address block and a horizontal total line. */
+      .vO {
+        padding: 7mm 9mm 5mm;
+      }
+      .vO .mast {
+        grid-template-columns: 1fr 42mm;
+        align-items: start;
+        gap: 2mm 8mm;
+      }
+      .vO .co {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        text-align: left;
+      }
+      .vO .co-name {
+        font-size: 20pt;
+      }
+      .vO .doc-title {
+        grid-column: 2;
+        text-align: right;
+      }
+      .vO .copies {
+        grid-column: 2;
+        flex-direction: row;
+        gap: 2mm;
+      }
+      .vO .copy {
+        font-size: 6pt;
+        letter-spacing: 0;
+        gap: 1mm;
+      }
+      .vO .mrule {
+        border-top-width: 0.2mm;
+        margin-top: 3mm;
+      }
+      .vO .party {
+        border: none;
+        padding: 2mm 0;
+        grid-template-columns: 1fr 54mm;
+      }
+      .vO .p-main {
+        padding: 0;
+      }
+      .vO .p-gstin {
+        float: none;
+        display: block;
+        margin: 0 0 1mm;
+      }
+      .vO .p-meta {
+        flex-direction: row;
+        justify-content: space-between;
+        border: none;
+        padding: 0;
+      }
+      .vO table {
+        border: none;
+        margin-top: 0;
+      }
+      .vO .sum {
+        grid-template-columns: 1fr;
+        gap: 2mm;
+      }
+      .vO .s-panel {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr) 1.2fr;
+        padding: 1.5mm 0;
+        border-bottom: 0.2mm solid #777;
+      }
+      .vO :is(.t-row, .t-net) {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0 2mm;
+        border: none;
+        border-left: 0.15mm solid #bbb;
+      }
+      .vO .t-row:first-child {
+        border-left: none;
+        padding-left: 0;
+      }
+      .vO :is(.t-row, .t-net) .v {
+        margin-left: 0;
+        font-size: 10pt;
+      }
+      .vO .foot {
+        border: none;
+      }
+
+      /* P · Margin Index — reference details live in a full-height left rail. */
+      .vP {
+        padding: 6mm 7mm 5mm 42mm;
+      }
+      .vP .margin-index {
+        position: absolute;
+        inset: 6mm auto 5mm 7mm;
+        width: 30mm;
+        border-right: 0.25mm solid #333;
+        padding-right: 3mm;
+        display: flex;
+        flex-direction: column;
+        gap: 7mm;
+      }
+      .vP .margin-index .p-meta {
+        border: none;
+        padding: 0;
+        gap: 5mm;
+      }
+      .vP .m-val:not(.date) {
+        font-size: 26pt;
+        font-weight: 700;
+      }
+      .vP .copies {
+        margin-top: auto;
+      }
+      .vP .mast {
+        display: block;
+      }
+      .vP .co {
+        text-align: left;
+      }
+      .vP .co-name {
+        font-size: 18pt;
+      }
+      .vP .mrule {
+        border-top-width: 0.2mm;
+        margin-top: 2mm;
+      }
+      .vP .party {
+        display: block;
+        border: none;
+      }
+      .vP .p-main {
+        padding: 2mm 0;
+      }
+      .vP table {
+        border: none;
+        margin-top: 0;
+      }
+      .vP :is(th, td) {
+        padding-left: 0.5mm;
+        padding-right: 0.5mm;
+      }
+      .vP .sum {
+        grid-template-columns: 1fr 49mm;
+        gap: 3mm;
+      }
+      .vP .s-line {
+        font-size: 7pt;
+      }
+      .vP .s-panel {
+        padding: 0;
+      }
+      .vP .foot {
+        grid-template-columns: 1fr 34mm 48mm;
+        gap: 2mm;
+      }
+      .vP .f-for {
+        font-size: 8pt;
+      }
+
+      /* Q · Fine Grid — joined form cells, with metadata below the masthead. */
+      .vQ {
+        padding: 6mm 8mm 5mm;
+      }
+      .vQ .mast {
+        grid-template-columns: 1fr 48mm;
+        border: 0.2mm solid #777;
+        padding: 1.5mm 3mm;
+      }
+      .vQ .co-name {
+        font-size: 16pt;
+      }
+      .vQ .co {
+        text-align: left;
+      }
+      .vQ .form-index {
+        display: grid;
+        grid-template-columns: 1fr 80mm;
+        border: 0.2mm solid #777;
+        border-top: none;
+      }
+      .vQ .doc-title {
+        padding: 1.5mm 3mm;
+      }
+      .vQ .p-meta {
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        border-color: #777;
+        padding: 0;
+        gap: 0;
+      }
+      .vQ .p-meta > div {
+        padding: 1mm 3mm;
+      }
+      .vQ .p-meta > div + div {
+        border-left: 0.2mm solid #777;
+      }
+      .vQ .party {
+        display: block;
+        border-color: #777;
+      }
+      .vQ .mrule {
+        display: none;
+      }
+      .vQ table {
+        margin: 0;
+        border: 0.2mm solid #777;
+      }
+      .vQ :is(th, td) {
+        border: 0.15mm solid #999;
+      }
+      .vQ td {
+        height: 4.6mm;
+        line-height: 4.6mm;
+      }
+      .vQ .sum {
+        margin: 0;
+        gap: 0;
+        border: 0.2mm solid #777;
+        border-top: none;
+      }
+      .vQ .s-left {
+        padding: 2mm 3mm;
+      }
+      .vQ .s-panel {
+        border-left: 0.2mm solid #777;
+        padding: 1.5mm 3mm;
+      }
+      .vQ .foot {
+        border: none;
+      }
+      /* R · Split Summary — the ledger and totals occupy parallel columns. */
+      .vR {
+        padding: 6mm 7mm 5mm;
+      }
+      .vR .mast {
+        grid-template-columns: 32mm 1fr 27mm;
+      }
+      .vR .co-name {
+        font-size: 18pt;
+      }
+      .vR .mrule {
+        border-top-width: 0.25mm;
+      }
+      .vR .party {
+        border: none;
+        margin-bottom: 2mm;
+      }
+      .vR .p-main {
+        padding-left: 0;
+      }
+      .vR .split-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 33mm;
+        gap: 4mm;
+      }
+      .vR table {
+        margin: 0;
+        border: none;
+      }
+      .vR :is(th, td) {
+        padding-left: 0.4mm;
+        padding-right: 0.4mm;
+      }
+      .vR .split-body > .s-panel {
+        border-left: 0.25mm solid #333;
+        padding: 1mm 0 0 3mm;
+      }
+      .vR .t-row {
+        flex-direction: column;
+        padding-bottom: 3mm;
+      }
+      .vR .t-row .v {
+        margin: 0;
+        font-size: 11pt;
+      }
+      .vR .t-net {
+        flex-direction: column;
+        gap: 1mm;
+        padding-top: 2mm;
+        border-color: #333;
+      }
+      .vR .t-net .v {
+        margin: 0;
+        font-size: 14pt;
+      }
+      .vR .sum {
+        display: block;
+        border-top: 0.15mm solid #999;
+        padding-top: 1mm;
+      }
+
+      /* S · Compact Register — metadata and totals form horizontal registers. */
+      .vS {
+        padding: 6mm 8mm 5mm;
+      }
+      .vS .mast {
+        grid-template-columns: 1fr 42mm;
+        align-items: start;
+      }
+      .vS .co {
+        text-align: left;
+      }
+      .vS .co-name {
+        font-size: 17pt;
+      }
+      .vS .doc-title {
+        text-align: right;
+      }
+      .vS .mrule {
+        border-top-width: 0.25mm;
+        margin-top: 2mm;
+      }
+      .vS .register-index {
+        display: grid;
+        grid-template-columns: 1fr 54mm;
+        align-items: center;
+        border-bottom: 0.15mm solid #777;
+        padding: 1.5mm 0;
+      }
+      .vS .p-meta {
+        flex-direction: row;
+        justify-content: start;
+        gap: 8mm;
+        border: none;
+        padding: 0;
+      }
+      .vS .p-meta > div {
+        display: flex;
+        align-items: baseline;
+        gap: 2mm;
+      }
+      .vS .copies {
+        flex-direction: row;
+        gap: 3mm;
+      }
+      .vS .party {
+        display: block;
+        border: none;
+      }
+      .vS .p-main {
+        padding: 1.5mm 0;
+      }
+      .vS table {
+        margin: 0;
+        border: none;
+      }
+      .vS th {
+        border-top: 0.25mm solid #333;
+      }
+      .vS td {
+        height: 4.4mm;
+        line-height: 4.4mm;
+        text-align: right;
+        padding-right: 2mm;
+      }
+      .vS td:nth-child(n + 7) {
+        text-align: left;
+      }
+      .vS td:nth-child(3),
+      .vS td:nth-child(6) {
+        border-right: 0.15mm solid #bbb;
+      }
+      .vS .sum {
+        display: flex;
+        flex-direction: column;
+        gap: 2mm;
+        margin-top: 0;
+      }
+      .vS .s-panel {
+        display: grid;
+        grid-template-columns: 0.8fr 1fr 1.2fr 1.2fr 1.3fr;
+        width: 100%;
+        padding: 2mm 0;
+        border-bottom: 0.25mm solid #333;
+      }
+      .vS :is(.t-row, .t-net) {
+        flex-direction: column;
+        margin: 0;
+        padding: 0 2mm;
+        border: none;
+        gap: 0.5mm;
+      }
+      .vS :is(.t-row, .t-net) .v {
+        margin: 0;
+        font-size: 10pt;
+      }
+      .vS .s-left {
+        order: 1;
+      }
+      .vS .foot {
+        grid-template-columns: 1fr 40mm 55mm;
+        padding-top: 3mm;
+      }
+      /* T-AC share the A sample; every rule is scoped to the new sheets. */
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC) {
+        color: #111;
+      }
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC) th {
+        background: #fff;
+        color: #111;
+        letter-spacing: 0;
+        font-size: 6.5pt;
+        border-bottom: 0.25mm solid #333;
+      }
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC) td {
+        font-size: 7.5pt;
+      }
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC) .s-panel {
+        background: none;
+        border-radius: 0;
+      }
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC)
+        :is(
+          .co-sub,
+          .p-sub,
+          .m-label,
+          .copy,
+          .s-line span,
+          .t-row .l,
+          .f-terms ol,
+          .f-cap,
+          .f-authcap
+        ) {
+        color: #555;
+      }
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC) .m-label {
+        font-size: 6.5pt;
+        letter-spacing: 0.03em;
+      }
+      :is(.vT, .vU, .vV, .vW, .vX, .vY, .vZ, .vAA, .vAB, .vAC) .copy i {
+        border-radius: 0;
+        border-color: #666;
+      }
+      /* T · Ledger Card — bordered slip header, dashed party and totals. */
+      .vT {
+        padding: 6.5mm 9mm 5mm;
+      }
+      .vT .mast {
+        grid-template-columns: 30mm 1fr 34mm;
+        border: 0.2mm solid #777;
+        padding: 2mm 3mm;
+      }
+      .vT .co {
+        text-align: left;
+      }
+      .vT .co-name {
+        font-size: 16pt;
+      }
+      .vT .doc-title {
+        font-size: 7pt;
+        letter-spacing: 0.1em;
+      }
+      .vT .mrule {
+        display: none;
+      }
+      .vT .party {
+        margin-top: 2mm;
+        border-style: dashed;
+      }
+      .vT table {
+        border-style: dashed;
+      }
+      .vT .s-panel {
+        border: 0.2mm dashed #777;
+        padding: 2mm 3mm;
+      }
+      .vT .foot {
+        border-top: 0.2mm dashed #777;
+      }
+      /* U · Memo Slip — narrow column, open type, hairline totals. */
+      .vU {
+        padding: 8mm 14mm 6mm;
+      }
+      .vU .mast {
+        grid-template-columns: 1fr;
+        text-align: left;
+        gap: 1mm;
+      }
+      .vU .co {
+        text-align: left;
+        order: -1;
+      }
+      .vU .co-name {
+        font-size: 22pt;
+        letter-spacing: -0.03em;
+      }
+      .vU .doc-title {
+        font-size: 6.8pt;
+        letter-spacing: 0.22em;
+      }
+      .vU .copies {
+        flex-direction: row;
+        gap: 3mm;
+        justify-self: start;
+      }
+      .vU .party {
+        display: block;
+        border: none;
+        border-bottom: 0.15mm solid #999;
+        margin-top: 1mm;
+      }
+      .vU .p-main {
+        padding-left: 0;
+      }
+      .vU .p-meta {
+        flex-direction: row;
+        gap: 10mm;
+        border: none;
+        padding-left: 0;
+      }
+      .vU table {
+        border: none;
+      }
+      .vU td {
+        height: 5mm;
+        line-height: 5mm;
+      }
+      .vU .sum {
+        grid-template-columns: 1fr;
+      }
+      .vU .s-panel {
+        border: none;
+        border-top: 0.2mm solid #222;
+        border-bottom: 0.2mm solid #222;
+        padding: 2mm 0;
+      }
+      /* V · Statement Band — dark mast and full-bleed totals band. */
+      .vV {
+        padding: 6mm 8mm 5mm;
+      }
+      .vV .mast {
+        grid-template-columns: 1fr 40mm;
+        background: #111;
+        color: #fff;
+        margin: 0 -8mm;
+        padding: 3mm 8mm;
+      }
+      .vV .doc-title {
+        color: #bbb;
+        text-align: right;
+      }
+      .vV .co {
+        text-align: left;
+      }
+      .vV .co-name {
+        color: #fff;
+        font-size: 18pt;
+      }
+      .vV .co-sub {
+        color: #bbb;
+      }
+      .vV .copies {
+        display: none;
+      }
+      .vV .mrule {
+        display: none;
+      }
+      .vV .party {
+        margin-top: 3mm;
+        border: none;
+        border-bottom: 0.3mm solid #111;
+      }
+      .vV .p-main {
+        padding-left: 0;
+      }
+      .vV table {
+        border: none;
+      }
+      .vV .sum {
+        grid-template-columns: 1fr;
+        background: #111;
+        color: #fff;
+        margin: 2mm -8mm 0;
+        padding: 3mm 8mm;
+      }
+      .vV .s-line {
+        color: #fff;
+      }
+      .vV .s-line span {
+        color: #bbb;
+      }
+      .vV .s-panel {
+        border: none;
+        padding: 0;
+      }
+      .vV .t-row .l {
+        color: #bbb;
+      }
+      .vV .t-net {
+        border-top-color: #555;
+      }
+      .vV .foot {
+        border: none;
+      }
+      /* W · Parcel Ticket — perforated ticket spine with stub reference. */
+      .vW {
+        padding: 6mm 7mm 5mm 42mm;
+      }
+      .vW .ticket-index {
+        position: absolute;
+        inset: 6mm auto 5mm 7mm;
+        width: 30mm;
+        border-right: 0.4mm dashed #333;
+        padding-right: 3mm;
+        display: flex;
+        flex-direction: column;
+        gap: 3mm;
+      }
+      .vW .ticket-index .stub {
+        border: 0.2mm solid #333;
+        padding: 2mm;
+        text-align: center;
+      }
+      .vW .ticket-index .stub b {
+        display: block;
+        font-size: 16pt;
+      }
+      .vW .mast {
+        display: block;
+      }
+      .vW .co {
+        text-align: left;
+      }
+      .vW .co-name {
+        font-size: 18pt;
+      }
+      .vW .copies {
+        flex-direction: row;
+        gap: 3mm;
+        margin-top: 1mm;
+      }
+      .vW .party {
+        display: block;
+        border: none;
+        border-top: 0.2mm solid #333;
+        margin-top: 2mm;
+      }
+      .vW .p-main {
+        padding-left: 0;
+      }
+      .vW table {
+        border: none;
+      }
+      .vW .sum {
+        grid-template-columns: 1fr;
+      }
+      .vW .s-panel {
+        border: 0.2mm solid #333;
+        padding: 2mm 3mm;
+      }
+      /* X · Column Rules — broadsheet dividers, quiet boxed totals. */
+      .vX {
+        padding: 7mm 9mm 5mm;
+      }
+      .vX .mast {
+        grid-template-columns: 1fr 36mm;
+      }
+      .vX .co {
+        text-align: left;
+      }
+      .vX .co-name {
+        font-size: 19pt;
+      }
+      .vX .party {
+        border: none;
+        border-bottom: 0.2mm solid #333;
+      }
+      .vX .p-main {
+        padding-left: 0;
+      }
+      .vX .p-meta {
+        border: none;
+        padding-right: 0;
+        text-align: right;
+      }
+      .vX table {
+        border: none;
+      }
+      .vX :is(th, td) {
+        border-left: 0.15mm solid #bbb;
+      }
+      .vX :is(th, td):first-child {
+        border-left: none;
+      }
+      .vX .sum {
+        grid-template-columns: 1fr 58mm;
+      }
+      .vX .s-panel {
+        border-left: 0.25mm solid #333;
+        padding-left: 4mm;
+      }
+      /* Y · Quiet Formal — centered notice with quiet double rules. */
+      .vY {
+        padding: 7mm 10mm 5mm;
+        text-align: center;
+      }
+      .vY .mast {
+        grid-template-columns: 1fr;
+        gap: 1mm;
+      }
+      .vY .co-name {
+        font-size: 19pt;
+        letter-spacing: 0.06em;
+      }
+      .vY .doc-title {
+        order: -1;
+        letter-spacing: 0.28em;
+        font-size: 6.4pt;
+      }
+      .vY .copies {
+        flex-direction: row;
+        justify-content: center;
+        justify-self: center;
+      }
+      .vY .mrule {
+        width: 34mm;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .vY .party {
+        text-align: left;
+        margin-top: 2mm;
+      }
+      .vY table {
+        margin-top: 2mm;
+      }
+      .vY .sum {
+        grid-template-columns: 1fr;
+        text-align: left;
+      }
+      .vY .s-panel {
+        border: none;
+        border-top: 0.25mm solid #333;
+        border-bottom: 0.25mm solid #333;
+        padding: 2mm 0;
+      }
+      .vY .foot {
+        text-align: left;
+      }
+      /* Z · Compact Slip — dense counter slip, all rows stay tight. */
+      .vZ {
+        padding: 5mm 7mm 4mm;
+      }
+      .vZ .mast {
+        grid-template-columns: 26mm 1fr 28mm;
+      }
+      .vZ .co-name {
+        font-size: 15pt;
+      }
+      .vZ .co-sub {
+        font-size: 6pt;
+      }
+      .vZ .party {
+        grid-template-columns: 1fr 48mm;
+      }
+      .vZ td {
+        height: 4.1mm;
+        line-height: 4.1mm;
+        font-size: 7.1pt;
+      }
+      .vZ th {
+        padding: 1mm;
+      }
+      .vZ table {
+        margin-top: 1mm;
+      }
+      .vZ .sum {
+        grid-template-columns: 1fr 56mm;
+        gap: 3mm;
+        margin-top: 1mm;
+      }
+      .vZ .s-panel {
+        padding: 1.4mm 2.2mm;
+      }
+      .vZ .foot {
+        grid-template-columns: 1fr 36mm 48mm;
+        gap: 2mm;
+      }
+      /* AA · Dispatch Tag — tag header with pill copy markers. */
+      .vAA {
+        padding: 6mm 8mm 5mm;
+      }
+      .vAA .mast {
+        grid-template-columns: 1fr 46mm;
+        border: 0.25mm solid #111;
+        border-radius: 2.4mm;
+        padding: 2.4mm 3.4mm;
+      }
+      .vAA .co {
+        text-align: left;
+      }
+      .vAA .co-name {
+        font-size: 17pt;
+      }
+      .vAA .copies {
+        gap: 1mm;
+      }
+      .vAA .copy {
+        border: 0.2mm solid #333;
+        border-radius: 99px;
+        padding: 0.7mm 2.4mm;
+      }
+      .vAA .copy i {
+        display: none;
+      }
+      .vAA .mrule {
+        display: none;
+      }
+      .vAA .party {
+        margin-top: 2mm;
+        border-radius: 2.4mm;
+      }
+      .vAA table {
+        border-radius: 2.4mm;
+        overflow: hidden;
+      }
+      .vAA .s-panel {
+        border: 0.25mm solid #111;
+        border-radius: 2.4mm;
+        padding: 2mm 3mm;
+      }
+      .vAA .foot {
+        border: none;
+      }
+      /* AB · Office File — file jacket with tabbed challan number. */
+      .vAB {
+        padding: 7mm 8mm 5mm;
+      }
+      .vAB .mast {
+        grid-template-columns: 1fr 34mm;
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 2mm;
+      }
+      .vAB .co {
+        text-align: left;
+      }
+      .vAB .co-name {
+        font-size: 17pt;
+        letter-spacing: 0.04em;
+      }
+      .vAB .p-meta {
+        border: 0.25mm solid #111;
+        border-bottom: none;
+        border-radius: 1.8mm 1.8mm 0 0;
+        text-align: center;
+        padding: 1.6mm 2mm 1.2mm;
+        background: #f4f4f5;
+        justify-content: flex-start;
+      }
+      .vAB .party {
+        border: 0.25mm solid #111;
+        margin-top: 0;
+      }
+      .vAB .copies {
+        flex-direction: row;
+        gap: 2mm;
+      }
+      .vAB table {
+        border: 0.25mm solid #111;
+        border-top: none;
+      }
+      .vAB .s-panel {
+        border: 0.25mm solid #111;
+        padding: 2mm 3mm;
+      }
+      .vAB .foot {
+        border-top: 0.3mm solid #111;
+      }
+      /* AC · Fine Frame — gallery frame, double rules, wide margins. */
+      .vAC {
+        padding: 7mm 10mm 5mm;
+        outline: 0.15mm solid #111;
+        outline-offset: -2.4mm;
+      }
+      .vAC .mast {
+        grid-template-columns: 30mm 1fr 30mm;
+      }
+      .vAC .co-name {
+        font-size: 18pt;
+        letter-spacing: 0.02em;
+      }
+      .vAC .party {
+        margin-top: 2mm;
+      }
+      .vAC table {
+        margin-top: 2mm;
+      }
+      .vAC th {
+        border-top: 0.3mm double #111;
+        border-bottom: 0.3mm double #111;
+      }
+      .vAC .sum {
+        grid-template-columns: 1fr 62mm;
+      }
+      .vAC .s-panel {
+        border: 0.2mm solid #111;
+        padding: 2mm 3mm;
+      }
+      .vAC .foot {
+        border-top: 0.3mm double #111;
+      }
+
+      /* ── View Modes & Grid Compare ── */
+      html.view-single .dir {
+        display: none;
+      }
+      html.view-single .dir.on {
+        display: block;
+      }
+
+      html.view-all .dir {
+        display: block !important;
+        margin-bottom: 44px;
+      }
+
+      html.view-grid #sheet-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 18px;
+        align-items: start;
+      }
+      html.view-grid .dir {
+        display: block !important;
+        margin-bottom: 0 !important;
+        background: #1e2026;
+        border: 1px solid #2d3139;
+        border-radius: 12px;
+        padding: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      html.view-grid .dir:hover {
+        border-color: #60a5fa;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      }
+      html.view-grid .dir.on {
+        border-color: #3b82f6;
+        outline: 2px solid #3b82f6;
+      }
+      html.view-grid .sheet {
+        zoom: 0.32;
+        transform-origin: top left;
+        pointer-events: none;
+        box-shadow: none;
+        margin: 0 auto 8px auto;
+      }
+      html.view-grid .stepper,
+      html.view-grid .tools-group .zoom-seg {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      html.view-all .stepper,
+      html.view-all .tools-group .zoom-seg {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      /* ── Zoom Levels ── */
+      html[data-zoom="0.85"] .sheet {
+        zoom: 0.85;
+      }
+      html[data-zoom="1"] .sheet {
+        zoom: 1;
+      }
+      html[data-zoom="1.15"] .sheet {
+        zoom: 1.15;
+      }
+
+      /* ── Light Canvas Theme ── */
+      html.light-canvas {
+        background: #eceff3;
+        color: #1a1d23;
+      }
+      html.light-canvas h1 {
+        color: #0f172a;
+      }
+      html.light-canvas .note {
+        color: #475569;
+      }
+      html.light-canvas .dir-label b {
+        color: #0f172a;
+      }
+      html.light-canvas .dir-label span {
+        color: #64748b;
+      }
+      html.light-canvas .picker {
+        background: rgba(248, 249, 251, 0.94);
+        border-bottom-color: #cbd5e1;
+      }
+      html.light-canvas .pbtn {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      html.light-canvas .pbtn:hover {
+        border-color: #94a3b8;
+        color: #0f172a;
+      }
+      html.light-canvas .pbtn[aria-pressed="true"] {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      html.light-canvas .seg button {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #475569;
+      }
+      html.light-canvas .seg button:hover {
+        color: #0f172a;
+      }
+      html.light-canvas .seg button[aria-pressed="true"] {
+        background: #fff;
+        border-color: #94a3b8;
+        color: #0f172a;
+      }
+      html.light-canvas .quick-jump select {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #0f172a;
+      }
+      html.light-canvas .stepper button,
+      html.light-canvas .tools-group button {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      html.light-canvas .tools-group button.active {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      html.light-canvas.view-grid .dir {
+        background: #fff;
+        border-color: #e2e8f0;
+      }
+
+      /* ── Modern Toolbar Additions ── */
+      .quick-jump select {
+        background: #1e2026;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        color: #e2e8f0;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 12px;
+        cursor: pointer;
+        outline: none;
+      }
+      .quick-jump select:focus {
+        border-color: #3b82f6;
+      }
+      .tools-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .zoom-seg {
+        display: inline-flex;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .zoom-btn {
+        background: #17181c;
+        border: none;
+        color: #94a3b8;
+        font-family: Inter, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      .zoom-btn:hover {
+        color: #fff;
+      }
+      .zoom-btn.active {
+        background: #3b82f6;
+        color: #fff;
+      }
+      .icon-btn {
+        background: #1e2026;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        color: #cbd5e1;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 11px;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        border-color: #60a5fa;
+        color: #fff;
+      }
+
+      /* ── 10 NEW CHALLAN FORMATS: vAD through vAM ── */
+
+      /* AD · Architectural Blueprint — technical drafting grid with coordinate marks */
+      .vAD {
+        padding: 6mm 8mm 5mm;
+        outline: 0.2mm solid #0284c7;
+        outline-offset: -1.5mm;
+        font-family: monospace, Inter, sans-serif;
+      }
+      .vAD .mast {
+        border-bottom: 0.25mm dashed #0284c7;
+        padding-bottom: 2mm;
+        grid-template-columns: 1fr 42mm;
+      }
+      .vAD .co-name {
+        font-size: 16pt;
+        color: #0369a1;
+        letter-spacing: 0.08em;
+      }
+      .vAD .doc-title {
+        color: #0284c7;
+        font-size: 7pt;
+        letter-spacing: 0.15em;
+      }
+      .vAD .party {
+        border: 0.2mm dashed #0284c7;
+        margin-top: 2mm;
+        background: #f0f9ff;
+      }
+      .vAD table {
+        border: 0.2mm dashed #0284c7;
+        margin-top: 2mm;
+      }
+      .vAD th {
+        background: #e0f2fe;
+        color: #0369a1;
+        border-bottom: 0.2mm dashed #0284c7;
+        font-size: 6.2pt;
+      }
+      .vAD td {
+        font-size: 7.2pt;
+        border-bottom: 0.15mm solid #e0f2fe;
+      }
+      .vAD .s-panel {
+        border: 0.2mm dashed #0284c7;
+        background: #f0f9ff;
+      }
+      .vAD .t-net .v {
+        color: #0369a1;
+      }
+      .vAD .foot {
+        border-top: 0.25mm dashed #0284c7;
+      }
+
+      /* AE · Nordic Minimal — Scandinavian whitespace & delicate slate lines */
+      .vAE {
+        padding: 8mm 10mm 6mm;
+      }
+      .vAE .mast {
+        grid-template-columns: 1fr;
+        gap: 1mm;
+        text-align: left;
+      }
+      .vAE .co-name {
+        font-size: 20pt;
+        letter-spacing: -0.02em;
+        color: #0f172a;
+      }
+      .vAE .doc-title {
+        font-size: 6.5pt;
+        letter-spacing: 0.2em;
+        color: #64748b;
+        order: -1;
+      }
+      .vAE .party {
+        border: none;
+        border-bottom: 0.15mm solid #cbd5e1;
+        margin-top: 3mm;
+        padding-bottom: 3mm;
+      }
+      .vAE .p-main {
+        padding-left: 0;
+      }
+      .vAE table {
+        border: none;
+        margin-top: 3mm;
+      }
+      .vAE th {
+        border-bottom: 0.25mm solid #0f172a;
+        background: transparent;
+        color: #0f172a;
+      }
+      .vAE td {
+        border-bottom: 0.15mm solid #f1f5f9;
+        padding: 1.2mm 0;
+        font-size: 7.5pt;
+      }
+      .vAE .sum {
+        grid-template-columns: 1fr 60mm;
+        margin-top: 3mm;
+      }
+      .vAE .s-panel {
+        border: none;
+        border-top: 0.25mm solid #0f172a;
+        padding: 2mm 0;
+      }
+      .vAE .foot {
+        border-top: 0.15mm solid #cbd5e1;
+      }
+
+      /* AF · Postal Courier — airmail edge & tracking matrix */
+      .vAF {
+        padding: 6mm 8mm 5mm;
+        border-left: 5mm solid #ef4444;
+        border-right: 5mm solid #3b82f6;
+      }
+      .vAF .mast {
+        grid-template-columns: 1fr 45mm;
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 2mm;
+      }
+      .vAF .co-name {
+        font-size: 17pt;
+        font-weight: 900;
+      }
+      .vAF .doc-title {
+        background: #111;
+        color: #fff;
+        padding: 1.5mm 3mm;
+        border-radius: 1mm;
+        font-size: 6.8pt;
+      }
+      .vAF .party {
+        border: 0.25mm solid #111;
+        border-radius: 1.5mm;
+        margin-top: 2mm;
+      }
+      .vAF table {
+        border: 0.25mm solid #111;
+        margin-top: 2mm;
+        border-radius: 1.5mm;
+        overflow: hidden;
+      }
+      .vAF th {
+        background: #f8fafc;
+        border-bottom: 0.25mm solid #111;
+      }
+      .vAF .s-panel {
+        border: 0.25mm solid #111;
+        border-radius: 1.5mm;
+        padding: 2mm 3mm;
+      }
+
+      /* AG · Luxury Atelier — balanced proportions & warm ochre accents */
+      .vAG {
+        padding: 7mm 10mm 6mm;
+        outline: 0.2mm solid #b45309;
+        outline-offset: -2mm;
+      }
+      .vAG .mast {
+        text-align: center;
+        grid-template-columns: 1fr;
+        gap: 1mm;
+      }
+      .vAG .co-name {
+        font-size: 21pt;
+        letter-spacing: 0.08em;
+        color: #92400e;
+      }
+      .vAG .doc-title {
+        font-size: 6.8pt;
+        letter-spacing: 0.25em;
+        color: #b45309;
+      }
+      .vAG .mrule {
+        width: 40mm;
+        margin: 1mm auto;
+        border-top-color: #b45309;
+      }
+      .vAG .party {
+        border: none;
+        border-top: 0.2mm solid #b45309;
+        border-bottom: 0.2mm solid #b45309;
+        padding: 2mm 0;
+        margin-top: 2mm;
+      }
+      .vAG table {
+        border: none;
+        margin-top: 2mm;
+      }
+      .vAG th {
+        border-top: 0.2mm solid #b45309;
+        border-bottom: 0.2mm solid #b45309;
+        color: #92400e;
+      }
+      .vAG .s-panel {
+        border: 0.2mm solid #b45309;
+        padding: 2mm 3mm;
+      }
+      .vAG .t-net {
+        border-top-color: #b45309;
+      }
+      .vAG .t-net .v {
+        color: #92400e;
+      }
+
+      /* AH · Industrial Kanban — amber routing card banner & shop-floor checklist */
+      .vAH {
+        padding: 6mm 8mm 5mm;
+      }
+      .vAH::before {
+        content: "JOBWORK PRODUCTION ROUTING CARD · FACTORY FLOOR DISPATCH";
+        display: block;
+        background: #f59e0b;
+        color: #111;
+        font-weight: 900;
+        font-size: 6.2pt;
+        letter-spacing: 0.15em;
+        text-align: center;
+        padding: 1.2mm;
+        margin: -6mm -8mm 4mm -8mm;
+      }
+      .vAH .mast {
+        grid-template-columns: 1fr 40mm;
+      }
+      .vAH .co-name {
+        font-size: 18pt;
+        font-weight: 900;
+      }
+      .vAH .party {
+        border: 0.3mm solid #111;
+        background: #fffbeb;
+      }
+      .vAH table {
+        border: 0.3mm solid #111;
+      }
+      .vAH th {
+        background: #111;
+        color: #fff;
+      }
+      .vAH .s-panel {
+        border: 0.3mm solid #111;
+        background: #fffbeb;
+      }
+      .vAH .t-net .v {
+        font-size: 15pt;
+        font-weight: 900;
+      }
+
+      /* AI · Bento Dashboard — modular rounded card panels */
+      .vAI {
+        padding: 6mm 8mm 5mm;
+        background: #f8fafc;
+      }
+      .vAI .mast {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        padding: 3mm 4mm;
+        grid-template-columns: 1fr 40mm;
+      }
+      .vAI .party {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        padding: 2.5mm 3.5mm;
+        margin-top: 2mm;
+      }
+      .vAI table {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        overflow: hidden;
+        margin-top: 2mm;
+      }
+      .vAI th {
+        background: #f1f5f9;
+      }
+      .vAI .s-panel {
+        background: #0f172a;
+        color: #fff;
+        border-radius: 2mm;
+        border: none;
+        padding: 2.5mm 3.5mm;
+      }
+      .vAI .s-panel .l {
+        color: #94a3b8;
+      }
+      .vAI .s-panel .v {
+        color: #fff;
+      }
+      .vAI .foot {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        padding: 2.5mm 3.5mm;
+        margin-top: 2mm;
+      }
+
+      /* AJ · Telegraph Wire — vintage cable slip & dashed borders */
+      .vAJ {
+        padding: 6mm 8mm 5mm;
+        border: 0.25mm dashed #111;
+      }
+      .vAJ .mast {
+        grid-template-columns: 1fr 40mm;
+        border-bottom: 0.25mm dashed #111;
+        padding-bottom: 2mm;
+      }
+      .vAJ .co-name {
+        font-size: 17pt;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .vAJ .doc-title {
+        font-size: 6.4pt;
+        letter-spacing: 0.2em;
+      }
+      .vAJ .party {
+        border: 0.2mm dashed #111;
+        margin-top: 2mm;
+      }
+      .vAJ table {
+        border: 0.2mm dashed #111;
+        margin-top: 2mm;
+      }
+      .vAJ th {
+        border-bottom: 0.2mm dashed #111;
+        background: transparent;
+      }
+      .vAJ td {
+        border-bottom: 0.15mm dotted #ccc;
+      }
+      .vAJ .s-panel {
+        border: 0.2mm dashed #111;
+      }
+
+      /* AK · Executive Duotone — deep navy masthead with warm slate fills */
+      .vAK {
+        padding: 6mm 8mm 5mm;
+      }
+      .vAK .mast {
+        background: #0f172a;
+        color: #fff;
+        margin: -6mm -8mm 3mm -8mm;
+        padding: 4mm 8mm;
+        grid-template-columns: 1fr 42mm;
+      }
+      .vAK .co-name {
+        color: #fff;
+        font-size: 19pt;
+      }
+      .vAK .co-sub {
+        color: #94a3b8;
+      }
+      .vAK .doc-title {
+        color: #94a3b8;
+      }
+      .vAK .party {
+        border: 0.2mm solid #cbd5e1;
+        background: #f8fafc;
+      }
+      .vAK table {
+        border: 0.2mm solid #cbd5e1;
+      }
+      .vAK th {
+        background: #0f172a;
+        color: #fff;
+      }
+      .vAK tbody tr:nth-child(even) {
+        background: #f8fafc;
+      }
+      .vAK .s-panel {
+        background: #0f172a;
+        color: #fff;
+        border: none;
+        padding: 2.5mm 3.5mm;
+      }
+      .vAK .s-panel .l {
+        color: #94a3b8;
+      }
+      .vAK .s-panel .v {
+        color: #fff;
+      }
+
+      /* AL · Ledger Envelope — envelope manifest header with window box */
+      .vAL {
+        padding: 6mm 8mm 5mm;
+      }
+      .vAL .mast {
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 2mm;
+      }
+      .vAL .party {
+        border: 0.25mm solid #111;
+        box-shadow: inset 0 0 0 1mm #f4f4f5;
+        margin-top: 2mm;
+        padding: 2mm;
+      }
+      .vAL table {
+        border: 0.25mm solid #111;
+        margin-top: 2mm;
+      }
+      .vAL th {
+        background: #e4e4e7;
+      }
+      .vAL .s-panel {
+        border: 0.25mm solid #111;
+        padding: 2mm 3mm;
+      }
+
+      /* AM · Micro Dot Matrix — retro monospace accents & pin holes */
+      .vAM {
+        padding: 6mm 10mm 5mm 7mm;
+        font-family: monospace, Inter, sans-serif;
+        border-right: 0.25mm dotted #999;
+      }
+      .vAM .mast {
+        grid-template-columns: 1fr 42mm;
+        border-bottom: 0.2mm solid #333;
+        padding-bottom: 2mm;
+      }
+      .vAM .co-name {
+        font-size: 16pt;
+        letter-spacing: 0.05em;
+      }
+      .vAM .party {
+        border: 0.15mm solid #666;
+        margin-top: 2mm;
+      }
+      .vAM table {
+        border: 0.15mm solid #666;
+        margin-top: 2mm;
+      }
+      .vAM th {
+        font-family: monospace, sans-serif;
+        font-size: 6.2pt;
+        border-bottom: 0.2mm solid #333;
+      }
+      .vAM td {
+        font-family: monospace, sans-serif;
+        font-size: 7.2pt;
+        border-bottom: 0.15mm dotted #ccc;
+      }
+      .vAM .s-panel {
+        border: 0.15mm solid #666;
+      }
     </style>
   </head>
   <body>
-    <h1>Delivery challan — 14 formats, pick one</h1>
+    <h1>Delivery challan — 39 formats, pick one</h1>
     <p class="note">
       Same jobwork challan data on every sheet (12 rows shown; all formats
       paginate at 12 rows/page). All grayscale-safe for mono printers. Terms,
       signatures and ORIGINAL/DUPLICATE marks appear on each in its own accent.
-      Use the picker bar to jump between formats (arrow keys step,
-      <b>All</b> shows every sheet).
+      Toggle <b>Single Sheet</b> / <b>Grid Compare</b> /
+      <b>All Sheets</b> above; use arrow keys [← / →] to step, quick dropdown to
+      jump, or click any card in Grid view.
     </p>
 
     <nav class="picker" aria-label="Format picker">
+      <div class="viewbar">
+        <div class="seg" role="group" aria-label="View mode">
+          <button type="button" id="view-single" aria-pressed="true">
+            Single Sheet
+          </button>
+          <button type="button" id="view-grid" aria-pressed="false">
+            Grid Compare
+          </button>
+          <button type="button" id="view-all" aria-pressed="false">
+            All Sheets
+          </button>
+        </div>
+        <div class="quick-jump">
+          <select id="format-select" aria-label="Select format"></select>
+        </div>
+        <span class="viewcount" id="view-count"></span>
+        <div class="stepper">
+          <button
+            type="button"
+            id="view-prev"
+            aria-label="Previous format"
+            title="Previous (←)"
+          >
+            &lsaquo;
+          </button>
+          <button
+            type="button"
+            id="view-next"
+            aria-label="Next format"
+            title="Next (→)"
+          >
+            &rsaquo;
+          </button>
+        </div>
+        <div class="tools-group">
+          <div class="zoom-seg" role="group" aria-label="Zoom">
+            <button type="button" class="zoom-btn" data-zoom="0.85">85%</button>
+            <button type="button" class="zoom-btn active" data-zoom="1">
+              100%
+            </button>
+            <button type="button" class="zoom-btn" data-zoom="1.15">
+              115%
+            </button>
+          </div>
+          <button
+            type="button"
+            id="theme-toggle"
+            class="icon-btn"
+            title="Toggle canvas theme (Dark/Light)"
+          >
+            ◑ Canvas
+          </button>
+        </div>
+      </div>
       <div class="picker-row"></div>
     </nav>
 
@@ -5082,11 +6791,184 @@
       </div>
     </div>
     <script>
+      // Clone before the picker snapshots .dir; sample values stay in one place.
       (function () {
-        document.documentElement.classList.add("js");
+        const source = document.querySelector(".sheet.vA").closest(".dir");
+        const anchor = document.currentScript;
+        const variants = [
+          [
+            "O",
+            "Open Letterhead",
+            "Open address block · horizontal totals · unboxed ledger",
+          ],
+          [
+            "P",
+            "Margin Index",
+            "Left reference rail · full-height index · separate ledger",
+          ],
+          [
+            "Q",
+            "Fine Grid",
+            "Joined form cells · reference strip · fine column rules",
+          ],
+          [
+            "R",
+            "Split Summary",
+            "Ledger left · stacked totals right · full-width remarks",
+          ],
+          [
+            "S",
+            "Compact Register",
+            "Inline reference register · compact rows · totals strip",
+          ],
+          ["T", "Ledger Card", "Bordered slip · dashed party · dashed totals"],
+          ["U", "Memo Slip", "Open type column · hairline totals"],
+          ["V", "Statement Band", "Dark mast · full-bleed totals band"],
+          ["W", "Parcel Ticket", "Ticket spine · stub reference"],
+          ["X", "Column Rules", "Broadsheet dividers · boxed totals"],
+          ["Y", "Quiet Formal", "Centered notice · double rules"],
+          ["Z", "Compact Slip", "Dense counter slip · tight rows"],
+          ["AA", "Dispatch Tag", "Tag header · pill copy markers"],
+          ["AB", "Office File", "File jacket · tabbed challan number"],
+          ["AC", "Fine Frame", "Gallery frame · double rules"],
+          [
+            "AD",
+            "Architectural Blueprint",
+            "Technical drafting grid · coordinate labels · cyan precision accents",
+          ],
+          [
+            "AE",
+            "Nordic Minimal",
+            "Scandinavian whitespace · soft slate lines · rounded copy badges",
+          ],
+          [
+            "AF",
+            "Postal Courier",
+            "Airmail edge motif · stamped security badge · tracking matrix",
+          ],
+          [
+            "AG",
+            "Luxury Atelier",
+            "Classical balanced serif proportions · double border · crest stamp",
+          ],
+          [
+            "AH",
+            "Industrial Kanban",
+            "Shop-floor production routing card · amber warning banner · checklist",
+          ],
+          [
+            "AI",
+            "Bento Dashboard",
+            "Modern bento card tiles · modular party & dispatch containers",
+          ],
+          [
+            "AJ",
+            "Telegraph Wire",
+            "Vintage telegram slip · perforated tear line · wire typography",
+          ],
+          [
+            "AK",
+            "Executive Duotone",
+            "Deep navy masthead · slate fills · highlighted net weight banner",
+          ],
+          [
+            "AL",
+            "Ledger Envelope",
+            "Packet manifest look · diagonal corner tab · addressed window box",
+          ],
+          [
+            "AM",
+            "Micro Dot Matrix",
+            "Retro modern matrix slip · tractor feed pin holes · QR code stamp",
+          ],
+        ];
+
+        variants.forEach(function ([code, name, description]) {
+          const section = source.cloneNode(true);
+          const sheet = section.querySelector(".sheet");
+          sheet.classList.replace("vA", "v" + code);
+          section.querySelector(".dir-label b").textContent =
+            code + " · " + name;
+          section.querySelector(".dir-label span").textContent = description;
+          const mast = sheet.querySelector(".mast");
+          const title = sheet.querySelector(".doc-title");
+          const meta = sheet.querySelector(".p-meta");
+          const copies = sheet.querySelector(".copies");
+          const party = sheet.querySelector(".party");
+          const table = sheet.querySelector("table");
+          const totals = sheet.querySelector(".s-panel");
+
+          function group(className, before, nodes) {
+            const container = document.createElement("div");
+            container.className = className;
+            sheet.insertBefore(container, before);
+            nodes.forEach(function (node) {
+              container.appendChild(node);
+            });
+          }
+
+          if (code === "O") {
+            mast.prepend(sheet.querySelector(".co"));
+            sheet.querySelector(".sum").prepend(totals);
+          } else if (code === "P") {
+            group("margin-index", mast, [title, meta, copies]);
+          } else if (code === "Q") {
+            title.querySelector("br").replaceWith(document.createTextNode(" "));
+            group("form-index", party, [title, meta]);
+          } else if (code === "R") {
+            group("split-body", table, [table, totals]);
+          } else if (code === "S") {
+            mast.appendChild(title);
+            group("register-index", party, [meta, copies]);
+          } else if (code === "W") {
+            group("ticket-index", mast, [title, meta, copies]);
+            const stub = document.createElement("div");
+            stub.className = "stub";
+            stub.innerHTML =
+              "<span>CHALLAN</span><b>15</b><span>19-09-2025</span>";
+            sheet.querySelector(".ticket-index").prepend(stub);
+          }
+
+          // Narrower column adjustments for side-column layouts
+          if (code === "P" || code === "R") {
+            const widths = [5, 9, 9, 12, 11, 12, 9, 20, 13];
+            table.querySelectorAll("col").forEach(function (col, index) {
+              col.style.width = widths[index] + "%";
+            });
+          }
+          anchor.before(section);
+        });
+      })();
+    </script>
+    <script>
+      (function () {
+        document.documentElement.classList.add("js", "view-single");
         var dirs = [].slice.call(document.querySelectorAll(".dir"));
         if (!dirs.length) return;
+
+        // Wrap dirs inside a #sheet-container for grid layout
+        var firstDir = dirs[0];
+        var parent = firstDir.parentNode;
+        var container = document.getElementById("sheet-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "sheet-container";
+          parent.insertBefore(container, firstDir);
+          dirs.forEach(function (d) {
+            container.appendChild(d);
+          });
+        }
+
         var row = document.querySelector(".picker-row");
+        var select = document.getElementById("format-select");
+        var segSingle = document.getElementById("view-single");
+        var segGrid = document.getElementById("view-grid");
+        var segAll = document.getElementById("view-all");
+        var count = document.getElementById("view-count");
+        var current = 0;
+        var currentMode = "single";
+        var buttons = [];
+
         var labels = dirs.map(function (d) {
           var b = d.querySelector(".dir-label b");
           var t = b ? b.textContent.trim() : "";
@@ -5096,49 +6978,106 @@
             name: (p[1] || "").trim(),
           };
         });
-        var buttons = [];
-        var allBtn = null;
-        var current = -1;
 
-        function paint() {
-          buttons.forEach(function (b, i) {
-            b.setAttribute("aria-pressed", i === current ? "true" : "false");
-          });
-          allBtn.setAttribute(
-            "aria-pressed",
-            current === -1 ? "true" : "false",
+        // Populate quick-jump select
+        labels.forEach(function (l, i) {
+          var opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = l.code + " — " + l.name;
+          select.appendChild(opt);
+        });
+        select.addEventListener("change", function () {
+          setMode("single");
+          show(parseInt(this.value, 10));
+        });
+
+        function setMode(mode, push) {
+          currentMode = mode;
+          document.documentElement.classList.remove(
+            "view-single",
+            "view-grid",
+            "view-all",
           );
+          document.documentElement.classList.add("view-" + mode);
+
+          segSingle.setAttribute(
+            "aria-pressed",
+            mode === "single" ? "true" : "false",
+          );
+          segGrid.setAttribute(
+            "aria-pressed",
+            mode === "grid" ? "true" : "false",
+          );
+          segAll.setAttribute(
+            "aria-pressed",
+            mode === "all" ? "true" : "false",
+          );
+
+          if (mode === "single") {
+            dirs.forEach(function (d, j) {
+              d.classList.toggle("on", j === current);
+            });
+            count.textContent =
+              current + 1 + " / " + dirs.length + " · " + labels[current].name;
+            select.value = current;
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#" + labels[current].code);
+              } catch (e) {}
+            }
+          } else if (mode === "grid") {
+            dirs.forEach(function (d, j) {
+              d.classList.toggle("on", j === current);
+            });
+            count.textContent = dirs.length + " formats (grid preview)";
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#grid");
+              } catch (e) {}
+            }
+          } else if (mode === "all") {
+            dirs.forEach(function (d) {
+              d.classList.remove("on");
+            });
+            count.textContent = dirs.length + " sheets (all)";
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#all");
+              } catch (e) {}
+            }
+          }
         }
+
         function show(i, push) {
           current = i;
           dirs.forEach(function (d, j) {
             d.classList.toggle("on", j === i);
           });
-          document.documentElement.classList.remove("all");
-          if (push !== false) {
-            try {
-              history.replaceState(null, "", "#" + labels[i].code);
-            } catch (e) {}
-          }
-          paint();
+          buttons.forEach(function (b, j) {
+            b.setAttribute("aria-pressed", j === i ? "true" : "false");
+          });
+          setMode("single", push);
           if (buttons[i])
             buttons[i].scrollIntoView({ inline: "nearest", block: "nearest" });
-          window.scrollTo({ top: 0 });
-        }
-        function showAll(push) {
-          current = -1;
-          dirs.forEach(function (d) {
-            d.classList.remove("on");
-          });
-          document.documentElement.classList.add("all");
-          if (push !== false) {
-            try {
-              history.replaceState(null, "", "#all");
-            } catch (e) {}
-          }
-          paint();
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
+        function step(delta) {
+          var next = (current + delta + dirs.length) % dirs.length;
+          show(next);
+          if (buttons[next]) buttons[next].focus();
+        }
+
+        // Clicking card in grid switches to single view
+        dirs.forEach(function (d, i) {
+          d.addEventListener("click", function () {
+            if (currentMode === "grid") {
+              show(i);
+            }
+          });
+        });
+
+        // Pill buttons
         labels.forEach(function (l, i) {
           var b = document.createElement("button");
           b.type = "button";
@@ -5157,37 +7096,78 @@
           row.appendChild(b);
           buttons.push(b);
         });
-        allBtn = document.createElement("button");
-        allBtn.type = "button";
-        allBtn.className = "pbtn all";
-        allBtn.textContent = "All";
-        allBtn.setAttribute("aria-label", "Show all directions");
-        allBtn.addEventListener("click", function () {
-          showAll();
+
+        segSingle.addEventListener("click", function () {
+          setMode("single");
+          show(current);
         });
-        row.appendChild(allBtn);
+        segGrid.addEventListener("click", function () {
+          setMode("grid");
+        });
+        segAll.addEventListener("click", function () {
+          setMode("all");
+        });
+
+        document
+          .getElementById("view-prev")
+          .addEventListener("click", function () {
+            step(-1);
+          });
+        document
+          .getElementById("view-next")
+          .addEventListener("click", function () {
+            step(1);
+          });
+
+        // Theme toggle
+        var themeBtn = document.getElementById("theme-toggle");
+        if (themeBtn) {
+          themeBtn.addEventListener("click", function () {
+            var isLight =
+              document.documentElement.classList.toggle("light-canvas");
+            themeBtn.textContent = isLight ? "◑ Dark" : "◑ Light";
+          });
+        }
+
+        // Zoom controls
+        var zoomBtns = [].slice.call(document.querySelectorAll(".zoom-btn"));
+        zoomBtns.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            zoomBtns.forEach(function (b) {
+              b.classList.remove("active");
+            });
+            btn.classList.add("active");
+            document.documentElement.setAttribute(
+              "data-zoom",
+              btn.getAttribute("data-zoom"),
+            );
+          });
+        });
+
         var hint = document.createElement("span");
         hint.className = "pk-hint";
-        hint.textContent = "← → to step · #code to link";
+        hint.textContent = "← → to step · Click card in grid to expand";
         row.appendChild(hint);
 
         function fromHash() {
-          var h = (location.hash || "").slice(1);
-          if (h === "all") return showAll(false);
+          var h = (location.hash || "").slice(1).toLowerCase();
+          if (h === "all") return setMode("all", false);
+          if (h === "grid") return setMode("grid", false);
           var i = labels.findIndex(function (l) {
-            return l.code.toLowerCase() === h.toLowerCase();
+            return l.code.toLowerCase() === h;
           });
           show(i > -1 ? i : 0, false);
         }
         window.addEventListener("hashchange", fromHash);
         document.addEventListener("keydown", function (e) {
+          if (
+            e.target &&
+            (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+          )
+            return;
           if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
           if (e.metaKey || e.ctrlKey || e.altKey) return;
-          var next =
-            current === -1 ? 0 : current + (e.key === "ArrowRight" ? 1 : -1);
-          next = (next + dirs.length) % dirs.length;
-          show(next);
-          if (buttons[next]) buttons[next].focus();
+          step(e.key === "ArrowRight" ? 1 : -1);
           e.preventDefault();
         });
         fromHash();

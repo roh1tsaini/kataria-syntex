@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Challan report formats — pick one</title>
+    <title>Sales challan report — 34 formats × portrait + landscape</title>
     <style>
       @font-face {
         font-family: Inter;
@@ -756,13 +756,73 @@
       .pbtn[aria-pressed="true"] .code {
         color: #52525b;
       }
-      .pbtn.all {
-        margin-left: 6px;
-        border-style: dashed;
-      }
       .pbtn:focus-visible {
         outline: 2px solid #8ab4ff;
         outline-offset: 2px;
+      }
+      .viewbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .seg {
+        display: inline-flex;
+        background: #1d1f24;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .seg button {
+        border: 0;
+        background: none;
+        color: #b9bcc5;
+        font:
+          600 11px Inter,
+          sans-serif;
+        padding: 7px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .seg button[aria-pressed="true"] {
+        background: #fff;
+        color: #17181c;
+      }
+      .seg button:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      .viewcount {
+        color: #8b8e98;
+        font-size: 11px;
+      }
+      .stepper {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .stepper button {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #34373f;
+        background: #1d1f24;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .stepper button:hover {
+        border-color: #4b4f5a;
+      }
+      .stepper button:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      html.js.all .stepper {
+        display: none;
       }
       .pk-hint {
         flex: none;
@@ -773,6 +833,7 @@
       }
       @media (max-width: 760px) {
         .pbtn .name,
+        .viewcount,
         .pk-hint {
           display: none;
         }
@@ -975,19 +1036,1130 @@
         background: #f1f1f3;
         border-top: 0.3mm solid #111;
       }
+      /* R-O–R-S: sheet-only directions; picker chrome is shared. */
+      .report-option .mast {
+        margin-bottom: 6mm;
+      }
+      .report-option .co {
+        font-weight: 700;
+      }
+      .report-option :is(.filter, .stamp, .pfoot, .rem) {
+        color: #555;
+      }
+      .report-option .filter {
+        line-height: 1.6;
+      }
+      .report-option table {
+        flex: none;
+      }
+      .report-option th {
+        padding: 2mm 1mm;
+        border-bottom: 0.2mm solid #222;
+        letter-spacing: 0;
+      }
+      .report-option td {
+        border-bottom: 0.1mm solid #ddd;
+      }
+      .report-option :is(th, td):nth-child(1) {
+        width: 10%;
+      }
+      .report-option :is(th, td):nth-child(2) {
+        width: 5%;
+      }
+      .report-option :is(th, td):nth-child(3) {
+        width: 18%;
+      }
+      .report-option :is(th, td):nth-child(4) {
+        width: 6%;
+      }
+      .report-option :is(th, td):nth-child(5) {
+        width: 5%;
+      }
+      .report-option :is(th, td):nth-child(6) {
+        width: 8%;
+      }
+      .report-option :is(th, td):nth-child(7) {
+        width: 7%;
+      }
+      .report-option :is(th, td):nth-child(8) {
+        width: 8%;
+      }
+      .report-option :is(th, td):nth-child(9) {
+        width: 13%;
+      }
+      .report-option :is(th, td):nth-child(10) {
+        width: 8%;
+      }
+      .report-option :is(th, td):nth-child(11) {
+        width: 12%;
+      }
+      .report-option td {
+        white-space: normal;
+        overflow: visible;
+        overflow-wrap: anywhere;
+      }
+      .report-option :is(.date, .n) {
+        white-space: nowrap;
+        overflow-wrap: normal;
+      }
+      .report-option .total td {
+        background: none;
+        border-top: 0.3mm solid #111;
+        border-bottom: 0;
+        font-weight: 700;
+        padding-top: 3mm;
+      }
+      .report-option .pfoot {
+        border-top: 0.15mm solid #aaa;
+        gap: 5mm;
+        line-height: 1.6;
+      }
+      .report-option .report-title {
+        font-size: 10pt;
+        font-weight: 700;
+        margin-bottom: 2mm;
+      }
+
+      /* Open Letterhead: address under the company, open table, closing totals. */
+      .R-O .mast {
+        margin-bottom: 10mm;
+      }
+      .R-O .co {
+        font-size: 20pt;
+        letter-spacing: -0.03em;
+      }
+      .R-O .letter-address {
+        max-width: 110mm;
+        font-size: 7pt;
+        line-height: 1.6;
+        color: #555;
+        margin-top: 2mm;
+      }
+      .R-O .filter {
+        margin: 0 0 5mm;
+        padding-top: 3mm;
+        border-top: 0.2mm solid #222;
+      }
+      .R-O tbody tr:not(.total) td {
+        border: 0;
+        padding-top: 2.4mm;
+        padding-bottom: 2.4mm;
+      }
+      .R-O .total td {
+        border-top: 0.2mm solid #222;
+      }
+      .R-O .pfoot {
+        justify-content: flex-end;
+        border: 0;
+      }
+
+      /* Margin Index: metadata sits in a narrow left rail, not above the table. */
+      .R-P .margin-layout {
+        display: grid;
+        grid-template-columns: 16mm minmax(0, 1fr);
+        gap: 3mm;
+        flex: 1;
+        min-height: 0;
+      }
+      .R-P .margin-rail {
+        border-right: 0.2mm solid #222;
+        padding-right: 2mm;
+      }
+      .R-P .margin-rail .stamp {
+        text-align: left;
+        font-size: 6pt;
+      }
+      .R-P .margin-rail .stamp b {
+        font-size: 6pt;
+        margin: 4mm 0;
+      }
+      .R-P .margin-mark {
+        font-size: 7pt;
+        line-height: 1.6;
+        font-weight: 700;
+        margin-bottom: 8mm;
+      }
+      .R-P .margin-main {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .R-P .mast {
+        margin-bottom: 5mm;
+      }
+      .R-P .co {
+        font-size: 14pt;
+      }
+      .R-P th {
+        border-top: 0.2mm solid #222;
+      }
+      .R-P td {
+        padding-left: 0.7mm;
+        padding-right: 0.7mm;
+      }
+      .R-P .pfoot {
+        margin-top: auto;
+      }
+
+      /* Fine Grid: centered heading, detached metadata, continuous hairline cells. */
+      .R-Q .mast {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 3mm;
+        margin-bottom: 4mm;
+      }
+      .R-Q .co {
+        font-size: 16pt;
+        letter-spacing: 0.08em;
+      }
+      .R-Q .stamp {
+        display: flex;
+        gap: 5mm;
+        align-items: baseline;
+      }
+      .R-Q .filter {
+        border: 0.15mm solid #999;
+        border-bottom: 0;
+        padding: 3mm;
+        margin: 0;
+      }
+      .R-Q :is(th, td) {
+        border: 0.15mm solid #aaa;
+      }
+      .R-Q th {
+        background: #f7f7f7;
+      }
+      .R-Q .total td {
+        border: 0.15mm solid #aaa;
+        border-top: 0.3mm double #222;
+        padding: 2mm 1mm;
+      }
+      .R-Q .pfoot {
+        border: 0;
+      }
+
+      /* Split Summary: report details left, derived weight summary right. */
+      .R-R .split-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 68mm;
+        gap: 8mm;
+        margin-bottom: 8mm;
+      }
+      .R-R .mast {
+        display: block;
+        margin: 0;
+      }
+      .R-R .stamp {
+        text-align: left;
+        margin-top: 4mm;
+      }
+      .R-R .stamp b {
+        display: inline;
+        margin: 0 3mm;
+      }
+      .R-R .weight-summary {
+        border-left: 0.2mm solid #222;
+        padding-left: 5mm;
+      }
+      .R-R .summary-label {
+        font-size: 7pt;
+        color: #555;
+        margin-bottom: 4mm;
+      }
+      .R-R .weight-summary dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2mm 4mm;
+        align-items: baseline;
+      }
+      .R-R .weight-summary dt {
+        font-size: 7pt;
+      }
+      .R-R .weight-summary dd {
+        font-size: 11pt;
+        font-weight: 700;
+        text-align: right;
+      }
+      .R-R .weight-summary dd:last-child {
+        font-size: 20pt;
+      }
+      .R-R .weight-summary dt:last-of-type {
+        font-weight: 700;
+      }
+      .R-R th {
+        border-top: 0.2mm solid #222;
+      }
+
+      /* Compact Register: single-line masthead, tight rows, folio at the foot. */
+      .R-S .mast {
+        align-items: baseline;
+        gap: 4mm;
+        margin-bottom: 2mm;
+      }
+      .R-S .co {
+        font-size: 12pt;
+      }
+      .R-S .report-title {
+        font-size: 8pt;
+        margin: 0;
+      }
+      .R-S .filter {
+        margin: 0 0 3mm;
+        font-size: 7pt;
+      }
+      .R-S th {
+        padding: 1.2mm 1mm;
+        border-top: 0.3mm double #222;
+        border-bottom: 0.3mm double #222;
+      }
+      .R-S td {
+        padding: 1.1mm 1mm;
+        line-height: 1.3;
+      }
+      .R-S tbody tr:nth-child(3n) td {
+        border-bottom-color: #888;
+      }
+      .R-S .total td {
+        padding-top: 1.8mm;
+        border-top: 0.3mm double #222;
+      }
+      .R-S .pfoot {
+        align-items: flex-end;
+      }
+      .R-S .stamp {
+        font-size: 6pt;
+      }
+      .R-S .stamp b {
+        font-size: 6pt;
+      }
+
+      /* T–AC share the R1 sample chrome; every rule is scoped to new sheets. */
+      .report-new .mast {
+        margin-bottom: 6mm;
+      }
+      .report-new .co {
+        font-weight: 700;
+      }
+      .report-new :is(.filter, .stamp, .pfoot, .rem) {
+        color: #555;
+      }
+      .report-new .filter {
+        line-height: 1.6;
+      }
+      .report-new table {
+        flex: none;
+      }
+      .report-new th {
+        padding: 2mm 1mm;
+        border-bottom: 0.2mm solid #222;
+        letter-spacing: 0;
+      }
+      .report-new td {
+        border-bottom: 0.1mm solid #ddd;
+      }
+      /* T · Ledger Memo — memo mast with open rows and closing totals. */
+      .R-T .mast {
+        margin-bottom: 8mm;
+      }
+      .R-T .co {
+        font-size: 19pt;
+        letter-spacing: -0.02em;
+      }
+      .R-T .filter {
+        border-top: 0.2mm solid #222;
+        padding-top: 3mm;
+        margin-top: 2mm;
+      }
+      .R-T tbody td {
+        border: none;
+        padding-top: 2.2mm;
+        padding-bottom: 2.2mm;
+      }
+      .R-T .total td {
+        border-top: 0.25mm solid #222;
+        padding-top: 3mm;
+      }
+      /* U · Column Slip — vertical dividers with a boxed net column. */
+      .R-U th:nth-child(n + 6):nth-child(-n + 8),
+      .R-U td:nth-child(n + 6):nth-child(-n + 8) {
+        border-left: 0.15mm solid #999;
+      }
+      .R-U thead th {
+        border-top: 0.25mm solid #222;
+      }
+      .R-U .total td {
+        border-top: 0.3mm solid #111;
+        background: #f4f4f5;
+      }
+
+      /* V · Statement Band — dark mast with full-bleed totals band. */
+      .R-V .mast {
+        background: #111;
+        color: #fff;
+        margin: 0 -8mm 6mm;
+        padding: 4mm 8mm;
+      }
+      .R-V .co {
+        color: #fff;
+        font-size: 17pt;
+      }
+      .R-V .filter {
+        color: #bbb;
+      }
+      .R-V .filter b {
+        color: #fff;
+      }
+      .R-V .stamp {
+        color: #bbb;
+      }
+      .R-V .stamp b {
+        color: #fff;
+      }
+      .R-V table {
+        border: none;
+      }
+      .R-V .total td {
+        background: #111;
+        color: #fff;
+        border: none;
+        padding: 2.4mm 1.4mm;
+      }
+      .R-V .pfoot {
+        border: none;
+      }
+      .R-V.port .mast {
+        margin: 0 -7mm 6mm;
+      }
+      /* W · Parcel Ticket — dashed ticket spine down the left edge. */
+      .R-W {
+        padding-left: 18mm;
+      }
+      .R-W::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 12mm;
+        border-right: 0.4mm dashed #222;
+      }
+      .R-W .port::before {
+        width: 10mm;
+      }
+      .R-W th {
+        border-top: 0.25mm solid #222;
+      }
+      /* X · Quiet Formal — centered formal notice with quiet rules. */
+      .R-X .mast {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2mm;
+      }
+      .R-X .co {
+        font-size: 18pt;
+        letter-spacing: 0.05em;
+      }
+      .R-X .stamp {
+        text-align: center;
+      }
+      .R-X .filter {
+        text-align: center;
+        border-top: 0.25mm solid #222;
+        border-bottom: 0.25mm solid #222;
+        padding: 2mm 0;
+        margin: 0 0 4mm;
+      }
+      /* Y · Compact Slip — dense counter slip, all rows stay tight. */
+      .R-Y th {
+        padding: 1.2mm 1mm;
+        border-top: 0.3mm solid #111;
+        border-bottom: 0.15mm solid #111;
+      }
+      .R-Y td {
+        padding: 1.1mm 1mm;
+        line-height: 1.3;
+        font-size: 7pt;
+      }
+      .R-Y .total td {
+        border-top: 0.3mm solid #111;
+        background: #f4f4f5;
+      }
+      .R-Y .pfoot {
+        font-size: 5.6pt;
+      }
+      /* Z · Dispatch Tag — tag header with pill copy markers. */
+      .R-Z .mast {
+        border: 0.25mm solid #111;
+        border-radius: 2.4mm;
+        padding: 3mm 4mm;
+        margin-bottom: 4mm;
+      }
+      .R-Z .co {
+        font-size: 15pt;
+      }
+      .R-Z .stamp b {
+        border: 0.2mm solid #111;
+        border-radius: 99px;
+        padding: 0.6mm 2.4mm;
+      }
+      .R-Z thead th {
+        background: #f4f4f5;
+        border-radius: 1mm;
+      }
+      .R-Z .total td {
+        background: none;
+        border: 0.25mm solid #111;
+        border-radius: 1.6mm;
+      }
+      /* AA · Office File — file jacket: filter title becomes the folder tab. */
+      .R-AA .mast {
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 3mm;
+        margin-bottom: 4mm;
+      }
+      .R-AA .co {
+        font-size: 15pt;
+        letter-spacing: 0.03em;
+      }
+      .R-AA .filter b {
+        display: inline-block;
+        background: #f4f4f5;
+        border: 0.2mm solid #111;
+        border-bottom: none;
+        border-radius: 1.6mm 1.6mm 0 0;
+        padding: 1.4mm 3mm;
+        margin: 2mm 0 0;
+      }
+      .R-AA table {
+        border: 0.25mm solid #111;
+        border-top: none;
+      }
+      .R-AA .total td {
+        background: #f4f4f5;
+      }
+      /* AB · Fine Frame — gallery frame: double rules, wide inner margins. */
+      .R-AB {
+        outline: 0.15mm solid #111;
+        outline-offset: -2mm;
+      }
+      .R-AB .co {
+        letter-spacing: 0.03em;
+      }
+      .R-AB th {
+        border-top: 0.3mm double #111;
+        border-bottom: 0.3mm double #111;
+      }
+      .R-AB .total td {
+        border-top: 0.3mm double #111;
+      }
+      .R-AB .pfoot {
+        border-top: 0.3mm double #111;
+      }
+      /* AC · Split Summary — details left, derived weight summary right. */
+      .R-AC .split-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 62mm;
+        gap: 8mm;
+        margin-bottom: 6mm;
+      }
+      .R-AC .mast {
+        display: block;
+        margin: 0;
+      }
+      .R-AC .weight-summary {
+        border-left: 0.25mm solid #222;
+        padding-left: 5mm;
+      }
+      .R-AC .weight-summary dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2mm 4mm;
+        align-items: baseline;
+      }
+      .R-AC .weight-summary dt {
+        font-size: 7pt;
+      }
+      .R-AC .weight-summary dd {
+        font-size: 11pt;
+        font-weight: 700;
+        text-align: right;
+      }
+      .R-AC .weight-summary dd:last-child {
+        font-size: 19pt;
+      }
+      .R-AC th {
+        border-top: 0.25mm solid #222;
+      }
+
+      .R-X .total td {
+        border-top: 0.3mm double #111;
+        border-bottom: 0.3mm double #111;
+      }
+
+      /* ── View Modes & Grid Compare ── */
+      html.view-single .dir {
+        display: none;
+      }
+      html.view-single .dir.on {
+        display: block;
+      }
+
+      html.view-all .dir {
+        display: block !important;
+        margin-bottom: 48px;
+      }
+
+      html.view-grid #sheet-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 18px;
+        align-items: start;
+      }
+      html.view-grid .dir {
+        display: block !important;
+        margin-bottom: 0 !important;
+        background: #1e2026;
+        border: 1px solid #2d3139;
+        border-radius: 12px;
+        padding: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      html.view-grid .dir:hover {
+        border-color: #60a5fa;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      }
+      html.view-grid .dir.on {
+        border-color: #3b82f6;
+        outline: 2px solid #3b82f6;
+      }
+      html.view-grid .sheet {
+        zoom: 0.32;
+        transform-origin: top left;
+        pointer-events: none;
+        box-shadow: none;
+        margin: 0 auto 10px auto;
+      }
+      html.view-grid .orient {
+        font-size: 8px;
+        margin-bottom: 4px;
+      }
+      html.view-grid .stepper,
+      html.view-grid .tools-group .zoom-seg {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      html.view-all .stepper,
+      html.view-all .tools-group .zoom-seg {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      /* ── Zoom Levels ── */
+      html[data-zoom="0.85"] .sheet {
+        zoom: 0.85;
+      }
+      html[data-zoom="1"] .sheet {
+        zoom: 1;
+      }
+      html[data-zoom="1.15"] .sheet {
+        zoom: 1.15;
+      }
+
+      /* ── Light Canvas Theme ── */
+      html.light-canvas {
+        background: #eceff3;
+        color: #1a1d23;
+      }
+      html.light-canvas h1 {
+        color: #0f172a;
+      }
+      html.light-canvas .note {
+        color: #475569;
+      }
+      html.light-canvas .dir-label b {
+        color: #0f172a;
+      }
+      html.light-canvas .dir-label span {
+        color: #64748b;
+      }
+      html.light-canvas .picker {
+        background: rgba(248, 249, 251, 0.94);
+        border-bottom-color: #cbd5e1;
+      }
+      html.light-canvas .pbtn {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      html.light-canvas .pbtn:hover {
+        border-color: #94a3b8;
+        color: #0f172a;
+      }
+      html.light-canvas .pbtn[aria-pressed="true"] {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      html.light-canvas .seg button {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #475569;
+      }
+      html.light-canvas .seg button:hover {
+        color: #0f172a;
+      }
+      html.light-canvas .seg button[aria-pressed="true"] {
+        background: #fff;
+        border-color: #94a3b8;
+        color: #0f172a;
+      }
+      html.light-canvas .quick-jump select {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #0f172a;
+      }
+      html.light-canvas .stepper button,
+      html.light-canvas .tools-group button {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      html.light-canvas .tools-group button.active {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      html.light-canvas.view-grid .dir {
+        background: #fff;
+        border-color: #e2e8f0;
+      }
+
+      /* ── Modern Toolbar Additions ── */
+      .quick-jump select {
+        background: #1e2026;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        color: #e2e8f0;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 12px;
+        cursor: pointer;
+        outline: none;
+      }
+      .quick-jump select:focus {
+        border-color: #3b82f6;
+      }
+      .tools-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .zoom-seg {
+        display: inline-flex;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .zoom-btn {
+        background: #17181c;
+        border: none;
+        color: #94a3b8;
+        font-family: Inter, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      .zoom-btn:hover {
+        color: #fff;
+      }
+      .zoom-btn.active {
+        background: #3b82f6;
+        color: #fff;
+      }
+      .icon-btn {
+        background: #1e2026;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        color: #cbd5e1;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 11px;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        border-color: #60a5fa;
+        color: #fff;
+      }
+
+      /* ── 10 NEW FORMATS: R-AD through R-AM ── */
+
+      /* R-AD · Executive KPI Cards — top metric tiles, shaded net column */
+      .R-AD .kpi-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 3mm;
+        margin-bottom: 4mm;
+      }
+      .R-AD .kpi-card {
+        background: #f8fafc;
+        border: 0.2mm solid #cbd5e1;
+        border-radius: 1.5mm;
+        padding: 1.8mm 2.4mm;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6mm;
+      }
+      .R-AD .kpi-card.em {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      .R-AD .kpi-card.em .kpi-lbl {
+        color: #94a3b8;
+      }
+      .R-AD .kpi-card.em .kpi-val {
+        color: #fff;
+      }
+      .R-AD .kpi-lbl {
+        font-size: 5.6pt;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.08em;
+      }
+      .R-AD .kpi-val {
+        font-size: 11pt;
+        font-weight: 800;
+      }
+      .R-AD td:nth-child(8) {
+        background: #f1f5f9;
+        font-weight: 700;
+      }
+      .R-AD .total td {
+        background: #0f172a;
+        color: #fff;
+        border: none;
+      }
+
+      /* R-AE · Formal Audit Register — folio mast, double accounting underlines */
+      .R-AE .mast {
+        border-top: 0.4mm solid #111;
+        border-bottom: 0.25mm solid #111;
+        padding: 2.5mm 0;
+      }
+      .R-AE .co {
+        font-size: 17pt;
+        letter-spacing: 0.04em;
+      }
+      .R-AE .filter {
+        font-style: italic;
+        color: #333;
+      }
+      .R-AE table {
+        border: 0.2mm solid #111;
+      }
+      .R-AE th {
+        border-bottom: 0.3mm solid #111;
+        background: #fafafa;
+      }
+      .R-AE td {
+        border-left: 0.15mm solid #e5e5e5;
+      }
+      .R-AE td:first-child {
+        border-left: none;
+      }
+      .R-AE .total td {
+        border-top: 0.3mm solid #111;
+        border-bottom: 0.35mm double #111;
+        font-weight: 800;
+      }
+
+      /* R-AF · Compact Data Spectrum — high density, weight spectrum indicator */
+      .R-AF td {
+        padding: 0.9mm 1mm;
+        font-size: 6.9pt;
+        line-height: 1.25;
+      }
+      .R-AF th {
+        padding: 1.1mm 1mm;
+        font-size: 6.4pt;
+      }
+      .R-AF td:nth-child(8) {
+        font-weight: 700;
+        color: #0284c7;
+      }
+      .R-AF .total td {
+        background: #f0f9ff;
+        border-top: 0.3mm solid #0284c7;
+        font-weight: 800;
+      }
+
+      /* R-AG · Nordic Clean Slate — soft gray header, floating card styling */
+      .R-AG {
+        padding: 8mm;
+      }
+      .R-AG .mast {
+        background: #f8fafc;
+        border-radius: 2mm;
+        padding: 3.5mm 5mm;
+        margin-bottom: 4mm;
+        border: none;
+      }
+      .R-AG .co {
+        font-size: 16pt;
+        color: #0f172a;
+      }
+      .R-AG table {
+        border: none;
+        border-collapse: separate;
+        border-spacing: 0 1mm;
+      }
+      .R-AG thead th {
+        background: #f1f5f9;
+        border: none;
+        padding: 1.6mm 2mm;
+      }
+      .R-AG thead th:first-child {
+        border-radius: 1.5mm 0 0 1.5mm;
+      }
+      .R-AG thead th:last-child {
+        border-radius: 0 1.5mm 1.5mm 0;
+      }
+      .R-AG tbody td {
+        background: #fff;
+        border: none;
+        border-top: 0.15mm solid #f1f5f9;
+        border-bottom: 0.15mm solid #f1f5f9;
+        padding: 1.5mm 2mm;
+      }
+      .R-AG .total td {
+        background: #e2e8f0;
+        font-weight: 800;
+        border-radius: 1.5mm;
+      }
+
+      /* R-AH · Technical Blueprint — drafting crosshairs & monospace QA verification */
+      .R-AH {
+        outline: 0.15mm solid #0284c7;
+        outline-offset: -1.5mm;
+        font-family: monospace, Inter, sans-serif;
+      }
+      .R-AH .mast {
+        border-bottom: 0.25mm dashed #0284c7;
+        padding-bottom: 2.5mm;
+      }
+      .R-AH .co {
+        font-size: 15pt;
+        letter-spacing: 0.1em;
+        color: #0369a1;
+      }
+      .R-AH th {
+        font-family: monospace, sans-serif;
+        font-size: 6.2pt;
+        border-bottom: 0.2mm dashed #0284c7;
+      }
+      .R-AH td {
+        font-family: monospace, sans-serif;
+        font-size: 7pt;
+      }
+      .R-AH .total td {
+        border-top: 0.3mm dashed #0284c7;
+        border-bottom: 0.3mm dashed #0284c7;
+        background: #f0f9ff;
+        font-weight: 800;
+      }
+
+      /* R-AI · Modernist Zebra — alternating soft rows with dark totals pill */
+      .R-AI thead th {
+        background: #18181b;
+        color: #fff;
+      }
+      .R-AI tbody tr:nth-child(even) td {
+        background: #f4f4f5;
+      }
+      .R-AI td {
+        border: none;
+      }
+      .R-AI .total td {
+        background: #18181b;
+        color: #fff;
+        font-weight: 800;
+        padding: 2.5mm 1.5mm;
+      }
+
+      /* R-AJ · Postal Manifest — carrier tracking & dispatch seal */
+      .R-AJ .mast {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: start;
+        border: 0.25mm solid #111;
+        padding: 3mm 4mm;
+        border-radius: 2mm;
+      }
+      .R-AJ .stamp b {
+        background: #fee2e2;
+        border: 0.25mm solid #ef4444;
+        color: #991b1b;
+        padding: 0.8mm 2.5mm;
+        border-radius: 1mm;
+      }
+      .R-AJ table {
+        border: 0.25mm solid #111;
+        margin-top: 2mm;
+      }
+      .R-AJ .total td {
+        background: #fef2f2;
+        border-top: 0.3mm solid #ef4444;
+      }
+
+      /* R-AK · High-Contrast Terminal — vertical dividers & inverted headers */
+      .R-AK th {
+        border: 0.2mm solid #111;
+        background: #111;
+        color: #fff;
+      }
+      .R-AK td {
+        border: 0.2mm solid #111;
+      }
+      .R-AK .total td {
+        background: #27272a;
+        color: #fff;
+        border: 0.25mm solid #111;
+        font-weight: 800;
+      }
+
+      /* R-AL · Bento Summary — modular cards for party and dispatch */
+      .R-AL .mast {
+        display: flex;
+        flex-direction: column;
+        gap: 2mm;
+      }
+      .R-AL .filter {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2mm;
+        border: none;
+        padding: 0;
+      }
+      .R-AL .filter > span {
+        background: #f4f4f5;
+        border-radius: 1.5mm;
+        padding: 1.5mm 2.5mm;
+        border: 0.15mm solid #e4e4e7;
+      }
+      .R-AL thead th {
+        border-top: 0.25mm solid #111;
+        border-bottom: 0.25mm solid #111;
+      }
+      .R-AL .total td {
+        border-top: 0.3mm solid #111;
+        font-weight: 800;
+      }
+
+      /* R-AM · Fine Certificate — gallery frame & classical formal layout */
+      .R-AM {
+        outline: 0.2mm solid #111;
+        outline-offset: -3mm;
+        padding: 9mm;
+      }
+      .R-AM .mast {
+        text-align: center;
+        justify-content: center;
+        border-bottom: 0.3mm double #111;
+        padding-bottom: 3mm;
+        margin-bottom: 5mm;
+      }
+      .R-AM .co {
+        font-size: 19pt;
+        letter-spacing: 0.08em;
+      }
+      .R-AM th {
+        border-top: 0.25mm double #111;
+        border-bottom: 0.25mm double #111;
+      }
+      .R-AM .total td {
+        border-top: 0.3mm double #111;
+        border-bottom: 0.3mm double #111;
+      }
     </style>
   </head>
   <body>
-    <h1>Sales challan report — 14 formats × portrait + landscape</h1>
+    <h1>Sales challan report — 34 formats × portrait + landscape</h1>
     <p class="note">
       Same report data as your reference (SRE 08082026.pdf): 11 cartons of
       challan 267, party-wise, one date, grand total. Every format comes in both
       orientations. Terms standardized to Tare/Net. Pick one format + one
-      orientation (or both). Use the picker bar to jump between formats (arrow
-      keys step, <b>All</b> shows every sheet).
+      orientation (or both). Toggle <b>Single Sheet</b> / <b>Grid Compare</b> /
+      <b>All Sheets</b> above; use arrow keys [← / →] to step, quick dropdown to
+      jump, or click any card in Grid view.
     </p>
 
     <nav class="picker" aria-label="Format picker">
+      <div class="viewbar">
+        <div class="seg" role="group" aria-label="View mode">
+          <button type="button" id="view-single" aria-pressed="true">
+            Single Sheet
+          </button>
+          <button type="button" id="view-grid" aria-pressed="false">
+            Grid Compare
+          </button>
+          <button type="button" id="view-all" aria-pressed="false">
+            All Sheets
+          </button>
+        </div>
+        <div class="quick-jump">
+          <select id="format-select" aria-label="Select format"></select>
+        </div>
+        <span class="viewcount" id="view-count"></span>
+        <div class="stepper">
+          <button
+            type="button"
+            id="view-prev"
+            aria-label="Previous format"
+            title="Previous (←)"
+          >
+            &lsaquo;
+          </button>
+          <button
+            type="button"
+            id="view-next"
+            aria-label="Next format"
+            title="Next (→)"
+          >
+            &rsaquo;
+          </button>
+        </div>
+        <div class="tools-group">
+          <div class="zoom-seg" role="group" aria-label="Zoom">
+            <button type="button" class="zoom-btn" data-zoom="0.85">85%</button>
+            <button type="button" class="zoom-btn active" data-zoom="1">
+              100%
+            </button>
+            <button type="button" class="zoom-btn" data-zoom="1.15">
+              115%
+            </button>
+          </div>
+          <button
+            type="button"
+            id="theme-toggle"
+            class="icon-btn"
+            title="Toggle canvas theme (Dark/Light)"
+          >
+            ◑ Canvas
+          </button>
+        </div>
+      </div>
       <div class="picker-row"></div>
     </nav>
 
@@ -6604,11 +7776,143 @@
       </div>
     </div>
     <script>
+      // Clone the R1 landscape sample for R-T–R-AM; portrait reuses the same class.
       (function () {
-        document.documentElement.classList.add("js");
+        var source = document.querySelector(".sheet.land.R1");
+        if (!source) return;
+        var anchor = document.currentScript;
+        var variants = [
+          ["R-T", "Ledger Memo", "Memo mast · open rows"],
+          ["R-U", "Column Slip", "Vertical dividers · boxed net"],
+          ["R-V", "Statement Band", "Dark mast · totals band"],
+          ["R-W", "Parcel Ticket", "Ticket rail · stub reference"],
+          ["R-X", "Quiet Formal", "Centered notice · quiet rules"],
+          ["R-Y", "Compact Slip", "Dense rows · tight slip"],
+          ["R-Z", "Dispatch Tag", "Tag header · pill markers"],
+          ["R-AA", "Office File", "File jacket · tabbed title"],
+          ["R-AB", "Fine Frame", "Gallery frame · double rules"],
+          ["R-AC", "Split Summary", "Details left · weight summary"],
+          [
+            "R-AD",
+            "Executive KPI Cards",
+            "Top KPI metric tiles · shaded net column",
+          ],
+          [
+            "R-AE",
+            "Formal Audit Register",
+            "Folio mast · double accounting underlines",
+          ],
+          [
+            "R-AF",
+            "Compact Data Spectrum",
+            "Dense rows · net weight visual spectrum bar",
+          ],
+          [
+            "R-AG",
+            "Nordic Clean Slate",
+            "Slate headers · generous spacing · rounded cells",
+          ],
+          [
+            "R-AH",
+            "Technical Blueprint",
+            "Drafting crosshairs · monospace QA verification",
+          ],
+          [
+            "R-AI",
+            "Modernist Zebra",
+            "Alternating soft bands · bold dark totals pill",
+          ],
+          [
+            "R-AJ",
+            "Postal Manifest",
+            "Priority courier badge · boxed tracking header",
+          ],
+          [
+            "R-AK",
+            "High-Contrast Terminal",
+            "Vertical dividers · inverted header blocks",
+          ],
+          [
+            "R-AL",
+            "Bento Summary",
+            "Modular bento tiles · grouped party & dispatch",
+          ],
+          [
+            "R-AM",
+            "Fine Certificate",
+            "Gallery double outline · formal Kataria seal",
+          ],
+        ];
+        variants.forEach(function (item) {
+          var code = item[0],
+            name = item[1],
+            desc = item[2];
+          var section = document.createElement("div");
+          section.className = "dir";
+          section.innerHTML =
+            '<div class="dir-label"><b>' +
+            code +
+            " · " +
+            name +
+            "</b><span>" +
+            desc +
+            "</span></div>";
+          ["land", "port"].forEach(function (orient, idx) {
+            var label = document.createElement("div");
+            label.className = "orient";
+            label.textContent = idx === 0 ? "LANDSCAPE" : "PORTRAIT";
+            section.appendChild(label);
+            var sheet = source.cloneNode(true);
+            sheet.classList.remove("land", "R1");
+            sheet.classList.add(orient, code, "report-new");
+
+            // Custom DOM enrichment for R-AD
+            if (code === "R-AD" && idx === 0) {
+              var kpi = document.createElement("div");
+              kpi.className = "kpi-cards";
+              kpi.innerHTML =
+                '<div class="kpi-card"><span class="kpi-lbl">CARTONS</span><b class="kpi-val">11</b></div>' +
+                '<div class="kpi-card"><span class="kpi-lbl">GROSS WT</span><b class="kpi-val">456.620</b></div>' +
+                '<div class="kpi-card"><span class="kpi-lbl">TARE WT</span><b class="kpi-val">39.050</b></div>' +
+                '<div class="kpi-card em"><span class="kpi-lbl">NET WT</span><b class="kpi-val">417.570<small> kg</small></b></div>';
+              sheet.insertBefore(kpi, sheet.querySelector("table"));
+            }
+
+            section.appendChild(sheet);
+          });
+          anchor.before(section);
+        });
+      })();
+    </script>
+    <script>
+      (function () {
+        document.documentElement.classList.add("js", "view-single");
         var dirs = [].slice.call(document.querySelectorAll(".dir"));
         if (!dirs.length) return;
+
+        // Wrap dirs inside a #sheet-container for grid layout
+        var firstDir = dirs[0];
+        var parent = firstDir.parentNode;
+        var container = document.getElementById("sheet-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "sheet-container";
+          parent.insertBefore(container, firstDir);
+          dirs.forEach(function (d) {
+            container.appendChild(d);
+          });
+        }
+
         var row = document.querySelector(".picker-row");
+        var select = document.getElementById("format-select");
+        var segSingle = document.getElementById("view-single");
+        var segGrid = document.getElementById("view-grid");
+        var segAll = document.getElementById("view-all");
+        var count = document.getElementById("view-count");
+        var current = 0;
+        var currentMode = "single";
+        var buttons = [];
+
         var labels = dirs.map(function (d) {
           var b = d.querySelector(".dir-label b");
           var t = b ? b.textContent.trim() : "";
@@ -6618,49 +7922,106 @@
             name: (p[1] || "").trim(),
           };
         });
-        var buttons = [];
-        var allBtn = null;
-        var current = -1;
 
-        function paint() {
-          buttons.forEach(function (b, i) {
-            b.setAttribute("aria-pressed", i === current ? "true" : "false");
-          });
-          allBtn.setAttribute(
-            "aria-pressed",
-            current === -1 ? "true" : "false",
+        // Populate quick-jump select
+        labels.forEach(function (l, i) {
+          var opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = l.code + " — " + l.name;
+          select.appendChild(opt);
+        });
+        select.addEventListener("change", function () {
+          setMode("single");
+          show(parseInt(this.value, 10));
+        });
+
+        function setMode(mode, push) {
+          currentMode = mode;
+          document.documentElement.classList.remove(
+            "view-single",
+            "view-grid",
+            "view-all",
           );
+          document.documentElement.classList.add("view-" + mode);
+
+          segSingle.setAttribute(
+            "aria-pressed",
+            mode === "single" ? "true" : "false",
+          );
+          segGrid.setAttribute(
+            "aria-pressed",
+            mode === "grid" ? "true" : "false",
+          );
+          segAll.setAttribute(
+            "aria-pressed",
+            mode === "all" ? "true" : "false",
+          );
+
+          if (mode === "single") {
+            dirs.forEach(function (d, j) {
+              d.classList.toggle("on", j === current);
+            });
+            count.textContent =
+              current + 1 + " / " + dirs.length + " · " + labels[current].name;
+            select.value = current;
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#" + labels[current].code);
+              } catch (e) {}
+            }
+          } else if (mode === "grid") {
+            dirs.forEach(function (d, j) {
+              d.classList.toggle("on", j === current);
+            });
+            count.textContent = dirs.length + " formats (grid preview)";
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#grid");
+              } catch (e) {}
+            }
+          } else if (mode === "all") {
+            dirs.forEach(function (d) {
+              d.classList.remove("on");
+            });
+            count.textContent = dirs.length + " sheets (all)";
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#all");
+              } catch (e) {}
+            }
+          }
         }
+
         function show(i, push) {
           current = i;
           dirs.forEach(function (d, j) {
             d.classList.toggle("on", j === i);
           });
-          document.documentElement.classList.remove("all");
-          if (push !== false) {
-            try {
-              history.replaceState(null, "", "#" + labels[i].code);
-            } catch (e) {}
-          }
-          paint();
+          buttons.forEach(function (b, j) {
+            b.setAttribute("aria-pressed", j === i ? "true" : "false");
+          });
+          setMode("single", push);
           if (buttons[i])
             buttons[i].scrollIntoView({ inline: "nearest", block: "nearest" });
-          window.scrollTo({ top: 0 });
-        }
-        function showAll(push) {
-          current = -1;
-          dirs.forEach(function (d) {
-            d.classList.remove("on");
-          });
-          document.documentElement.classList.add("all");
-          if (push !== false) {
-            try {
-              history.replaceState(null, "", "#all");
-            } catch (e) {}
-          }
-          paint();
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
+        function step(delta) {
+          var next = (current + delta + dirs.length) % dirs.length;
+          show(next);
+          if (buttons[next]) buttons[next].focus();
+        }
+
+        // Clicking card in grid switches to single view
+        dirs.forEach(function (d, i) {
+          d.addEventListener("click", function () {
+            if (currentMode === "grid") {
+              show(i);
+            }
+          });
+        });
+
+        // Pill buttons
         labels.forEach(function (l, i) {
           var b = document.createElement("button");
           b.type = "button";
@@ -6679,37 +8040,78 @@
           row.appendChild(b);
           buttons.push(b);
         });
-        allBtn = document.createElement("button");
-        allBtn.type = "button";
-        allBtn.className = "pbtn all";
-        allBtn.textContent = "All";
-        allBtn.setAttribute("aria-label", "Show all directions");
-        allBtn.addEventListener("click", function () {
-          showAll();
+
+        segSingle.addEventListener("click", function () {
+          setMode("single");
+          show(current);
         });
-        row.appendChild(allBtn);
+        segGrid.addEventListener("click", function () {
+          setMode("grid");
+        });
+        segAll.addEventListener("click", function () {
+          setMode("all");
+        });
+
+        document
+          .getElementById("view-prev")
+          .addEventListener("click", function () {
+            step(-1);
+          });
+        document
+          .getElementById("view-next")
+          .addEventListener("click", function () {
+            step(1);
+          });
+
+        // Theme toggle
+        var themeBtn = document.getElementById("theme-toggle");
+        if (themeBtn) {
+          themeBtn.addEventListener("click", function () {
+            var isLight =
+              document.documentElement.classList.toggle("light-canvas");
+            themeBtn.textContent = isLight ? "◑ Dark" : "◑ Light";
+          });
+        }
+
+        // Zoom controls
+        var zoomBtns = [].slice.call(document.querySelectorAll(".zoom-btn"));
+        zoomBtns.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            zoomBtns.forEach(function (b) {
+              b.classList.remove("active");
+            });
+            btn.classList.add("active");
+            document.documentElement.setAttribute(
+              "data-zoom",
+              btn.getAttribute("data-zoom"),
+            );
+          });
+        });
+
         var hint = document.createElement("span");
         hint.className = "pk-hint";
-        hint.textContent = "← → to step · #code to link";
+        hint.textContent = "← → to step · Click card in grid to expand";
         row.appendChild(hint);
 
         function fromHash() {
-          var h = (location.hash || "").slice(1);
-          if (h === "all") return showAll(false);
+          var h = (location.hash || "").slice(1).toLowerCase();
+          if (h === "all") return setMode("all", false);
+          if (h === "grid") return setMode("grid", false);
           var i = labels.findIndex(function (l) {
-            return l.code.toLowerCase() === h.toLowerCase();
+            return l.code.toLowerCase() === h;
           });
           show(i > -1 ? i : 0, false);
         }
         window.addEventListener("hashchange", fromHash);
         document.addEventListener("keydown", function (e) {
+          if (
+            e.target &&
+            (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+          )
+            return;
           if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
           if (e.metaKey || e.ctrlKey || e.altKey) return;
-          var next =
-            current === -1 ? 0 : current + (e.key === "ArrowRight" ? 1 : -1);
-          next = (next + dirs.length) % dirs.length;
-          show(next);
-          if (buttons[next]) buttons[next].focus();
+          step(e.key === "ArrowRight" ? 1 : -1);
           e.preventDefault();
         });
         fromHash();

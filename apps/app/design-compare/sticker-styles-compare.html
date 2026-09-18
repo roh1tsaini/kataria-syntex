@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Carton sticker directions — pick one</title>
+    <title>Carton sticker — 32 directions, pick one</title>
     <style>
       @font-face {
         font-family: Inter;
@@ -516,13 +516,73 @@
       .pbtn[aria-pressed="true"] .code {
         color: #52525b;
       }
-      .pbtn.all {
-        margin-left: 6px;
-        border-style: dashed;
-      }
       .pbtn:focus-visible {
         outline: 2px solid #8ab4ff;
         outline-offset: 2px;
+      }
+      .viewbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .seg {
+        display: inline-flex;
+        background: #1d1f24;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .seg button {
+        border: 0;
+        background: none;
+        color: #b9bcc5;
+        font:
+          600 11px Inter,
+          sans-serif;
+        padding: 7px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .seg button[aria-pressed="true"] {
+        background: #fff;
+        color: #17181c;
+      }
+      .seg button:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      .viewcount {
+        color: #8b8e98;
+        font-size: 11px;
+      }
+      .stepper {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .stepper button {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #34373f;
+        background: #1d1f24;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .stepper button:hover {
+        border-color: #4b4f5a;
+      }
+      .stepper button:focus-visible {
+        outline: 2px solid #8ab4ff;
+        outline-offset: 2px;
+      }
+      html.js.all .stepper {
+        display: none;
       }
       .pk-hint {
         flex: none;
@@ -533,6 +593,7 @@
       }
       @media (max-width: 760px) {
         .pbtn .name,
+        .viewcount,
         .pk-hint {
           display: none;
         }
@@ -1530,19 +1591,1582 @@
         font-size: 5.9pt;
         color: #8e8e96;
       }
+      /* M–V share the A sample; every rule is scoped to the new stickers. */
+      :is(
+        .st.M,
+        .st.N,
+        .st.O,
+        .st.P,
+        .st.Q,
+        .st.R,
+        .st.S,
+        .st.T,
+        .st.U,
+        .st.V
+      ) {
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        color: #111;
+      }
+      :is(.st.M, .st.N, .st.O, .st.P, .st.Q, .st.R, .st.S, .st.T, .st.U, .st.V)
+        .l {
+        font-size: 5.8pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.1em;
+      }
+      :is(.st.M, .st.N, .st.O, .st.P, .st.Q, .st.R, .st.S, .st.T, .st.U, .st.V)
+        .v {
+        font-weight: 700;
+      }
+      /* M · Ledger Slip — slip header with slip number and ruled detail. */
+      .st.M {
+        padding: 4mm 4.5mm 3.5mm;
+        border: 0.3mm solid #111;
+      }
+      .st.M .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 2mm;
+      }
+      .st.M .co {
+        font-size: 12pt;
+        font-weight: 800;
+      }
+      .st.M .id {
+        font-size: 6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.14em;
+        text-align: right;
+      }
+      .st.M .party {
+        font-size: 9pt;
+        font-weight: 700;
+        margin-top: 2mm;
+      }
+      .st.M .hero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-top: 2mm;
+      }
+      .st.M .hero .v {
+        font-size: 24pt;
+        font-weight: 800;
+      }
+      .st.M .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 4mm;
+        margin-top: 2mm;
+      }
+      .st.M .spec .f {
+        display: flex;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e0e0e4;
+        padding: 1.4mm 0;
+      }
+      .st.M .spec .f .v {
+        margin-left: auto;
+        font-size: 9.4pt;
+      }
+      .st.M .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+
+      /* N · Quiet Memo — open memo with generous air and hairline totals. */
+      .st.N {
+        padding: 5mm 6mm 4mm;
+      }
+      .st.N .co {
+        font-size: 13pt;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .st.N .party {
+        font-size: 9pt;
+        font-weight: 700;
+        color: #52525b;
+        margin-top: 1mm;
+      }
+      .st.N .hero {
+        margin-top: 3mm;
+        border-top: 0.15mm solid #999;
+        border-bottom: 0.15mm solid #999;
+        padding: 2mm 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.N .hero .v {
+        font-size: 25pt;
+        font-weight: 800;
+      }
+      .st.N .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2mm;
+        margin-top: 3mm;
+      }
+      .st.N .spec .f {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6mm;
+      }
+      .st.N .spec .f .v {
+        font-size: 10pt;
+      }
+      .st.N .note {
+        margin-top: auto;
+        font-size: 5.9pt;
+        color: #8e8e96;
+        text-align: center;
+      }
+      /* O · Dispatch Tag — tag header with punched copy markers. */
+      .st.O {
+        padding: 4mm;
+        border: 0.3mm solid #111;
+        border-radius: 3mm;
+      }
+      .st.O .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+        background: #111;
+        color: #fff;
+        border-radius: 1.8mm;
+        padding: 2.4mm 3mm;
+      }
+      .st.O .top .co {
+        font-size: 11pt;
+        font-weight: 800;
+      }
+      .st.O .top .id {
+        font-size: 6pt;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: #bbb;
+        text-align: right;
+      }
+      .st.O .party {
+        text-align: center;
+        font-size: 9pt;
+        font-weight: 700;
+        margin-top: 2mm;
+      }
+      .st.O .hero {
+        text-align: center;
+        margin-top: 1mm;
+      }
+      .st.O .hero .v {
+        font-size: 26pt;
+        font-weight: 800;
+      }
+      .st.O .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.6mm;
+        margin-top: 2.4mm;
+      }
+      .st.O .spec .f {
+        border: 0.2mm solid #d4d4d8;
+        border-radius: 1.2mm;
+        padding: 1.6mm 2mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.O .spec .f .v {
+        font-size: 10pt;
+      }
+      .st.O .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+      /* P · Parcel Stripe — edge stripe with stub reference and open grid. */
+      .st.P {
+        padding: 4mm 4mm 3.5mm 15mm;
+        border-left: 7mm solid #111;
+      }
+      .st.P .co {
+        font-size: 12pt;
+        font-weight: 800;
+      }
+      .st.P .party {
+        font-size: 9pt;
+        font-weight: 700;
+        margin-top: 1mm;
+      }
+      .st.P .hero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-top: 2mm;
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 1.6mm;
+      }
+      .st.P .hero .v {
+        font-size: 24pt;
+        font-weight: 800;
+      }
+      .st.P .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 4mm;
+        margin-top: 2mm;
+      }
+      .st.P .spec .f {
+        display: flex;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e0e0e4;
+        padding: 1.4mm 0;
+      }
+      .st.P .spec .f .v {
+        margin-left: auto;
+        font-size: 9.4pt;
+      }
+      .st.P .note {
+        margin-top: auto;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+      /* Q · Column Slip — vertical dividers with a boxed net panel. */
+      .st.Q {
+        padding: 4mm;
+        border: 0.25mm solid #111;
+      }
+      .st.Q .top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 3mm;
+        padding-bottom: 2mm;
+        border-bottom: 0.25mm solid #111;
+      }
+      .st.Q .co {
+        font-size: 11.5pt;
+        font-weight: 800;
+      }
+      .st.Q .id {
+        font-size: 6pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.12em;
+        text-align: right;
+      }
+      .st.Q .party {
+        font-size: 8.8pt;
+        font-weight: 700;
+        margin-top: 2mm;
+      }
+      .st.Q .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        margin-top: 2mm;
+        border: 0.2mm solid #d4d4d8;
+      }
+      .st.Q .cols > div {
+        padding: 2mm;
+        border-left: 0.2mm solid #d4d4d8;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.Q .cols > div:first-child {
+        border-left: none;
+      }
+      .st.Q .cols .v {
+        font-size: 11pt;
+      }
+      .st.Q .cols .em {
+        background: #111;
+      }
+      .st.Q .cols .em .l {
+        color: #bbb;
+      }
+      .st.Q .cols .em .v {
+        color: #fff;
+      }
+      .st.Q .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+      /* R · Quiet Formal — centered notice with double rules. */
+      .st.R {
+        padding: 5mm 6mm 4mm;
+        text-align: center;
+        border: 0.25mm solid #111;
+      }
+      .st.R .co {
+        font-size: 12pt;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+      .st.R .party {
+        font-size: 9pt;
+        font-weight: 700;
+        margin-top: 1mm;
+      }
+      .st.R .rule {
+        width: 30mm;
+        margin: 2mm auto;
+        border-top: 0.3mm double #111;
+      }
+      .st.R .hero .v {
+        font-size: 26pt;
+        font-weight: 800;
+      }
+      .st.R .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.4mm 4mm;
+        margin-top: 2mm;
+        text-align: left;
+      }
+      .st.R .spec .f {
+        display: flex;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e0e0e4;
+        padding: 1.2mm 0;
+      }
+      .st.R .spec .f .v {
+        margin-left: auto;
+        font-size: 9.2pt;
+      }
+      .st.R .note {
+        margin-top: 2mm;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+      /* S · Compact Tag — dense counter tag, all fields stay tight. */
+      .st.S {
+        padding: 3.4mm 4mm 3mm;
+        border: 0.2mm solid #777;
+      }
+      .st.S .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .st.S .co {
+        font-size: 10.5pt;
+        font-weight: 800;
+      }
+      .st.S .id {
+        font-size: 5.8pt;
+        font-weight: 700;
+        color: #71717a;
+        letter-spacing: 0.1em;
+        text-align: right;
+      }
+      .st.S .party {
+        font-size: 8.6pt;
+        font-weight: 700;
+        margin-top: 1mm;
+      }
+      .st.S .hero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border: 0.2mm solid #111;
+        padding: 1.6mm 2.4mm;
+        margin-top: 2mm;
+      }
+      .st.S .hero .v {
+        font-size: 20pt;
+        font-weight: 800;
+      }
+      .st.S .spec {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.4mm;
+        margin-top: 2mm;
+      }
+      .st.S .spec .f {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4mm;
+      }
+      .st.S .spec .f .v {
+        font-size: 9pt;
+      }
+      .st.S .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.7pt;
+        color: #8e8e96;
+      }
+
+      /* T · Statement Band — dark band header with full-bleed net strip. */
+      .st.T {
+        padding: 0;
+        border: 0.3mm solid #111;
+      }
+      .st.T .band {
+        background: #111;
+        color: #fff;
+        padding: 3mm 4mm;
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+        align-items: baseline;
+      }
+      .st.T .band .co {
+        font-size: 11pt;
+        font-weight: 800;
+      }
+      .st.T .band .id {
+        font-size: 6pt;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: #bbb;
+        text-align: right;
+      }
+      .st.T .body {
+        padding: 3mm 4mm;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.T .party {
+        font-size: 9pt;
+        font-weight: 700;
+      }
+      .st.T .hero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-top: 2mm;
+      }
+      .st.T .hero .v {
+        font-size: 24pt;
+        font-weight: 800;
+      }
+      .st.T .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 4mm;
+        margin-top: 2mm;
+      }
+      .st.T .spec .f {
+        display: flex;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e0e0e4;
+        padding: 1.3mm 0;
+      }
+      .st.T .spec .f .v {
+        margin-left: auto;
+        font-size: 9.2pt;
+      }
+      .st.T .netband {
+        background: #111;
+        color: #fff;
+        text-align: center;
+        padding: 1.8mm;
+        font-size: 6pt;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+      }
+      /* U · Office Memo — file memo with tabbed carton number. */
+      .st.U {
+        padding: 4.5mm;
+        border: 0.25mm solid #111;
+      }
+      .st.U .top {
+        border-bottom: 0.3mm solid #111;
+        padding-bottom: 2mm;
+      }
+      .st.U .co {
+        font-size: 11.5pt;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+      }
+      .st.U .id {
+        display: inline-block;
+        margin-top: 1mm;
+        background: #f4f4f5;
+        border: 0.2mm solid #111;
+        border-bottom: none;
+        border-radius: 1.4mm 1.4mm 0 0;
+        padding: 1mm 2.4mm;
+        font-size: 6.4pt;
+        font-weight: 700;
+      }
+      .st.U .party {
+        border: 0.25mm solid #111;
+        padding: 2mm;
+        font-size: 9pt;
+        font-weight: 700;
+      }
+      .st.U .hero {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-top: 2.4mm;
+      }
+      .st.U .hero .v {
+        font-size: 23pt;
+        font-weight: 800;
+      }
+      .st.U .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.4mm 4mm;
+        margin-top: 2mm;
+      }
+      .st.U .spec .f {
+        display: flex;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e0e0e4;
+        padding: 1.2mm 0;
+      }
+      .st.U .spec .f .v {
+        margin-left: auto;
+        font-size: 9.2pt;
+      }
+      .st.U .note {
+        margin-top: auto;
+        font-size: 5.9pt;
+        color: #8e8e96;
+        text-align: center;
+      }
+      /* V · Fine Frame — gallery frame with double rules and wide margins. */
+      .st.V {
+        padding: 5mm;
+        outline: 0.15mm solid #111;
+        outline-offset: -1.8mm;
+        border: 0.2mm solid #111;
+      }
+      .st.V .co {
+        text-align: center;
+        font-size: 11.5pt;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+      }
+      .st.V .party {
+        text-align: center;
+        font-size: 8.8pt;
+        font-weight: 700;
+        margin-top: 1mm;
+      }
+      .st.V .hero {
+        text-align: center;
+        margin-top: 2mm;
+        border-top: 0.3mm double #111;
+        border-bottom: 0.3mm double #111;
+        padding: 2mm 0;
+      }
+      .st.V .hero .v {
+        font-size: 24pt;
+        font-weight: 800;
+      }
+      .st.V .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 4mm;
+        margin-top: 2mm;
+      }
+      .st.V .spec .f {
+        display: flex;
+        gap: 2mm;
+        border-bottom: 0.15mm solid #e0e0e4;
+        padding: 1.3mm 0;
+      }
+      .st.V .spec .f .v {
+        margin-left: auto;
+        font-size: 9.2pt;
+      }
+      .st.V .note {
+        margin-top: auto;
+        text-align: center;
+        font-size: 5.9pt;
+        color: #8e8e96;
+      }
+
+      /* ── View Modes & Grid Compare ── */
+      html.view-single .dir {
+        display: none;
+      }
+      html.view-single .dir.on {
+        display: block;
+      }
+
+      html.view-all .dir {
+        display: block !important;
+        margin-bottom: 48px;
+      }
+
+      html.view-grid #sheet-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 18px;
+        align-items: start;
+      }
+      html.view-grid .dir {
+        display: block !important;
+        margin-bottom: 0 !important;
+        background: #1e2026;
+        border: 1px solid #2d3139;
+        border-radius: 12px;
+        padding: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      html.view-grid .dir:hover {
+        border-color: #60a5fa;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      }
+      html.view-grid .dir.on {
+        border-color: #3b82f6;
+        outline: 2px solid #3b82f6;
+      }
+      html.view-grid .sheet {
+        zoom: 0.32;
+        transform-origin: top left;
+        pointer-events: none;
+        box-shadow: none;
+        margin: 0 auto 8px auto;
+      }
+      html.view-grid .zoomlabel,
+      html.view-grid .zoomrow {
+        display: none !important;
+      }
+      html.view-grid .stepper,
+      html.view-grid .tools-group .zoom-seg {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      html.view-all .stepper,
+      html.view-all .tools-group .zoom-seg {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      /* ── Zoom Levels ── */
+      html[data-zoom="0.85"] .sheet,
+      html[data-zoom="0.85"] .zoomrow {
+        zoom: 0.85;
+      }
+      html[data-zoom="1"] .sheet,
+      html[data-zoom="1"] .zoomrow {
+        zoom: 1;
+      }
+      html[data-zoom="1.15"] .sheet,
+      html[data-zoom="1.15"] .zoomrow {
+        zoom: 1.15;
+      }
+
+      /* ── Light Canvas Theme ── */
+      html.light-canvas {
+        background: #eceff3;
+        color: #1a1d23;
+      }
+      html.light-canvas h1 {
+        color: #0f172a;
+      }
+      html.light-canvas .note {
+        color: #475569;
+      }
+      html.light-canvas .dir-label b {
+        color: #0f172a;
+      }
+      html.light-canvas .dir-label span {
+        color: #64748b;
+      }
+      html.light-canvas .picker {
+        background: rgba(248, 249, 251, 0.94);
+        border-bottom-color: #cbd5e1;
+      }
+      html.light-canvas .pbtn {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      html.light-canvas .pbtn:hover {
+        border-color: #94a3b8;
+        color: #0f172a;
+      }
+      html.light-canvas .pbtn[aria-pressed="true"] {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      html.light-canvas .seg button {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #475569;
+      }
+      html.light-canvas .seg button:hover {
+        color: #0f172a;
+      }
+      html.light-canvas .seg button[aria-pressed="true"] {
+        background: #fff;
+        border-color: #94a3b8;
+        color: #0f172a;
+      }
+      html.light-canvas .quick-jump select {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #0f172a;
+      }
+      html.light-canvas .stepper button,
+      html.light-canvas .tools-group button {
+        background: #fff;
+        border-color: #cbd5e1;
+        color: #334155;
+      }
+      html.light-canvas .tools-group button.active {
+        background: #0f172a;
+        color: #fff;
+        border-color: #0f172a;
+      }
+      html.light-canvas.view-grid .dir {
+        background: #fff;
+        border-color: #e2e8f0;
+      }
+
+      /* ── Modern Toolbar Additions ── */
+      .quick-jump select {
+        background: #1e2026;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        color: #e2e8f0;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 12px;
+        cursor: pointer;
+        outline: none;
+      }
+      .quick-jump select:focus {
+        border-color: #3b82f6;
+      }
+      .tools-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      .zoom-seg {
+        display: inline-flex;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .zoom-btn {
+        background: #17181c;
+        border: none;
+        color: #94a3b8;
+        font-family: Inter, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      .zoom-btn:hover {
+        color: #fff;
+      }
+      .zoom-btn.active {
+        background: #3b82f6;
+        color: #fff;
+      }
+      .icon-btn {
+        background: #1e2026;
+        border: 1px solid #34373f;
+        border-radius: 999px;
+        color: #cbd5e1;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 11px;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        border-color: #60a5fa;
+        color: #fff;
+      }
+
+      /* ── 10 NEW STICKER DIRECTIONS: S-W through S-AF ── */
+
+      /* S-W · High-Visibility Logistics — hazard warning header & giant net */
+      .st.W {
+        padding: 0;
+        border: 0.35mm solid #111;
+        overflow: hidden;
+      }
+      .st.W::before {
+        content: "CAUTION · VERIFIED WEIGHT";
+        display: block;
+        background: repeating-linear-gradient(
+          45deg,
+          #18181b,
+          #18181b 4mm,
+          #f59e0b 4mm,
+          #f59e0b 8mm
+        );
+        color: #fff;
+        font-weight: 900;
+        font-size: 5.5pt;
+        letter-spacing: 0.15em;
+        padding: 1.2mm 2mm;
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+      }
+      .st.W .top {
+        padding: 2mm 3.5mm 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.W .co {
+        font-size: 11pt;
+        font-weight: 900;
+      }
+      .st.W .id {
+        background: #111;
+        color: #fff;
+        padding: 0.8mm 2mm;
+        border-radius: 0.8mm;
+        font-size: 6.5pt;
+        font-weight: 800;
+      }
+      .st.W .party {
+        padding: 1mm 3.5mm 0;
+        font-size: 8.8pt;
+        font-weight: 800;
+        color: #1e293b;
+      }
+      .st.W .hero {
+        background: #fef3c7;
+        border-top: 0.25mm solid #d97706;
+        border-bottom: 0.25mm solid #d97706;
+        padding: 1.8mm 3.5mm;
+        margin-top: 1.8mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.W .hero .l {
+        font-size: 7.2pt;
+        font-weight: 800;
+        color: #92400e;
+      }
+      .st.W .hero .v {
+        font-size: 25pt;
+        font-weight: 900;
+        color: #111;
+      }
+      .st.W .spec {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1mm 2mm;
+        padding: 1.5mm 3.5mm;
+      }
+      .st.W .spec .f {
+        display: flex;
+        flex-direction: column;
+      }
+      .st.W .spec .f .v {
+        font-size: 9pt;
+        font-weight: 700;
+      }
+      .st.W .note {
+        font-size: 5.4pt;
+        color: #64748b;
+        padding: 0 3.5mm 2mm;
+        margin-top: auto;
+      }
+
+      /* S-X · QR Matrix & Spec — simulated QR matrix block & clean data */
+      .st.X {
+        padding: 3.5mm;
+        border: 0.25mm solid #111;
+        display: grid;
+        grid-template-columns: 1fr 20mm;
+        gap: 2mm 3mm;
+      }
+      .st.X .top {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 0.25mm solid #111;
+        padding-bottom: 1.5mm;
+      }
+      .st.X .co {
+        font-size: 11.5pt;
+        font-weight: 800;
+      }
+      .st.X .id {
+        font-size: 6.2pt;
+        font-weight: 700;
+        color: #475569;
+      }
+      .st.X .party {
+        font-size: 8.6pt;
+        font-weight: 700;
+      }
+      .st.X .hero {
+        grid-column: 1 / 2;
+        display: flex;
+        align-items: baseline;
+        gap: 2mm;
+        border-bottom: 0.2mm solid #cbd5e1;
+        padding: 1.5mm 0;
+      }
+      .st.X .hero .v {
+        font-size: 21pt;
+        font-weight: 800;
+      }
+      .st.X .spec {
+        grid-column: 1 / 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1mm 2mm;
+      }
+      .st.X .spec .f {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 0.15mm solid #f1f5f9;
+      }
+      .st.X::after {
+        content: "QR MATRIX VERIFIED";
+        grid-column: 2 / 3;
+        grid-row: 3 / 5;
+        border: 0.25mm solid #111;
+        background:
+          repeating-linear-gradient(
+            0deg,
+            #111,
+            #111 1.5mm,
+            #fff 1.5mm,
+            #fff 3mm
+          ),
+          repeating-linear-gradient(
+            90deg,
+            #111,
+            #111 1.5mm,
+            #fff 1.5mm,
+            #fff 3mm
+          );
+        background-blend-mode: difference;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 4pt;
+        font-weight: 900;
+        color: #fff;
+        text-shadow: 0 0 2px #000;
+        border-radius: 1mm;
+      }
+      .st.X .note {
+        grid-column: 1 / -1;
+        font-size: 5.5pt;
+        color: #64748b;
+        margin-top: auto;
+      }
+
+      /* S-Y · Technical Blueprint — drafting grid & cyan accents */
+      .st.Y {
+        padding: 4mm;
+        border: 0.25mm solid #0284c7;
+        outline: 0.15mm solid #0284c7;
+        outline-offset: -1.5mm;
+        font-family: monospace, Inter, sans-serif;
+      }
+      .st.Y .top {
+        border-bottom: 0.2mm dashed #0284c7;
+        padding-bottom: 1.5mm;
+        display: flex;
+        justify-content: space-between;
+      }
+      .st.Y .co {
+        font-size: 11pt;
+        font-weight: 800;
+        color: #0369a1;
+        letter-spacing: 0.05em;
+      }
+      .st.Y .id {
+        font-size: 6pt;
+        color: #0284c7;
+      }
+      .st.Y .party {
+        font-size: 8.5pt;
+        font-weight: 700;
+        margin-top: 1.5mm;
+        color: #0f172a;
+      }
+      .st.Y .hero {
+        margin-top: 2mm;
+        border-top: 0.2mm dashed #0284c7;
+        border-bottom: 0.2mm dashed #0284c7;
+        padding: 1.5mm 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.Y .hero .v {
+        font-size: 22pt;
+        font-weight: 900;
+        color: #0369a1;
+      }
+      .st.Y .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1mm 3mm;
+        margin-top: 2mm;
+      }
+      .st.Y .spec .f {
+        display: flex;
+        justify-content: space-between;
+      }
+      .st.Y .note {
+        font-size: 5.4pt;
+        color: #64748b;
+        margin-top: auto;
+        border-top: 0.15mm solid #e0f2fe;
+        padding-top: 1mm;
+      }
+
+      /* S-Z · Modern Bento Tile — rounded quadrant layout */
+      .st.Z {
+        padding: 3mm;
+        border: 0.25mm solid #e2e8f0;
+        border-radius: 3mm;
+        background: #f8fafc;
+      }
+      .st.Z .top {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        padding: 1.5mm 2.5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.Z .co {
+        font-size: 10.5pt;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .st.Z .id {
+        font-size: 6pt;
+        font-weight: 700;
+        color: #64748b;
+      }
+      .st.Z .party {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        padding: 1.5mm 2.5mm;
+        margin-top: 1.5mm;
+        font-size: 8.5pt;
+        font-weight: 700;
+      }
+      .st.Z .hero {
+        background: #0f172a;
+        color: #fff;
+        border-radius: 2mm;
+        padding: 2mm 3mm;
+        margin-top: 1.5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.Z .hero .l {
+        color: #94a3b8;
+        font-size: 6.8pt;
+      }
+      .st.Z .hero .v {
+        color: #fff;
+        font-size: 22pt;
+        font-weight: 900;
+      }
+      .st.Z .spec {
+        background: #fff;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 2mm;
+        padding: 1.5mm 2.5mm;
+        margin-top: 1.5mm;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1mm;
+      }
+      .st.Z .spec .f {
+        display: flex;
+        flex-direction: column;
+      }
+      .st.Z .note {
+        font-size: 5.2pt;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: 1.5mm;
+      }
+
+      /* S-AA · Heavy Industrial Stencil — cargo container aesthetic */
+      .st.AA {
+        padding: 3.5mm;
+        border: 0.4mm solid #000;
+        background: #fafafa;
+      }
+      .st.AA .top {
+        border-bottom: 0.35mm solid #000;
+        padding-bottom: 1.5mm;
+      }
+      .st.AA .co {
+        font-size: 13pt;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .st.AA .id {
+        font-size: 7.5pt;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        margin-top: 0.8mm;
+      }
+      .st.AA .party {
+        font-size: 8.8pt;
+        font-weight: 800;
+        margin-top: 1.5mm;
+        border-bottom: 0.25mm solid #000;
+        padding-bottom: 1mm;
+      }
+      .st.AA .hero {
+        margin-top: 2mm;
+        border: 0.3mm solid #000;
+        padding: 1.5mm 2.5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.AA .hero .v {
+        font-size: 24pt;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+      .st.AA .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1mm 3mm;
+        margin-top: 2mm;
+      }
+      .st.AA .spec .f {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 0.2mm solid #000;
+        padding: 0.8mm 0;
+      }
+      .st.AA .spec .f .v {
+        font-weight: 800;
+      }
+      .st.AA .note {
+        font-size: 5.6pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-top: auto;
+        border-top: 0.25mm solid #000;
+        padding-top: 1mm;
+      }
+
+      /* S-AB · Minimalist Nordic — whisper hairlines & soft pills */
+      .st.AB {
+        padding: 4.5mm;
+        border: 0.15mm solid #cbd5e1;
+        border-radius: 2mm;
+      }
+      .st.AB .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.AB .co {
+        font-size: 12pt;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #1e293b;
+      }
+      .st.AB .id {
+        font-size: 6pt;
+        color: #64748b;
+        font-weight: 600;
+      }
+      .st.AB .party {
+        font-size: 8.8pt;
+        font-weight: 700;
+        color: #334155;
+        margin-top: 1mm;
+      }
+      .st.AB .hero {
+        margin-top: 2.5mm;
+        border-top: 0.15mm solid #e2e8f0;
+        border-bottom: 0.15mm solid #e2e8f0;
+        padding: 2mm 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.AB .hero .l {
+        font-size: 7pt;
+        color: #64748b;
+      }
+      .st.AB .hero .v {
+        font-size: 23pt;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .st.AB .spec {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5mm;
+        margin-top: 2.5mm;
+      }
+      .st.AB .spec .f {
+        background: #f8fafc;
+        border: 0.15mm solid #e2e8f0;
+        border-radius: 1mm;
+        padding: 1mm 1.5mm;
+        display: flex;
+        flex-direction: column;
+      }
+      .st.AB .spec .f .v {
+        font-size: 8.8pt;
+        font-weight: 700;
+      }
+      .st.AB .note {
+        font-size: 5.4pt;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: auto;
+      }
+
+      /* S-AC · Air Freight Cargo — flight priority header & box badge */
+      .st.AC {
+        padding: 3.5mm;
+        border: 0.3mm solid #111;
+      }
+      .st.AC::before {
+        content: "PRIORITY LOGISTICS · DISPATCH ZONE 1";
+        display: block;
+        background: #111;
+        color: #fff;
+        font-size: 5.6pt;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-align: center;
+        padding: 0.8mm;
+        margin: -3.5mm -3.5mm 2.5mm -3.5mm;
+      }
+      .st.AC .top {
+        display: flex;
+        justify-content: space-between;
+      }
+      .st.AC .co {
+        font-size: 11pt;
+        font-weight: 900;
+      }
+      .st.AC .id {
+        border: 0.25mm solid #111;
+        padding: 0.5mm 2mm;
+        font-size: 6.5pt;
+        font-weight: 800;
+      }
+      .st.AC .party {
+        font-size: 8.6pt;
+        font-weight: 700;
+        margin-top: 1mm;
+      }
+      .st.AC .hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-top: 0.25mm solid #111;
+        border-bottom: 0.25mm solid #111;
+        padding: 1.5mm 0;
+        margin-top: 1.5mm;
+      }
+      .st.AC .hero .v {
+        font-size: 23pt;
+        font-weight: 900;
+      }
+      .st.AC .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1mm 3mm;
+        margin-top: 1.5mm;
+      }
+      .st.AC .spec .f {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 0.15mm solid #e2e8f0;
+      }
+      .st.AC .note {
+        font-size: 5.4pt;
+        color: #64748b;
+        margin-top: auto;
+      }
+
+      /* S-AD · Tag Perforation Stub — tear-off stub line with inspection mark */
+      .st.AD {
+        padding: 4mm 4mm 4mm 22mm;
+        border: 0.25mm solid #111;
+        position: relative;
+      }
+      .st.AD::before {
+        content: "QA STUB · TORN AT SHIPMENT";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 17mm;
+        border-right: 0.3mm dashed #111;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5.4pt;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        background: #f8fafc;
+        color: #475569;
+      }
+      .st.AD .co {
+        font-size: 11.5pt;
+        font-weight: 800;
+      }
+      .st.AD .party {
+        font-size: 8.8pt;
+        font-weight: 700;
+        margin-top: 1mm;
+      }
+      .st.AD .hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 0.25mm solid #111;
+        padding: 1.5mm 0;
+        margin-top: 1.5mm;
+      }
+      .st.AD .hero .v {
+        font-size: 22pt;
+        font-weight: 900;
+      }
+      .st.AD .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1mm 2.5mm;
+        margin-top: 1.5mm;
+      }
+      .st.AD .spec .f {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 0.15mm solid #e2e8f0;
+      }
+      .st.AD .note {
+        font-size: 5.4pt;
+        color: #64748b;
+        margin-top: auto;
+      }
+
+      /* S-AE · Centered Prestige Seal — luxury yarn export crest & ribbon */
+      .st.AE {
+        padding: 4.5mm;
+        border: 0.25mm solid #b45309;
+        outline: 0.15mm solid #b45309;
+        outline-offset: -1.8mm;
+        text-align: center;
+      }
+      .st.AE .top {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .st.AE .co {
+        font-size: 12.5pt;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        color: #92400e;
+      }
+      .st.AE .id {
+        font-size: 6.2pt;
+        font-weight: 700;
+        color: #b45309;
+        margin-top: 0.5mm;
+      }
+      .st.AE .party {
+        font-size: 8.8pt;
+        font-weight: 700;
+        margin-top: 1.5mm;
+        color: #1e293b;
+      }
+      .st.AE .hero {
+        margin-top: 2mm;
+        border-top: 0.25mm double #b45309;
+        border-bottom: 0.25mm double #b45309;
+        padding: 1.5mm 0;
+      }
+      .st.AE .hero .v {
+        font-size: 24pt;
+        font-weight: 900;
+        color: #92400e;
+      }
+      .st.AE .spec {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5mm;
+        margin-top: 2mm;
+        text-align: left;
+      }
+      .st.AE .spec .f {
+        display: flex;
+        flex-direction: column;
+      }
+      .st.AE .note {
+        font-size: 5.4pt;
+        color: #78716c;
+        margin-top: auto;
+      }
+
+      /* S-AF · Color-Coded Lot Band — vibrant lot identification strip */
+      .st.AF {
+        padding: 0;
+        border: 0.25mm solid #111;
+        overflow: hidden;
+      }
+      .st.AF .top {
+        background: #0284c7;
+        color: #fff;
+        padding: 2mm 3.5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .st.AF .co {
+        font-size: 11pt;
+        font-weight: 900;
+        color: #fff;
+      }
+      .st.AF .id {
+        font-size: 6.5pt;
+        font-weight: 800;
+        color: #e0f2fe;
+      }
+      .st.AF .party {
+        padding: 1.5mm 3.5mm 0;
+        font-size: 8.8pt;
+        font-weight: 800;
+      }
+      .st.AF .hero {
+        padding: 1.5mm 3.5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 0.2mm solid #e2e8f0;
+      }
+      .st.AF .hero .v {
+        font-size: 23pt;
+        font-weight: 900;
+        color: #0284c7;
+      }
+      .st.AF .spec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1mm 3mm;
+        padding: 1.5mm 3.5mm;
+      }
+      .st.AF .spec .f {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 0.15mm solid #f1f5f9;
+      }
+      .st.AF .note {
+        font-size: 5.4pt;
+        color: #64748b;
+        padding: 0 3.5mm 2mm;
+        margin-top: auto;
+      }
     </style>
   </head>
   <body>
-    <h1>Carton sticker — 12 directions, pick one</h1>
+    <h1>Carton sticker — 32 directions, pick one</h1>
     <p class="note">
       A4 sheet, 6 stickers (2 × 3) — same grid as your current print. Same data
       as your reference (cartons 1596–1601). Weights say Tare/Net (standardized
       like the challan). Each direction shows the full sheet, then one sticker
-      enlarged for detail. Use the picker bar to jump between directions (arrow
-      keys step, <b>All</b> shows every sheet).
+      enlarged for detail. Toggle <b>Single Sheet</b> / <b>Grid Compare</b> /
+      <b>All Sheets</b> above; use arrow keys [← / →] to step, quick dropdown to
+      jump, or click any card in Grid view.
     </p>
 
     <nav class="picker" aria-label="Format picker">
+      <div class="viewbar">
+        <div class="seg" role="group" aria-label="View mode">
+          <button type="button" id="view-single" aria-pressed="true">
+            Single Sheet
+          </button>
+          <button type="button" id="view-grid" aria-pressed="false">
+            Grid Compare
+          </button>
+          <button type="button" id="view-all" aria-pressed="false">
+            All Sheets
+          </button>
+        </div>
+        <div class="quick-jump">
+          <select id="format-select" aria-label="Select format"></select>
+        </div>
+        <span class="viewcount" id="view-count"></span>
+        <div class="stepper">
+          <button
+            type="button"
+            id="view-prev"
+            aria-label="Previous format"
+            title="Previous (←)"
+          >
+            &lsaquo;
+          </button>
+          <button
+            type="button"
+            id="view-next"
+            aria-label="Next format"
+            title="Next (→)"
+          >
+            &rsaquo;
+          </button>
+        </div>
+        <div class="tools-group">
+          <div class="zoom-seg" role="group" aria-label="Zoom">
+            <button type="button" class="zoom-btn" data-zoom="0.85">85%</button>
+            <button type="button" class="zoom-btn active" data-zoom="1">
+              100%
+            </button>
+            <button type="button" class="zoom-btn" data-zoom="1.15">
+              115%
+            </button>
+          </div>
+          <button
+            type="button"
+            id="theme-toggle"
+            class="icon-btn"
+            title="Toggle canvas theme (Dark/Light)"
+          >
+            ◑ Canvas
+          </button>
+        </div>
+      </div>
       <div class="picker-row"></div>
     </nav>
 
@@ -4246,11 +5870,172 @@
       </div>
     </div>
     <script>
+      // Clone the A sample for M–AF; each new sticker reuses its data contract.
       (function () {
-        document.documentElement.classList.add("js");
+        var source = document.querySelector(".sheet.A");
+        if (!source) return;
+        var anchor = document.currentScript;
+        var cartons = [
+          ["1596", "40.000", "3.350", "36.650"],
+          ["1597", "41.820", "3.470", "38.350"],
+          ["1598", "44.000", "3.620", "40.380"],
+          ["1599", "40.540", "3.490", "37.050"],
+          ["1600", "41.060", "3.490", "37.570"],
+          ["1601", "41.040", "3.710", "37.330"],
+        ];
+        function sticker(cls, carton) {
+          var el = document.createElement("div");
+          el.className = "st " + cls;
+          el.innerHTML =
+            '<div class="top"><div class="co">KATARIA SYNTEX</div>' +
+            '<div class="id">CARTON ' +
+            carton[0] +
+            " · LOT 246</div></div>" +
+            '<div class="party">SHRI RAM EMBROIDERY</div>' +
+            '<div class="hero"><span class="l">NET WT.</span>' +
+            '<span class="v">' +
+            carton[3] +
+            "<small> kg</small></span></div>" +
+            '<div class="spec">' +
+            "<div class='f'><span class='l'>CARTON</span><span class='v'>" +
+            carton[0] +
+            "</span></div>" +
+            "<div class='f'><span class='l'>LOT</span><span class='v'>246</span></div>" +
+            "<div class='f'><span class='l'>GROSS</span><span class='v'>" +
+            carton[1] +
+            "</span></div>" +
+            "<div class='f'><span class='l'>TARE</span><span class='v'>" +
+            carton[2] +
+            "</span></div>" +
+            "<div class='f'><span class='l'>CHEESE</span><span class='v'>27</span></div>" +
+            "<div class='f'><span class='l'>SHADE</span><span class='v'>SRE-101</span></div>" +
+            "</div>" +
+            '<div class="rule"></div><div class="cols"></div><div class="band"></div>' +
+            '<div class="body"></div><div class="netband">NET ' +
+            carton[3] +
+            " KG · 225 RESAM SILK</div>" +
+            '<div class="note">Please do not mix this lot with any other lot.</div>';
+          return el;
+        }
+        var variants = [
+          ["M", "Ledger Slip", "Slip header · ruled detail"],
+          ["N", "Quiet Memo", "Open memo · hairline totals"],
+          ["O", "Dispatch Tag", "Tag header · pill markers"],
+          ["P", "Parcel Stripe", "Edge stripe · stub reference"],
+          ["Q", "Column Slip", "Vertical dividers · boxed net"],
+          ["R", "Quiet Formal", "Centered notice · double rules"],
+          ["S", "Compact Tag", "Dense counter tag"],
+          ["T", "Statement Band", "Dark band · net strip"],
+          ["U", "Office Memo", "File memo · tabbed number"],
+          ["V", "Fine Frame", "Gallery frame · double rules"],
+          [
+            "W",
+            "High-Visibility Logistics",
+            "Hazard header · massive net weight block",
+          ],
+          [
+            "X",
+            "QR Matrix & Spec",
+            "Digital QR code box · clean tabular specs",
+          ],
+          [
+            "Y",
+            "Technical Blueprint",
+            "Drafting grid · cyan rules · monospace metrics",
+          ],
+          ["Z", "Modern Bento Tile", "Apple bento quadrants · dark hero tile"],
+          [
+            "AA",
+            "Heavy Industrial Stencil",
+            "Cargo container stencils · bold divider bars",
+          ],
+          [
+            "AB",
+            "Minimalist Nordic",
+            "Delicate hairlines · rounded spec pills",
+          ],
+          [
+            "AC",
+            "Air Freight Cargo",
+            "Priority logistics badge · boxed carton tag",
+          ],
+          [
+            "AD",
+            "Tag Perforation Stub",
+            "Dashed tear-off stub line · QA inspection",
+          ],
+          [
+            "AE",
+            "Centered Prestige Seal",
+            "Luxury yarn export crest · gold-tone borders",
+          ],
+          [
+            "AF",
+            "Color-Coded Lot Band",
+            "Vibrant lot recognition header · blue hero net",
+          ],
+        ];
+        variants.forEach(function (item) {
+          var code = item[0],
+            name = item[1],
+            desc = item[2];
+          var section = document.createElement("div");
+          section.className = "dir";
+          section.innerHTML =
+            '<div class="dir-label"><b>S-' +
+            code +
+            " · " +
+            name +
+            "</b><span>" +
+            desc +
+            "</span></div>";
+          var sheet = document.createElement("div");
+          sheet.className = "sheet " + code;
+          cartons.forEach(function (carton) {
+            sheet.appendChild(sticker(code, carton));
+          });
+          section.appendChild(sheet);
+          var zoomlabel = document.createElement("div");
+          zoomlabel.className = "zoomlabel";
+          zoomlabel.textContent = "Detail — 1.5×";
+          section.appendChild(zoomlabel);
+          var zoomrow = document.createElement("div");
+          zoomrow.className = "zoomrow";
+          zoomrow.appendChild(sticker(code, cartons[0]));
+          section.appendChild(zoomrow);
+          anchor.before(section);
+        });
+      })();
+    </script>
+    <script>
+      (function () {
+        document.documentElement.classList.add("js", "view-single");
         var dirs = [].slice.call(document.querySelectorAll(".dir"));
         if (!dirs.length) return;
+
+        // Wrap dirs in #sheet-container for clean grid layout
+        var firstDir = dirs[0];
+        var parent = firstDir.parentNode;
+        var container = document.getElementById("sheet-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "sheet-container";
+          parent.insertBefore(container, firstDir);
+          dirs.forEach(function (d) {
+            container.appendChild(d);
+          });
+        }
+
         var row = document.querySelector(".picker-row");
+        var select = document.getElementById("format-select");
+        var segSingle = document.getElementById("view-single");
+        var segGrid = document.getElementById("view-grid");
+        var segAll = document.getElementById("view-all");
+        var count = document.getElementById("view-count");
+        var current = 0;
+        var currentMode = "single";
+        var buttons = [];
+
         var labels = dirs.map(function (d) {
           var b = d.querySelector(".dir-label b");
           var t = b ? b.textContent.trim() : "";
@@ -4260,49 +6045,106 @@
             name: (p[1] || "").trim(),
           };
         });
-        var buttons = [];
-        var allBtn = null;
-        var current = -1;
 
-        function paint() {
-          buttons.forEach(function (b, i) {
-            b.setAttribute("aria-pressed", i === current ? "true" : "false");
-          });
-          allBtn.setAttribute(
-            "aria-pressed",
-            current === -1 ? "true" : "false",
+        // Populate quick-jump select
+        labels.forEach(function (l, i) {
+          var opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = l.code + " — " + l.name;
+          select.appendChild(opt);
+        });
+        select.addEventListener("change", function () {
+          setMode("single");
+          show(parseInt(this.value, 10));
+        });
+
+        function setMode(mode, push) {
+          currentMode = mode;
+          document.documentElement.classList.remove(
+            "view-single",
+            "view-grid",
+            "view-all",
           );
+          document.documentElement.classList.add("view-" + mode);
+
+          segSingle.setAttribute(
+            "aria-pressed",
+            mode === "single" ? "true" : "false",
+          );
+          segGrid.setAttribute(
+            "aria-pressed",
+            mode === "grid" ? "true" : "false",
+          );
+          segAll.setAttribute(
+            "aria-pressed",
+            mode === "all" ? "true" : "false",
+          );
+
+          if (mode === "single") {
+            dirs.forEach(function (d, j) {
+              d.classList.toggle("on", j === current);
+            });
+            count.textContent =
+              current + 1 + " / " + dirs.length + " · " + labels[current].name;
+            select.value = current;
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#" + labels[current].code);
+              } catch (e) {}
+            }
+          } else if (mode === "grid") {
+            dirs.forEach(function (d, j) {
+              d.classList.toggle("on", j === current);
+            });
+            count.textContent = dirs.length + " directions (grid preview)";
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#grid");
+              } catch (e) {}
+            }
+          } else if (mode === "all") {
+            dirs.forEach(function (d) {
+              d.classList.remove("on");
+            });
+            count.textContent = dirs.length + " sheets (all)";
+            if (push !== false) {
+              try {
+                history.replaceState(null, "", "#all");
+              } catch (e) {}
+            }
+          }
         }
+
         function show(i, push) {
           current = i;
           dirs.forEach(function (d, j) {
             d.classList.toggle("on", j === i);
           });
-          document.documentElement.classList.remove("all");
-          if (push !== false) {
-            try {
-              history.replaceState(null, "", "#" + labels[i].code);
-            } catch (e) {}
-          }
-          paint();
+          buttons.forEach(function (b, j) {
+            b.setAttribute("aria-pressed", j === i ? "true" : "false");
+          });
+          setMode("single", push);
           if (buttons[i])
             buttons[i].scrollIntoView({ inline: "nearest", block: "nearest" });
-          window.scrollTo({ top: 0 });
-        }
-        function showAll(push) {
-          current = -1;
-          dirs.forEach(function (d) {
-            d.classList.remove("on");
-          });
-          document.documentElement.classList.add("all");
-          if (push !== false) {
-            try {
-              history.replaceState(null, "", "#all");
-            } catch (e) {}
-          }
-          paint();
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
+        function step(delta) {
+          var next = (current + delta + dirs.length) % dirs.length;
+          show(next);
+          if (buttons[next]) buttons[next].focus();
+        }
+
+        // Clicking card in grid switches to single view
+        dirs.forEach(function (d, i) {
+          d.addEventListener("click", function () {
+            if (currentMode === "grid") {
+              show(i);
+            }
+          });
+        });
+
+        // Pill buttons
         labels.forEach(function (l, i) {
           var b = document.createElement("button");
           b.type = "button";
@@ -4321,37 +6163,78 @@
           row.appendChild(b);
           buttons.push(b);
         });
-        allBtn = document.createElement("button");
-        allBtn.type = "button";
-        allBtn.className = "pbtn all";
-        allBtn.textContent = "All";
-        allBtn.setAttribute("aria-label", "Show all directions");
-        allBtn.addEventListener("click", function () {
-          showAll();
+
+        segSingle.addEventListener("click", function () {
+          setMode("single");
+          show(current);
         });
-        row.appendChild(allBtn);
+        segGrid.addEventListener("click", function () {
+          setMode("grid");
+        });
+        segAll.addEventListener("click", function () {
+          setMode("all");
+        });
+
+        document
+          .getElementById("view-prev")
+          .addEventListener("click", function () {
+            step(-1);
+          });
+        document
+          .getElementById("view-next")
+          .addEventListener("click", function () {
+            step(1);
+          });
+
+        // Theme toggle
+        var themeBtn = document.getElementById("theme-toggle");
+        if (themeBtn) {
+          themeBtn.addEventListener("click", function () {
+            var isLight =
+              document.documentElement.classList.toggle("light-canvas");
+            themeBtn.textContent = isLight ? "◑ Dark" : "◑ Light";
+          });
+        }
+
+        // Zoom controls
+        var zoomBtns = [].slice.call(document.querySelectorAll(".zoom-btn"));
+        zoomBtns.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            zoomBtns.forEach(function (b) {
+              b.classList.remove("active");
+            });
+            btn.classList.add("active");
+            document.documentElement.setAttribute(
+              "data-zoom",
+              btn.getAttribute("data-zoom"),
+            );
+          });
+        });
+
         var hint = document.createElement("span");
         hint.className = "pk-hint";
-        hint.textContent = "← → to step · #code to link";
+        hint.textContent = "← → to step · Click card in grid to expand";
         row.appendChild(hint);
 
         function fromHash() {
-          var h = (location.hash || "").slice(1);
-          if (h === "all") return showAll(false);
+          var h = (location.hash || "").slice(1).toLowerCase();
+          if (h === "all") return setMode("all", false);
+          if (h === "grid") return setMode("grid", false);
           var i = labels.findIndex(function (l) {
-            return l.code.toLowerCase() === h.toLowerCase();
+            return l.code.toLowerCase() === h;
           });
           show(i > -1 ? i : 0, false);
         }
         window.addEventListener("hashchange", fromHash);
         document.addEventListener("keydown", function (e) {
+          if (
+            e.target &&
+            (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+          )
+            return;
           if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
           if (e.metaKey || e.ctrlKey || e.altKey) return;
-          var next =
-            current === -1 ? 0 : current + (e.key === "ArrowRight" ? 1 : -1);
-          next = (next + dirs.length) % dirs.length;
-          show(next);
-          if (buttons[next]) buttons[next].focus();
+          step(e.key === "ArrowRight" ? 1 : -1);
           e.preventDefault();
         });
         fromHash();
