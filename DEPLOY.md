@@ -12,10 +12,10 @@ Cloudflare — free tier only.
 | Databases    | Cloudflare **D1** (SQLite)         | `ks-biz-app-db`, `ks-web-db`     |
 | CI/CD        | GitHub Actions                     | auto-deploys on push to `main`   |
 
-Native shells build in the single `.github/workflows/pipeline.yml`: the
-`gate` job (typecheck, lint, format, build) runs first, then `deploy`,
-`desktop`, and `android` run in parallel, then `publish-r2` uploads the
-installers to the R2 release bucket.
+Native shells and web workers build in `.github/workflows/pipeline.yml`:
+the `gate` job runs first, then `deploy-web`, `desktop`, and `android` run in
+parallel, `publish-r2` uploads installers to R2, and `deploy-app` deploys the
+business app worker.
 
 ## First-time setup (once)
 
@@ -46,15 +46,18 @@ Optionally set `NEXT_PUBLIC_SITE_URL` (or `SITE_URL`) for the public website
 
 Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
-1. `gate` — typecheck + lint + format + build. Blocks everything below.
-2. `deploy` — app: build SPA → ensure D1 → migrate → ensure `ks-releases`
-   bucket → deploy Worker; website: ensure D1 → migrate → build → deploy
-   Worker (the build runs after the database id is injected — vinext bakes
-   it into the bundle).
+1. `gate` — typecheck + lint + format + build concurrently via Turbo. Resolves
+   whether the push introduces a new release version compared to live R2.
+2. `deploy-web` — runs immediately in parallel on push: ensure website D1
+   (`ks-web-db`) → migrate → build Vinext → deploy website worker.
 3. `desktop` + `android` — installers (win-x64, mac-arm64, linux-x64) and
-   APK, in parallel with the deploys.
-4. `publish-r2` — uploads installers + rewrites the version manifest when
-   the version changed.
+   signed APK with Gradle caching, in parallel with `deploy-web`. Runs on release
+   pushes and manual dispatches (skipped on routine non-release commits and PRs).
+4. `publish-r2` — ensures `ks-releases` bucket exists, installs dependencies,
+   uploads installers + writes update manifests with latest-only retention.
+5. `deploy-app` — app: build SPA → ensure D1 (`ks-biz-app-db`) → migrate →
+   deploy Worker. Runs on push; when a release is being published, it runs after
+   `publish-r2` so clients never hit a version floor before the release is live.
 
 Manual dispatch (Actions → Pipeline) can rebuild only `desktop` or only
 `android` via the `targets` choice, and also creates the GitHub Release

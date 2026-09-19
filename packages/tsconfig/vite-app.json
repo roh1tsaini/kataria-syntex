@@ -5,7 +5,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["dom", "dom.iterable", "esnext", "webworker"],
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "bun"],
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true
   },

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["dom", "esnext"],
-    "types": ["node", "bun"],
+    "types": ["bun"],
     "verbatimModuleSyntax": true,
     "paths": {
       "@/*": ["./src/*"]

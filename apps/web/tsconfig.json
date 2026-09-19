@@ -1,7 +1,7 @@
 {
   "extends": "@kataria-syntex/tsconfig/nextjs.json",
   "compilerOptions": {
-    "types": ["node"],
+    "types": ["bun"],
     "paths": {
       "@/*": ["./src/*"]
     }

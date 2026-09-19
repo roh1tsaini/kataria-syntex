@@ -1,7 +1,7 @@
 {
   "extends": "@kataria-syntex/tsconfig/base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["bun"]
   },
   "include": ["electron/**/*.ts"]
 }
