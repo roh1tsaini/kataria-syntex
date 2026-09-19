@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getProduct, products } from "@kataria-syntex/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { site } from "@/content/site";
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -19,7 +20,30 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = getProduct(slug);
   if (!product) return {};
-  return { title: product.name, description: product.description };
+  return {
+    title: product.name,
+    description: product.description,
+    alternates: {
+      canonical: `/products/${product.slug}`,
+    },
+    openGraph: {
+      title: `${product.name} — ${site.name}`,
+      description: product.description,
+      type: "article",
+      images: [
+        {
+          url: product.image,
+          alt: product.imageAlt,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} — ${site.name}`,
+      description: product.description,
+      images: [product.image],
+    },
+  };
 }
 
 export default async function ProductPage({
@@ -33,8 +57,26 @@ export default async function ProductPage({
 
   const inquiryHref = `/contact?product=${encodeURIComponent(product.name)}`;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: `${site.url}${product.image}`,
+    category: product.category,
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+    },
+  };
+
   return (
     <article className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Link
         href="/products"
         className="inline-flex min-h-[44px] items-center gap-2 py-2 font-mono text-xs text-ink-soft transition-colors hover:text-royal"

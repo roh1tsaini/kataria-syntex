@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Save } from "lucide-react";
+import { Check, Save } from "lucide-react";
+import { useInlineSaved } from "@/ui/components/editor-shell";
 import { fmtDate } from "@/ui/lib/format";
 import {
   useAuth,
@@ -218,12 +219,20 @@ export function CompanyTab() {
     setDirty(true);
   };
 
-  const run = async (fn: () => Promise<void>, success: string) => {
+  const [detailsSaved, triggerDetailsSaved] = useInlineSaved();
+  const [numberingSaved, triggerNumberingSaved] = useInlineSaved();
+
+  const run = async (
+    fn: () => Promise<void>,
+    success: string,
+    onDone?: () => void,
+  ) => {
     setError(null);
     setBusy(true);
     try {
       await fn();
       setDirty(false);
+      onDone?.();
       toastSuccess(success);
     } catch (err) {
       const msg = friendlyError(err);
@@ -272,6 +281,7 @@ export function CompanyTab() {
                     phone2: details.phone2.trim(),
                   }),
                 "Company details saved.",
+                triggerDetailsSaved,
               );
             }}
           >
@@ -350,8 +360,17 @@ export function CompanyTab() {
                     loading={busy}
                     disabled={!details.name.trim()}
                   >
-                    <Save aria-hidden />
-                    Save details
+                    {detailsSaved ? (
+                      <>
+                        <Check className="size-4" aria-hidden />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save aria-hidden />
+                        Save details
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
@@ -368,7 +387,11 @@ export function CompanyTab() {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (canEdit) {
-                  void run(() => saveNumbering(numbering), "Numbering saved.");
+                  void run(
+                    () => saveNumbering(numbering),
+                    "Numbering saved.",
+                    triggerNumberingSaved,
+                  );
                 }
               }}
             >
@@ -405,8 +428,17 @@ export function CompanyTab() {
                 />
                 {canEdit && (
                   <Button type="submit" className="self-start" loading={busy}>
-                    <Save aria-hidden />
-                    Save numbering
+                    {numberingSaved ? (
+                      <>
+                        <Check className="size-4" aria-hidden />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save aria-hidden />
+                        Save numbering
+                      </>
+                    )}
                   </Button>
                 )}
               </MorphGroup>

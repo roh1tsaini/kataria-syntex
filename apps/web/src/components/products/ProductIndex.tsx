@@ -45,6 +45,13 @@ export function ProductIndex({
         ))}
       </div>
 
+      <p
+        aria-live="polite"
+        className="tnum mt-6 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft"
+      >
+        {visible.length} of {products.length} products
+      </p>
+
       <div
         ref={gridRef}
         className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"

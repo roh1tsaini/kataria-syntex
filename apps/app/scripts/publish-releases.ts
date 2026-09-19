@@ -42,6 +42,11 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, basename } from "node:path";
+import {
+  compareSemver,
+  hasUpdateFloor,
+  releaseContentType,
+} from "@kataria-syntex/shared";
 
 const ACCOUNT = process.env.CF_ACCOUNT_ID ?? "";
 const TOKEN = process.env.CF_API_TOKEN ?? "";
@@ -142,22 +147,6 @@ function walk(dir: string): string[] {
     else out.push(full);
   }
   return out;
-}
-
-const CONTENT_TYPES: Record<string, string> = {
-  ".apk": "application/vnd.android.package-archive",
-  ".exe": "application/vnd.microsoft.portable-executable",
-  ".dmg": "application/x-apple-diskimage",
-  ".blockmap": "application/octet-stream",
-  ".yml": "application/yaml",
-  ".AppImage": "application/x-executable",
-};
-
-function contentTypeFor(name: string): string {
-  for (const [ext, type] of Object.entries(CONTENT_TYPES)) {
-    if (name.endsWith(ext)) return type;
-  }
-  return "application/octet-stream";
 }
 
 /** R2 key for a built artifact: app/<folder>/<builder filename>. The builder
@@ -288,39 +277,9 @@ for (const { key, file } of uploads) {
   await putObject(
     key,
     readFileSync(file),
-    contentTypeFor(basename(key)),
+    releaseContentType(basename(key)),
     basename(key).endsWith(".yml") ? "public, max-age=60" : ARTIFACT_CACHE,
   );
-}
-
-/**
- * True only when a minVersion value actually forces an update. Inlined here
- * rather than imported from @kataria-syntex/shared: this script runs from
- * apps/app via a bare `bun scripts/...` in CI, where the workspace root is
- * not on the resolution path, so a cross-package import fails at module
- * load. The shared copy stays the source of truth for the app itself.
- * Mirrors packages/shared/src/semver.ts — keep them in step.
- */
-function hasUpdateFloor(minVersion: string | null | undefined): boolean {
-  if (typeof minVersion !== "string") return false;
-  if (minVersion.trim() === "") return false;
-  return compareSemver(minVersion, "0.0.0") > 0;
-}
-
-function parseSemver(v: string): [number, number, number] {
-  const parts = v.trim().replace(/^v/, "").split(".");
-  const num = (s: string | undefined) => {
-    const n = Number.parseInt(s ?? "", 10);
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  };
-  return [num(parts[0]), num(parts[1]), num(parts[2])];
-}
-
-/** Same tri-major ordering as the app's semver compare. */
-function compareSemver(a: string, b: string): number {
-  const [ax, ay, az] = parseSemver(a);
-  const [bx, by, bz] = parseSemver(b);
-  return ax - bx || ay - by || az - bz;
 }
 
 // 2) The unified manifest — Android + macOS Electron + /download page read it.

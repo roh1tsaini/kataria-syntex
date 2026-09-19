@@ -74,6 +74,8 @@ const SERVER_MESSAGES = {
   challan_job_worker_mismatch:
     "This challan belongs to a different job worker.",
   challan_not_outward: "Returns need a job-work challan.",
+  over_receipt_exceeded:
+    "Returned quantity exceeds the allowed limit for this challan.",
   in_use: "This entry is still referenced. Remove those uses first.",
   // recipes
   recipe_exists: "This colour already has a recipe for that denier.",

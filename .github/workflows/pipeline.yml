@@ -220,6 +220,8 @@ jobs:
 
       - name: Build Vinext worker
         working-directory: apps/web
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || vars.SITE_URL || 'https://web.katariasyntex.workers.dev' }}
         run: bun run build
 
       - name: Deploy website worker

@@ -58,6 +58,7 @@ const API_CODES = [
   "challan_has_returns",
   "challan_job_worker_mismatch",
   "challan_not_outward",
+  "over_receipt_exceeded",
   "type_change_not_allowed",
   "fy_change_not_allowed",
   "fy_mismatch",

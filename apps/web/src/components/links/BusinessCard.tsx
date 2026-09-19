@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Camera,
@@ -14,7 +14,7 @@ import {
 import { Reveal } from "@/components/motion/Reveal";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { CardLink } from "@/content/links";
-import type { OpenStatus } from "@/lib/hours";
+import { openStatus, type OpenStatus } from "@/lib/hours";
 
 const ICONS: Record<CardLink["icon"], LucideIcon> = {
   globe: Globe,
@@ -55,6 +55,23 @@ export function BusinessCard({
   status,
   links,
 }: BusinessCardProps) {
+  const [liveStatus, setLiveStatus] = useState<OpenStatus>(status);
+
+  useEffect(() => {
+    setLiveStatus(openStatus());
+    const interval = setInterval(() => {
+      setLiveStatus(openStatus());
+    }, 30_000);
+    const onVisibility = () => {
+      if (!document.hidden) setLiveStatus(openStatus());
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
   const reducedMotion = usePrefersReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -225,9 +242,9 @@ export function BusinessCard({
               <span className="tnum flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-ice-soft">
                 <span
                   aria-hidden="true"
-                  className={`h-1.5 w-1.5 flex-none rounded-full ${status.open ? "animate-pulse bg-sky" : "bg-danger"}`}
+                  className={`h-1.5 w-1.5 flex-none rounded-full ${liveStatus.open ? "animate-pulse bg-sky" : "bg-danger"}`}
                 />
-                {status.label}
+                {liveStatus.label}
               </span>
             </div>
 

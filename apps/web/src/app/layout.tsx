@@ -9,9 +9,30 @@ export const metadata: Metadata = {
     template: `%s — ${site.name}`,
   },
   description: site.overview,
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     siteName: site.name,
     type: "website",
+    locale: "en_IN",
+    url: site.url,
+    title: `${site.name} — Yarn sourcing from Surat`,
+    description: site.overview,
+    images: [
+      {
+        url: "/icon.svg",
+        width: 512,
+        height: 512,
+        alt: `${site.name} logo`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: `${site.name} — Yarn sourcing from Surat`,
+    description: site.overview,
+    images: ["/icon.svg"],
   },
 };
 

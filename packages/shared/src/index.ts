@@ -29,3 +29,4 @@ export * from "./fy";
 export * from "./semver";
 export * from "./format";
 export * from "./realtime";
+export * from "./releases";

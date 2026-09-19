@@ -104,6 +104,9 @@ Tracking tightens as size grows; leading does the opposite.
 | Eyebrow/label | 11px uppercase       | 600    | +0.06em  | 1            |
 | Data/numbers  | inherits             | 500+   | —        | tabular-nums |
 
+Form labels (`FieldLabel` in `ui/components/ui/field.tsx`) follow the
+Small/meta standard: 13px, weight 500 (`text-[13px] font-medium leading-snug`).
+
 Page totals use the page-title size; section totals use the section-head
 size. Pairing codes keep wide tracking (+0.18em) with tabular-nums as the
 one legibility exception.
@@ -184,6 +187,13 @@ no text-transform on body copy.
   `bg-background/70` where backdrop-filter is supported), never `bg-card` —
   one flat wash, no double surface against the sidebar's card.
   `prefers-reduced-transparency` falls back to solid.
+- Frosted glass & blur surfaces:
+  - Header chrome: `backdrop-blur-xl bg-background/85 supports-[backdrop-filter]:bg-background/70`
+  - Floating capsule / circle navigation: `capsule-surface` / `menu-float-circle` with `backdrop-filter: blur(12px) saturate(1.4)` and `color-mix(in oklch, var(--card) 78%, transparent)`
+  - Sticky mobile action bars (`.sticky-action-bar`): `backdrop-filter: blur(12px) saturate(1.4)` and `color-mix(in oklch, var(--card) 85%, transparent)`
+  - Dialog & settings scrims: `bg-black/40 backdrop-blur-[4px]`
+  - Glass cards (`.glass-card`): `backdrop-filter: blur(16px) saturate(1.5)` with `color-mix(in oklch, var(--card) 72%, transparent)`
+  - Under `prefers-reduced-transparency: reduce`, all frosted glass surfaces collapse to solid background/card fills and remove backdrop filters.
 - Header right side: the company name is bare muted text — no bordered
   chips, no boxed backgrounds in the chrome row.
 

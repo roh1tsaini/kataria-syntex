@@ -7,6 +7,7 @@ import {
   uniqueIndex,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import {
   type Permission as SharedPermission,
   type NumberingConfig as SharedNumberingConfig,
@@ -202,6 +203,12 @@ export const invites = sqliteTable(
     index("idx_invites_workspace").on(t.workspaceId),
     index("idx_invites_phone").on(t.phone),
     index("idx_invites_email").on(t.email),
+    uniqueIndex("uq_invites_active_phone")
+      .on(t.workspaceId, t.phone)
+      .where(sql`${t.consumedAt} IS NULL AND ${t.phone} IS NOT NULL`),
+    uniqueIndex("uq_invites_active_email")
+      .on(t.workspaceId, t.email)
+      .where(sql`${t.consumedAt} IS NULL AND ${t.email} IS NOT NULL`),
   ],
 );
 

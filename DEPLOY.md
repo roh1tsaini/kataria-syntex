@@ -32,12 +32,15 @@ The deploy job (`deploy` in `pipeline.yml`) **auto-provisions both D1
 databases and injects their ids on the runner** — no manual dashboard steps,
 no ids to paste.
 
-### 2. Set the app origin
+### 2. Set the origins
 
 Add a repository **variable** `APP_URL` = the app worker FQDN
 (`https://app.katariasyntex.workers.dev`). Native builds read it: the
 Electron build injects it into the packaged bundle; the Android APK bakes
 it as `VITE_API_URL` (a bare FQDN is normalized to https).
+
+Optionally set `NEXT_PUBLIC_SITE_URL` (or `SITE_URL`) for the public website
+(`https://web.katariasyntex.workers.dev`); falls back to the production worker domain.
 
 ### 3. Deploy
 

@@ -5,7 +5,7 @@
  * APP_URL; a packaged build without it fails here rather than shipping the
  * placeholder origin.
  */
-import { build } from "bun";
+import { bundleElectron } from "./bundle";
 
 if (!process.env.APP_URL) {
   console.error(
@@ -15,32 +15,11 @@ if (!process.env.APP_URL) {
 }
 const apiOrigin = `https://${process.env.APP_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
 
-const common = {
-  target: "node" as const,
-  format: "cjs" as const,
-  external: ["electron"],
+const built = await bundleElectron({
+  apiOrigin,
   minify: true,
-  sourcemap: "external" as const,
-  define: {
-    "process.env.KC_API_ORIGIN": JSON.stringify(apiOrigin),
-    // Same origin, used by the updater for /releases/* (see updater.ts).
-    __KC_UPDATE_FEED__: JSON.stringify(apiOrigin),
-  },
-};
+  sourcemap: "external",
+});
+if (!built.success) process.exit(1);
 
-for (const entry of ["main", "preload"]) {
-  const result = await build({
-    ...common,
-    entrypoints: [`./electron/${entry}.ts`],
-    outdir: "dist-electron",
-    // .cjs, never .js — apps/app is "type": "module", so Electron would load
-    // .js bundles as ESM and crash on require.
-    naming: "[dir]/[name].cjs",
-  });
-  if (!result.success) {
-    console.error(`electron/${entry}.ts build failed`);
-    for (const log of result.logs) console.error(log);
-    process.exit(1);
-  }
-}
 console.log("dist-electron/ built");

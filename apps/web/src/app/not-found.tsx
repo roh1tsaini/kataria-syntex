@@ -27,11 +27,19 @@ export default function NotFound() {
             The link may be old or mistyped. Try the yarn index or the shade
             card instead.
           </p>
-          <Button asChild variant="primary" className="mt-8">
-            <Link href="/">
-              <ArrowLeft /> Back to the front desk
-            </Link>
-          </Button>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild variant="primary">
+              <Link href="/">
+                <ArrowLeft /> Back to front desk
+              </Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/products">Yarn index</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/shade-card">Shade card</Link>
+            </Button>
+          </div>
         </div>
       </main>
       <SiteFooter />

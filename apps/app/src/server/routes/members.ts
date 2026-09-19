@@ -107,13 +107,26 @@ membersRoute.post("/invite", requirePermission("manage_members"), async (c) => {
   )
     return apiError(c, "already_pending", 409);
 
-  await addPendingMember(
-    db,
-    member.workspaceId,
-    c.get("auth").userId,
-    ident,
-    perms,
-  );
+  try {
+    await addPendingMember(
+      db,
+      member.workspaceId,
+      c.get("auth").userId,
+      ident,
+      perms,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      /UNIQUE constraint failed.*invites\.(workspace_id|phone|email)/is.test(
+        msg,
+      ) ||
+      /UNIQUE constraint failed.*uq_invites_active/is.test(msg)
+    ) {
+      return apiError(c, "already_pending", 409);
+    }
+    throw err;
+  }
   return c.json({ ok: true, attached: false });
 });
 

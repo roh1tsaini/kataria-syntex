@@ -4,6 +4,7 @@
  * tears both down.
  */
 import { spawn, type ChildProcess } from "node:child_process";
+import { bundleElectron } from "./bundle";
 
 const vite = spawn("bunx", ["vite", "--port", "1420", "--strictPort"], {
   stdio: ["ignore", "pipe", "pipe"],
@@ -48,19 +49,8 @@ if (!(await waitForVite())) {
 // define, so the main process reads it at runtime and DEV routes API calls
 // to localhost:3000 (the packaging build in electron/build.ts bakes the
 // production origin instead).
-const built = await Bun.build({
-  entrypoints: ["./electron/main.ts", "./electron/preload.ts"],
-  outdir: "dist-electron",
-  target: "node",
-  format: "cjs",
-  external: ["electron"],
-  // .cjs, never .js — apps/app is "type": "module", so Electron would load
-  // .js bundles as ESM and crash on require.
-  naming: "[dir]/[name].cjs",
-});
+const built = await bundleElectron();
 if (!built.success) {
-  console.error("electron main/preload build failed");
-  for (const log of built.logs) console.error(log);
   shutdown(1);
 }
 

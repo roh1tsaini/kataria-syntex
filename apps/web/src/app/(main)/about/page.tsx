@@ -71,7 +71,7 @@ export default function AboutPage() {
               <Reveal
                 key={pillar.title}
                 delay={index * 70}
-                className="card-sheen rounded-card border border-line bg-paper p-6 shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float md:p-8"
+                className="card-lift p-6 md:p-8"
               >
                 <p className="tnum font-mono text-xs font-medium text-royal">
                   {String(index + 1).padStart(2, "0")}

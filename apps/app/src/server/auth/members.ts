@@ -38,6 +38,38 @@ export async function addPendingMember(
   permissions: Permission[],
 ): Promise<void> {
   const now = new Date();
+  const newExpiresAt = toIso(
+    new Date(now.getTime() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000),
+  );
+  const column = ident.type === "phone" ? invites.phone : invites.email;
+
+  // If an unconsumed invite row exists (e.g. an expired invite or refreshed permissions),
+  // update it in-place rather than inserting a duplicate that would violate uniqueness.
+  const existing = await d
+    .select({ id: invites.id })
+    .from(invites)
+    .where(
+      and(
+        eq(invites.workspaceId, workspaceId),
+        eq(column, ident.value),
+        isNull(invites.consumedAt),
+      ),
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    await d
+      .update(invites)
+      .set({
+        permissions: JSON.stringify(permissions),
+        invitedBy,
+        expiresAt: newExpiresAt,
+        createdAt: toIso(now),
+      })
+      .where(eq(invites.id, existing[0]!.id));
+    return;
+  }
+
   await d.insert(invites).values({
     id: generateId(),
     workspaceId,
@@ -45,9 +77,7 @@ export async function addPendingMember(
     email: ident.type === "email" ? ident.value : null,
     permissions: JSON.stringify(permissions),
     invitedBy,
-    expiresAt: toIso(
-      new Date(now.getTime() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000),
-    ),
+    expiresAt: newExpiresAt,
     createdAt: toIso(now),
   });
 }

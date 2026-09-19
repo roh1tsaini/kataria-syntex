@@ -5,13 +5,6 @@ import type { YarnProduct } from "@kataria-syntex/shared";
 import { cn } from "@kataria-syntex/shared";
 
 /**
- * Paper card that lifts on hover — kept next to its two call sites
- * (here + ShadeStrip) instead of a one-export module.
- */
-const liftedCard =
-  "card-sheen relative rounded-card border border-line bg-paper shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float";
-
-/**
  * The yarn card used by the home index and the products page — duotone
  * art (grayscale multiplied over royal, so every photo sits inside the
  * blue family), code + family chip, and the three specs a buyer scans
@@ -27,7 +20,7 @@ export function ProductCard({
   return (
     <Link
       href={`/products/${product.slug}`}
-      className={cn("group flex h-full flex-col overflow-hidden", liftedCard)}
+      className="card-lift group flex h-full flex-col overflow-hidden"
     >
       <div className="art-duotone relative aspect-[16/10] overflow-hidden">
         <Image

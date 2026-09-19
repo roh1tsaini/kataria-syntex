@@ -1,8 +1,4 @@
 import { cn } from "@kataria-syntex/shared";
-
-// Keep in sync with the same token in components/products/ProductCard.tsx.
-const liftedCard =
-  "card-sheen relative rounded-card border border-line bg-paper shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float";
 import { Section } from "@/components/section/Section";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -46,7 +42,7 @@ export function ShadeStrip() {
           <Link
             href="/shade-card"
             aria-label="Open the full shade card"
-            className={cn("group block p-1.5", liftedCard)}
+            className="card-lift group block p-1.5"
           >
             <div className="flex items-baseline justify-between px-3 pt-2 pb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
               <span>RAJ shade card</span>

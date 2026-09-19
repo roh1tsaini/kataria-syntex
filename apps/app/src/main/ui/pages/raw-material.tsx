@@ -25,6 +25,10 @@ import {
   CardTitle,
   CardDescription,
 } from "@/ui/components/ui/card";
+import {
+  EditorSectionHeader,
+  EditorErrorBanner,
+} from "@/ui/components/editor-shell";
 import { Badge } from "@/ui/components/ui/badge";
 import {
   InputGroup,
@@ -647,29 +651,20 @@ function RawMaterialForm({
       </div>
 
       {mastersError && (
-        <div
-          role="alert"
-          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
-        >
-          <p className="text-sm text-destructive">
-            Couldn't load deniers, colours and suppliers. Save is disabled until
-            they load.
-          </p>
-          <Button size="sm" variant="outline" onClick={retryMasters}>
-            Retry
-          </Button>
+        <div className="mt-4">
+          <EditorErrorBanner
+            message="Couldn't load deniers, colours and suppliers. Save is disabled until they load."
+            action={{ label: "Retry", onClick: retryMasters }}
+          />
         </div>
       )}
 
       {detailError && (
-        <div
-          role="alert"
-          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
-        >
-          <p className="text-sm text-destructive">{detailError}</p>
-          <Button size="sm" variant="outline" onClick={() => void loadDetail()}>
-            Retry
-          </Button>
+        <div className="mt-4">
+          <EditorErrorBanner
+            message={detailError}
+            action={{ label: "Retry", onClick: () => void loadDetail() }}
+          />
         </div>
       )}
 
@@ -684,12 +679,11 @@ function RawMaterialForm({
 
       <form onSubmit={submit} className="mt-6 flex flex-col gap-6">
         <Card className="h-fit overflow-hidden">
-          <CardHeader className="border-b border-border bg-muted px-4 py-3">
-            <CardTitle className="text-[15px]">Details</CardTitle>
-            <CardDescription className="text-xs">
-              Record the purchase date and optional supplier.
-            </CardDescription>
-          </CardHeader>
+          <EditorSectionHeader
+            className="border-b border-border bg-muted px-4 py-3"
+            title="Details"
+            description="Record the purchase date and optional supplier."
+          />
           <CardContent className="pt-5">
             <FieldGroup className="gap-4 sm:grid sm:grid-cols-2">
               <Field>
@@ -774,14 +768,11 @@ function RawMaterialForm({
         </Card>
 
         <Card className="overflow-hidden flex flex-col">
-          <CardHeader className="border-b border-border bg-muted px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <CardTitle className="text-[15px]">Items</CardTitle>
-                <CardDescription className="text-xs">
-                  One row per lot of grey yarn received.
-                </CardDescription>
-              </div>
+          <EditorSectionHeader
+            className="border-b border-border bg-muted px-4 py-3"
+            title="Items"
+            description="One row per lot of grey yarn received."
+            actions={
               <div className="flex shrink-0 items-center gap-2">
                 <Badge
                   variant="secondary"
@@ -796,8 +787,8 @@ function RawMaterialForm({
                   {fmtWt(totalWt)} kg total
                 </Badge>
               </div>
-            </div>
-          </CardHeader>
+            }
+          />
           <CardContent className="pt-4 pb-4 flex-1">
             <div className="flex flex-col gap-3">
               {rows.map((row, idx) => (

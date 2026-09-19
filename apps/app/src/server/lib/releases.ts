@@ -19,23 +19,12 @@
  * streams the bytes.
  */
 import type { Env } from "../env";
+import { releaseContentType } from "@kataria-syntex/shared";
 
 const MANIFEST_SUFFIX = /\/latest(\.json|\.yml|-linux\.yml|-mac\.yml)$/i;
 
-const CONTENT_TYPES: Record<string, string> = {
-  ".apk": "application/vnd.android.package-archive",
-  ".exe": "application/vnd.microsoft.portable-executable",
-  ".dmg": "application/x-apple-diskimage",
-  ".blockmap": "application/octet-stream",
-  ".yml": "application/yaml",
-  ".json": "application/json",
-};
-
 function contentType(key: string): string {
-  const dot = key.lastIndexOf(".");
-  const ext = dot === -1 ? "" : key.slice(dot).toLowerCase();
-  // The AppImage target has no real extension — treat unknown as raw bytes.
-  return CONTENT_TYPES[ext] ?? "application/octet-stream";
+  return releaseContentType(key);
 }
 
 function cacheControl(key: string): string {

@@ -374,6 +374,14 @@
 }
 
 /*
+ * Paper card that lifts on hover — shared across product cards, shade strip,
+ * and market panels.
+ */
+@utility card-lift {
+  @apply card-sheen relative rounded-card border border-line bg-paper shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float;
+}
+
+/*
  * Load-in — one-time entrance for above-the-fold content (hero column,
  * floating panel). Pure CSS so it runs before hydration; delays are set
  * inline per element. Uses the `translate` property so it never fights

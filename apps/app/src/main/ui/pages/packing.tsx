@@ -25,6 +25,10 @@ import {
   CardTitle,
   CardDescription,
 } from "@/ui/components/ui/card";
+import {
+  EditorSectionHeader,
+  EditorErrorBanner,
+} from "@/ui/components/editor-shell";
 import { Badge } from "@/ui/components/ui/badge";
 import {
   InputGroup,
@@ -614,6 +618,8 @@ function PackingForm({
       prev.map((r, i) => {
         if (i !== idx) return r;
         const updated = { ...r, [field]: value };
+        // Net auto-fills from gross − tare while weights are being typed;
+        // stays manually editable until a weight changes again.
         if (field === "grossWt" || field === "tareWt") {
           const g = parseFloat(updated.grossWt) || 0;
           const t = parseFloat(updated.tareWt) || 0;
@@ -634,6 +640,8 @@ function PackingForm({
       prev.map((r, i) => {
         if (i !== idx) return r;
         const updated = { ...r, [field]: value };
+        // Net auto-fills from sack weight × sacks; stays manually editable
+        // until sack weight or count changes again.
         if (field === "sackWt" || field === "sacks") {
           const sw = parseFloat(updated.sackWt) || 0;
           const sk = parseInt(updated.sacks) || 0;
@@ -756,28 +764,20 @@ function PackingForm({
       </div>
 
       {mastersError && (
-        <div
-          role="alert"
-          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
-        >
-          <p className="text-sm text-destructive">
-            Couldn't load deniers and colours. Save is disabled until they load.
-          </p>
-          <Button size="sm" variant="outline" onClick={retryMasters}>
-            Retry
-          </Button>
+        <div className="mt-4">
+          <EditorErrorBanner
+            message="Couldn't load deniers and colours. Save is disabled until they load."
+            action={{ label: "Retry", onClick: retryMasters }}
+          />
         </div>
       )}
 
       {detailError && (
-        <div
-          role="alert"
-          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/8 px-4 py-3"
-        >
-          <p className="text-sm text-destructive">{detailError}</p>
-          <Button size="sm" variant="outline" onClick={() => void loadDetail()}>
-            Retry
-          </Button>
+        <div className="mt-4">
+          <EditorErrorBanner
+            message={detailError}
+            action={{ label: "Retry", onClick: () => void loadDetail() }}
+          />
         </div>
       )}
 
@@ -792,22 +792,19 @@ function PackingForm({
 
       <form onSubmit={submit} className="mt-6 flex flex-col gap-6">
         <Card className="h-fit overflow-hidden">
-          <CardHeader className="border-b border-border bg-muted px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <CardTitle className="text-[15px]">Details</CardTitle>
-                <CardDescription className="text-xs">
-                  Date for this packing entry.
-                </CardDescription>
-              </div>
+          <EditorSectionHeader
+            className="border-b border-border bg-muted px-4 py-3"
+            title="Details"
+            description="Date for this packing entry."
+            actions={
               <Badge
                 variant="secondary"
                 className="shrink-0 font-semibold tabular-nums"
               >
                 {fmtWt(totalWt)} kg total
               </Badge>
-            </div>
-          </CardHeader>
+            }
+          />
           <CardContent className="pt-5">
             <FieldGroup className="gap-4 sm:flex-row sm:items-end">
               <Field className="sm:max-w-xs">
@@ -831,28 +828,25 @@ function PackingForm({
         </Card>
 
         <Card className="overflow-hidden flex flex-col">
-          <CardHeader className="border-b border-border bg-muted px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <CardTitle className="text-[15px]">
-                  {type === "sale"
-                    ? "Items — Gross / Tare"
-                    : "Items — Sack × Weight"}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {type === "sale"
-                    ? "Weigh each box; net weight is auto-calculated."
-                    : "Net weight = sack weight × number of sacks."}
-                </CardDescription>
-              </div>
+          <EditorSectionHeader
+            className="border-b border-border bg-muted px-4 py-3"
+            title={
+              type === "sale" ? "Items — Gross / Tare" : "Items — Sack × Weight"
+            }
+            description={
+              type === "sale"
+                ? "Weigh each box; net weight is auto-calculated."
+                : "Net weight = sack weight × number of sacks."
+            }
+            actions={
               <Badge
                 variant="secondary"
                 className="shrink-0 font-semibold tabular-nums"
               >
                 {rows.length} {rows.length === 1 ? "line" : "lines"}
               </Badge>
-            </div>
-          </CardHeader>
+            }
+          />
           <CardContent className="pt-4 pb-4 flex-1">
             <div className="flex flex-col gap-3">
               <AnimatePresence initial={false}>

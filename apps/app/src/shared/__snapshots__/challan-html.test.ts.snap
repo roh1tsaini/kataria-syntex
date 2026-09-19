@@ -1,0 +1,353 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`challan-html generates byte-exact standalone HTML for sales challan 1`] = `
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:; script-src 'none';">
+<title>Challan DC-2627-0042</title>
+<style>
+
+@font-face { font-family:"Inter Print"; font-weight:400; font-style:normal;
+  src:url(data:font/ttf;base64,AAEAAAASAQA...TEST_REGULAR_FONT_BASE64...) format("truetype"); }
+@font-face { font-family:"Inter Print"; font-weight:700; font-style:normal;
+  src:url(data:font/ttf;base64,AAEAAAASAQA...TEST_BOLD_FONT_BASE64...) format("truetype"); }
+@page { size:210mm 148mm; margin:0; }
+
+:root { --ink:#000; --label:#52525b; --faint:#a1a1aa; --rule:#e4e4e7; --head:#3f3f46; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:#fff; }
+body { font-family:"Inter Print", Inter, sans-serif; color:var(--ink);
+  font-feature-settings:"tnum" 1, "lnum" 1; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.sheet { width:210mm; height:148mm; background:#fff;
+  padding:4mm 6mm 2.8mm; display:flex; flex-direction:column; overflow:hidden;
+  page-break-after:always; break-after:page; }
+.sheet:last-child { page-break-after:auto; break-after:auto; }
+
+/* ── Masthead ── */
+.masthead { display:grid; grid-template-columns:34mm 1fr 30mm; align-items:center; }
+.doc-title { font-size:8.5pt; font-weight:700; line-height:1.35; letter-spacing:.02em; }
+.company { text-align:center; min-width:0; }
+.company-name { font-size:17pt; font-weight:800; letter-spacing:.04em; line-height:1.1;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.company-sub { font-size:6.6pt; color:var(--label); line-height:1.5;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.copies { justify-self:end; display:flex; flex-direction:column; gap:1.4mm; }
+.copy { display:flex; align-items:center; gap:1.6mm; font-size:6.4pt; font-weight:600;
+  color:var(--head); letter-spacing:.02em; }
+.copy::before { content:""; width:3.2mm; height:3.2mm; border:.35mm solid var(--ink); border-radius:.5mm; background:#fff; }
+.masthead-rule { border:none; border-top:.55mm solid var(--ink); margin:1.8mm 0 0; }
+
+/* ── Party band ── */
+.party { display:grid; grid-template-columns:1fr 52mm; border:.35mm solid var(--ink);
+  border-top:none; }
+.party-main { padding:2mm 3mm 1.8mm; min-width:0; }
+.party-line { display:flex; align-items:baseline; gap:2mm; min-width:0; }
+.party-ms { font-size:6.4pt; font-weight:700; color:var(--head); flex:none; }
+.party-name { font-size:10.5pt; font-weight:700; letter-spacing:.015em; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.party-gstin { margin-left:auto; font-size:7pt; font-weight:700; color:var(--head);
+  white-space:nowrap; }
+.party-sub { display:flex; gap:3mm; margin-top:1.1mm; font-size:6.6pt; color:var(--label);
+  white-space:nowrap; overflow:hidden; }
+.party-sub span { overflow:hidden; text-overflow:ellipsis; }
+.party-meta { border-left:.35mm solid var(--ink); padding:2mm 3mm; display:flex;
+  flex-direction:column; justify-content:center; gap:1.2mm; min-width:0; }
+.meta-row { display:flex; align-items:baseline; gap:2mm; }
+.meta-label { font-size:6.2pt; font-weight:700; color:var(--label);
+  letter-spacing:.04em; flex:none; }
+.meta-value { font-size:11pt; font-weight:800; margin-left:auto; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.meta-row:last-child .meta-value { font-size:9.5pt; font-weight:700; }
+
+/* ── Items table ── */
+table.items { width:100%; border-collapse:collapse; table-layout:fixed; }
+.items th { background:var(--ink); color:#fff; font-size:6.7pt; font-weight:700;
+  letter-spacing:.05em; padding:1.3mm 1.6mm; text-align:center; }
+.items td { font-size:7.8pt; padding:0 1.6mm; text-align:center; height:5.25mm;
+  line-height:5.25mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.items tbody tr { border-bottom:.18mm solid var(--rule); }
+.items tbody tr:last-child { border-bottom:.3mm solid var(--ink); }
+.items { border:.3mm solid var(--ink); border-top:none; }
+
+/* ── Totals ── */
+.totals { display:grid; grid-template-columns:1fr 58mm; gap:4mm; margin-top:1.6mm;
+  padding:0 .4mm; }
+.totals-left { min-width:0; align-self:center; }
+.stat-line { font-size:7.4pt; font-weight:700; line-height:1.65; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-line .lbl { color:var(--label); font-weight:600; }
+.remarks-line { font-size:7.4pt; line-height:1.65; color:var(--label); margin-top:.8mm;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.remarks-line b { color:var(--ink); }
+.totals-right { display:flex; flex-direction:column; justify-content:center; }
+.tot-row { display:flex; align-items:baseline; font-size:7.4pt; line-height:1.5; }
+.tot-row .lbl { color:var(--label); }
+.tot-row .val { margin-left:auto; font-weight:700; padding-left:3mm; }
+.tot-rule { border:none; border-top:.25mm solid var(--rule); margin:.3mm 0; }
+.tot-row.final { font-weight:700; }
+.tot-row.final .lbl { color:var(--ink); }
+.tot-row.final .val { font-size:8.6pt; }
+
+/* ── Footer ── */
+.foot-rule { border:none; border-top:.3mm solid var(--ink); margin:1.6mm 0 0; }
+.footer { display:grid; grid-template-columns:64mm 1fr 62mm; gap:4mm;
+  padding:1.3mm .4mm 0; flex:1; min-height:0; }
+.terms h3 { font-size:7.2pt; font-weight:700; letter-spacing:.02em; }
+.terms ol { margin:.8mm 0 0 3.4mm; font-size:6.6pt; color:var(--label); line-height:1.5; }
+.sign-cell { display:flex; flex-direction:column; align-items:center;
+  justify-content:flex-end; gap:1mm; }
+.sign-line { width:34mm; border-top:.25mm solid var(--faint); }
+.sign-cap { font-size:6.4pt; color:var(--label); }
+.auth-cell { display:flex; flex-direction:column; align-items:flex-end;
+  justify-content:flex-end; gap:1mm; text-align:right; }
+.auth-for { font-size:8.6pt; font-weight:800; letter-spacing:.02em; max-width:100%;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.auth-line { width:34mm; border-top:.25mm solid var(--faint); }
+.auth-cap { font-size:6pt; font-weight:600; color:var(--label); letter-spacing:.06em; }
+.page-no { text-align:center; font-size:6.2pt; color:var(--faint); margin-top:1mm; }
+</style>
+</head>
+<body>
+<div class="sheet">
+<div class="masthead">
+  <div class="doc-title">DELIVERY CHALLAN</div>
+  <div class="company">
+    <div class="company-name">KATARIA SYNTEX PRIVATE LIMITED</div>
+    <div class="company-sub">PLOT 12-14, GIDC INDUSTRIAL ESTATE, SURAT, GUJARAT - 395006</div>
+    <div class="company-sub">Contact No.: 9876543210, 9876543211</div>
+  </div>
+  <div class="copies">
+    <div class="copy">ORIGINAL</div>
+    <div class="copy">DUPLICATE</div>
+  </div>
+</div>
+<hr class="masthead-rule">
+<div class="party">
+  <div class="party-main">
+    <div class="party-line">
+      <span class="party-ms">M/s</span>
+      <span class="party-name">SURAT TEXTILES PVT LTD</span>
+      <span class="party-gstin">GSTIN: 24AABCS5678G1Z1</span>
+    </div>
+    <div class="party-sub"><span>RING ROAD, SURAT, GUJARAT</span><span>Mobile: 9123456780</span></div>
+  </div>
+  <div class="party-meta">
+    <div class="meta-row"><span class="meta-label">CHALLAN NO.</span>
+      <span class="meta-value">DC-2627-0042</span></div>
+    <div class="meta-row"><span class="meta-label">DATE</span>
+      <span class="meta-value">19-09-2026</span></div>
+  </div>
+</div>
+<table class="items">
+  <thead><tr><th style="width:7mm">SR.</th><th style="width:17mm">BOX NO.</th><th style="width:15mm">CHEESE</th><th style="width:21mm">GROSS WT.</th><th style="width:19mm">TARE WT.</th><th style="width:21mm">NET WT.</th><th style="width:28mm">DENIER</th><th style="width:1fr">COLOR</th><th style="width:20mm">LOT NO.</th></tr></thead>
+  <tbody><tr><td>1</td><td>B-101</td><td>24</td><td>52.750</td><td>2.750</td><td>50.000</td><td>80/72 SD</td><td>Jet Black</td><td>L-901</td></tr><tr><td>2</td><td>B-102</td><td>24</td><td>52.700</td><td>2.700</td><td>50.000</td><td>80/72 SD</td><td>Optical White</td><td>L-902</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+</table>
+<div class="totals">
+  <div class="totals-left"><div class="stat-line"><span class="lbl">GSTIN:</span> 24AAACK1234F1Z5</div><div class="stat-line"><span class="lbl">PAN No.:</span> AAACK1234F</div><div class="remarks-line"><b>Remarks:</b> URGENT DELIVERY BY TEMPO. HANDOVER TO SUPERVISOR.</div></div>
+  <div class="totals-right">
+    <div class="tot-row"><span class="lbl">Total Box</span><span class="val">2</span></div><div class="tot-row"><span class="lbl">Total Cheese</span><span class="val">48</span></div><div class="tot-row"><span class="lbl">Total Gross Wt.</span><span class="val">105.450</span></div><div class="tot-row"><span class="lbl">Total Tare Wt.</span><span class="val">5.450</span></div>
+    <hr class="tot-rule">
+    <div class="tot-row final"><span class="lbl">Total Net Wt.</span>
+      <span class="val">100.000</span></div>
+  </div>
+</div>
+<hr class="foot-rule">
+<div class="footer">
+  <div class="terms">
+    <h3>Terms &amp; Conditions</h3>
+    <ol>
+      <li>Please do not mix different lots.</li><li>Subject to SURAT jurisdiction.</li>
+    </ol>
+  </div>
+  <div class="sign-cell">
+    <div class="sign-line"></div>
+    <div class="sign-cap">Receiver's Sign.</div>
+  </div>
+  <div class="auth-cell">
+    <div class="auth-for">For KATARIA SYNTEX PRIVATE LIMITED</div>
+    <div class="auth-line"></div>
+    <div class="auth-cap">AUTHORISED SIGNATORY</div>
+  </div>
+</div>
+</div>
+</body>
+</html>"
+`;
+
+exports[`challan-html generates byte-exact standalone HTML for outward job work challan 1`] = `
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:; script-src 'none';">
+<title>Challan JW-2627-0015</title>
+<style>
+
+@font-face { font-family:"Inter Print"; font-weight:400; font-style:normal;
+  src:url(data:font/ttf;base64,AAEAAAASAQA...TEST_REGULAR_FONT_BASE64...) format("truetype"); }
+@font-face { font-family:"Inter Print"; font-weight:700; font-style:normal;
+  src:url(data:font/ttf;base64,AAEAAAASAQA...TEST_BOLD_FONT_BASE64...) format("truetype"); }
+@page { size:210mm 148mm; margin:0; }
+
+:root { --ink:#000; --label:#52525b; --faint:#a1a1aa; --rule:#e4e4e7; --head:#3f3f46; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:#fff; }
+body { font-family:"Inter Print", Inter, sans-serif; color:var(--ink);
+  font-feature-settings:"tnum" 1, "lnum" 1; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.sheet { width:210mm; height:148mm; background:#fff;
+  padding:4mm 6mm 2.8mm; display:flex; flex-direction:column; overflow:hidden;
+  page-break-after:always; break-after:page; }
+.sheet:last-child { page-break-after:auto; break-after:auto; }
+
+/* ── Masthead ── */
+.masthead { display:grid; grid-template-columns:34mm 1fr 30mm; align-items:center; }
+.doc-title { font-size:8.5pt; font-weight:700; line-height:1.35; letter-spacing:.02em; }
+.company { text-align:center; min-width:0; }
+.company-name { font-size:17pt; font-weight:800; letter-spacing:.04em; line-height:1.1;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.company-sub { font-size:6.6pt; color:var(--label); line-height:1.5;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.copies { justify-self:end; display:flex; flex-direction:column; gap:1.4mm; }
+.copy { display:flex; align-items:center; gap:1.6mm; font-size:6.4pt; font-weight:600;
+  color:var(--head); letter-spacing:.02em; }
+.copy::before { content:""; width:3.2mm; height:3.2mm; border:.35mm solid var(--ink); border-radius:.5mm; background:#fff; }
+.masthead-rule { border:none; border-top:.55mm solid var(--ink); margin:1.8mm 0 0; }
+
+/* ── Party band ── */
+.party { display:grid; grid-template-columns:1fr 52mm; border:.35mm solid var(--ink);
+  border-top:none; }
+.party-main { padding:2mm 3mm 1.8mm; min-width:0; }
+.party-line { display:flex; align-items:baseline; gap:2mm; min-width:0; }
+.party-ms { font-size:6.4pt; font-weight:700; color:var(--head); flex:none; }
+.party-name { font-size:10.5pt; font-weight:700; letter-spacing:.015em; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.party-gstin { margin-left:auto; font-size:7pt; font-weight:700; color:var(--head);
+  white-space:nowrap; }
+.party-sub { display:flex; gap:3mm; margin-top:1.1mm; font-size:6.6pt; color:var(--label);
+  white-space:nowrap; overflow:hidden; }
+.party-sub span { overflow:hidden; text-overflow:ellipsis; }
+.party-meta { border-left:.35mm solid var(--ink); padding:2mm 3mm; display:flex;
+  flex-direction:column; justify-content:center; gap:1.2mm; min-width:0; }
+.meta-row { display:flex; align-items:baseline; gap:2mm; }
+.meta-label { font-size:6.2pt; font-weight:700; color:var(--label);
+  letter-spacing:.04em; flex:none; }
+.meta-value { font-size:11pt; font-weight:800; margin-left:auto; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.meta-row:last-child .meta-value { font-size:9.5pt; font-weight:700; }
+
+/* ── Items table ── */
+table.items { width:100%; border-collapse:collapse; table-layout:fixed; }
+.items th { background:var(--ink); color:#fff; font-size:6.7pt; font-weight:700;
+  letter-spacing:.05em; padding:1.3mm 1.6mm; text-align:center; }
+.items td { font-size:7.8pt; padding:0 1.6mm; text-align:center; height:5.25mm;
+  line-height:5.25mm; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.items tbody tr { border-bottom:.18mm solid var(--rule); }
+.items tbody tr:last-child { border-bottom:.3mm solid var(--ink); }
+.items { border:.3mm solid var(--ink); border-top:none; }
+
+/* ── Totals ── */
+.totals { display:grid; grid-template-columns:1fr 58mm; gap:4mm; margin-top:1.6mm;
+  padding:0 .4mm; }
+.totals-left { min-width:0; align-self:center; }
+.stat-line { font-size:7.4pt; font-weight:700; line-height:1.65; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-line .lbl { color:var(--label); font-weight:600; }
+.remarks-line { font-size:7.4pt; line-height:1.65; color:var(--label); margin-top:.8mm;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.remarks-line b { color:var(--ink); }
+.totals-right { display:flex; flex-direction:column; justify-content:center; }
+.tot-row { display:flex; align-items:baseline; font-size:7.4pt; line-height:1.5; }
+.tot-row .lbl { color:var(--label); }
+.tot-row .val { margin-left:auto; font-weight:700; padding-left:3mm; }
+.tot-rule { border:none; border-top:.25mm solid var(--rule); margin:.3mm 0; }
+.tot-row.final { font-weight:700; }
+.tot-row.final .lbl { color:var(--ink); }
+.tot-row.final .val { font-size:8.6pt; }
+
+/* ── Footer ── */
+.foot-rule { border:none; border-top:.3mm solid var(--ink); margin:1.6mm 0 0; }
+.footer { display:grid; grid-template-columns:64mm 1fr 62mm; gap:4mm;
+  padding:1.3mm .4mm 0; flex:1; min-height:0; }
+.terms h3 { font-size:7.2pt; font-weight:700; letter-spacing:.02em; }
+.terms ol { margin:.8mm 0 0 3.4mm; font-size:6.6pt; color:var(--label); line-height:1.5; }
+.sign-cell { display:flex; flex-direction:column; align-items:center;
+  justify-content:flex-end; gap:1mm; }
+.sign-line { width:34mm; border-top:.25mm solid var(--faint); }
+.sign-cap { font-size:6.4pt; color:var(--label); }
+.auth-cell { display:flex; flex-direction:column; align-items:flex-end;
+  justify-content:flex-end; gap:1mm; text-align:right; }
+.auth-for { font-size:8.6pt; font-weight:800; letter-spacing:.02em; max-width:100%;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.auth-line { width:34mm; border-top:.25mm solid var(--faint); }
+.auth-cap { font-size:6pt; font-weight:600; color:var(--label); letter-spacing:.06em; }
+.page-no { text-align:center; font-size:6.2pt; color:var(--faint); margin-top:1mm; }
+</style>
+</head>
+<body>
+<div class="sheet">
+<div class="masthead">
+  <div class="doc-title">JOBWORK<br>DELIVERY CHALLAN</div>
+  <div class="company">
+    <div class="company-name">KATARIA SYNTEX PRIVATE LIMITED</div>
+    <div class="company-sub">PLOT 12-14, GIDC INDUSTRIAL ESTATE, SURAT, GUJARAT - 395006</div>
+    <div class="company-sub">Contact No.: 9876543210, 9876543211</div>
+  </div>
+  <div class="copies">
+    <div class="copy">ORIGINAL</div>
+    <div class="copy">DUPLICATE</div>
+  </div>
+</div>
+<hr class="masthead-rule">
+<div class="party">
+  <div class="party-main">
+    <div class="party-line">
+      <span class="party-ms">M/s</span>
+      <span class="party-name">APEX DYEING &AMP; PRINTING MILLS</span>
+      
+    </div>
+    <div class="party-sub"><span>PANDESARA GIDC, SURAT</span><span>Mobile: 9825123456</span></div>
+  </div>
+  <div class="party-meta">
+    <div class="meta-row"><span class="meta-label">CHALLAN NO.</span>
+      <span class="meta-value">JW-2627-0015</span></div>
+    <div class="meta-row"><span class="meta-label">DATE</span>
+      <span class="meta-value">19-09-2026</span></div>
+  </div>
+</div>
+<table class="items">
+  <thead><tr><th style="width:7mm">SR.</th><th style="width:17mm">BOX NO.</th><th style="width:15mm">CHEESE</th><th style="width:21mm">GROSS WT.</th><th style="width:19mm">TARE WT.</th><th style="width:21mm">NET WT.</th><th style="width:28mm">DENIER</th><th style="width:1fr">COLOR</th><th style="width:20mm">LOT NO.</th></tr></thead>
+  <tbody><tr><td>1</td><td>JW-01</td><td>24</td><td>52.500</td><td>2.500</td><td>50.000</td><td>150/48 Bright</td><td>Raw White</td><td>LOT-X</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+</table>
+<div class="totals">
+  <div class="totals-left"><div class="stat-line"><span class="lbl">GSTIN:</span> 24AAACK1234F1Z5</div><div class="stat-line"><span class="lbl">PAN No.:</span> AAACK1234F</div><div class="remarks-line"><b>Remarks:</b> JOB WORK PROCESS: YARN DYEING</div></div>
+  <div class="totals-right">
+    <div class="tot-row"><span class="lbl">Total Box</span><span class="val">1</span></div><div class="tot-row"><span class="lbl">Total Cheese</span><span class="val">24</span></div><div class="tot-row"><span class="lbl">Total Gross Wt.</span><span class="val">52.500</span></div><div class="tot-row"><span class="lbl">Total Tare Wt.</span><span class="val">2.500</span></div>
+    <hr class="tot-rule">
+    <div class="tot-row final"><span class="lbl">Total Net Wt.</span>
+      <span class="val">50.000</span></div>
+  </div>
+</div>
+<hr class="foot-rule">
+<div class="footer">
+  <div class="terms">
+    <h3>Terms &amp; Conditions</h3>
+    <ol>
+      <li>Please do not mix different lots.</li><li>Subject to SURAT jurisdiction.</li>
+    </ol>
+  </div>
+  <div class="sign-cell">
+    <div class="sign-line"></div>
+    <div class="sign-cap">Receiver's Sign.</div>
+  </div>
+  <div class="auth-cell">
+    <div class="auth-for">For KATARIA SYNTEX PRIVATE LIMITED</div>
+    <div class="auth-line"></div>
+    <div class="auth-cap">AUTHORISED SIGNATORY</div>
+  </div>
+</div>
+</div>
+</body>
+</html>"
+`;

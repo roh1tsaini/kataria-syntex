@@ -36,7 +36,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed inset-0 z-50 flex flex-col bg-navy ks-aurora-dark text-paper outline-none transition-[opacity,translate] duration-[var(--dur-cinema)] ease-[var(--ease-cinema)] data-[state=open]:translate-y-0 data-[state=open]:opacity-100 data-[state=closed]:translate-y-3 data-[state=closed]:opacity-0",
+          "fixed inset-0 z-50 flex flex-col overflow-y-auto bg-navy ks-aurora-dark text-paper outline-none transition-[opacity,translate] duration-[var(--dur-cinema)] ease-[var(--ease-cinema)] data-[state=open]:translate-y-0 data-[state=open]:opacity-100 data-[state=closed]:translate-y-3 data-[state=closed]:opacity-0",
           className,
         )}
         {...props}

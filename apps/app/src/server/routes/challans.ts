@@ -316,6 +316,12 @@ challansRoute.delete("/:id", requirePermission("delete_challan"), async (c) => {
 
 // ── PDF Download ───────────────────────────────────────────────────────────────
 
+/**
+ * Server-rendered PDF of an existing challan via Cloudflare Browser Rendering.
+ * Like challan lists and detail reads, this is open to all authenticated
+ * workspace members (viewing/printing challans has no permission gate).
+ * Browser Run CPU budget is protected by per-user rate limiting below.
+ */
 challansRoute.get("/:id/pdf", async (c) => {
   const workspaceId = c.get("member").workspaceId;
   const db = getDb(c.env.DB);

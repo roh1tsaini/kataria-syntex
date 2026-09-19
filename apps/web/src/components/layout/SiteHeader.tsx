@@ -109,7 +109,7 @@ export function SiteHeader() {
               <DialogDescription className="sr-only">
                 Site navigation
               </DialogDescription>
-              <div className="relative flex h-full flex-col justify-between px-6 pb-10 pt-20">
+              <div className="relative flex min-h-full flex-col justify-between px-6 pb-10 pt-20">
                 <nav aria-label="Mobile" className="flex flex-col">
                   {navLinks.map((link, index) => (
                     <Link

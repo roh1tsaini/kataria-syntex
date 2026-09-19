@@ -900,6 +900,7 @@
   .menu-float-circle {
     background: color-mix(in oklch, var(--card) 78%, transparent);
     backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
   }
 }
 
@@ -912,21 +913,34 @@
   .capsule-surface {
     background: color-mix(in oklch, var(--card) 78%, transparent);
     backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  }
+  .sticky-action-bar {
+    background: color-mix(in oklch, var(--card) 85%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .filter-bar,
-  .sticky-action-bar,
-  header[class*="backdrop-blur"],
-  nav[class*="backdrop-blur"] {
+  .sticky-action-bar {
     backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--card) !important;
+  }
+  header[class*="backdrop-blur"],
+  nav[class*="backdrop-blur"],
+  div[class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     background-color: var(--background) !important;
   }
   .capsule-surface,
   .menu-float-circle {
-    backdrop-filter: none;
-    background: var(--card);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--card) !important;
   }
 }
 
