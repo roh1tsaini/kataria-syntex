@@ -658,8 +658,7 @@ copy, or commit them. Secrets enter only as env read at use site.
   `scripts/publish-releases.ts` and prunes everything older (latest-only).
   Push builds publish only when `package.json` `version` differs from the
   published manifest — bumping the version IS the release action. Manual
-  dispatch can scope `targets` to `desktop` or `android` and additionally
-  creates the GitHub Release record (`release` job, dispatch-only).
+  dispatch can scope `targets` to `desktop` or `android`.
   Requires `APP_URL` repo variable; `CLOUDFLARE_API_TOKEN` needs **Workers
   R2 Storage Edit**.
 

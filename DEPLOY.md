@@ -60,8 +60,7 @@ Push to `main`. One workflow (`pipeline.yml`) runs everything:
    `publish-r2` so clients never hit a version floor before the release is live.
 
 Manual dispatch (Actions → Pipeline) can rebuild only `desktop` or only
-`android` via the `targets` choice, and also creates the GitHub Release
-record.
+`android` via the `targets` choice.
 
 After the first app deploy, set `APP_URL` (step 2) so native builds can reach
 the API.
@@ -138,7 +137,7 @@ The app version lives only in `apps/app/package.json`. Everything reads it:
   `major*10000 + minor*100 + patch` (0.8.0 → 800). Every bump raises the
   code — Android rejects updates that don't.
 - **App UI** — Settings → About shows it (injected at build time).
-- **Releases** — the `v<version>` GitHub Release tag is read from the file.
+- **Releases** — Cloudflare R2 bucket `ks-releases` distributes installers and update manifests.
 
 One bump releases everywhere: desktop installers and the Android APK ride
 the same version.
@@ -149,9 +148,9 @@ Bump `apps/app/package.json`, push, then Repo → Actions → **Pipeline**
 → Run workflow:
 
 - `targets: all | desktop | android` — desktop-only skips the 90-min APK job.
-- The release job tags `v<version>` from `apps/app/package.json` and attaches
-  the `.exe` / `.dmg` / `.AppImage` / `.apk` files. Re-releasing a version
-  whose tag already exists fails the run — bump first.
+- Push or dispatch with `targets: all` uploads the `.exe` / `.dmg` / `.AppImage` / `.apk`
+  files and writes update manifests to R2. Re-releasing requires bumping the
+  version in `apps/app/package.json`.
 
 Android signing uses the secrets from first-time setup step 5 — the APK job
 fails fast when they are absent. The APK job builds `apps/app`, runs

@@ -2,7 +2,7 @@ name: Pipeline
 
 # One workflow for everything:
 #   gate → [deploy-web, desktop, android] in parallel
-#   [desktop, android] → (release) → publish-r2 → deploy-app
+#   [desktop, android] → publish-r2 → deploy-app
 #
 # Runs on GitHub-hosted runners. Public repository with free runner minutes.
 # Native packaging (desktop installers + Android APK) is gated to release pushes
@@ -31,11 +31,11 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 # Artifacts only hand off installers between jobs — the real distribution is
-# R2 + GitHub Releases. Short retention keeps the account's artifact storage
-# quota free (each run uploads ~400MB of installers).
+# R2. Short retention keeps the account's artifact storage quota free (each run
+# uploads ~400MB of installers).
 env:
   ACTIONS_ARTIFACT_RETENTION_DAYS: 3
 
@@ -278,7 +278,7 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -322,59 +322,12 @@ jobs:
           path: apps/android/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
-  release:
-    name: "Publish GitHub Release"
-    # Manual dispatch only — GitHub Releases are an internal record; R2 is the
-    # distribution channel. Requires both build jobs to have succeeded or been
-    # skipped by the targets choice.
-    if: ${{ github.event_name == 'workflow_dispatch' && !cancelled() && (needs.desktop.result == 'success' || needs.desktop.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') }}
-    needs: [gate, desktop, android]
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: Read app version
-        id: app_version
-        run: echo "version=$(jq -r .version apps/app/package.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Fail if the release tag already exists
-        run: |
-          if git rev-parse "v${{ steps.app_version.outputs.version }}" >/dev/null 2>&1; then
-            echo "::error::Tag v${{ steps.app_version.outputs.version }} already exists — bump the version in apps/app/package.json before releasing."
-            exit 1
-          fi
-
-      - name: Download all bundles
-        uses: actions/download-artifact@v8
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Inspect downloaded files
-        run: ls -laR dist
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: v${{ steps.app_version.outputs.version }}
-          name: Kataria Syntex Biz App v${{ steps.app_version.outputs.version }}
-          body: |
-            Internal record — installers ship from the app's /download page.
-
-            - **Android** (all phones): `*.apk` — signed. Allow "Install unknown apps" and open the file.
-            - **Windows**: `*-setup.exe` — NSIS installer. SmartScreen may warn (unsigned); click "More info → Run anyway".
-            - **macOS**: `*.dmg` — Apple Silicon. Right-click → Open to bypass Gatekeeper.
-            - **Linux**: `*.AppImage` — `chmod +x` and run.
-          generate_release_notes: false
-          files: dist/**
-          fail_on_unmatched_files: false
-
   publish-r2:
     name: "Publish releases to R2"
     # Push builds publish only when package.json's version differs from what
     # R2 hosts; manual dispatch publishes when all targets are selected.
-    # Runs after the release job so GitHub history and R2 stay in step on dispatches.
-    if: ${{ !cancelled() && needs.gate.result == 'success' && (needs.desktop.result == 'success' || needs.desktop.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') && (github.event_name != 'workflow_dispatch' || needs.release.result == 'success' || needs.release.result == 'skipped') && ((github.event_name == 'push' && needs.gate.outputs.is_release == 'true') || (github.event_name == 'workflow_dispatch' && inputs.targets == 'all')) }}
-    needs: [gate, desktop, android, release]
+    if: ${{ !cancelled() && needs.gate.result == 'success' && (needs.desktop.result == 'success' || needs.desktop.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') && ((github.event_name == 'push' && needs.gate.outputs.is_release == 'true') || (github.event_name == 'workflow_dispatch' && inputs.targets == 'all')) }}
+    needs: [gate, desktop, android]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
