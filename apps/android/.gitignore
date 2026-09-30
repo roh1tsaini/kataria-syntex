@@ -1,0 +1,17 @@
+# Build output
+dist/
+node_modules/
+
+# Local env
+*.local
+
+# Gradle signing material never leaves CI
+keystore.properties
+*.jks
+*.p12
+
+# Capacitor / Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties

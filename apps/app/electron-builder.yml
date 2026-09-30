@@ -1,0 +1,70 @@
+appId: com.katariasyntex.bizapp
+productName: Kataria Syntex Biz App
+# Derived binaries must be path-safe — the scoped package name
+# (@kataria-syntex/biz-app) breaks the AppImage target.
+executableName: kataria-syntex-biz-app
+copyright: Kataria Syntex
+
+directories:
+  output: release
+  buildResources: resources
+
+# The renderer (dist/) and the main/preload bundles (dist-electron/) are both
+# produced by `bun run electron:package` before this config runs.
+files:
+  - dist/**
+  - dist-electron/**
+  - "!dist-electron/**/*.map"
+  - package.json
+
+# Main process entry is package.json's "main" (dist-electron/main.cjs). The
+# bundles are CommonJS (electron/build.ts format: "cjs"), so the packaged app
+# must not inherit the workspace "type": "module" — Electron would load
+# main.cjs as ESM and crash on require.
+extraMetadata:
+  type: commonjs
+
+asar: true
+
+# Generic feed — exists only to make electron-builder emit latest.yml /
+# latest-linux.yml next to the installers (CI uploads them to R2; the
+# updater re-points the feed per-OS at runtime, electron/updater.ts).
+publish:
+  provider: generic
+  url: https://app.katariasyntex.workers.dev/releases/app/desktop
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  # Dash-named artifacts: what the builder writes is what gets stored in R2
+  # and referenced by latest.yml — no renaming anywhere in the pipeline.
+  artifactName: Kataria-Syntex-Biz-App-Setup-${version}.${ext}
+  icon: resources/icon.png
+
+# One-click (per-user, silent): the updated installer runs without any UI, so
+# the auto-update applies invisibly on quit. An assisted installer
+# (oneClick: false) would raise a setup wizard every update.
+nsis:
+  oneClick: true
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+  # Same dash-named pattern as win/linux — one naming scheme everywhere.
+  artifactName: Kataria-Syntex-Biz-App-${version}-${arch}.${ext}
+  category: public.app-category.business
+  icon: resources/icon.png
+  # QR-code scan/approve uses the camera — macOS blocks capture without a
+  # usage description (the main process grants `media` only to app origins).
+  extendInfo:
+    NSCameraUsageDescription: Scan QR codes to sign in and approve devices.
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  artifactName: Kataria-Syntex-Biz-App-${version}.${ext}
+  category: Office
+  icon: resources/icon.png

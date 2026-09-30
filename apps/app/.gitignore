@@ -1,0 +1,14 @@
+.env.local
+dist/
+dist-server/
+out/
+release/
+# SQLite databases — local dev data, never committed
+data/
+*.db
+*.db-wal
+*.db-shm
+# Signing material — keystores must never be committed (kept in GitHub secrets)
+*.jks
+*.p12
+*.log

@@ -1,0 +1,34 @@
+{
+  "name": "@kataria-syntex/android",
+  "version": "0.11.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "cd ../app && bunx vite build",
+    "build:web:apk": "bun scripts/build-web.ts",
+    "sync": "bun run build:web:apk && bunx cap sync android",
+    "open": "bunx cap open android",
+    "build:apk": "bun run sync && cd android && ./gradlew assembleRelease",
+    "typecheck": "bunx tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@kataria-syntex/tsconfig": "*",
+    "@types/bun": "^1.4.2",
+    "eslint": "~9.38.0",
+    "typescript": "^7.0.2"
+  }
+}

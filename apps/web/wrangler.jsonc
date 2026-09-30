@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "web",
+  "main": "vinext/server/fetch-handler",
+  "compatibility_date": "2026-08-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://web.katariasyntex.workers.dev",
+  },
+  "assets": {
+    "directory": "dist/client",
+    "not_found_handling": "none",
+    "binding": "ASSETS",
+  },
+  "d1_databases": [
+    {
+      "binding": "INQUIRY_DB",
+      "database_name": "ks-web-db",
+      // CI auto-provisions the database and injects the real id on deploy
+      // (.github/workflows/pipeline.yml). Local dev reads bindings from this
+      // file through the Cloudflare Vite plugin.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle",
+      "migrations_table": "d1_migrations",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+  },
+}

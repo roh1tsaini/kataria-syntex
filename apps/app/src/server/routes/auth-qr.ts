@@ -1,0 +1,163 @@
+import { Hono } from "hono";
+import { z } from "zod";
+
+import { inArray, isNotNull, lt, or } from "drizzle-orm";
+import { getDb } from "../lib/db";
+import { qrLogins } from "../db/schema";
+
+import { detectIdentifier, type Identifier } from "../lib/identifier";
+
+import { ipBudgetRemaining, recordIpAttempt } from "../auth/otp";
+import {
+  createQrLogin,
+  approveQrLogin,
+  claimQrLogin,
+  qrLoginInfo,
+  QR_TTL_SECONDS,
+} from "../auth/qr-login";
+
+import { requireAuth } from "../auth/session";
+import { toIso } from "../lib/datetime";
+import {
+  badRequest,
+  buildDeviceMeta,
+  clientIp,
+  findUserByIdentifier,
+  identifierSchema,
+  setSessionCookie,
+  authPayload,
+  type AuthEnv,
+} from "./auth-shared";
+import { apiError } from "../lib/api-error";
+
+export const authQrRoute = new Hono<AuthEnv>();
+
+// ── QR login ────────────────────────────────────────────────────────────────
+
+const qrLoginCodeSchema = z.object({ code: z.string().min(4).max(64) });
+
+/** /qr/start body. An absent identifier — including a missing or empty
+ * body — starts an anonymous login; a present one names the account to
+ * grant. Unknown keys are rejected so garbage can't masquerade as anonymous. */
+const qrStartBodySchema = identifierSchema.partial().strict();
+
+// Query form of the login code — same bounds as qrLoginCodeSchema.
+const qrCodeQuerySchema = z.string().min(4).max(64);
+
+/**
+ * Start a QR login. Optional identifier: when the waiting device names an
+ * account, approval grants that account if it matches the approver.
+ */
+authQrRoute.post("/qr/start", async (c) => {
+  // Budgeted: QR rows are never deleted eagerly, so unbounded anonymous
+  // starts would grow the table forever. Normal use is a handful per login.
+  if (ipBudgetRemaining("qr_start", clientIp(c), 120) <= 0)
+    return apiError(c, "qr_rate_limited", 429);
+  recordIpAttempt("qr_start", clientIp(c));
+  const db = getDb(c.env.DB);
+  // Opportunistic bounded purge of expired/claimed rows (same pattern as
+  // loginAttempts pruning) — a global unbounded DELETE on every anonymous
+  // start is both wasteful and a free-tier D1 write spike.
+  const staleRows = await db
+    .select({ id: qrLogins.id })
+    .from(qrLogins)
+    .where(
+      or(
+        lt(qrLogins.expiresAt, toIso(new Date())),
+        isNotNull(qrLogins.claimedAt),
+      ),
+    )
+    .limit(500);
+  if (staleRows.length > 0)
+    await db.delete(qrLogins).where(
+      inArray(
+        qrLogins.id,
+        staleRows.map((r) => r.id),
+      ),
+    );
+
+  // A missing body parses as null and means the same thing as {} — the
+  // waiting device starts an anonymous login.
+  const parsed = qrStartBodySchema.safeParse(
+    (await c.req.json().catch(() => null)) ?? {},
+  );
+  if (!parsed.success) return badRequest(c, "invalid_identifier");
+  let ident: Identifier | null = null;
+  if (parsed.data.identifier !== undefined) {
+    ident = detectIdentifier(parsed.data.identifier);
+    if (!ident) return badRequest(c, "invalid_identifier");
+    const target = await findUserByIdentifier(db, ident);
+    if (!target) return apiError(c, "unknown_identifier", 404);
+  }
+
+  // QR creation is unlimited: a pending code grants nothing until an
+  // authenticated device approves it, and codes are unguessable (2^79).
+  const { code, expiresAt } = await createQrLogin(db, ident);
+  const origin = new URL(c.req.url).origin;
+  const payloadUrl = `${origin}/login/scan/${encodeURIComponent(code)}`;
+  return c.json({
+    code,
+    expiresIn: QR_TTL_SECONDS,
+    payload: payloadUrl,
+    expiresAt: expiresAt.toISOString(),
+  });
+});
+
+/** Public info for the scan/approve page — names who will be logged in. */
+authQrRoute.get("/qr/info", async (c) => {
+  const parsed = qrCodeQuerySchema.safeParse(c.req.query("code"));
+  if (!parsed.success) return badRequest(c, "invalid_code");
+  const code = parsed.data;
+  if (ipBudgetRemaining("qr_info", clientIp(c), 120) <= 0)
+    return apiError(c, "qr_rate_limited", 429);
+  recordIpAttempt("qr_info", clientIp(c));
+  const info = await qrLoginInfo(getDb(c.env.DB), code);
+  return c.json(info);
+});
+
+/**
+ * Approve from a logged-in device.
+ */
+authQrRoute.post("/qr/approve", requireAuth, async (c) => {
+  const parsed = qrLoginCodeSchema.safeParse(
+    await c.req.json().catch(() => null),
+  );
+  if (!parsed.success) return badRequest(c, "invalid_code");
+  const auth = c.get("auth");
+
+  const db = getDb(c.env.DB);
+  const result = await approveQrLogin(db, parsed.data.code, {
+    userId: auth.userId,
+  });
+  if (result.kind === "expired") return apiError(c, "qr_code_expired", 400);
+  if (result.kind === "not_found") return apiError(c, "qr_code_invalid", 400);
+  if (result.kind === "unknown_target") return apiError(c, "forbidden", 403);
+  if (result.kind === "already_approved")
+    return apiError(c, "qr_already_approved", 409);
+  return c.json({
+    status: "ok",
+    grantedTo: result.grantedTo,
+    grantedName: result.grantedName,
+    grantedSelf: result.grantedTo === auth.userId,
+  });
+});
+
+authQrRoute.post("/qr/status", async (c) => {
+  const parsed = qrCodeQuerySchema.safeParse(c.req.query("code"));
+  if (!parsed.success) return badRequest(c, "invalid_code");
+  const code = parsed.data;
+  if (ipBudgetRemaining("qr_status", clientIp(c), 600) <= 0)
+    return c.json({ status: "pending" });
+  recordIpAttempt("qr_status", clientIp(c));
+  const db = getDb(c.env.DB);
+  const result = await claimQrLogin(db, code, buildDeviceMeta(c));
+  if (result.status === "pending") return c.json({ status: "pending" });
+  if (result.status === "expired") return c.json({ status: "expired" });
+  if (result.status === "not_found") return c.json({ status: "not_found" });
+
+  const { token, deviceId } = result.session;
+  setSessionCookie(c, token);
+  const payload = await authPayload(db, result.userId);
+  if (!payload) return apiError(c, "internal_server_error", 500);
+  return c.json({ status: "ok", token, deviceId, ...payload });
+});

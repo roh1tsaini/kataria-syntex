@@ -1,0 +1,35 @@
+# Dependencies & build output
+node_modules/
+**/node_modules/
+.next/
+.vinext/
+dist/
+dist-electron/
+.turbo/
+.wrangler/
+coverage/
+apps/android/android/
+
+
+# Generated files
+*.tsbuildinfo
+apps/web/next-env.d.ts
+apps/web/cloudflare-env.d.ts
+apps/app/drizzle/
+apps/app/out/
+apps/app/release/
+
+# Binaries & reference documents
+*.pdf
+*.png
+*.jpeg
+*.jpg
+*.ico
+*.icns
+*.p12
+*.sql
+apps/app/Docs Template/
+
+# Screenshots (kept on disk, not part of the repo)
+apps/app/tmp/
+

@@ -1,0 +1,61 @@
+import type { NextConfig } from "next";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
+
+// Rendered by Vinext on Cloudflare Workers — see apps/web/vite.config.ts +
+// wrangler.jsonc for the Workers setup. Vinext loads this file as ESM, so no
+// CommonJS globals (__dirname) here.
+
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=31536000; includeSubDomains; preload",
+  },
+  {
+    key: "Content-Security-Policy",
+    // Next.js hydrates via inline scripts => unsafe-inline required.
+    // React's dev runtime uses eval() for debugging aids, so 'unsafe-eval'
+    // is allowed only in development; production never evaluates strings.
+    value: [
+      "default-src 'self'",
+      process.env.NODE_ENV === "development"
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+        : "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      // Contact page embeds a Google Maps iframe (maps.google.com).
+      "frame-src https://maps.google.com https://www.google.com",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+    ].join("; "),
+  },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+];
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  outputFileTracingRoot: root,
+  turbopack: { root },
+  // Images ship as pre-optimized static WebP (public/images/) — there is no
+  // server optimizer behind /_next/image (the Cloudflare adapter needs the
+  // paid Images binding), so next/image serves files as-is.
+  images: { unoptimized: true },
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
+};
+
+export default nextConfig;

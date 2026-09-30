@@ -1,0 +1,47 @@
+{
+  "name": "@kataria-syntex/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vinext dev --port 3000",
+    "build": "vinext build",
+    "lint": "eslint .",
+    "typecheck": "bunx wrangler types cloudflare-env.d.ts && bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@kataria-syntex/shared": "*",
+    "@radix-ui/react-accordion": "^1.2.20",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-slot": "^1.3.3",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^1.41.0",
+    "next": "^16.3.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-server-dom-webpack": "^19.2.8",
+    "vinext": "^1.0.0-beta.9"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.4",
+    "@cloudflare/workers-types": "^5.20260830.1",
+    "@kataria-syntex/tsconfig": "*",
+    "@next/eslint-plugin-next": "^16.3.4",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/bun": "^1.4.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vinext/cloudflare": "^1.0.0-beta.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-rsc": "^0.5.34",
+    "eslint": "~9.38.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "wrangler": "^4.129.0"
+  }
+}

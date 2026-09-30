@@ -1,0 +1,464 @@
+@import "tailwindcss";
+
+/* Self-hosted fonts — zero CDN, zero Google. WOFF2 in ./fonts/ committed to git. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-400-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-400-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-500-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-500-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+:root {
+  --font-space-grotesk:
+    "Space Grotesk Variable", "Avenir Next", "Segoe UI", sans-serif;
+  --font-inter: "Inter Variable", "Avenir Next", "Segoe UI", sans-serif;
+  --font-ibm-plex-mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/*
+ * Design tokens — blue brand system (owner-locked 2026-09-01, see design.md).
+ * Navy carries ink and dark surfaces, royal is the action color, sky the
+ * accent on dark, ice the light surface. Status colors stay separate.
+ */
+@theme inline {
+  --font-display:
+    var(--font-space-grotesk), "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: var(--font-inter), "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono:
+    var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --color-navy: #0a2540;
+  --color-royal: #1e3a8a;
+  --color-sky: #7dd3fc;
+  --color-ice: #b8d8f5;
+  --color-cornflower: #93c5fd;
+  --color-canvas: #e6f0fb;
+  --color-canvas-deep: #d4e7f7;
+  --color-paper: #ffffff;
+  --color-ink-soft: #46586e;
+  --color-line: rgb(10 37 64 / 0.12);
+  --color-line-dark: rgb(125 211 252 / 0.15);
+  --color-ice-soft: rgb(184 216 245 / 0.72);
+  --color-danger: #c10328;
+  --color-success: #286e44;
+
+  --radius-chip: 8px;
+  --radius-control: 11px;
+  --radius-card: 16px;
+  --radius-panel: 18px;
+  --radius-hero: 24px;
+
+  /* Layered depth: a tight contact shadow plus a wide ambient one. */
+  --shadow-xs: 0 1px 2px rgb(10 37 64 / 0.06);
+  --shadow-card:
+    0 1px 2px rgb(10 37 64 / 0.05), 0 10px 28px -8px rgb(10 37 64 / 0.1);
+  --shadow-float:
+    0 2px 6px rgb(10 37 64 / 0.06), 0 28px 56px -16px rgb(10 37 64 / 0.22);
+  --shadow-button: 0 8px 20px -8px rgb(30 58 138 / 0.55);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+  /* Cinematic feel (design.md §4): 600ms with a soft settle — the same
+     spring the app compare page shipped as "Cinema", sampled once. */
+  --ease-cinema: linear(
+    0,
+    0.0046,
+    0.0175,
+    0.037,
+    0.0621,
+    0.0915,
+    0.1242,
+    0.1595,
+    0.1966,
+    0.2348,
+    0.2737,
+    0.3128,
+    0.3517,
+    0.39,
+    0.4276,
+    0.4641,
+    0.4995,
+    0.5337,
+    0.5664,
+    0.5977,
+    0.6275,
+    0.6558,
+    0.6826,
+    0.7078,
+    0.7315,
+    0.7538,
+    0.7747,
+    0.7941,
+    0.8123,
+    0.8291,
+    0.8448,
+    0.8593,
+    0.8726,
+    0.885,
+    0.8963,
+    0.9068,
+    0.9163,
+    0.9251,
+    0.9331,
+    0.9404,
+    0.947,
+    0.9531,
+    0.9585,
+    0.9635,
+    0.9679,
+    0.972,
+    0.9756,
+    0.9788,
+    0.9817,
+    0.9843,
+    0.9866,
+    0.9887,
+    0.9905,
+    0.9921,
+    0.9935,
+    0.9948,
+    0.9959,
+    0.9968,
+    0.9976,
+    0.9983,
+    0.999,
+    1
+  );
+  --dur-cinema: 600ms;
+
+  --animate-accordion-down: accordion-down var(--dur-cinema) var(--ease-cinema);
+  --animate-accordion-up: accordion-up var(--dur-cinema) var(--ease-cinema);
+
+  --breakpoint-xs: 30rem;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Native scrolling only — smooth for anchor jumps, never a JS
+       scroll animator: fractional-offset scrolling resamples text and
+       images at subpixel positions, which reads as glitch/tear on
+       dpr-1 displays. */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas text-navy font-body antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-sky);
+    color: var(--color-navy);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-royal);
+    outline-offset: 2px;
+  }
+
+  .bg-navy :focus-visible {
+    outline-color: var(--color-sky);
+  }
+
+  /* Thin, low-contrast scrollbar that stays out of the way. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(10 37 64 / 0.3);
+    border: 3px solid var(--color-canvas);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@utility tnum {
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/*
+ * Atmosphere — brand-blue aurora washes that give light and navy bands
+ * depth without photography. Static by design (no looping backgrounds).
+ */
+@utility ks-aurora-light {
+  background-image:
+    radial-gradient(
+      52rem 30rem at 10% -8%,
+      rgb(125 211 252 / 0.34),
+      transparent 62%
+    ),
+    radial-gradient(
+      44rem 30rem at 94% 2%,
+      rgb(147 197 253 / 0.32),
+      transparent 60%
+    ),
+    radial-gradient(
+      64rem 40rem at 50% 122%,
+      rgb(30 58 138 / 0.1),
+      transparent 64%
+    );
+}
+
+@utility ks-aurora-dark {
+  background-image:
+    radial-gradient(
+      50rem 26rem at 14% -12%,
+      rgb(125 211 252 / 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      46rem 32rem at 96% -4%,
+      rgb(30 58 138 / 0.55),
+      transparent 62%
+    ),
+    radial-gradient(
+      72rem 36rem at 50% 128%,
+      rgb(125 211 252 / 0.07),
+      transparent 60%
+    );
+}
+
+/* Fine blueprint grid, faded radially via mask where it is used. */
+@utility ks-grid-blue {
+  background-image:
+    linear-gradient(to right, rgb(10 37 64 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(10 37 64 / 0.05) 1px, transparent 1px);
+  background-size: 54px 54px;
+}
+
+/* Fiber-grain overlay (feTurbulence) — sit it absolutely with mix-blend. */
+@utility ks-noise {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27160%27%20height%3D%27160%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.9%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url(%23n)%27%20opacity%3D%270.55%27%2F%3E%3C%2Fsvg%3E");
+}
+
+/*
+ * Card sheen — a 1px sky catch-light along a card's top edge so white
+ * surfaces pick up the ambient light instead of sitting flat.
+ */
+@utility card-sheen {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(125 211 252 / 0.55),
+      transparent
+    );
+    pointer-events: none;
+  }
+}
+
+/*
+ * Duotone product art — photos are grayscale and multiplied over royal so
+ * every image sits inside the blue family (white backgrounds read as royal
+ * fields). The treatment is applied in ProductCard / product pages.
+ */
+@utility art-duotone {
+  background-color: var(--color-royal);
+}
+
+@utility art-duotone-img {
+  filter: grayscale(1) brightness(1.16) contrast(0.98);
+  mix-blend-mode: multiply;
+}
+
+/*
+ * Paper card that lifts on hover — shared across product cards, shade strip,
+ * and market panels.
+ */
+@utility card-lift {
+  @apply card-sheen relative rounded-card border border-line bg-paper shadow-card transition-[translate,box-shadow] duration-300 ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-float;
+}
+
+/*
+ * Load-in — one-time entrance for above-the-fold content (hero column,
+ * floating panel). Pure CSS so it runs before hydration; delays are set
+ * inline per element. Uses the `translate` property so it never fights
+ * transforms. The global reduced-motion block collapses it to a fade.
+ */
+@keyframes ks-enter {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.ks-enter {
+  animation: ks-enter 760ms var(--ease-cinema) both;
+}
+
+/*
+ * Reveal — crossfade with a soft rise. Hidden state only applies when
+ * JS is active (html.js), so server-rendered and no-JS pages stay fully
+ * visible. Uses the `translate` property so it never fights transforms.
+ */
+.ks-reveal {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity var(--dur-cinema) var(--ease-cinema),
+    translate var(--dur-cinema) var(--ease-cinema);
+}
+html.js .ks-reveal[data-shown="false"] {
+  opacity: 0;
+  translate: 0 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 200ms !important;
+    transition-property:
+      opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+  .ks-reveal {
+    transition-duration: 200ms !important;
+    translate: 0 0 !important;
+  }
+}
+
+/* Form micro-animations */
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-slide-in {
+  animation: fade-slide-in 150ms var(--ease-out);
+}
+.animate-fade-zoom-in {
+  animation: fade-zoom-in 300ms var(--ease-out);
+}

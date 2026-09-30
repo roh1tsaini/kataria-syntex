@@ -1,0 +1,39 @@
+{
+  "name": "kataria-syntex-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@kataria-syntex/web",
+    "dev:app": "turbo dev --filter=@kataria-syntex/biz-app",
+    "build": "turbo build",
+    "build:web": "turbo build --filter=@kataria-syntex/web",
+    "build:app": "turbo build --filter=@kataria-syntex/biz-app",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:updates": "bun outdated",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.3",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "sharp": "0.35.3"
+  },
+  "trustedDependencies": [
+    "@swc/core",
+    "unrs-resolver"
+  ]
+}

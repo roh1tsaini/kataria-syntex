@@ -1,0 +1,1001 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Electron window chrome reserves (set on documentElement by the entry,
+   Electron only): --wc-w reserves room for the floating window controls in
+   the top-right corner (non-macOS); --tl-inset clears the native
+   traffic-light strip above the sidebar brand (macOS). 0px elsewhere. */
+:root {
+  --wc-w: 0px;
+  --tl-inset: 0px;
+  /* One window-control button. The cluster reservation (--wc-w) is derived
+     from this, so a coarse pointer's 44px floor can never widen the controls
+     past the space the header reserved for them. */
+  --wc-btn-w: 2.5rem;
+}
+@media (pointer: coarse) {
+  :root {
+    --wc-btn-w: 2.75rem;
+  }
+}
+@media print {
+  :root {
+    --wc-w: 0px !important;
+    --tl-inset: 0px !important;
+  }
+}
+
+/* Coarse-pointer floor: every tappable element is at least 44px. Desktop
+   keeps its dense size; only coarse pointers get the minimum. */
+@utility touch-44 {
+  @media (pointer: coarse) {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
+
+/* Hide scrollbars while keeping the area scrollable (horizontal chip strips). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Inter variable font — bundled locally (assets/fonts), zero external requests at runtime. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../assets/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../assets/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7, U+02CC, U+02CE-02D7, U+02DD, U+02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/*
+ * Design system — Apple × Vercel × Luma
+ * Apple fluid motion + optical type, Vercel flat borders, generous Apple spacing.
+ */
+
+@theme inline {
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 5%);
+  --shadow-lift:
+    0 4px 12px -4px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
+  --shadow-overlay:
+    0 8px 24px -8px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
+  /* Top specular edge on capsule materials — light catching lit glass (§2.7) */
+  --specular: inset 0 1px 0 oklch(1 0 0 / 55%);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* SPRING as a curve — critically damped, settled at 380ms. CSS surfaces
+     (grid-rows morphs, dialogs) share the exact curve motion/react springs
+     produce; sampled once, no live physics. */
+  --ease-morph: linear(
+    0,
+    0.0094,
+    0.0344,
+    0.0705,
+    0.1143,
+    0.1631,
+    0.2147,
+    0.2676,
+    0.3204,
+    0.3723,
+    0.4225,
+    0.4705,
+    0.516,
+    0.5589,
+    0.5989,
+    0.6362,
+    0.6707,
+    0.7025,
+    0.7316,
+    0.7584,
+    0.7827,
+    0.8049,
+    0.8251,
+    0.8433,
+    0.8598,
+    0.8747,
+    0.8881,
+    0.9002,
+    0.9111,
+    0.9208,
+    0.9295,
+    0.9373,
+    0.9443,
+    0.9506,
+    0.9561,
+    0.9611,
+    0.9655,
+    0.9694,
+    0.9729,
+    0.9761,
+    0.9788,
+    0.9813,
+    0.9834,
+    0.9854,
+    0.9871,
+    0.9886,
+    0.9899,
+    0.9911,
+    0.9922,
+    0.9931,
+    0.9939,
+    0.9946,
+    0.9953,
+    0.9958,
+    0.9963,
+    0.9968,
+    0.9972,
+    0.9975,
+    0.9978,
+    0.9981,
+    0.9983,
+    1
+  );
+}
+
+/* ── Accent — one neutral monochrome, no picker ─────────────────────────── */
+
+:root {
+  --a-strong: oklch(0.22 0.005 260);
+  --a-fg: oklch(0.985 0 0);
+  --a-soft: oklch(0.22 0.005 260 / 7%);
+  --a-ink: oklch(0.32 0.008 260);
+}
+.dark {
+  --a-strong: oklch(0.93 0 0);
+  --a-fg: oklch(0.16 0 0);
+  --a-soft: oklch(1 0 0 / 10%);
+  --a-ink: oklch(0.88 0 0);
+}
+
+/* ── Neutral base — Vercel zinc ─────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.145 0 0);
+  --qr-ink: var(--foreground);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --primary: var(--a-strong);
+  --primary-foreground: var(--a-fg);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: var(--a-soft);
+  --accent-foreground: var(--a-ink);
+  --destructive: oklch(0.577 0.216 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.6 0.13 158);
+  --warning: oklch(0.68 0.14 70);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: var(--a-strong);
+  --chart-1: var(--a-strong);
+  --chart-2: oklch(0.65 0 0);
+  --chart-3: color-mix(in oklch, var(--a-strong) 55%, oklch(0.6 0 0));
+  --chart-4: oklch(0.45 0 0);
+  --chart-5: color-mix(in oklch, var(--a-strong) 30%, oklch(0.75 0 0));
+  --radius: 0.625rem;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  /* Login QR modules stay near-black: the code sits on a fixed white canvas
+     (quiet zone + scan contrast), so a light ink would vanish in dark mode. */
+  --qr-ink: oklch(0.145 0 0);
+  --specular: inset 0 1px 0 oklch(1 0 0 / 8%);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --primary: var(--a-strong);
+  --primary-foreground: var(--a-fg);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: var(--a-soft);
+  --accent-foreground: var(--a-ink);
+  --destructive: oklch(0.704 0.191 22.2);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.72 0.14 158);
+  --warning: oklch(0.79 0.14 75);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: var(--a-strong);
+  --chart-1: var(--a-strong);
+  --chart-2: oklch(0.62 0 0);
+  --chart-3: color-mix(in oklch, var(--a-strong) 55%, oklch(0.65 0 0));
+  --chart-4: oklch(0.42 0 0);
+  --chart-5: color-mix(in oklch, var(--a-strong) 30%, oklch(0.78 0 0));
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+    scrollbar-color: color-mix(
+        in oklch,
+        var(--muted-foreground) 38%,
+        transparent
+      )
+      transparent;
+    /* Apple: respect Dynamic Type — scale with rem, 100% = 16px base */
+    font-size: clamp(15px, 1rem + 0.12vw, 17px);
+    font-optical-sizing: auto;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1,
+      "cv11" 1,
+      "ss01" 1;
+    font-optical-sizing: auto;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    overflow-x: clip;
+    /* Apple: body tracking near 0, comfortable leading */
+    letter-spacing: -0.011em;
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+  /* Ensure #root stretches full viewport even with safe-area padding on body */
+  #root {
+    min-height: 100dvh;
+    isolation: isolate;
+  }
+  /* Electron desktop shell: the document itself never scrolls — the routed
+  view scrolls in .app-scroll, keeping the floating window controls flush
+  against the window edge with no scrollbar/gutter inset. */
+  [data-shell="desktop"] {
+    height: 100%;
+    overflow: hidden;
+    /* No viewport scrollbar gutter: `stable` reserves space even with
+      overflow hidden, insetting the bar from the window edge. The inner
+      .app-scroll keeps its own scrollbar. */
+    scrollbar-gutter: auto;
+  }
+  [data-shell="desktop"] body {
+    height: 100%;
+    overflow: hidden;
+  }
+  [data-shell="desktop"] #root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  [data-shell="desktop"] .app-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  /* Shell routes: the header is a fixed row of the window and the routed
+  content scrolls in .shell-scroll below it — the page scrollbar starts
+  under the header line, never beside the window controls. Chrome-less
+  routes (no shell) keep scrolling in .app-scroll above. */
+  [data-shell="desktop"] .app-shell-root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  [data-shell="desktop"] .app-shell-col {
+    flex: 1 1 0%;
+    min-height: 0;
+  }
+  [data-shell="desktop"] .shell-scroll {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  /* Electron window chrome (design.md §2.7.1): a `-webkit-app-region: drag`
+     rect swallows every pointer event inside it, and the OS — not the page —
+     gets the click. Chromium collects app-region rects in layout-tree
+     pre-order and Electron applies them last-rect-wins, so a control is only
+     safe by construction when it is no-drag itself. Every control is
+     therefore no-drag, everywhere in the desktop shell: the drag surfaces
+     (header row, sidebar brand row, the chrome-less route strip) keep their
+     own free space, and no control can ever be stranded by a drag rect that
+     happens to overlap it. */
+  [data-shell="desktop"]
+    :is(
+      button,
+      a[href],
+      input,
+      select,
+      textarea,
+      label,
+      summary,
+      [role="button"],
+      [role="tab"],
+      [contenteditable="true"]
+    ) {
+    -webkit-app-region: no-drag;
+  }
+  ::selection {
+    background-color: color-mix(in oklch, var(--a-strong) 20%, transparent);
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+    background-color: color-mix(
+      in oklch,
+      var(--muted-foreground) 32%,
+      transparent
+    );
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(
+      in oklch,
+      var(--muted-foreground) 55%,
+      transparent
+    );
+  }
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Strong, accessible focus ring that respects accent */
+  :where(:focus-visible) {
+    outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent);
+    outline-offset: 2px;
+  }
+  /* No OS tap square: the highlight paints the bounding box and ignores
+     border-radius, so circle buttons flash square on touch. Press feedback
+     comes from each control's own :active fill + scale instead. */
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /* Apple optical type — tracking tightens as size grows */
+  .page-eyebrow {
+    color: var(--muted-foreground);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .page-title {
+    font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.05;
+    text-wrap: balance;
+    font-optical-sizing: auto;
+  }
+  .page-desc {
+    font-size: 0.9375rem;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+    font-weight: 400;
+    letter-spacing: -0.006em;
+  }
+
+  .micro-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    line-height: 1;
+  }
+
+  /* Apple material filter bar — translucent border, generous padding */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem;
+  }
+
+  /* Press feedback (§5): transform answers instantly (100ms); colors keep
+     their 150ms hover pace. Shared by every tappable control. */
+  .btn-motion {
+    transition:
+      background-color 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      border-color 150ms var(--ease-out),
+      box-shadow 150ms var(--ease-out),
+      transform 100ms var(--ease-out);
+  }
+
+  .field-control {
+    border-radius: var(--radius-md);
+    background-color: var(--card);
+    border-width: 1px;
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      background-color 140ms ease;
+  }
+  .field-control:hover {
+    border-color: color-mix(in oklch, var(--foreground) 18%, var(--border));
+  }
+  .field-control:focus-within,
+  .field-control:focus,
+  .field-control:focus-visible {
+    border-color: var(--ring);
+    box-shadow: none;
+    outline: none;
+  }
+
+  .table-row {
+    transition: background-color 140ms ease;
+  }
+  .table-row:hover {
+    background-color: var(--muted);
+  }
+
+  /* Apple card — standard 16px padding (§2.1), soft, no hard shadow */
+  .data-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 1rem;
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .data-card:hover {
+      border-color: color-mix(in oklch, var(--foreground) 18%, var(--border));
+      background: var(--card);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+
+  /* Clear the floating navigation without moving actions when field focus changes. */
+  .sticky-action-bar {
+    position: sticky;
+    bottom: calc(3.25rem + 2px + 12px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    margin-inline: -1rem;
+    padding: 0.75rem 1rem;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+  }
+  @media (min-width: 640px) {
+    .sticky-action-bar {
+      position: static;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      backdrop-filter: none;
+      border: 0;
+      box-shadow: none;
+    }
+  }
+
+  /* The settings window scrolls its own body: the desktop shell pins the
+     document and routes scroll in .shell-scroll, but the window is a
+     portal-mounted fixed surface outside that container, so it needs its
+     own scroller. Mobile renders the page inside .shell-scroll and never
+     reaches this class. */
+  .settings-window-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 0%;
+    min-height: 0;
+    scrollbar-gutter: stable;
+  }
+
+  /* Horizontal scroll affordance — fade mask to hint scrollability */
+  .scroll-fade {
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      black calc(100% - 24px),
+      transparent
+    );
+  }
+
+  /* Pre-auth ambient wash — entry (/) + download (/download) only. A pale
+    periwinkle sky with one luminous core melting into the center — content
+    sits in the light — and four wide cloud banks drifting slowly across it.
+    This is the one place blue hue is allowed (§2.5): everywhere else stays
+    monochrome. Transform-only keyframes; the global prefers-reduced-motion
+    collapse stills the drift; a static grain layer hides gradient banding. */
+  .entry-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+  }
+  .entry-wash {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        90% 70% at 50% 34%,
+        oklch(0.99 0.008 290) 0%,
+        oklch(0.95 0.028 288) 36%,
+        transparent 72%
+      ),
+      radial-gradient(
+        70% 85% at -6% 30%,
+        oklch(0.76 0.11 280) 0%,
+        transparent 68%
+      ),
+      radial-gradient(
+        65% 80% at 104% 22%,
+        oklch(0.7 0.13 288) 0%,
+        transparent 66%
+      ),
+      radial-gradient(
+        90% 60% at 20% 108%,
+        oklch(0.82 0.08 298) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        80% 60% at 90% 110%,
+        oklch(0.78 0.1 305) 0%,
+        transparent 70%
+      ),
+      oklch(0.91 0.045 286);
+  }
+  .entry-wash::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.035;
+  }
+  .entry-wash > i {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    will-change: transform;
+  }
+  /* The luminous core the content sits in front of — clouds part around it */
+  .entry-wash > .w1 {
+    width: 95vmax;
+    height: 58vmax;
+    left: 50%;
+    top: 34%;
+    translate: -50% -50%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.99 0.01 290 / 95%),
+      transparent 75%
+    );
+    animation: entry-drift-1 38s var(--ease-in-out) infinite alternate;
+  }
+  .entry-wash > .w2 {
+    width: 70vmax;
+    height: 40vmax;
+    left: -18%;
+    top: -16%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.78 0.1 282 / 85%),
+      transparent 72%
+    );
+    animation: entry-drift-2 44s var(--ease-in-out) infinite alternate;
+  }
+  .entry-wash > .w3 {
+    width: 62vmax;
+    height: 44vmax;
+    right: -16%;
+    top: 6%;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.72 0.12 292 / 80%),
+      transparent 72%
+    );
+    animation: entry-drift-3 41s var(--ease-in-out) infinite alternate;
+  }
+  .entry-wash > .w4 {
+    width: 90vmax;
+    height: 46vmax;
+    left: 50%;
+    bottom: -28%;
+    translate: -50% 0;
+    background: radial-gradient(
+      closest-side,
+      oklch(0.84 0.09 300 / 85%),
+      transparent 74%
+    );
+    animation: entry-drift-4 47s var(--ease-in-out) infinite alternate;
+  }
+  .dark .entry-wash {
+    background:
+      radial-gradient(
+        90% 70% at 50% 34%,
+        oklch(0.42 0.07 290) 0%,
+        oklch(0.3 0.07 288) 40%,
+        transparent 72%
+      ),
+      radial-gradient(
+        70% 85% at -6% 30%,
+        oklch(0.3 0.11 275) 0%,
+        transparent 68%
+      ),
+      radial-gradient(
+        65% 80% at 104% 22%,
+        oklch(0.27 0.12 285) 0%,
+        transparent 66%
+      ),
+      radial-gradient(
+        90% 60% at 20% 108%,
+        oklch(0.26 0.09 298) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        80% 60% at 90% 110%,
+        oklch(0.24 0.08 305) 0%,
+        transparent 70%
+      ),
+      oklch(0.17 0.035 282);
+  }
+  .dark .entry-wash > .w1 {
+    background: radial-gradient(
+      closest-side,
+      oklch(0.45 0.08 290 / 70%),
+      transparent 75%
+    );
+  }
+  .dark .entry-wash > .w2 {
+    background: radial-gradient(
+      closest-side,
+      oklch(0.34 0.1 280 / 70%),
+      transparent 72%
+    );
+  }
+  .dark .entry-wash > .w3 {
+    background: radial-gradient(
+      closest-side,
+      oklch(0.31 0.11 290 / 65%),
+      transparent 72%
+    );
+  }
+  .dark .entry-wash > .w4 {
+    background: radial-gradient(
+      closest-side,
+      oklch(0.29 0.09 300 / 70%),
+      transparent 74%
+    );
+  }
+  /* Indeterminate progress: a size the source can't know gets an honest
+     shimmer instead of a bar pinned at 0%. */
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    60%,
+    to {
+      transform: translateX(260%);
+    }
+  }
+  /* Tab-bar icon pop — selection wins, the icon answers (§2.7.2) */
+  @keyframes tab-pop {
+    0% {
+      transform: scale(0.82);
+    }
+    55% {
+      transform: scale(1.14);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  /* Clouds slide sideways more than they zoom — weather, not bubbles */
+  @keyframes entry-drift-1 {
+    from {
+      transform: translate3d(-2.5%, -1%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(2.5%, 1.5%, 0) scale(1.07);
+    }
+  }
+  @keyframes entry-drift-2 {
+    from {
+      transform: translate3d(0, 0, 0) scale(1.02);
+    }
+    to {
+      transform: translate3d(6%, 3%, 0) scale(1.1);
+    }
+  }
+  @keyframes entry-drift-3 {
+    from {
+      transform: translate3d(0, 2%, 0) scale(1.06);
+    }
+    to {
+      transform: translate3d(-6%, -2%, 0) scale(0.98);
+    }
+  }
+  @keyframes entry-drift-4 {
+    from {
+      transform: translate3d(-3%, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(3%, -3%, 0) scale(1.08);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .entry-wash > i {
+      filter: none;
+      opacity: 0.35;
+    }
+    .entry-wash::after {
+      display: none;
+    }
+  }
+
+  /* Living layer: the WebGL2 fluid canvas (entry-fluid.tsx) covers the CSS
+    sky completely when it mounts; it dissolves itself on any WebGL failure,
+    revealing the sky beneath. Sized by CSS to the full stage while the
+    backing store renders at half resolution inside the component. */
+  .entry-wash > .entry-fluid {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    transition: opacity 240ms var(--ease-out);
+  }
+
+  /* Frosted card for content floating directly on the wash (download) */
+  .glass-card {
+    background: color-mix(in oklch, var(--card) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-card {
+      background: var(--card);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+}
+
+@layer utilities {
+  /* Input focus = thin border highlight only (no halo, nothing to clip).
+     Lives in the utilities layer so it beats the `border-input` utility;
+     a components-layer rule alone loses to it regardless of specificity. */
+  .field-control:focus-within,
+  .field-control:focus,
+  .field-control:focus-visible,
+  [data-slot="input-group"]:has(
+    [data-slot="input-group-control"]:focus-visible
+  ),
+  [data-slot="input-group"]:focus-within {
+    border-color: var(--ring);
+    box-shadow: none;
+    outline: none;
+  }
+}
+
+@media print {
+  body {
+    background: none !important;
+  }
+  /* Printing flows the document again — a clipped, fixed-height shell
+     would truncate printed pages to the window height. */
+  [data-shell="desktop"],
+  [data-shell="desktop"] body {
+    height: auto;
+    overflow: visible;
+  }
+  [data-shell="desktop"] #root {
+    height: auto;
+    display: block;
+  }
+  [data-shell="desktop"] .app-scroll {
+    overflow: visible;
+  }
+  [data-shell="desktop"] .app-shell-root {
+    height: auto;
+    display: block;
+  }
+  [data-shell="desktop"] .shell-scroll {
+    overflow: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 200ms !important;
+    transition-property:
+      opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.phone-navigation {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Phone floating panel-left circle (§2.7.2) — fixed top-left, over content,
+   above the top safe area. Hidden on ≥md where the header row owns
+   navigation. */
+.phone-menu-float {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 16px;
+  z-index: 40;
+}
+.menu-float-circle {
+  background: var(--card);
+  box-shadow: var(--shadow-overlay), var(--specular);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .menu-float-circle {
+    background: color-mix(in oklch, var(--card) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
+.capsule-surface {
+  background: var(--card);
+  box-shadow: var(--shadow-overlay), var(--specular);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .capsule-surface {
+    background: color-mix(in oklch, var(--card) 78%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  }
+  .sticky-action-bar {
+    background: color-mix(in oklch, var(--card) 85%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .filter-bar,
+  .sticky-action-bar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--card) !important;
+  }
+  header[class*="backdrop-blur"],
+  nav[class*="backdrop-blur"],
+  div[class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--background) !important;
+  }
+  .capsule-surface,
+  .menu-float-circle {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--card) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: oklch(0.75 0 0);
+  }
+  .dark {
+    --border: oklch(0.35 0 0);
+  }
+}
+
+/* View-transitions soft fade when supported */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.22s;
+  }
+}
+
+/* Notification banner (§3, §5) — sonner ships 400ms `ease` transitions, which
+   is not the house curve. Scoped one level deeper than sonner's own selectors
+   so the override holds whatever order the injected stylesheet lands in.
+   Reduced motion is already collapsed by the block above. */
+[data-sonner-toaster] [data-sonner-toast] {
+  transition:
+    transform 380ms var(--ease-out),
+    opacity 380ms var(--ease-out),
+    height 380ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+/* Exits mirror entries ~20% faster (§5 rule 2). */
+[data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+  transition:
+    transform 300ms var(--ease-out),
+    opacity 300ms var(--ease-out),
+    height 300ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+[data-sonner-toaster] [data-sonner-toast] > * {
+  transition: opacity 380ms var(--ease-out);
+}

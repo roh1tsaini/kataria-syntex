@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.next/
+.vinext/
+.wrangler/
+out/
+build/
+*.tsbuildinfo
+
+# Environment & secrets (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+
+
+# Turbo & tool caches
+.turbo/
+.cache/
+coverage/
+.expo/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Reference business documents (customer challans/invoices) — never commit
+apps/app/Docs Template/
+
+# apps/app build outputs
+apps/app/out/
+apps/app/release/
+apps/app/build/
+apps/app/dist-electron/
+
+# Scratch / tool output (audit screenshots, throwaway profiles)
+apps/app/tmp/
+eslint-output.json
+apps/web/eslint-output.json
+/.agents
+skills-lock.json
+/.tmp-dl
+/.tmp-prof
+/.workbuddy-ai
+/.openchamber
+sales.pdf
+label.pdf

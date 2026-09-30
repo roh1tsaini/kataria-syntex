@@ -1,0 +1,15 @@
+{
+  "extends": "@kataria-syntex/tsconfig/base.json",
+  "compilerOptions": {
+    // dom is types-only here: fetch/Blob/AbortController/timers are runtime
+    // globals in every shell (RN ships them too). The adapter contract keeps
+    // window/document/localStorage OUT of this package.
+    "lib": ["dom", "esnext"],
+    // fetch/Blob/AbortController/URLSearchParams globals come from bun
+    // types — they exist in every shell at runtime.
+    "types": ["bun"],
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*"]
+}

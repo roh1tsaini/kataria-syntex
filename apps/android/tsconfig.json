@@ -1,0 +1,22 @@
+{
+  "extends": "@kataria-syntex/tsconfig/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["dom", "esnext"],
+    "types": ["bun"],
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src",
+    "scripts",
+    "capacitor.config.ts",
+    "*.ts",
+    "*.js",
+    "*.mjs",
+    "*.d.ts"
+  ],
+  "exclude": ["node_modules", "android", "dist"]
+}

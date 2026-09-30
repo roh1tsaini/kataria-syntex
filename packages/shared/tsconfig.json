@@ -1,0 +1,7 @@
+{
+  "extends": "@kataria-syntex/tsconfig/base.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler"
+  },
+  "include": ["src/**/*"]
+}

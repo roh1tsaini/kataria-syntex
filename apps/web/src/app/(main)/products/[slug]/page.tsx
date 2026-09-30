@@ -1,0 +1,174 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { getProduct, products } from "@kataria-syntex/shared";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { site } from "@/content/site";
+
+export function generateStaticParams() {
+  return products.map((product) => ({ slug: product.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = getProduct(slug);
+  if (!product) return {};
+  return {
+    title: product.name,
+    description: product.description,
+    alternates: {
+      canonical: `/products/${product.slug}`,
+    },
+    openGraph: {
+      title: `${product.name} — ${site.name}`,
+      description: product.description,
+      type: "article",
+      images: [
+        {
+          url: product.image,
+          alt: product.imageAlt,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} — ${site.name}`,
+      description: product.description,
+      images: [product.image],
+    },
+  };
+}
+
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const product = getProduct(slug);
+  if (!product) notFound();
+
+  const inquiryHref = `/contact?product=${encodeURIComponent(product.name)}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: `${site.url}${product.image}`,
+    category: product.category,
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+    },
+  };
+
+  return (
+    <article className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <Link
+        href="/products"
+        className="inline-flex min-h-[44px] items-center gap-2 py-2 font-mono text-xs text-ink-soft transition-colors hover:text-royal"
+      >
+        <ArrowLeft aria-hidden="true" className="size-3.5" />
+        Back to the yarn index
+      </Link>
+
+      <div className="mt-8 grid gap-12 lg:grid-cols-12">
+        {/* Visual */}
+        <div className="lg:col-span-5">
+          <div className="art-duotone relative aspect-[4/5] overflow-hidden rounded-card shadow-card ring-1 ring-royal/20">
+            <Image
+              src={product.image}
+              alt={product.imageAlt}
+              fill
+              priority
+              sizes="(min-width: 1024px) 40vw, 100vw"
+              className="art-duotone-img object-cover"
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {product.applications.map((application) => (
+              <Badge key={application}>{application}</Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Specification */}
+        <div className="lg:col-span-7">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <p className="tnum font-mono text-xs text-ink-soft">
+              {product.code}
+            </p>
+            <p className="font-body text-xs font-bold uppercase tracking-[0.07em] text-royal">
+              {product.category}
+            </p>
+          </div>
+          <h1 className="mt-3 text-balance font-display text-4xl font-bold leading-[1.02] tracking-tight text-navy md:text-5xl">
+            {product.name}
+          </h1>
+          <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft md:text-lg">
+            {product.description}
+          </p>
+
+          <dl className="card-sheen mt-8 overflow-hidden rounded-card border border-line bg-paper shadow-card">
+            {product.specs.map((spec) => (
+              <div
+                key={spec.label}
+                className="grid grid-cols-2 gap-4 border-b border-line px-5 py-3.5 transition-colors last:border-b-0 hover:bg-canvas/50"
+              >
+                <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+                  {spec.label}
+                </dt>
+                <dd className="tnum text-right font-mono text-sm text-navy">
+                  {spec.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <h2 className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+            What it does well
+          </h2>
+          <ul className="mt-4 space-y-2.5">
+            {product.features.map((feature) => (
+              <li
+                key={feature}
+                className="flex items-baseline gap-3 text-sm leading-relaxed text-navy"
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-1 shrink-0 translate-y-[-1px] rounded-full bg-royal"
+                />
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Button asChild variant="primary" size="lg">
+              <Link href={inquiryHref}>
+                Inquire about this yarn
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="lg">
+              <Link href="/shade-card">Match a shade</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
