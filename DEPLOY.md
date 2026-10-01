@@ -12,10 +12,9 @@ Cloudflare — free tier only.
 | Databases    | Cloudflare **D1** (SQLite)         | `ks-biz-app-db`, `ks-web-db`     |
 | CI/CD        | GitHub Actions                     | auto-deploys on push to `main`   |
 
-Native shells and web workers build in `.github/workflows/pipeline.yml`:
-the `gate` job runs first, then `deploy-web`, `desktop`, and `android` run in
-parallel, `publish-r2` uploads installers to R2, and `deploy-app` deploys the
-business app worker.
+Worker bindings, hostnames and the release bucket: `apps/app/APP.md`
+Section 11. Database and bucket names repeat here on purpose — the commands in
+this guide type them.
 
 ## First-time setup (once)
 
@@ -28,9 +27,9 @@ Add two secrets (repo → Settings → Secrets and variables → Actions):
 | `CLOUDFLARE_API_TOKEN`  | Token with **D1 Edit + Workers Edit + Workers R2 Storage Edit** |
 | `CLOUDFLARE_ACCOUNT_ID` | Your account id (Cloudflare dashboard → Workers)                |
 
-The deploy job (`deploy` in `pipeline.yml`) **auto-provisions both D1
-databases and injects their ids on the runner** — no manual dashboard steps,
-no ids to paste.
+The deploy jobs (`deploy-web` and `deploy-app` in `pipeline.yml`)
+**auto-provision both D1 databases and inject their ids on the runner** — no
+manual dashboard steps, no ids to paste.
 
 ### 2. Set the origins
 
@@ -44,9 +43,6 @@ plugin's download-origin check accept — the pipeline strips the scheme
 before passing it to Gradle, and the build fails if `APP_HOST` is not a
 bare hostname (so a poisoned variable can never produce an un-updatable
 APK).
-
-Optionally set `NEXT_PUBLIC_SITE_URL` (or `SITE_URL`) for the public website
-(`https://web.katariasyntex.workers.dev`); falls back to the production worker domain.
 
 ### 3. Deploy
 
@@ -134,28 +130,21 @@ bunx wrangler d1 export ks-web-db --output backup-web.sql
 
 Keep exports somewhere durable (GitHub private repo, Google Drive).
 
-### Versioning
-
-The app version lives only in `apps/app/package.json` (`version` +
-`minAppVersion`). Bumping it IS the release action — CI publishes only when
-it differs from the live manifest. The mechanics (version gate, Android
-versionCode, manifest fields) are documented in `apps/app/APP.md` Sections
-5.2 and 12.
-
 ### Releases (desktop/Android)
 
-Bump `apps/app/package.json`, push, then Repo → Actions → **Pipeline**
-→ Run workflow:
+Bump `version` in `apps/app/package.json`, push, then Repo → Actions →
+**Pipeline** → Run workflow:
 
 - `targets: all | desktop | android` — desktop-only skips the 90-min APK job.
 - Push or dispatch with `targets: all` uploads the `.exe` / `.dmg` / `.AppImage` / `.apk`
-  files and writes update manifests to R2. Re-releasing requires bumping the
-  version in `apps/app/package.json`.
+  files and writes update manifests to R2. Re-releasing requires a new `version`.
 
 Android signing uses the secrets from first-time setup step 5 — the APK job
 fails fast when they are absent. The APK job builds `apps/app`, runs
 `bunx cap sync android` from `apps/android`, then gradle; the signing config
 is read from `apps/android/android/keystore.properties` written by CI.
+
+Version floor, `versionCode` and manifest fields: `apps/app/APP.md` Section 12.
 
 ### Monitoring
 
@@ -166,28 +155,6 @@ is read from `apps/android/android/keystore.properties` written by CI.
 ### Upgrades
 
 - Keep majors current: `bun install` after bumping any dep; the repo gates
-  (`typecheck` + `lint` + `build`) will catch breakage.
+  (`AGENTS.md` Section 2.4) will catch breakage.
 - Wrangler: `bunx wrangler --version` vs `package.json`; changelog before major
   bumps.
-
-## Local development
-
-```bash
-bun install
-bun run dev:web    # website on :3000 (vinext)
-bun run dev:app    # app frontend on :1420 (turbo dev --filter biz-app)
-```
-
-`apps/app` extras: `bun run dev` (frontend only), `bun run dev:server` (API
-on :3000 — the frontend expects it via `adb reverse` or dev proxy),
-`bun run electron:dev`.
-
-## Required gates (every change)
-
-```bash
-bun run typecheck && bun run lint && bun run format:check && bun run build
-```
-
-Web, Electron and Android render one bundle (`apps/app`); the Android
-shell typechecks and syncs separately
-(`bunx tsc --noEmit` + `bunx cap sync android` inside `apps/android`).

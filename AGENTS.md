@@ -62,27 +62,12 @@ well-organized, short, and true.
 
 ## 2. Repo map
 
-| Path                | What                                                                                                              | Stack                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `apps/app`          | Internal business app — web + Electron desktop                                                                    | React 19 + Vite + Tailwind v4 + Zustand · Hono on Cloudflare Workers · D1 (Drizzle) · Web + Electron      |
-| `apps/android`      | Internal business app — Android shell around the `apps/app` bundle                                                | Capacitor 8 · renders the `apps/app` React 19/Vite bundle, which is where `packages/app-core` is consumed |
-| `apps/web`          | Public showcase website                                                                                           | Next.js + React 19 + Tailwind v4 · Vinext on Cloudflare Workers                                           |
-| `packages/shared`   | Shared domain types, yarn/shade data, validation (`@kataria-syntex/shared`)                                       | TypeScript                                                                                                |
-| `packages/app-core` | Shared business core for both apps: API client, zustand stores, network reachability (`@kataria-syntex/app-core`) | TypeScript + React                                                                                        |
-| `packages/tsconfig` | Shared TS config presets                                                                                          | —                                                                                                         |
+Workspace layout and per-workspace stack: `README.md`. Session storage per
+shell and the owner-fixed build targets: `apps/app/APP.md` Section 5.
 
 ## 2.1 Platforms
 
-| Platform | Shell                                | Session storage                   |
-| -------- | ------------------------------------ | --------------------------------- |
-| Web      | Browser                              | HttpOnly cookie                   |
-| Desktop  | Electron (`apps/app`)                | OS keychain via IPC + safeStorage |
-| Mobile   | Capacitor 8 WebView (`apps/android`) | `@capacitor/preferences`          |
-
-Build targets (fixed by owner): Android universal APK,
-Windows x64, macOS arm64 dmg (Apple Silicon only), Linux x64 AppImage.
-**iOS is skipped completely — never build or scaffold for it.**
-
+- **iOS is skipped completely — never build or scaffold for it.**
 - `packages/app-core` holds the shared business core (API client, zustand
   stores, network reachability, error copy). Both apps configure it at boot
   through its `PlatformAdapter` seam. All three shells share one file —
@@ -133,19 +118,17 @@ copies it. Never write a second implementation.
 
 ### What "same" means
 
-- **Visual:** same structure, spacing, radii, control heights, colors, copy,
-  icons, empty/loading/error states as `apps/app` at the `≤sm` breakpoint.
-  `apps/app/design.md` is the contract; design values come from it and its
-  tokens in `globals.css`, with no Android token-conversion step.
-- **Behavior:** same validation, navigation targets, confirmations, toasts
-  (copy via `friendlyError`).
-- **Data:** same fields, sorting; formatting from the shared home
-  (`apps/app/src/main/ui/lib/format.ts`): `fmtDate` renders `DD Mon YYYY`,
-  `fmtRelative` renders the relative timestamp and falls back to `fmtDate`.
-- **Motion:** same presets and grammar (`apps/app/src/main/ui/lib/motion.ts`);
-  enter/exit mirror, exits ~20% faster, reduced motion collapses.
-- **Logic:** one home. Business logic, stores, network reachability, error copy
-  live in `packages/app-core` / `packages/shared`.
+Rules only — the values live in one place each:
+
+- **Visual** — contract in `apps/app/design.md`; tokens in `globals.css`, no
+  Android token-conversion step. Phone-scale contract in `design.md` Section 4.1.
+- **Behavior** — same validation, navigation targets, confirmations, toasts
+  (copy via `friendlyError`); per-shell detail in `apps/app/APP.md` Section 5.1.
+- **Data** — same fields and sorting; date/number formatting is owned by
+  `apps/app/design.md` Section 2.4.1.
+- **Motion** — presets in `apps/app/src/main/ui/lib/motion.ts`, grammar in
+  `design.md` Section 5.
+- **Logic** — one home: `packages/app-core` / `packages/shared`.
   Platform differences live ONLY in the one adapter file
   (`apps/app/src/main/lib/platform.ts`), behind `detectHost() === "android"`.
   A platform branch anywhere else is a bug.
@@ -199,28 +182,54 @@ code never certifies it.
 
 ## 3. Commands
 
+Every script in the repo, by workspace.
+
 ```bash
 # repo root (Bun workspaces + turbo) — bun is the ONLY package manager
 bun install
-bun run dev        # all dev servers
-bun run build      # production build — required gate
-bun run typecheck  # required gate
-bun run lint       # required gate
-bun run format:check
-bun run check:updates  # registry drift review — run before every commit
+bun run dev            # all dev servers (turbo dev)
+bun run dev:web        # website only
+bun run dev:app        # business app only
+bun run build          # production build — required gate
+bun run build:web      # website build only
+bun run build:app      # business app build only
+bun run typecheck      # required gate
+bun run lint           # required gate
+bun run format         # prettier --write .
+bun run format:check   # required gate
+bun run check:updates  # registry drift review (bun outdated) — before every commit
+bun run prepare        # husky install (git hooks)
 
 # Git hooks (husky): pre-commit runs lint-staged + typecheck,
 # pre-push runs lint + build. Never commit with --no-verify.
 
 # inside apps/app
-bun run dev:server   # Hono API (workerd, wrangler dev)
-bun run dev          # Vite frontend on :1420
-bun run electron:dev # Electron shell over the Vite dev server
+bun run dev               # Vite frontend on :1420 (strict port, proxies /api → :3000)
+bun run dev:server        # Hono API (workerd, wrangler dev) on :3000
+bun run electron:dev      # Electron shell over the Vite dev server
+bun run electron:package  # build + build:electron + electron-builder
+bun run build:electron    # bundle main/preload for Electron
+bun run build             # vite build (renderer)
+bun run typecheck         # tsc for app, server and electron configs
+bun run lint              # eslint .
+bun run db:generate       # drizzle-kit generate (new migration)
+bun run db:migrate:local
+bun run icons             # regenerate app icons (sharp)
+
+# inside apps/web
+bun run dev        # vinext dev on :3000
+bun run build      # vinext build
+bun run typecheck  # wrangler types + tsc --noEmit
+bun run lint       # eslint .
 
 # inside apps/android (Android app — Capacitor shell over the apps/app bundle)
-bun run sync         # build apps/app + cap sync android
-bun run open         # open android/ in Android Studio
-bun run build:apk    # cap sync + gradle assembleRelease (needs the Android SDK)
+bun run build:web:apk # build apps/app with the APK build script
+bun run build:web     # plain vite build of apps/app
+bun run sync      # build apps/app + cap sync android
+bun run open      # open android/ in Android Studio
+bun run build:apk # cap sync + gradlew assembleRelease (needs the Android SDK)
+bun run typecheck # bunx tsc --noEmit
+bun run lint      # eslint .
 ```
 
 ## 4. Hard rules
@@ -270,8 +279,7 @@ bun run build:apk    # cap sync + gradle assembleRelease (needs the Android SDK)
 2. **Bump `version` after coding.** Whenever an AI session finishes a
    change that warrants a release, it bumps `apps/app/package.json`
    `version` (patch for fixes, minor for features) as part of that change.
-   The CI push build publishes to R2 only when the version differs, so the
-   bump IS the release action.
+   Why the bump is the release action: `apps/app/APP.md` Section 12.
 3. Releases ship from the `ks-releases` R2 bucket (`/releases/*` on the app
    Worker) — see `apps/app/APP.md` Section 12. Latest version only; the manifest
    is `app/android/latest.json`.

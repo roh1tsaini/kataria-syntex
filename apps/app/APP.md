@@ -12,7 +12,7 @@ Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands ·
 5 Platforms (5.1 per-shell, 5.2 Android project, 5.3 update mechanisms) ·
 6 Database · 7 API · 8 Auth & security · 9 Offline & reachability ·
 10 App UI · 11 Infra facts · 12 Updates & versioning · 13 Caching ·
-14 Dev & test · 15 Pointers.
+14 Dev & test.
 
 ---
 
@@ -77,25 +77,18 @@ packages/shared/src/             # pure shared data & validation — no platform
 
 ## 4 · Commands
 
-```bash
-bun run dev               # Vite :1420 (strict port, proxies /api → :3000)
-bun run dev:server        # wrangler dev :3000 (workerd + local D1)
-bun run electron:dev      # Electron shell over the Vite dev server
-bun run db:generate       # drizzle-kit generate (new migration)
-bun run db:migrate:local
-bun run icons             # regenerate app icons (sharp)
-bun run electron:package  # build + build:electron + electron-builder
-```
+All commands: `AGENTS.md` Section 3. This app's build notes:
 
-**Build notes**
-
-- `electron:package` — CI inlines the same steps in `pipeline.yml`; keep
-  both spellings in sync.
-- `build:electron` also runs solo mid-pipeline to inject `APP_URL`.
+- `electron:package` — CI runs `build` + `build:electron` + `electron-builder`
+  with per-platform builder args instead (`pipeline.yml`); keep both spellings
+  in sync.
+- `build:electron` bundles main/preload and bakes `APP_URL` into
+  `KC_API_ORIGIN`; it fails without `APP_URL`. `electron/dev.ts` deliberately
+  skips the bake and points at `localhost:3000`.
 - `release/` (400MB+ binaries) is excluded from `turbo.json` outputs —
   CI artifacts, never cached.
 - Done = typecheck + lint + format + build green from repo root AND the
-  feature works when run.
+  feature works when run (`AGENTS.md` Section 2.4).
 - Web, Electron and Android compile as one renderer bundle; `apps/android`
   typechecks and syncs (`bunx cap sync android`) against `packages/app-core`.
 
@@ -175,9 +168,7 @@ bun run electron:package  # build + build:electron + electron-builder
 - Plugins: official `@capacitor/*` set plus local `InstallerPlugin.kt`
   (streams APK to app-private `updates/` cache, verifies SHA-256 against the
   manifest, fires `FileProvider` `ACTION_VIEW`).
-- Commands in `apps/android`: `bun run sync` (build `apps/app` + `cap sync
-android`), `bun run build:apk` (adds `gradlew assembleRelease`), `bun run
-open` (Android Studio).
+- Commands: `AGENTS.md` Section 3.
 
 ### 5.3 · Update mechanisms
 
@@ -265,19 +256,18 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 | Password  | ✓   | ✓       | ✓       |
 | QR login  | ✓   | ✓       | ✓       |
 
-| Topic               | Rule                                                                                             |
-| ------------------- | ------------------------------------------------------------------------------------------------ |
-| Session             | opaque token in HttpOnly cookie (web) / `Authorization: Bearer` (native); 30-day TTL             |
-| QR login            | 10-min TTL codes in `qr_logins`; single-use CAS claim                                            |
-| OTP delivery        | Pingram API — `https://api.pingram.co` (worker secret `PINGRAM_API_KEY`)                         |
-| OTP expiry          | 5 min; 3 verify attempts per code (CAS update)                                                   |
-| OTP resend cooldown | 30 s per identifier (429 `otp_resend_cooldown`)                                                  |
-| OTP daily caps      | 5/hr and 12/day per identifier · 10 per IP per 15 min · 300 global/day (`OTP_DAILY_BUDGET`)      |
-| Password            | optional PBKDF2-SHA256 (100k iterations, min 10 chars); dummy-hash on missing user               |
-| Desktop session     | OS keychain via safeStorage IPC — never a plain file                                             |
-| Android session     | `@capacitor/preferences` KV (scoped to the app)                                                  |
-| Desktop logout      | wipes native keychain + `localStorage` + `sessionStorage`                                        |
-| Devices management  | `/devices` and Settings → Devices list active sessions with current marker and per-device revoke |
+| Topic               | Rule                                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Session             | opaque token in HttpOnly cookie (web) / `Authorization: Bearer` (native); 30-day TTL · storage per shell in Section 5 |
+| QR login            | 10-min TTL codes in `qr_logins`; single-use CAS claim                                                                 |
+| OTP delivery        | Pingram API — `https://api.pingram.co` (worker secret `PINGRAM_API_KEY`)                                              |
+| OTP expiry          | 5 min; 3 verify attempts per code (CAS update)                                                                        |
+| OTP resend cooldown | 30 s per identifier (429 `otp_resend_cooldown`)                                                                       |
+| OTP daily caps      | 5/hr and 12/day per identifier · 10 per IP per 15 min · 300 global/day (`OTP_DAILY_BUDGET`)                           |
+| Password            | optional PBKDF2-SHA256 (100k iterations, min 10 chars); dummy-hash on missing user                                    |
+| Native persistence  | the desktop token never lands in a plain file · the Android KV is scoped to the app (storage per shell in Section 5)  |
+| Desktop logout      | wipes native keychain + `localStorage` + `sessionStorage`                                                             |
+| Devices management  | `/devices` and Settings → Devices list active sessions with current marker and per-device revoke                      |
 
 **Flow**
 
@@ -383,9 +373,3 @@ version`, and `deploy-app` runs after `publish-r2` when a release is being
 - Dev user — phone `+91 63515 70979`, no password, OTP-only.
 - QR login needs a second logged-in device (any camera) to approve.
 - Dev logs (`api*.log`) are throwaway and gitignored — never commit them.
-
-## 15 · Pointers
-
-- `design.md` — design system (mandatory read for UI work).
-- `DEPLOY.md` — pipeline, first-time setup, secrets, backups, releases.
-- `AGENTS.md` — working rules, parity protocol, verification gates.

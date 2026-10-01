@@ -34,12 +34,7 @@ own worker, own D1, own design identity.
 | Data      | D1 `ks-web-db`, one table (`inquiries`)               |
 | Content   | `src/content/*` + `packages/shared`                   |
 
-```bash
-# inside apps/web
-bun run dev      # vinext dev --port 3000
-bun run build    # vinext build
-bun run lint     # gate
-```
+Commands: `AGENTS.md` Section 3.
 
 ## 3 · Source map
 
@@ -84,16 +79,16 @@ apps/web/
 
 ## 4 · Pages
 
-| Route              | What                                                                 |
-| ------------------ | -------------------------------------------------------------------- |
-| `/`                | showcase home — hero, process, markets, yarn index, shade strip, CTA |
-| `/about`           | company story                                                        |
-| `/contact`         | inquiry form + details                                               |
-| `/products`        | product index                                                        |
-| `/products/[slug]` | product detail (dynamic)                                             |
-| `/shade-card`      | online shade explorer                                                |
-| `/links`           | visiting-card page (dynamic — open-now status from `lib/hours.ts`)   |
-| `/api/inquiry`     | POST handler → D1 insert                                             |
+| Route              | What                                                                                                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `/`                | showcase home — hero, process, markets, yarn index, shade strip, CTA                                                        |
+| `/about`           | company story                                                                                                               |
+| `/contact`         | inquiry form + details                                                                                                      |
+| `/products`        | product index                                                                                                               |
+| `/products/[slug]` | product detail (dynamic)                                                                                                    |
+| `/shade-card`      | online shade explorer                                                                                                       |
+| `/links`           | visiting-card page (dynamic) — open-now status rendered server-side, then refreshed client-side every 30 s and on tab focus |
+| `/api/inquiry`     | POST handler → D1 insert                                                                                                    |
 
 ## 5 · Inquiry flow
 
@@ -131,11 +126,13 @@ checking the table is a manual step.
   `INQUIRY_DB` binding, and observability. The D1 `database_id` is a zero
   placeholder — CI provisions the real database and substitutes the id
   before the build (`pipeline.yml`).
-- `NEXT_PUBLIC_SITE_URL` — set in neither `wrangler.jsonc` nor CI, so
-  `src/content/site.ts` falls back to
-  `https://web.katariasyntex.workers.dev` — that fallback is the baked
-  production value. It feeds `metadataBase`, the sitemap, `robots.txt`
-  and the `/links` Website row.
+- `NEXT_PUBLIC_SITE_URL` — set in `wrangler.jsonc` to
+  `https://web.katariasyntex.workers.dev`; `src/content/site.ts` repeats the
+  same value as its `??` fallback. It feeds `metadataBase`, the sitemap,
+  `robots.txt` and the `/links` Website row.
+- `pipeline.yml` supplies `NEXT_PUBLIC_SITE_URL` to the build from the repo
+  variable `NEXT_PUBLIC_SITE_URL`, else `SITE_URL`, else the production
+  worker domain — so a repo variable overrides the `wrangler.jsonc` value.
 
 ## 9 · Deployment
 
@@ -153,16 +150,6 @@ build — vinext bakes it into the worker. Migration path off the platform:
   (`components/ui/dialog.tsx`) whose inner column (`SiteHeader.tsx:112`)
   has no `overflow-y-auto`; in landscape the last links and "Send inquiry"
   clip (~504px of content in a 390px viewport). Portrait is fine.
-- `/links` computes `openStatus()` server-side from `lib/hours.ts` and
-  never re-checks client-side — a page opened at 6:55 PM shows "Open now ·
-  till 7:00 PM" past closing, wrong for the exact visitor who needs it.
 - No `og:image`, Twitter card or canonical URL (Section 7); sharing
   renders a text-only card.
 - Product images serve at ~3× the needed resolution at their render size.
-
-## 11 · Pointers
-
-- `design.md` — the design system (band grammar, tokens, motion).
-- `DEPLOY.md` — pipeline, secrets, backups.
-- `apps/app/APP.md` — the business app (separate product, separate worker).
-- `packages/shared/src/index.ts` — `COMPANY_DETAILS`, the brand facts.

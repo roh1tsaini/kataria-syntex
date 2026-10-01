@@ -249,24 +249,6 @@ cinematic pair `--ease-cinema` (600ms spring curve, sampled
    skeletons for async content.
 7. `prefers-reduced-motion`: everything collapses to opacity ≤200ms.
 
-### 4.2 Morph — pill ⇄ card
-
-One surface grows from its collapsed row into the raised card and back on
-the cinematic curve — the same element at both sizes, never a
-close-then-open swap.
-
-- FAQ accordion (`ui/accordion.tsx`): a closed item is a quiet row; open,
-  it lifts into a card (radius chip→card, line border, white fill,
-  shadow-xs). Surface, height keyframes and the rotating plus all ride
-  `--ease-cinema` at `--dur-cinema`.
-- Filterable grids (product index, shade explorer) glide via
-  `src/lib/use-flip.ts` — survivors translate from their previous slot,
-  entering items fade+rise 14px. No exit ghosts; transform/opacity only;
-  no-JS and reduced motion never animate.
-- Modal (mobile nav) slides and fades on the same curve.
-- Small feedback (form success/error, hovers, arrows) keeps `--ease-out`
-  — not everything is cinematic, only size and presence changes.
-
 ### 4.1 Scrolling rules
 
 Scrolling is native — no JS scroll animator. CSS `scroll-behavior: smooth`
@@ -285,6 +267,24 @@ on `html` covers anchor jumps. Non-negotiables:
   scroll-traversed content: an estimate that differs from real height
   makes the page lurch as groups paint. The wound-yarn swatch grids
   scroll at full frame rate without it.
+
+### 4.2 Morph — pill ⇄ card
+
+One surface grows from its collapsed row into the raised card and back on
+the cinematic curve — the same element at both sizes, never a
+close-then-open swap.
+
+- FAQ accordion (`ui/accordion.tsx`): a closed item is a quiet row; open,
+  it lifts into a card (radius chip→card, line border, white fill,
+  shadow-xs). Surface, height keyframes and the rotating plus all ride
+  `--ease-cinema` at `--dur-cinema`.
+- Filterable grids (product index, shade explorer) glide via
+  `src/lib/use-flip.ts` — survivors translate from their previous slot,
+  entering items fade+rise 14px. No exit ghosts; transform/opacity only;
+  no-JS and reduced motion never animate.
+- Modal (mobile nav) slides and fades on the same curve.
+- Small feedback (form success/error, hovers, arrows) keeps `--ease-out`
+  — not everything is cinematic, only size and presence changes.
 
 ## 5. Accessibility floor (non-negotiable)
 
