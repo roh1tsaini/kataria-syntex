@@ -65,7 +65,7 @@ export function ShadeExplorer({
   );
 
   // Filter/search changes glide: surviving swatches flip to their new
-  // grid slot, entering swatches rise in (§4.2). Each page grid flips
+  // grid slot, entering swatches rise in (Section 4.2). Each page grid flips
   // its own swatches.
   const flipDeps = [activePage, query] as const;
 

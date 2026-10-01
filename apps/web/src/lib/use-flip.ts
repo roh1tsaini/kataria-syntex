@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /**
- * FLIP reflow for filterable grids (design.md §4.2): when the filtered item
+ * FLIP reflow for filterable grids (design.md Section 4.2): when the filtered item
  * set changes, surviving children glide from their old position to the new
  * one on the cinematic curve; entering children rise in. Transform +
  * opacity only — no layout animation, no exit ghosts (the survivors' glide

@@ -1,6 +1,6 @@
 /**
  * Per-request version gate — the runtime half of the no-backward-compat
- * contract (AGENTS.md §4.0.1). Every API call carries the client's version in
+ * contract (AGENTS.md Section 4.0.1). Every API call carries the client's version in
  * X-App-Version; below minAppVersion the server answers 426 update_required
  * so a stale native client shows the blocking update dialog instead of a
  * pile of parse failures after a breaking deploy.

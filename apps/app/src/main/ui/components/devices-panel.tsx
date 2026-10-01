@@ -117,7 +117,7 @@ function DeviceRow({
   );
 }
 
-/** Shaped like the rows it stands in for (design.md §3.1). */
+/** Shaped like the rows it stands in for (design.md Section 3.1). */
 function DevicesPanelSkeleton() {
   return (
     <div>

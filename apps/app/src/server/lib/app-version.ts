@@ -1,7 +1,7 @@
 /**
  * The deployed app version and the force-update floor, read from
  * apps/app/package.json at bundle time. `version` is what CI publishes;
- * `minAppVersion` is the owner's breaking-change contract (AGENTS.md §4.0.1):
+ * `minAppVersion` is the owner's breaking-change contract (AGENTS.md Section 4.0.1):
  * bump it when a deploy breaks older clients and every API call from a
  * client below it answers 426 update_required.
  */

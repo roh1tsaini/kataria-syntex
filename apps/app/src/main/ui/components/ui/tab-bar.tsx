@@ -28,7 +28,7 @@ export function TabBar({ items, pathname, onMore, hidden }: TabBarProps) {
   const id = useId();
   const reduceMotion = useReducedMotion();
   const [editing, setEditing] = useState(false);
-  // Icon pop answers selection (§2.7.2) — null means "never yet", so the
+  // Icon pop answers selection (Section 2.7.2) — null means "never yet", so the
   // initial mount never pulses.
   const [popKey, setPopKey] = useState<number | null>(null);
   const active = items.findIndex((item) =>

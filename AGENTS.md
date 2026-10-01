@@ -227,7 +227,8 @@ bun run build:web:apk # build apps/app with the APK build script
 bun run build:web     # plain vite build of apps/app
 bun run sync      # build apps/app + cap sync android
 bun run open      # open android/ in Android Studio
-bun run build:apk # cap sync + gradlew assembleRelease (needs the Android SDK)
+bun run build:apk # cap sync + gradlew assembleRelease (Android SDK required;
+                  # see apps/app/APP.md Section 5.2)
 bun run typecheck # bunx tsc --noEmit
 bun run lint      # eslint .
 ```

@@ -114,7 +114,7 @@
     0 4px 12px -4px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
   --shadow-overlay:
     0 8px 24px -8px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
-  /* Top specular edge on capsule materials — light catching lit glass (§2.7) */
+  /* Top specular edge on capsule materials — light catching lit glass (Section 2.7) */
   --specular: inset 0 1px 0 oklch(1 0 0 / 55%);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -356,7 +356,7 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
-  /* Electron window chrome (design.md §2.7.1): a `-webkit-app-region: drag`
+  /* Electron window chrome (design.md Section 2.7.1): a `-webkit-app-region: drag`
      rect swallows every pointer event inside it, and the OS — not the page —
      gets the click. Chromium collects app-region rects in layout-tree
      pre-order and Electron applies them last-rect-wins, so a control is only
@@ -468,7 +468,7 @@
     padding: 0.75rem;
   }
 
-  /* Press feedback (§5): transform answers instantly (100ms); colors keep
+  /* Press feedback (Section 5): transform answers instantly (100ms); colors keep
      their 150ms hover pace. Shared by every tappable control. */
   .btn-motion {
     transition:
@@ -506,7 +506,7 @@
     background-color: var(--muted);
   }
 
-  /* Apple card — standard 16px padding (§2.1), soft, no hard shadow */
+  /* Apple card — standard 16px padding (Section 2.1), soft, no hard shadow */
   .data-card {
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
@@ -574,7 +574,7 @@
   /* Pre-auth ambient wash — entry (/) + download (/download) only. A pale
     periwinkle sky with one luminous core melting into the center — content
     sits in the light — and four wide cloud banks drifting slowly across it.
-    This is the one place blue hue is allowed (§2.5): everywhere else stays
+    This is the one place blue hue is allowed (Section 2.5): everywhere else stays
     monochrome. Transform-only keyframes; the global prefers-reduced-motion
     collapse stills the drift; a static grain layer hides gradient banding. */
   .entry-stage {
@@ -750,7 +750,7 @@
       transform: translateX(260%);
     }
   }
-  /* Tab-bar icon pop — selection wins, the icon answers (§2.7.2) */
+  /* Tab-bar icon pop — selection wins, the icon answers (Section 2.7.2) */
   @keyframes tab-pop {
     0% {
       transform: scale(0.82);
@@ -897,7 +897,7 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Phone floating panel-left circle (§2.7.2) — fixed top-left, over content,
+/* Phone floating panel-left circle (Section 2.7.2) — fixed top-left, over content,
    above the top safe area. Hidden on ≥md where the header row owns
    navigation. */
 .phone-menu-float {
@@ -975,7 +975,7 @@
   }
 }
 
-/* Notification banner (§3, §5) — sonner ships 400ms `ease` transitions, which
+/* Notification banner (Section 3, Section 5) — sonner ships 400ms `ease` transitions, which
    is not the house curve. Scoped one level deeper than sonner's own selectors
    so the override holds whatever order the injected stylesheet lands in.
    Reduced motion is already collapsed by the block above. */
@@ -987,7 +987,7 @@
     box-shadow 200ms var(--ease-out);
 }
 
-/* Exits mirror entries ~20% faster (§5 rule 2). */
+/* Exits mirror entries ~20% faster (Section 5 rule 2). */
 [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
   transition:
     transform 300ms var(--ease-out),

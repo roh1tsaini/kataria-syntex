@@ -36,7 +36,7 @@ const API_CODES = [
   "qr_already_approved",
   "qr_rate_limited",
   // updates — the API carries no backward compatibility; a client below the
-  // released minAppVersion gets this on every call (see AGENTS.md §4.0.1)
+  // released minAppVersion gets this on every call (see AGENTS.md Section 4.0.1)
   "update_required",
 ] as const;
 

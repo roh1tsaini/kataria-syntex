@@ -140,7 +140,7 @@
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
-  /* Cinematic feel (design.md §4): 600ms with a soft settle — the same
+  /* Cinematic feel (design.md Section 4): 600ms with a soft settle — the same
      spring the app compare page shipped as "Cinema", sampled once. */
   --ease-cinema: linear(
     0,

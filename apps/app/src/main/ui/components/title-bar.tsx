@@ -10,7 +10,7 @@ import { desktopWindow } from "@/lib/platform";
 import { cn } from "@/ui/lib/cn";
 
 /**
- * Electron window chrome, blended (design.md §2.7.1): there is no bar — the
+ * Electron window chrome, blended (design.md Section 2.7.1): there is no bar — the
  * app surface runs to every window edge. Electron-only; web and Android
  * render nothing.
  *

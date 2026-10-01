@@ -150,6 +150,12 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 - `apps/android/android/` is a committed Capacitor Gradle project — native
   config only (manifest permissions, signing, ABI filters), never UI.
 - `cap sync` copies the built bundle and the plugin list into it.
+- **Phone testing runs through CI, never a local build.**
+  `apps/android/scripts/build-web.ts` forces `https://` on the baked API
+  origin and fails without one, so a bundle aimed at a local `wrangler dev`
+  would speak TLS to a plain-HTTP server. Push, let the `android` job build
+  the signed APK against the deployed worker (`vars.APP_URL`), install the
+  artifact.
 - `app/build.gradle` reads `apps/app/package.json` for `versionName` and
   derives `versionCode = major*10000 + minor*100 + patch`.
 - ARM-only: `abiFilters 'armeabi-v7a', 'arm64-v8a'`.

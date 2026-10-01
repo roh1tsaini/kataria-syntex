@@ -2,7 +2,7 @@ import { Skeleton } from "@/ui/components/motion";
 
 /**
  * Route-level loading skeletons. One skeleton per screen, mirroring that
- * screen's real layout (design.md §3.1): the shell renders these inside its
+ * screen's real layout (design.md Section 3.1): the shell renders these inside its
  * existing page gutter while a route chunk loads, so chrome never flashes.
  */
 

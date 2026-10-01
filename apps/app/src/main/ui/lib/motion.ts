@@ -25,13 +25,13 @@ export const SPRING: Transition = {
 
 /** Surface entrances (dialog, settings window) reuse SPRING. */
 export const MORPH: Transition = SPRING;
-/** Surface exits - same path, ~20% faster (design.md §5.1). */
+/** Surface exits - same path, ~20% faster (design.md Section 5.1). */
 export const MORPH_EXIT: Transition = {
   type: "spring",
   bounce: 0,
   duration: 0.3,
 };
-/** Parent that staggers its children on "show" (design.md §5: ~40ms
+/** Parent that staggers its children on "show" (design.md Section 5: ~40ms
  * sibling stagger). Import - never re-derive at the call site. */
 export function staggerContainer(
   stagger = 0.04,

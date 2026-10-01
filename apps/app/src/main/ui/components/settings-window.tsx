@@ -8,16 +8,16 @@ import { cn } from "@/ui/lib/cn";
 import { EASE_OUT, MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 
 /**
- * App settings as a big window on desktop (design.md §3): pinned near the
+ * App settings as a big window on desktop (design.md Section 3): pinned near the
  * top of the viewport, the app behind it dimmed and blurred. Small screens
  * render the children directly as the page — one surface, breakpoint-decided,
- * so every shell renders the same content (design.md §4.1, AGENTS.md §2.3).
+ * so every shell renders the same content (design.md Section 4.1, AGENTS.md Section 2.3).
  *
  * Layering: scrim + surface at z-[45], above the sidebar (z-40) and header
  * (z-30) so the blur covers the app, and below every z-50 dialog. The floating
  * window controls sit at z-[60] (title-bar.tsx) so they stay sharp and
  * clickable while the window is open — they are chrome above content
- * (design.md §2.7.1). The surface anchors below the 3.5rem chrome strip so it
+ * (design.md Section 2.7.1). The surface anchors below the 3.5rem chrome strip so it
  * never visually collides with them.
  */
 export function SettingsWindow({

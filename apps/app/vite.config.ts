@@ -53,7 +53,6 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     host: process.env.KC_DEV_LAN === "1" ? "0.0.0.0" : "localhost",
-    allowedHosts: [".trycloudflare.com"],
     proxy: {
       "/api": {
         target: process.env.VITE_PROXY_TARGET ?? "http://localhost:3000",
@@ -64,7 +63,6 @@ export default defineConfig({
   preview: {
     port: 1420,
     host: process.env.KC_DEV_LAN === "1" ? "0.0.0.0" : "localhost",
-    allowedHosts: [".trycloudflare.com"],
     proxy: {
       "/api": {
         target: process.env.VITE_PROXY_TARGET ?? "http://localhost:3000",

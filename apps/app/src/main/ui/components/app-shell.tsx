@@ -586,7 +586,7 @@ function useTabBarItems(sections: NavSection[]): TabBarItem[] {
 
 function InnerPageLoader({ pathname }: { pathname: string }) {
   // One skeleton per screen, shaped like the content it stands in for
-  // (design.md §3.1).
+  // (design.md Section 3.1).
   return routeSkeleton(pathname);
 }
 
@@ -757,7 +757,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
         </a>
 
         {/* Desktop sidebar — pinned open it is a layout column; a collapsed
-            rail expands on hover as an overlay (design.md §4/§5). The aside
+            rail expands on hover as an overlay (design.md Section 4/Section 5). The aside
             itself carries no app-region: its brand row owns the window's
             top-left drag band (see the row below), and every row under it is
             ordinary clickable surface. */}
@@ -905,7 +905,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
           </div>
         </div>
 
-        {/* Phone bottom bar (§2.7.2) — frosted capsule above content; hidden
+        {/* Phone bottom bar (Section 2.7.2) — frosted capsule above content; hidden
             with the drawer, chrome-less routes, and on desktop. */}
         <TabBar
           items={tabBarItems}

@@ -8,7 +8,7 @@ import { cn } from "@kataria-syntex/shared";
 const Accordion = AccordionPrimitive.Root;
 
 /**
- * Pill ⇄ card morph (design.md §4.2): a closed item is a quiet row on the
+ * Pill ⇄ card morph (design.md Section 4.2): a closed item is a quiet row on the
  * page; opening grows it into a raised card. The surface (radius, border,
  * fill, shadow) rides `--ease-cinema` at `--dur-cinema` — the height
  * keyframes run the same curve, so the whole thing moves as one spring.

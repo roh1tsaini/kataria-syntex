@@ -61,7 +61,7 @@ function useMobileSheet() {
 }
 
 /**
- * Morphing dialog surface (design.md §5.1): the panel springs open —
+ * Morphing dialog surface (design.md Section 5.1): the panel springs open —
  * desktop scales 0.96→1 from center, ≤sm slides up as a bottom sheet — and
  * exits on the same path ~20% faster. The centering translate lives in the
  * CSS `translate` property (Tailwind classes), so motion's `transform`
@@ -147,7 +147,7 @@ export const DialogHeader = ({
   <div className={cn("flex flex-col gap-1.5", className)} {...props} />
 );
 
-/** Section-head type scale (§2.4) — Radix renders a bare `<h2>`, which
+/** Section-head type scale (Section 2.4) — Radix renders a bare `<h2>`, which
  * Tailwind's preflight resets to body text, so the size and weight live here
  * once instead of at every call site. */
 export const DialogTitle = React.forwardRef<
