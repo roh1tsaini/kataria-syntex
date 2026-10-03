@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wound-yarn shade studies — pick the next engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f3f0ea;
+        --panel: #fdfbf7;
+        --ink: #211c15;
+        --muted: #6f675a;
+        --line: #e3dccf;
+        --accent: #0f766e;
+        --shadow:
+          0 1px 2px rgb(33 28 21/0.05), 0 10px 26px -14px rgb(33 28 21/0.22);
+        --shadow-hover:
+          0 2px 4px rgb(33 28 21/0.06), 0 22px 44px -18px rgb(33 28 21/0.3);
+      }
+      [data-theme="dark"] {
+        --bg: #141110;
+        --panel: #1d1a16;
+        --ink: #ede7db;
+        --muted: #9d947f;
+        --line: #2e2a23;
+        --accent: #2dd4bf;
+        --shadow: 0 1px 2px rgb(0 0 0/0.35), 0 12px 30px -14px rgb(0 0 0/0.55);
+        --shadow-hover:
+          0 2px 4px rgb(0 0 0/0.4), 0 24px 48px -18px rgb(0 0 0/0.65);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .display {
+        font-family: "Space Grotesk", Inter, sans-serif;
+      }
+
+      /* ---------- header ---------- */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: color-mix(in srgb, var(--panel) 82%, transparent);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--line);
+      }
+      .bar {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 14px clamp(16px, 4vw, 48px);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+      .logo {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        flex: none;
+        background: repeating-linear-gradient(
+          180deg,
+          #ff7aa8 0 1.3px,
+          #e91e63 1.3px 2.7px,
+          #b81250 2.7px 4px,
+          #f06292 4px 5.4px
+        );
+        box-shadow:
+          inset 0 1px 1px rgb(255 255 255/0.35),
+          inset 0 -1px 2px rgb(0 0 0/0.3),
+          0 1px 2px rgb(0 0 0/0.15);
+      }
+      h1 {
+        font-size: 15.5px;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: 0.01em;
+      }
+      .sub {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
+      .spacer {
+        flex: 1;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        font:
+          500 11px/1 Inter,
+          sans-serif;
+        letter-spacing: 0.04em;
+        padding: 7px 12px;
+        border-radius: 99px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .chip.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .pick {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        color: var(--muted);
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        padding: 6px 10px;
+      }
+      .pick b {
+        color: var(--ink);
+        font-weight: 600;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+      }
+      .btn {
+        font:
+          500 11px/1 Inter,
+          sans-serif;
+        padding: 7px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      /* ---------- grid ---------- */
+      main {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 30px clamp(16px, 4vw, 48px) 60px;
+      }
+      .intro {
+        max-width: 660px;
+        margin-bottom: 26px;
+      }
+      .intro h2 {
+        font-size: clamp(22px, 3vw, 30px);
+        font-weight: 600;
+        margin: 0 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .intro p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.65;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(335px, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        transition:
+          transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
+          box-shadow 0.35s;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-hover);
+      }
+      .card.selected {
+        box-shadow:
+          0 0 0 2px var(--accent),
+          var(--shadow-hover);
+      }
+      @media (min-width: 900px) {
+        .card.wide {
+          grid-column: span 2;
+        }
+      }
+
+      .art {
+        position: relative;
+        height: 176px;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .art.auto {
+        height: auto;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .swatch {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        box-shadow:
+          inset 0 1px 1px rgb(255 255 255/0.2),
+          inset 0 -1px 2px rgb(10 25 40/0.28),
+          inset 3px 0 5px -2px rgb(0 0 0/0.24),
+          inset -3px 0 5px -2px rgb(0 0 0/0.24);
+      }
+      .sheen {
+        position: absolute;
+        inset: 16px;
+        border-radius: 12px;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        background: linear-gradient(
+          115deg,
+          transparent 42%,
+          rgb(255 255 255/0.45) 50%,
+          transparent 58%
+        );
+        background-size: 280% 100%;
+        background-position: 130% 0;
+        transition: background-position 1.15s ease;
+      }
+      .card:hover .sheen {
+        background-position: -80% 0;
+      }
+
+      .badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 700;
+        opacity: 0;
+        transform: scale(0.6);
+        transition: all 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+        box-shadow: 0 2px 8px rgb(0 0 0/0.25);
+      }
+      .card.selected .badge {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .meta {
+        padding: 14px 16px 16px;
+      }
+      .mrow {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .idx {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        flex: none;
+      }
+      .mrow h3 {
+        font-family: "Space Grotesk", Inter, sans-serif;
+        font-size: 15.5px;
+        font-weight: 600;
+        margin: 0;
+        flex: 1;
+        min-width: 0;
+      }
+      .hexchip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: none;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+      .hexchip i {
+        width: 11px;
+        height: 11px;
+        border-radius: 4px;
+        display: inline-block;
+        box-shadow: inset 0 0 0 1px rgb(0 0 0/0.12);
+      }
+      .spec {
+        margin-top: 7px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .note {
+        margin: 8px 0 0;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      /* denier scale rows */
+      .denrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 9px 0;
+      }
+      .denlab {
+        width: 58px;
+        flex: none;
+        text-align: right;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+      .denswatch {
+        flex: 1;
+        height: 36px;
+        border-radius: 8px;
+        box-shadow:
+          inset 0 1px 1px rgb(255 255 255/0.2),
+          inset 0 -1px 2px rgb(10 25 40/0.28),
+          inset 3px 0 5px -2px rgb(0 0 0/0.24),
+          inset -3px 0 5px -2px rgb(0 0 0/0.24);
+      }
+
+      /* cone study */
+      .cones {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+      }
+      .cones svg {
+        width: 47%;
+        max-width: 235px;
+        height: auto;
+        display: block;
+      }
+
+      /* full card run */
+      .cardrun {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        width: 100%;
+      }
+      .runitem {
+        flex: 1 1 40px;
+        min-width: 38px;
+      }
+      .runsw {
+        height: 64px;
+        border-radius: 7px;
+        box-shadow:
+          inset 0 1px 1px rgb(255 255 255/0.2),
+          inset 0 -1px 2px rgb(10 25 40/0.3),
+          inset 2px 0 4px -2px rgb(0 0 0/0.22),
+          inset -2px 0 4px -2px rgb(0 0 0/0.22);
+      }
+      .runcod {
+        display: block;
+        margin-top: 4px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 8.5px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 22px clamp(16px, 4vw, 48px);
+        text-align: center;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="bar">
+        <div class="brand">
+          <span class="logo" aria-hidden="true"></span>
+          <div>
+            <h1 class="display">Wound-yarn shade studies</h1>
+            <div class="sub">
+              14 renderings of one shade — pick the next YarnSwatch engine
+            </div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="chips" id="filters">
+          <button class="chip active" data-f="all">All</button>
+          <button class="chip" data-f="solid">Solid</button>
+          <button class="chip" data-f="multi">Multi-color</button>
+          <button class="chip" data-f="texture">Textured</button>
+          <button class="chip" data-f="form">Form studies</button>
+        </div>
+        <div class="pick">Pick&nbsp;<b id="pickName">none yet</b></div>
+        <button class="btn" id="copyPick">Copy id</button>
+        <button class="btn" id="themeBtn">Dark</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="intro">
+        <h2 class="display">
+          Every card below is a different way to wind the same idea.
+        </h2>
+        <p>
+          Today's shade swatch is wound yarn rendered in CSS — cylinder-lit
+          rows, ply twist, fiber grain. These are alternate engines for the same
+          component, built on real shade-card codes from the shared card. Click
+          a card to pick it; the pick lands in the header. Denier, palette and
+          form vary across the set.
+        </p>
+      </div>
+      <div class="grid" id="grid"></div>
+    </main>
+
+    <footer>
+      Throwaway compare page — deleted once a design is chosen. The winning
+      engine ports to apps/web/src/components/shade/woven.ts
+    </footer>
+
+    <script>
+      /* ================================================================
+   Utils — color, seeded RNG, thread walker (same math as the app)
+   ================================================================ */
+      function parseHex(hex) {
+        const raw = hex.replace("#", "").trim();
+        const full =
+          raw.length === 3
+            ? raw
+                .split("")
+                .map((c) => c + c)
+                .join("")
+            : raw;
+        const n = parseInt(full, 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+      const fmt = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+      const fmtA = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+      function shiftRgb(hex, amt) {
+        // amt>0 lightens toward white, <0 darkens
+        const c = parseHex(hex),
+          t = Math.abs(amt),
+          tgt = amt >= 0 ? 255 : 0;
+        return c.map((v) => Math.round(v + (tgt - v) * t));
+      }
+      function hashSeed(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 0x01000193);
+        }
+        return h >>> 0;
+      }
+      function mulberry32(seed) {
+        let a = seed >>> 0;
+        return () => {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      /* Continuous-thread walker — one thread carrying its palette in order. */
+      function threadRows(opts) {
+        const { paletteLength, rowWidths, baseLen, seed } = opts;
+        if (paletteLength <= 0 || baseLen <= 0) return rowWidths.map(() => []);
+        const rng = mulberry32(
+          typeof seed === "number" ? seed >>> 0 : hashSeed(seed),
+        );
+        const phase = rng() * baseLen;
+        const lengths = [];
+        const lengthAt = (j) => {
+          while (lengths.length <= j)
+            lengths.push(baseLen * (0.75 + 0.55 * rng()));
+          return lengths[j];
+        };
+        const boundaries = [0];
+        const ensure = (s) => {
+          while (boundaries[boundaries.length - 1] < s) {
+            const j = boundaries.length - 1;
+            boundaries.push(boundaries[j] + lengthAt(j));
+          }
+        };
+        let cursor = phase,
+          seg = 0;
+        ensure(cursor + 1);
+        while (boundaries[seg + 1] <= cursor) seg++;
+        return rowWidths.map((width) => {
+          if (width <= 0) return [];
+          const rowStart = cursor,
+            rowEnd = cursor + width;
+          cursor = rowEnd;
+          ensure(rowEnd + 1);
+          while (boundaries[seg + 1] <= rowStart) seg++;
+          const out = [];
+          let s = seg;
+          while (boundaries[s] < rowEnd) {
+            out.push({
+              x0: Math.max(boundaries[s], rowStart) - rowStart,
+              x1: Math.min(boundaries[s + 1], rowEnd) - rowStart,
+              colorIndex: s % paletteLength,
+            });
+            s++;
+          }
+          return out;
+        });
+      }
+      const svgURI = (svg) =>
+        `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+
+      /* Shared texture layers — same recipes as the live engine */
+      const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E")`;
+      const PROFILE = [
+        [0, 0.3],
+        [0.1, 0.22],
+        [0.36, 0],
+        [0.62, -0.1],
+        [0.85, -0.26],
+        [1, -0.38],
+      ];
+      const SOFT_PROFILE = [
+        [0, 0.24],
+        [0.14, 0.18],
+        [0.38, 0.02],
+        [0.64, -0.07],
+        [0.85, -0.18],
+        [1, -0.3],
+      ];
+      const RING_PROFILE = [
+        [0, -0.26],
+        [0.16, -0.12],
+        [0.5, 0.13],
+        [0.84, -0.12],
+        [1, -0.26],
+      ];
+      const ROW_JITTER = [
+        0.05, -0.03, 0.015, -0.055, 0.03, -0.02, 0.04, -0.015,
+      ];
+      const TWIST =
+        "repeating-linear-gradient(171deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 3px, rgba(255,255,255,0) 4px, rgba(255,255,255,0) 7px)";
+      const TWIST_SOFT =
+        "repeating-linear-gradient(173deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 3px, rgba(255,255,255,0) 4px, rgba(255,255,255,0) 8px)";
+      const DRIFT =
+        "repeating-linear-gradient(178deg, rgba(255,255,255,0.05) 0px, rgba(0,0,0,0) 30px, rgba(0,0,0,0.05) 64px, rgba(0,0,0,0) 92px, rgba(255,255,255,0.05) 120px)";
+      const DRIFT_LONG =
+        "repeating-linear-gradient(178deg, rgba(255,255,255,0.05) 0px, rgba(0,0,0,0) 44px, rgba(0,0,0,0.05) 92px, rgba(0,0,0,0) 138px, rgba(255,255,255,0.05) 182px, rgba(0,0,0,0) 216px)";
+
+      /* Cylinder shading across strands of one color. Strand angle in CSS deg (0 = horizontal). */
+      function strandShading(hex, rowHeight, profile, jitters, opts = {}) {
+        const angle = opts.angle ?? 0;
+        const period = rowHeight * Math.cos((angle * Math.PI) / 180);
+        const alpha = opts.alpha ?? 1;
+        const stops = [];
+        jitters.forEach((j, row) =>
+          profile.forEach(([f, amt]) => {
+            stops.push(
+              `${fmtA(shiftRgb(hex, amt + j), alpha)} ${(row * period + f * period).toFixed(2)}px`,
+            );
+          }),
+        );
+        return `repeating-linear-gradient(${angle}deg, ${stops.join(", ")})`;
+      }
+      /* White/black light overlay for tiles that already carry their own color */
+      function lightShading(rowHeight, profile, jitters, opts = {}) {
+        const angle = opts.angle ?? 0;
+        const period = rowHeight * Math.cos((angle * Math.PI) / 180);
+        const js = opts.jitterScale ?? 1;
+        const stops = [];
+        jitters.forEach((j, row) =>
+          profile.forEach(([f, amt]) => {
+            const v = Math.max(-0.85, Math.min(0.85, amt + j * js));
+            stops.push(
+              `${v >= 0 ? `rgba(255,255,255,${v.toFixed(3)})` : `rgba(0,0,0,${(-v).toFixed(3)})`} ${(row * period + f * period).toFixed(2)}px`,
+            );
+          }),
+        );
+        return `repeating-linear-gradient(${angle}deg, ${stops.join(", ")})`;
+      }
+      /* Solid wound swatch CSS — today's recipe, parametrized */
+      function solidWound(hex, rowHeight, opts = {}) {
+        const layers = [
+          GRAIN,
+          opts.drift ?? DRIFT,
+          opts.twist ?? TWIST,
+          strandShading(
+            hex,
+            rowHeight,
+            opts.profile ?? PROFILE,
+            opts.jitters ?? ROW_JITTER,
+            { angle: opts.angle ?? 0 },
+          ),
+        ];
+        return {
+          backgroundColor: hex,
+          backgroundImage: layers.join(", "),
+          backgroundBlendMode: "overlay, normal, normal, normal",
+        };
+      }
+      /* Melange tile — one continuous thread, palette in order, seeded */
+      function melangeTile(colors, rowHeight, rows, baseLen, seed) {
+        const W = 240,
+          H = rows * rowHeight;
+        const segs = threadRows({
+          paletteLength: colors.length,
+          rowWidths: Array(rows).fill(W),
+          baseLen,
+          seed,
+        });
+        const rng = mulberry32(hashSeed(seed + "|shade"));
+        let rects = "";
+        segs.forEach((list, row) => {
+          const y = (row * rowHeight).toFixed(2);
+          list.forEach((s) => {
+            const c = shiftRgb(
+              colors[s.colorIndex % colors.length],
+              (rng() - 0.5) * 0.08,
+            );
+            rects += `<rect x='${s.x0.toFixed(2)}' y='${y}' width='${(s.x1 - s.x0 + 0.6).toFixed(2)}' height='${(rowHeight + 0.6).toFixed(2)}' fill='${fmt(c)}'/>`;
+          });
+        });
+        return svgURI(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}'>${rects}</svg>`,
+        );
+      }
+      function melangeWound(colors, rowHeight, baseLen, seed) {
+        return {
+          backgroundColor: colors[0],
+          backgroundImage: [
+            GRAIN,
+            DRIFT,
+            TWIST,
+            lightShading(rowHeight, PROFILE, ROW_JITTER, { jitterScale: 0.6 }),
+            melangeTile(colors, rowHeight, 40, baseLen, seed),
+          ].join(", "),
+          backgroundBlendMode: "overlay, normal, normal, normal, normal",
+        };
+      }
+      /* Slub tile — undyed cotton: variable strand heights, slub knots, stray fibers */
+      function slubTile(seed) {
+        const W = 240,
+          H = 300,
+          base = "#E7DCC4";
+        const rng = mulberry32(hashSeed(seed));
+        let y = 2,
+          shapes = "";
+        while (y < H - 4) {
+          const h = 6.5 * (0.7 + rng() * 0.7);
+          const c = fmt(shiftRgb(base, (rng() - 0.5) * 0.06));
+          shapes += `<rect x='-2' y='${y.toFixed(1)}' width='${W + 4}' height='${h.toFixed(1)}' fill='${c}'/>`;
+          shapes += `<rect x='-2' y='${y.toFixed(1)}' width='${W + 4}' height='${h.toFixed(1)}' fill='url(#cylS)'/>`;
+          if (rng() < 0.16) {
+            const bx = rng() * W,
+              bw = 9 + rng() * 20,
+              bh = h * (1.3 + rng() * 0.9);
+            shapes += `<ellipse cx='${bx.toFixed(1)}' cy='${(y + h / 2).toFixed(1)}' rx='${bw.toFixed(1)}' ry='${bh.toFixed(1)}' fill='${fmt(shiftRgb(base, -0.09))}'/>`;
+            shapes += `<ellipse cx='${bx.toFixed(1)}' cy='${(y + h / 2).toFixed(1)}' rx='${bw.toFixed(1)}' ry='${bh.toFixed(1)}' fill='url(#cylS)'/>`;
+          }
+          y += h + 0.4;
+        }
+        for (let i = 0; i < 26; i++) {
+          const fx = rng() * W,
+            fy = rng() * H,
+            len = 4 + rng() * 10;
+          shapes += `<line x1='${fx.toFixed(1)}' y1='${fy.toFixed(1)}' x2='${(fx + len).toFixed(1)}' y2='${(fy + (rng() - 0.5) * 3).toFixed(1)}' stroke='${fmt(shiftRgb(base, -0.12))}' stroke-width='0.7' opacity='0.5'/>`;
+        }
+        return svgURI(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}'>` +
+            `<defs><linearGradient id='cylS' x1='0' y1='0' x2='0' y2='1'>` +
+            `<stop offset='0' stop-color='#ffffff' stop-opacity='.28'/><stop offset='.35' stop-color='#ffffff' stop-opacity='.02'/>` +
+            `<stop offset='.7' stop-color='#000000' stop-opacity='.08'/><stop offset='1' stop-color='#000000' stop-opacity='.30'/>` +
+            `</linearGradient></defs>${shapes}</svg>`,
+        );
+      }
+      /* Fleck tile — heather: base shade flecked with neighbour tones */
+      function fleckTile(baseHex, flecks, seed) {
+        const W = 240,
+          H = 260;
+        const rng = mulberry32(hashSeed(seed));
+        let dots = "";
+        for (let i = 0; i < 340; i++) {
+          const c = flecks[i % flecks.length];
+          dots += `<circle cx='${(rng() * W).toFixed(1)}' cy='${(rng() * H).toFixed(1)}' r='${(0.7 + rng() * 1.6).toFixed(2)}' fill='${fmt(shiftRgb(c, (rng() - 0.5) * 0.1))}' opacity='${(0.45 + rng() * 0.5).toFixed(2)}'/>`;
+        }
+        for (let i = 0; i < 42; i++) {
+          const fx = rng() * W,
+            fy = rng() * H,
+            len = 3 + rng() * 5;
+          const c = flecks[i % flecks.length];
+          dots += `<line x1='${fx.toFixed(1)}' y1='${fy.toFixed(1)}' x2='${(fx + len).toFixed(1)}' y2='${fy.toFixed(1)}' stroke='${fmt(c)}' stroke-width='1' opacity='${(0.3 + rng() * 0.4).toFixed(2)}'/>`;
+        }
+        return svgURI(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}'><rect width='${W}' height='${H}' fill='${baseHex}'/>${dots}</svg>`,
+        );
+      }
+      /* Halo tile — texturized DTY: every strand carries a soft halo */
+      function haloTile(hex, seed) {
+        const W = 240,
+          H = 280;
+        const rng = mulberry32(hashSeed(seed));
+        let y = 0,
+          shapes = "";
+        while (y < H) {
+          const h = 13 * (0.8 + rng() * 0.5);
+          const jx = ((rng() - 0.5) * 5).toFixed(1);
+          shapes += `<rect x='${jx}' y='${y.toFixed(1)}' width='${W}' height='${h.toFixed(1)}' rx='${(h / 2).toFixed(1)}' fill='${fmt(shiftRgb(hex, -0.06))}' filter='url(#haloB)' opacity='0.9'/>`;
+          shapes += `<rect x='${jx}' y='${(y + h * 0.28).toFixed(1)}' width='${W}' height='${(h * 0.44).toFixed(1)}' rx='${(h * 0.22).toFixed(1)}' fill='${fmt(shiftRgb(hex, 0.1))}' filter='url(#haloC)' opacity='0.95'/>`;
+          y += h * 0.82;
+        }
+        return svgURI(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}'>` +
+            `<defs><filter id='haloB' x='-20%' y='-40%' width='140%' height='180%'><feGaussianBlur stdDeviation='2.2'/></filter>` +
+            `<filter id='haloC' x='-20%' y='-40%' width='140%' height='180%'><feGaussianBlur stdDeviation='0.7'/></filter></defs>${shapes}</svg>`,
+        );
+      }
+      /* Barber twist — two plies at an angle, each shaded like its own cylinder */
+      function barberShading(hexA, hexB, stripeW, angleDeg) {
+        const period = 2 * stripeW;
+        const stops = [];
+        PROFILE.forEach(([f, amt]) =>
+          stops.push(
+            `${fmt(shiftRgb(hexA, amt))} ${(f * stripeW).toFixed(2)}px`,
+          ),
+        );
+        PROFILE.forEach(([f, amt]) =>
+          stops.push(
+            `${fmt(shiftRgb(hexB, amt))} ${(stripeW + f * stripeW).toFixed(2)}px`,
+          ),
+        );
+        return `repeating-linear-gradient(${angleDeg}deg, ${stops.join(", ")})`;
+      }
+      /* Cross-wound cone — the physical package, as inline SVG */
+      function coneSVG(colors, seed, opts = {}) {
+        const uid = seed.replace(/[^a-z0-9]/gi, "");
+        const rng = mulberry32(hashSeed(seed));
+        const cx = 160,
+          topY = 64,
+          botY = 248,
+          topW = 96,
+          botW = 244;
+        const wind = opts.wind ?? 31,
+          gap = opts.gap ?? 8.5,
+          baseW = opts.lineWidth ?? 5.4;
+        const cy = (topY + botY) / 2;
+        const path =
+          `M ${cx - botW / 2} ${botY}` +
+          ` C ${cx - botW / 2 + 14} 192 ${cx - topW / 2 - 16} 126 ${cx - topW / 2} ${topY}` +
+          ` L ${cx + topW / 2} ${topY}` +
+          ` C ${cx + topW / 2 + 16} 126 ${cx + botW / 2 - 14} 192 ${cx + botW / 2} ${botY}` +
+          ` Q ${cx} ${botY + 13} ${cx - botW / 2} ${botY} Z`;
+        const solid = colors.length === 1;
+        const base = solid ? colors[0] : colors[0];
+        let lines = "",
+          i = 0;
+        [wind, -wind].forEach((deg) => {
+          const rad = (deg * Math.PI) / 180;
+          const dir = { x: Math.cos(rad), y: Math.sin(rad) };
+          const n = { x: -Math.sin(rad), y: Math.cos(rad) };
+          for (let o = -260; o <= 260; o += gap) {
+            const col = solid
+              ? shiftRgb(colors[0], ((i % 4) - 1.5) * 0.045)
+              : colors[i % colors.length];
+            const w = baseW * (0.9 + rng() * 0.25);
+            lines +=
+              `<line x1='${(cx + n.x * o - dir.x * 420).toFixed(1)}' y1='${(cy + n.y * o - dir.y * 420).toFixed(1)}'` +
+              ` x2='${(cx + n.x * o + dir.x * 420).toFixed(1)}' y2='${(cy + n.y * o + dir.y * 420).toFixed(1)}'` +
+              ` stroke='${fmt(col)}' stroke-width='${w.toFixed(2)}' opacity='0.96'/>`;
+            i++;
+          }
+        });
+        return (
+          `<svg viewBox='0 0 320 300' role='img' aria-label='Cross-wound yarn cone'>` +
+          `<defs>` +
+          `<linearGradient id='vol${uid}' x1='0' y1='0' x2='1' y2='0'>` +
+          `<stop offset='0' stop-color='#ffffff' stop-opacity='.34'/><stop offset='.16' stop-color='#ffffff' stop-opacity='.14'/>` +
+          `<stop offset='.4' stop-color='#ffffff' stop-opacity='0'/><stop offset='.7' stop-color='#000000' stop-opacity='.08'/>` +
+          `<stop offset='.88' stop-color='#000000' stop-opacity='.24'/><stop offset='1' stop-color='#000000' stop-opacity='.40'/></linearGradient>` +
+          `<linearGradient id='vtop${uid}' x1='0' y1='0' x2='0' y2='1'>` +
+          `<stop offset='0' stop-color='#ffffff' stop-opacity='.16'/><stop offset='.5' stop-color='#ffffff' stop-opacity='0'/>` +
+          `<stop offset='1' stop-color='#000000' stop-opacity='.18'/></linearGradient>` +
+          `<filter id='soft${uid}' x='-40%' y='-40%' width='180%' height='180%'><feGaussianBlur stdDeviation='7'/></filter>` +
+          `<filter id='soft2${uid}' x='-40%' y='-40%' width='180%' height='180%'><feGaussianBlur stdDeviation='10'/></filter>` +
+          `<clipPath id='clip${uid}'><path d='${path}'/></clipPath>` +
+          `</defs>` +
+          `<ellipse cx='${cx}' cy='${botY + 15}' rx='138' ry='12' fill='#000000' opacity='.22' filter='url(#soft2${uid})'/>` +
+          `<path d='${path}' fill='${fmt(shiftRgb(base, -0.12))}'/>` +
+          `<g clip-path='url(#clip${uid})'>${lines}` +
+          `<rect x='${cx - botW / 2}' y='${topY - 24}' width='${botW}' height='${botY - topY + 48}' fill='url(#vol${uid})'/>` +
+          `<rect x='${cx - botW / 2}' y='${topY - 24}' width='${botW}' height='${botY - topY + 48}' fill='url(#vtop${uid})'/>` +
+          `</g>` +
+          `<ellipse cx='${cx - 56}' cy='${cy - 6}' rx='17' ry='62' fill='#ffffff' opacity='.28' filter='url(#soft${uid})' transform='rotate(-16 ${cx - 56} ${cy - 6})'/>` +
+          `<ellipse cx='${cx}' cy='${topY}' rx='${topW / 2}' ry='11' fill='${fmt(shiftRgb(base, -0.22))}' opacity='.85'/>` +
+          `<ellipse cx='${cx}' cy='${topY - 1}' rx='${topW / 2 - 8}' ry='7' fill='${fmt(shiftRgb(base, 0.05))}' opacity='.5'/>` +
+          `<path d='${path}' fill='none' stroke='#000000' stroke-opacity='.18' stroke-width='1'/>` +
+          `</svg>`
+        );
+      }
+      /* ================================================================
+   The 14 studies
+   ================================================================ */
+      const PAGE7 = [
+        ["57", "#FFA500"],
+        ["58", "#FFD700"],
+        ["59", "#FFEB3B"],
+        ["60LL", "#B2EBF2"],
+        ["60L", "#80DEEA"],
+        ["60", "#4DD0E1"],
+        ["61", "#26C6DA"],
+        ["62", "#00ACC1"],
+        ["63", "#00838F"],
+        ["64", "#006064"],
+        ["64R", "#7B1F3A"],
+        ["60NL", "#F8BBD0"],
+        ["60N", "#F48FB1"],
+        ["61N", "#EC407A"],
+        ["62N", "#009688"],
+        ["63N", "#00796B"],
+        ["65", "#E91E63"],
+        ["66", "#C2185B"],
+        ["67", "#00695C"],
+        ["68", "#004D40"],
+        ["69NL", "#A5D6A7"],
+        ["69N", "#81C784"],
+        ["69ND", "#66BB6A"],
+        ["69LL", "#C8E6C9"],
+        ["69L", "#E8F5E9"],
+      ];
+
+      const VARIANTS = [
+        {
+          id: "00",
+          cat: "solid",
+          name: "Current — wound rows",
+          code: "65",
+          hex: "#E91E63",
+          spec: "Shade 65 · E91E63 · 150D DTY",
+          note: "The engine live on the site today — cylinder rows, ply-twist hairlines, fiber grain. Reference point for everything below.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            Object.assign(s.style, solidWound("#E91E63", 9));
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "01",
+          cat: "solid",
+          name: "Deep Wind",
+          code: "66",
+          hex: "#C2185B",
+          spec: "Shade 66 · C2185B · 150D DTY",
+          note: "Taller strands, wider crown light, softer press groove. Longer drift so the field never repeats machine-perfectly.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            Object.assign(
+              s.style,
+              solidWound("#C2185B", 13, {
+                profile: SOFT_PROFILE,
+                twist: TWIST_SOFT,
+                drift: DRIFT_LONG,
+              }),
+            );
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "02",
+          cat: "solid",
+          name: "Crosswind",
+          code: "71D",
+          hex: "#1B5E20",
+          spec: "Shade 71D · 1B5E20 · 300D cone",
+          note: "Two strand families at ±11° — the X-wind of a real cross-wound cone, flattened onto the card.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            const famA = strandShading("#1B5E20", 12, PROFILE, ROW_JITTER, {
+              angle: 11,
+            });
+            const famB = strandShading("#1B5E20", 12, PROFILE, ROW_JITTER, {
+              angle: -11,
+              alpha: 0.5,
+            });
+            s.style.backgroundColor = "#1B5E20";
+            s.style.backgroundImage = [GRAIN, DRIFT, TWIST, famB, famA].join(
+              ", ",
+            );
+            s.style.backgroundBlendMode =
+              "overlay, normal, normal, normal, normal";
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "03",
+          cat: "form",
+          name: "Denier Scale",
+          wide: true,
+          code: "60",
+          hex: "#4DD0E1",
+          spec: "Shade 60 · 4DD0E1 · 50 / 150 / 400 / 1200D",
+          note: "One shade across four deniers. Strand height scales with denier — 5px at 50D reads like silk, 28px at 1200D reads like rope.",
+          render(art) {
+            const rows = [
+              ["50D", 5, 0.5],
+              ["150D", 9, 1.0],
+              ["400D", 16, 1.4],
+              ["1200D", 28, 2.0],
+            ];
+            rows.forEach(([lab, rh, scale]) => {
+              const row = document.createElement("div");
+              row.className = "denrow";
+              const labEl = document.createElement("span");
+              labEl.className = "denlab";
+              labEl.textContent = lab;
+              const sw = document.createElement("div");
+              sw.className = "denswatch";
+              Object.assign(
+                sw.style,
+                solidWound("#4DD0E1", rh, {
+                  jitters: ROW_JITTER.map((j) => j * scale),
+                  profile: scale > 1.5 ? SOFT_PROFILE : PROFILE,
+                }),
+              );
+              row.append(labEl, sw);
+              art.appendChild(row);
+            });
+          },
+        },
+        {
+          id: "04",
+          cat: "solid",
+          name: "Dye-Bath Ombré",
+          code: "60→64",
+          hex: "#4DD0E1",
+          dotCss: "linear-gradient(135deg,#4DD0E1,#006064)",
+          spec: "Shades 60 → 64 · ombré · 200D",
+          note: "A single dye-bath gradient — light crown to deep base — with the same wound rows riding over it.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            s.style.backgroundColor = "#4DD0E1";
+            s.style.backgroundImage = [
+              GRAIN,
+              DRIFT,
+              TWIST,
+              lightShading(11, PROFILE, ROW_JITTER),
+              "linear-gradient(180deg,#4DD0E1 0%,#00ACC1 48%,#00838F 78%,#006064 100%)",
+            ].join(", ");
+            s.style.backgroundBlendMode =
+              "overlay, normal, normal, normal, normal";
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "05",
+          cat: "multi",
+          name: "Space-Dyed Thread",
+          code: "88LD",
+          hex: "#880E4F",
+          spec: "Shade 88LD · space-dyed · 180D",
+          note: "One continuous thread carrying four purples in order. Segment lengths are seeded; the palette order never breaks.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            Object.assign(
+              s.style,
+              melangeWound(
+                ["#880E4F", "#9C27B0", "#7B1FA2", "#4A148C"],
+                12,
+                46,
+                "88LD",
+              ),
+            );
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "06",
+          cat: "texture",
+          name: "Handspun Slub",
+          code: "Nat",
+          hex: "#E7DCC4",
+          spec: "Natural · undyed · Ne 20 ring-spun",
+          note: "Undyed cotton with slub knots and stray fibers — thick-thin irregularities, no two rows alike.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            s.style.backgroundColor = "#E7DCC4";
+            s.style.backgroundImage = [
+              GRAIN,
+              DRIFT_LONG,
+              slubTile("slub-natural"),
+            ].join(", ");
+            s.style.backgroundBlendMode = "overlay, normal, normal";
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "07",
+          cat: "solid",
+          name: "Silk Lustre",
+          code: "67",
+          hex: "#00695C",
+          spec: "Shade 67 · 00695C · 75D filament",
+          note: "Fine filament rows under a broad specular band. Hover the card to sweep the sheen across the wind.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            Object.assign(
+              s.style,
+              solidWound("#00695C", 7, { drift: DRIFT_LONG }),
+            );
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "08",
+          cat: "form",
+          name: "Cone Study",
+          wide: true,
+          code: "71D + 69ND",
+          hex: "#1B5E20",
+          dotCss: "linear-gradient(135deg,#1B5E20,#AED581)",
+          spec: "71D solid + 69ND melange · cross-wound cone",
+          note: "The physical package — cross-wound cone, volume-lit, floor shadow. Hero-grade art for the yarn pages.",
+          render(art) {
+            const wrap = document.createElement("div");
+            wrap.className = "cones";
+            wrap.innerHTML =
+              coneSVG(["#1B5E20"], "cone-solid-71D") +
+              coneSVG(["#66BB6A", "#AED581", "#C8E6C9"], "cone-melange-69ND");
+            art.appendChild(wrap);
+          },
+        },
+        {
+          id: "09",
+          cat: "multi",
+          name: "Heather Fleck",
+          code: "93N",
+          hex: "#546E7A",
+          spec: "Shade 93N · 546E7A · 100D heather",
+          note: "A base shade flecked with two neighbour tones — the heather look on a melange base.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            s.style.backgroundColor = "#546E7A";
+            s.style.backgroundImage = [
+              GRAIN,
+              DRIFT,
+              lightShading(8, PROFILE, ROW_JITTER, { jitterScale: 0.5 }),
+              fleckTile("#546E7A", ["#B0BEC5", "#37474F"], "heather-93N"),
+            ].join(", ");
+            s.style.backgroundBlendMode = "overlay, normal, normal, normal";
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "10",
+          cat: "multi",
+          name: "Z-Twist Two-Ply",
+          code: "97L/98L",
+          hex: "#EF5350",
+          dotCss: "linear-gradient(135deg,#EF5350,#FFCDD2)",
+          spec: "Shades 97L / 98L · two-ply · 120D",
+          note: "Two plies twisted at 38°, each shaded like its own cylinder — the barber-pole wind.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            s.style.backgroundColor = "#EF5350";
+            s.style.backgroundImage = [
+              GRAIN,
+              DRIFT,
+              "repeating-linear-gradient(30deg, rgba(255,255,255,0.05) 0px, rgba(0,0,0,0.04) 2px, rgba(255,255,255,0) 5px)",
+              barberShading("#EF5350", "#FFCDD2", 11, 38),
+            ].join(", ");
+            s.style.backgroundBlendMode = "overlay, normal, normal, normal";
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "11",
+          cat: "texture",
+          name: "Textured Halo",
+          code: "96",
+          hex: "#FF9800",
+          spec: "Shade 96 · FF9800 · 300D texturized",
+          note: "Texturized DTY bulk — every strand carries a soft halo, edges fuzzy like real bulked yarn.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            s.style.backgroundColor = "#FF9800";
+            s.style.backgroundImage = [
+              GRAIN,
+              DRIFT,
+              haloTile("#FF9800", "halo-96"),
+            ].join(", ");
+            s.style.backgroundBlendMode = "overlay, normal, normal";
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "12",
+          cat: "solid",
+          name: "Ring-Dyed Indigo",
+          code: "88",
+          hex: "#1A237E",
+          spec: "Shade 88 · 1A237E · ring-dyed · 250D",
+          note: "Ring-dyed indigo — dye sits at the rim while the core stays light. Dark edges, light heart.",
+          render(art) {
+            const s = document.createElement("div");
+            s.className = "swatch";
+            Object.assign(
+              s.style,
+              solidWound("#1A237E", 10, {
+                profile: RING_PROFILE,
+                drift: DRIFT_LONG,
+              }),
+            );
+            art.appendChild(s);
+          },
+        },
+        {
+          id: "13",
+          cat: "multi",
+          name: "Full Card Run",
+          wide: true,
+          code: "p.7",
+          hex: "#FFA500",
+          dotCss:
+            "linear-gradient(90deg,#FFA500,#FFEB3B,#B2EBF2,#EC407A,#43A047,#1A237E)",
+          spec: "Card page 7 · 25 shades · 150D",
+          note: "Card page 7 wound edge to edge — the texture at full-spectrum scale, every code legible.",
+          render(art) {
+            const run = document.createElement("div");
+            run.className = "cardrun";
+            PAGE7.forEach(([code, hex]) => {
+              const item = document.createElement("div");
+              item.className = "runitem";
+              const sw = document.createElement("div");
+              sw.className = "runsw";
+              Object.assign(sw.style, solidWound(hex, 5));
+              const cod = document.createElement("span");
+              cod.className = "runcod";
+              cod.textContent = code;
+              item.append(sw, cod);
+              run.appendChild(item);
+            });
+            art.appendChild(run);
+          },
+        },
+      ];
+      /* ================================================================
+   Build the grid
+   ================================================================ */
+      const grid = document.getElementById("grid");
+      const pickName = document.getElementById("pickName");
+      let selected = null;
+
+      VARIANTS.forEach((v) => {
+        const card = document.createElement("article");
+        card.className = "card" + (v.wide ? " wide" : "");
+        card.dataset.id = v.id;
+        card.dataset.cat = v.cat;
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", `Select variant ${v.id}, ${v.name}`);
+
+        const art = document.createElement("div");
+        art.className = "art";
+        v.render(art);
+        if (v.id === "03" || v.id === "08" || v.id === "13") {
+          art.classList.add("auto");
+        }
+        if (v.id === "07") {
+          const sheen = document.createElement("div");
+          sheen.className = "sheen";
+          art.appendChild(sheen);
+        }
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        badge.textContent = "✓";
+        art.appendChild(badge);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const dotCss = v.dotCss || v.hex;
+        meta.innerHTML =
+          `<div class="mrow"><span class="idx">${v.id}</span><h3>${v.name}</h3>` +
+          `<span class="hexchip"><i style="background:${dotCss}"></i>${v.code}</span></div>` +
+          `<div class="spec">${v.spec}</div><p class="note">${v.note}</p>`;
+
+        card.append(art, meta);
+
+        const select = () => {
+          if (selected === card) {
+            card.classList.remove("selected");
+            selected = null;
+            pickName.textContent = "none yet";
+            return;
+          }
+          document
+            .querySelectorAll(".card.selected")
+            .forEach((c) => c.classList.remove("selected"));
+          card.classList.add("selected");
+          selected = card;
+          pickName.textContent = `${v.id} · ${v.name}`;
+        };
+        card.addEventListener("click", select);
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            select();
+          }
+        });
+
+        grid.appendChild(card);
+      });
+
+      /* ---------- filters ---------- */
+      document.getElementById("filters").addEventListener("click", (e) => {
+        const btn = e.target.closest(".chip");
+        if (!btn) return;
+        document
+          .querySelectorAll("#filters .chip")
+          .forEach((c) => c.classList.remove("active"));
+        btn.classList.add("active");
+        const f = btn.dataset.f;
+        document.querySelectorAll(".card").forEach((card) => {
+          card.style.display =
+            f === "all" || card.dataset.cat === f ? "" : "none";
+        });
+      });
+
+      /* ---------- pick copy ---------- */
+      document
+        .getElementById("copyPick")
+        .addEventListener("click", async () => {
+          if (!selected) return;
+          const text = selected.dataset.id;
+          try {
+            await navigator.clipboard.writeText(text);
+            pickName.textContent = `${text} copied`;
+          } catch {
+            pickName.textContent = text;
+          }
+        });
+
+      /* ---------- theme ---------- */
+      const themeBtn = document.getElementById("themeBtn");
+      function applyTheme(t) {
+        document.documentElement.dataset.theme = t;
+        themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+        try {
+          localStorage.setItem("ling-theme", t);
+        } catch {}
+      }
+      themeBtn.addEventListener("click", () => {
+        applyTheme(
+          document.documentElement.dataset.theme === "dark" ? "light" : "dark",
+        );
+      });
+      (function initTheme() {
+        let t = null;
+        try {
+          t = localStorage.getItem("ling-theme");
+        } catch {}
+        if (!t)
+          t = window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        applyTheme(t);
+      })();
+    </script>
+  </body>
+</html>

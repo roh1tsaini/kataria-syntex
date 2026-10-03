@@ -1,0 +1,2337 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kataria Syntex — Wound Yarn Shade Card Exploration</title>
+    <style>
+      :root {
+        --bg-primary: #0a0d14;
+        --bg-surface: #121722;
+        --bg-surface-elevated: #1a2232;
+        --bg-card-paper: #f4efe6;
+        --text-primary: #f0f4fc;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.16);
+        --accent: #2563eb;
+        --accent-glow: rgba(37, 99, 235, 0.35);
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --font-sans:
+          system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Inter", sans-serif;
+        --font-mono:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+        /* Active swatch parameters */
+        --active-hex: #006064;
+        --active-hex-alt: #ffa500;
+        --active-row-height: 9px;
+        --light-x: 50%;
+        --light-y: 25%;
+      }
+
+      [data-theme="light"] {
+        --bg-primary: #f8fafc;
+        --bg-surface: #ffffff;
+        --bg-surface-elevated: #f1f5f9;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 80px;
+      }
+
+      /* Header & Controls Bar */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(10, 13, 20, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--border-subtle);
+        padding: 16px 24px;
+      }
+      [data-theme="light"] header {
+        background: rgba(255, 255, 255, 0.88);
+      }
+
+      .header-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .brand-group h1 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand-group h1 span.badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 3px 8px;
+        background: rgba(37, 99, 235, 0.18);
+        color: #60a5fa;
+        border: 1px solid rgba(37, 99, 235, 0.35);
+        border-radius: 9999px;
+        font-weight: 600;
+      }
+      .brand-group p {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
+
+      /* Global Toolbar */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .control-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        border-radius: var(--radius-sm);
+      }
+
+      .control-item label {
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+      }
+
+      select,
+      button,
+      input[type="color"] {
+        background: var(--bg-surface-elevated);
+        color: var(--text-primary);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        padding: 4px 8px;
+        font-family: inherit;
+        font-size: 0.8rem;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.15s ease;
+      }
+
+      select:hover,
+      button:hover {
+        border-color: var(--border-strong);
+      }
+
+      button.btn-primary {
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        font-weight: 500;
+      }
+      button.btn-primary:hover {
+        background: #1d4ed8;
+      }
+
+      .color-swatch-btn {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        display: inline-block;
+        vertical-align: middle;
+        transition: transform 0.15s;
+      }
+      .color-swatch-btn:hover {
+        transform: scale(1.2);
+      }
+      .color-swatch-btn.active {
+        box-shadow: 0 0 0 2px var(--accent);
+      }
+
+      /* Main Container */
+      main {
+        max-width: 1400px;
+        margin: 32px auto 0;
+        padding: 0 24px;
+      }
+
+      /* Overview Banner */
+      .overview-card {
+        background: linear-gradient(
+          145deg,
+          var(--bg-surface),
+          var(--bg-surface-elevated)
+        );
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        padding: 24px 28px;
+        margin-bottom: 32px;
+        display: grid;
+        grid-template-columns: 2fr 1.2fr;
+        gap: 28px;
+        align-items: center;
+      }
+
+      @media (max-width: 900px) {
+        .overview-card {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .overview-text h2 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin-bottom: 8px;
+      }
+      .overview-text p {
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 12px;
+      }
+      .physics-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .physics-tag {
+        font-size: 0.72rem;
+        font-family: var(--font-mono);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-subtle);
+        padding: 3px 8px;
+        border-radius: 4px;
+        color: #93c5fd;
+      }
+
+      .interactive-hint {
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px dashed rgba(37, 99, 235, 0.3);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+      }
+      .interactive-hint strong {
+        color: #60a5fa;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* Showcase Grid */
+      .grid-section-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .grid-section-title span.count {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+
+      .swatch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+        gap: 24px;
+        margin-bottom: 48px;
+      }
+
+      @media (max-width: 500px) {
+        .swatch-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Swatch Card */
+      .swatch-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: relative;
+        transition:
+          transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+          border-color 0.2s;
+      }
+      .swatch-card:hover {
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.4);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .card-title-group h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card-title-group h3 span.num {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+      .card-title-group p.sub {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
+
+      .card-badges {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .badge-denier {
+        font-size: 0.68rem;
+        font-family: var(--font-mono);
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+      }
+      .badge-luster {
+        font-size: 0.68rem;
+        font-family: var(--font-mono);
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+      }
+
+      /* Swatch Stage Container */
+      .swatch-stage-wrapper {
+        position: relative;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        background: #06090e;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      [data-theme="light"] .swatch-stage-wrapper {
+        background: #e2e8f0;
+      }
+
+      /* Swatch Shells (Simulating Shade Card Mount) */
+      .shade-card-mount {
+        background: #ece7de;
+        border-radius: 8px;
+        padding: 12px 14px 10px;
+        box-shadow:
+          0 4px 16px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        width: 100%;
+        max-width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        color: #1e293b;
+        position: relative;
+      }
+      .shade-card-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #475569;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .shade-card-label span.code {
+        font-family: var(--font-mono);
+        color: #0f172a;
+        font-weight: 700;
+      }
+
+      /* Target Swatch Element */
+      .yarn-swatch-box {
+        width: 100%;
+        height: 84px;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+        cursor: crosshair;
+        transition: height 0.2s ease;
+      }
+
+      /* Magnifier Loupe */
+      .magnifier-lens {
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.5),
+          inset 0 0 12px rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+        display: none;
+        z-index: 50;
+        overflow: hidden;
+        transform: translate(-50%, -50%);
+        background-repeat: no-repeat;
+      }
+
+      /* Card Details & Explanations */
+      .card-details {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+      .card-details ul {
+        list-style-type: none;
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .card-details li {
+        position: relative;
+        padding-left: 14px;
+        font-size: 0.76rem;
+      }
+      .card-details li::before {
+        content: "•";
+        position: absolute;
+        left: 2px;
+        color: #38bdf8;
+      }
+
+      /* Card Action Footer */
+      .card-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .copy-btn {
+        font-size: 0.74rem;
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .copy-btn:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .copy-btn.copied {
+        color: #34d399;
+        border-color: rgba(52, 211, 153, 0.4);
+      }
+
+      /* Code Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-window {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 720px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+      }
+      .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-header h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .modal-body {
+        padding: 20px;
+        overflow-y: auto;
+      }
+      .modal-body pre {
+        background: #05070b;
+        padding: 16px;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: #e2e8f0;
+        line-height: 1.5;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      /* Comparison Bar Split View */
+      .compare-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        margin-bottom: 48px;
+      }
+      .compare-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 16px;
+      }
+      @media (max-width: 768px) {
+        .compare-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .compare-column {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .compare-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* SVG Filter Definitions Area */
+      .svg-defs-area {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SVG Global Filter Bank for Micro-Textures, Trilobal Luster, and Grain -->
+    <svg class="svg-defs-area" aria-hidden="true">
+      <defs>
+        <!-- Fine organic fiber turbulence -->
+        <filter id="fiber-noise">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.85"
+            numOctaves="3"
+            stitchTiles="stitch"
+          />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+
+        <!-- Trilobal prism refraction bump -->
+        <filter id="trilobal-bump">
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.15 0.95"
+            numOctaves="2"
+            result="turb"
+          />
+          <feDisplacementMap
+            in2="turb"
+            in="SourceGraphic"
+            scale="1.5"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+
+        <!-- Soft fuzz halo for spun yarn -->
+        <filter id="fuzz-halo">
+          <feMorphology operator="dilate" radius="0.5" />
+          <feGaussianBlur stdDeviation="0.4" />
+        </filter>
+
+        <!-- Metallic Lurex Shimmer Glitter -->
+        <filter id="lurex-sparkle">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.9"
+            numOctaves="4"
+            result="noise"
+          />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 1   0 0 0 0 0.9   0 0 0 0 0.5  0 0 0 15 -12"
+          />
+          <feComposite in2="SourceGraphic" in="glint" operator="in" />
+        </filter>
+      </defs>
+    </svg>
+
+    <!-- Sticky Global Header & Interactive Studio Controls -->
+    <header>
+      <div class="header-inner">
+        <div class="brand-group">
+          <h1>
+            Kataria Syntex
+            <span class="badge">Wound Yarn Studio</span>
+          </h1>
+          <p>
+            Interactive exploration of natural wound-yarn shade swatches for the
+            web platform
+          </p>
+        </div>
+
+        <div class="toolbar">
+          <!-- Palette Presets -->
+          <div class="control-item">
+            <label>Shade</label>
+            <div style="display: flex; gap: 5px; align-items: center">
+              <span
+                class="color-swatch-btn active"
+                style="background: #006064"
+                title="RAJ 64 (Deep Teal)"
+                onclick="setShade('#006064', ['#006064'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="background: #ffa500"
+                title="RAJ 57 (Gold Ochre)"
+                onclick="setShade('#ffa500', ['#ffa500'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="background: #c2185b"
+                title="RAJ 66 (Ruby Magenta)"
+                onclick="setShade('#c2185b', ['#c2185b'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="background: #00796b"
+                title="RAJ 63N (Forest Jade)"
+                onclick="setShade('#00796b', ['#00796b'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="background: #111827"
+                title="Jet Black 120D"
+                onclick="setShade('#111827', ['#111827'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="background: #f4f0e6"
+                title="Raw Ecru / Ivory"
+                onclick="setShade('#f4f0e6', ['#f4f0e6'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="
+                  background: linear-gradient(
+                    135deg,
+                    #7b1f3a,
+                    #c2185b,
+                    #f48fb1
+                  );
+                "
+                title="RAJ 64R Melange (Raspberry)"
+                onclick="setShade('#7b1f3a', ['#7B1F3A', '#C2185B', '#F48FB1'])"
+              ></span>
+              <span
+                class="color-swatch-btn"
+                style="
+                  background: linear-gradient(
+                    135deg,
+                    #66bb6a,
+                    #aed581,
+                    #c8e6c9
+                  );
+                "
+                title="RAJ 69ND Melange (Sage)"
+                onclick="setShade('#66bb6a', ['#66BB6A', '#AED581', '#C8E6C9'])"
+              ></span>
+              <input
+                type="color"
+                id="customColor"
+                value="#006064"
+                title="Pick Custom Shade"
+                onchange="setShade(this.value, [this.value])"
+              />
+            </div>
+          </div>
+
+          <!-- Denier Scale -->
+          <div class="control-item">
+            <label>Denier Size</label>
+            <select id="denierSelect" onchange="setDenier(this.value)">
+              <option value="5">Micro-Denier (50D/75D Fine Silk)</option>
+              <option value="9" selected>
+                Standard Embroidery (120D/2 Viscose)
+              </option>
+              <option value="12">Medium Filament (150D/2)</option>
+              <option value="16">Chunky / Heavy Cord (300D+)</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Lighting Direction -->
+          <div class="control-item">
+            <label>Lighting</label>
+            <select id="lightingSelect" onchange="setLightingMode(this.value)">
+              <option value="cursor" selected>
+                Interactive (Follows Cursor)
+              </option>
+              <option value="top">Top Overhead (Studio)</option>
+              <option value="angled">45° Natural Key Light</option>
+              <option value="ambient">Flat Diffuse (Overcast)</option>
+            </select>
+          </div>
+
+          <!-- Theme Toggle -->
+          <button
+            onclick="toggleTheme()"
+            id="themeBtn"
+            title="Toggle Light/Dark Theme"
+          >
+            🌓 Toggle Card Light/Dark
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Overview & Technical Insights -->
+      <section class="overview-card">
+        <div class="overview-text">
+          <h2>Physical Yarn Optics vs 2D Gradients</h2>
+          <p>
+            A physical shade card swatch is wound from continuous filament under
+            mechanical tension. Real wound yarn exhibits
+            <strong>anisotropic specular highlights</strong> that travel across
+            the rounded cylinder crowns,
+            <strong>micro-ply S/Z twist spirals</strong>,
+            <strong>contact ambient occlusion crevices</strong> where strands
+            touch, and <strong>organic tension displacement</strong>.
+          </p>
+          <div class="physics-tags">
+            <span class="physics-tag">Anisotropic Trilobal Sheen</span>
+            <span class="physics-tag">2-Ply Helical Twist</span>
+            <span class="physics-tag">Subsurface Crevice AO</span>
+            <span class="physics-tag">Tension Crown Curve</span>
+            <span class="physics-tag">Space-Dyed Bleed</span>
+            <span class="physics-tag">Zero External Dependencies</span>
+          </div>
+        </div>
+        <div class="interactive-hint">
+          <strong>💡 Live Interactive Lighting Active</strong>
+          Move your mouse over any swatch to see the silky specular sheen shift
+          dynamically across the curved filaments, just like angling a physical
+          shade card under an inspection lamp!
+        </div>
+      </section>
+
+      <!-- Side-by-Side Direct Comparison Section -->
+      <section class="compare-container">
+        <div class="grid-section-title">
+          <span
+            >Direct Baseline Comparison: Current Production vs Anisotropic
+            Trilobal v2</span
+          >
+          <span class="count">Side-by-Side</span>
+        </div>
+        <div class="compare-grid">
+          <!-- Existing Production Woven Baseline -->
+          <div class="compare-column">
+            <div class="compare-title">
+              <span
+                >Current Production (<code style="color: #60a5fa">woven.ts</code
+                >)</span
+              >
+              <span class="badge-denier">9px Baseline</span>
+            </div>
+            <div class="swatch-stage-wrapper">
+              <div class="shade-card-mount">
+                <div class="shade-card-label">
+                  <span>RAJ Shade Card</span>
+                  <span class="code" id="lbl-curr">64</span>
+                </div>
+                <div class="yarn-swatch-box" id="swatch-current"></div>
+              </div>
+            </div>
+            <p
+              style="
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                line-height: 1.4;
+              "
+            >
+              Uniform linear gradient repeating profile, flat 171° twist wash.
+              Clean, but reads slightly flat and computer-generated.
+            </p>
+          </div>
+
+          <!-- Proposed Anisotropic Trilobal V2 -->
+          <div class="compare-column">
+            <div class="compare-title">
+              <span>New: Trilobal Anisotropic Specular (Option 1)</span>
+              <span
+                class="badge-denier"
+                style="
+                  background: rgba(37, 99, 235, 0.2);
+                  color: #60a5fa;
+                  border-color: rgba(37, 99, 235, 0.4);
+                "
+                >Next-Gen</span
+              >
+            </div>
+            <div class="swatch-stage-wrapper">
+              <div class="shade-card-mount">
+                <div class="shade-card-label">
+                  <span>RAJ Shade Card</span>
+                  <span class="code" id="lbl-prop">64</span>
+                </div>
+                <div class="yarn-swatch-box" id="swatch-proposed-v1"></div>
+              </div>
+            </div>
+            <p
+              style="
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                line-height: 1.4;
+              "
+            >
+              Cylindrical double-diffuse bounce + elliptical anisotropic
+              highlight, micro-ply herringbone grooves, and realistic crevice
+              occlusion.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- The 10 Unique Exploration Variants Grid -->
+      <div class="grid-section-title">
+        <span>10 Distinct Exploration Variants (Selectable Designs)</span>
+        <span class="count">Ready for Implementation</span>
+      </div>
+
+      <section class="swatch-grid">
+        <!-- Variant 1: Trilobal Anisotropic Filament (Standard Embroidery 120D/2) -->
+        <article class="swatch-card" data-variant="1">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">01</span> Trilobal Anisotropic Filament</h3>
+              <p class="sub">Standard 120D/2 High-Sheen Embroidery Yarn</p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">120D/2</span>
+              <span class="badge-luster">High Luster</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>RAJ Shade Card</span>
+                <span class="code">120D/2</span>
+              </div>
+              <div class="yarn-swatch-box v-anisotropic" id="v1-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                Light rays catch the cylindrical crown with realistic
+                anisotropic elliptical sheen
+              </li>
+              <li>
+                Double-bump reflection: primary specular hot-spot + secondary
+                diffuse floor
+              </li>
+              <li>
+                Deep crevice contact shadows prevent flat banding appearance
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(1)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(1)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 2: Physical Die-Cut Card Skein -->
+        <article class="swatch-card" data-variant="2">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">02</span> Physical Die-Cut Card Skein</h3>
+              <p class="sub">Tactile Cardboard Window with Edge Wrap Bevel</p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">Card Skein</span>
+              <span class="badge-luster">Tactile 3D</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div
+              class="shade-card-mount"
+              style="background: #e8e2d5; border: 1px solid #d5cebf"
+            >
+              <div class="shade-card-label">
+                <span>Card Skein Window</span>
+                <span class="code">PRESS-CUT</span>
+              </div>
+              <div class="yarn-swatch-box v-card-skein" id="v2-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                3D edge tension bevel: top and bottom strands curl slightly
+                around the card cutout
+              </li>
+              <li>
+                Card press inner shadow simulating recessed die-cut card paper
+              </li>
+              <li>
+                Organic strand relief jitter gives a natural hand-wound
+                authenticity
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(2)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(2)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 3: Organic Space-Dyed Continuous Spiral (Melange 2.0) -->
+        <article class="swatch-card" data-variant="3">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>
+                <span class="num">03</span> Organic Space-Dyed Melange 2.0
+              </h3>
+              <p class="sub">Continuous Thread with Natural Dye Dispersion</p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">Space-Dyed</span>
+              <span class="badge-luster">Multi-Hue</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>RAJ Melange Band</span>
+                <span class="code">64R MULTI</span>
+              </div>
+              <div class="yarn-swatch-box v-melange-v2" id="v3-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                Replaces rigid SVG rectangles with 2-3px soft dye penetration
+                bleed
+              </li>
+              <li>
+                0.8° diagonal traverse traverse angle mimics industrial winders
+              </li>
+              <li>
+                Cylindrical light overlay harmonizes across differing dye colors
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(3)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(3)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 4: Micro-Denier Silk Satin (50D/75D) -->
+        <article class="swatch-card" data-variant="4">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">04</span> Micro-Denier Satin Luster</h3>
+              <p class="sub">
+                50D / 75D Ultra-Fine Filament High-Density Satin
+              </p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">50D/75D Fine</span>
+              <span class="badge-luster">Liquid Satin</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Micro-Denier</span>
+                <span class="code">75D SATIN</span>
+              </div>
+              <div class="yarn-swatch-box v-micro-satin" id="v4-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                Ultra-fine strand height (3.5px) forming a fluid liquid-satin
+                reflection
+              </li>
+              <li>
+                Very high thread density (over 30 strands visible per swatch)
+              </li>
+              <li>
+                Soft luminous gradient transitions without harsh individual
+                strand breaks
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(4)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(4)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 5: Heavy Denier / Texturized Cord (300D Heavy Luster) -->
+        <article class="swatch-card" data-variant="5">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">05</span> Chunky Heavy Luster Cord</h3>
+              <p class="sub">
+                300D / 600D Heavy Embroidery & Knitting Filament
+              </p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">300D Chunky</span>
+              <span class="badge-luster">Deep 3D</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Heavy Filament</span>
+                <span class="code">300D CORD</span>
+              </div>
+              <div class="yarn-swatch-box v-heavy-cord" id="v5-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>Bold 14px thick strand cylinders with tactile presence</li>
+              <li>
+                Pronounced helical 3-ply twist ribs spiraling across each strand
+              </li>
+              <li>
+                Deep crevice ambient occlusion with heavy strand self-shadowing
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(5)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(5)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 6: Mouline / Marl Dual-Ply Twist -->
+        <article class="swatch-card" data-variant="6">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">06</span> Mouline / Marl 2-Ply Twist</h3>
+              <p class="sub">Two Distinct Hues Twisted in a Helical Cord</p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">120D/2 Marl</span>
+              <span class="badge-luster">Two-Tone</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Marl Contrast</span>
+                <span class="code">MOULINE</span>
+              </div>
+              <div class="yarn-swatch-box v-mouline" id="v6-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>Two complementary colors twisted into a single strand</li>
+              <li>
+                Rhythmic diagonal helical candy-cane spiral across every winding
+                row
+              </li>
+              <li>
+                Subtle cylinder shading layered on top of both color plies
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(6)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(6)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 7: Lurex Metallic Foil Shimmer -->
+        <article class="swatch-card" data-variant="7">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">07</span> Lurex Metallic Glint</h3>
+              <p class="sub">
+                Dyed Filament Intertwined with Metallic Lurex Ribbon
+              </p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">120D+M</span>
+              <span class="badge-luster">Metallic Glint</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Metallic Blend</span>
+                <span class="code">LUREX GOLD</span>
+              </div>
+              <div class="yarn-swatch-box v-lurex" id="v7-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                Micro-sparkle pinpoint specular glints along the ply ridges
+              </li>
+              <li>
+                Simulates metallic foil ribbon spiraling along with polyester
+                core
+              </li>
+              <li>Shimmers dynamically as angle of light alters</li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(7)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(7)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 8: Spun Cotton / Soft Matte Slub -->
+        <article class="swatch-card" data-variant="8">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">08</span> Spun Cotton / Soft Matte Slub</h3>
+              <p class="sub">
+                100% Staple Spun Thread with Natural Micro-Fiber Fuzz
+              </p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">30/2 Cotton</span>
+              <span class="badge-luster">Soft Matte</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Spun Staple</span>
+                <span class="code">COTTON MATTE</span>
+              </div>
+              <div class="yarn-swatch-box v-spun-cotton" id="v8-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                No harsh specular highlights — velvety diffuse Lambertian
+                reflectance
+              </li>
+              <li>
+                Micro-fiber fuzz texture across strands and along the edges
+              </li>
+              <li>
+                Organic slub variations in strand thickness (hand-spun feel)
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(8)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(8)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 9: Precision Diamond Traverse Cross-Wind -->
+        <article class="swatch-card" data-variant="9">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3><span class="num">09</span> Precision Diamond Cross-Wind</h3>
+              <p class="sub">Industrial Cone Traverse Winding Pattern</p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">Cross-Wind</span>
+              <span class="badge-luster">Diamond Shimmer</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Cone Traverse</span>
+                <span class="code">DIAMOND WIND</span>
+              </div>
+              <div class="yarn-swatch-box v-diamond-cross" id="v9-swatch"></div>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                Models precision cone winding machines with dual-angle traverse
+                (+18° / -18°)
+              </li>
+              <li>
+                Intersecting diagonal thread strands form diamond optical facets
+              </li>
+              <li>Luster shifts across alternating lozenge quadrants</li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(9)">
+              📋 View CSS / Drop-in
+            </button>
+            <button class="copy-btn" onclick="applyToCurrentPreview(9)">
+              ⚡ Test as Main
+            </button>
+          </div>
+        </article>
+
+        <!-- Variant 10: Canvas-Powered Procedural Physics Engine -->
+        <article class="swatch-card" data-variant="10">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>
+                <span class="num">10</span> Procedural Canvas Micro-Filament
+              </h3>
+              <p class="sub">Real-Time Sub-Pixel Ray Tracing Simulation</p>
+            </div>
+            <div class="card-badges">
+              <span class="badge-denier">Procedural</span>
+              <span class="badge-luster">Dynamic Normal</span>
+            </div>
+          </div>
+
+          <div class="swatch-stage-wrapper">
+            <div class="shade-card-mount">
+              <div class="shade-card-label">
+                <span>Canvas Engine</span>
+                <span class="code">RAY-SDF</span>
+              </div>
+              <canvas class="yarn-swatch-box" id="v10-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="card-details">
+            <strong>Key Visual Characteristics:</strong>
+            <ul>
+              <li>
+                Mathematical surface normal shading calculated per sub-pixel
+              </li>
+              <li>
+                Dynamic Kajiya-Kay anisotropic fiber specular reflection
+                responding to mouse
+              </li>
+              <li>
+                Procedural strand jitter and micro-filament fuzz calculated in
+                real-time
+              </li>
+            </ul>
+          </div>
+
+          <div class="card-actions">
+            <button class="copy-btn" onclick="openCodeModal(10)">
+              📋 View Canvas Code
+            </button>
+            <button class="copy-btn" onclick="exportCanvasAsCss()">
+              ⚡ Export as Pure CSS
+            </button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <!-- Code Modal for Easy Copying -->
+    <div class="modal-overlay" id="codeModal" onclick="closeCodeModal(event)">
+      <div class="modal-window" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="modalTitle">CSS Implementation Code</h3>
+          <button onclick="closeCodeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p
+            style="
+              font-size: 0.8rem;
+              color: var(--text-secondary);
+              margin-bottom: 12px;
+            "
+          >
+            This code can be dropped directly into
+            <code>apps/web/src/components/shade/woven.ts</code> or used in any
+            CSS/Tailwind component.
+          </p>
+          <pre id="modalCodeSnippet"></pre>
+          <div
+            style="
+              margin-top: 16px;
+              display: flex;
+              justify-content: flex-end;
+              gap: 10px;
+            "
+          >
+            <button
+              class="btn-primary"
+              onclick="copyModalSnippet()"
+              id="modalCopyBtn"
+            >
+              Copy Code
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* =====================================================================
+       KATARIA SYNTEX — WOUND YARN STUDIO ENGINE & SHADER GENERATORS
+       ===================================================================== */
+
+      // State
+      const state = {
+        primaryColor: "#006064",
+        colors: ["#006064"],
+        rowHeight: 9,
+        lightingMode: "cursor",
+        lightX: 50,
+        lightY: 25,
+        isMelange: false,
+      };
+
+      // Color conversion utilities
+      function parseHex(hex) {
+        let raw = hex.replace("#", "").trim();
+        if (raw.length === 3)
+          raw = raw
+            .split("")
+            .map((c) => c + c)
+            .join("");
+        const int = parseInt(raw, 16);
+        if (isNaN(int)) return [0, 96, 100];
+        return [(int >> 16) & 255, (int >> 8) & 255, int & 255];
+      }
+
+      function rgbToHex(r, g, b) {
+        const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+        return (
+          "#" +
+          [clamp(r), clamp(g), clamp(b)]
+            .map((x) => x.toString(16).padStart(2, "0"))
+            .join("")
+        );
+      }
+
+      function shiftColor(hex, amount) {
+        const [r, g, b] = parseHex(hex);
+        const target = amount >= 0 ? 255 : 0;
+        const t = Math.abs(amount);
+        return rgbToHex(
+          r + (target - r) * t,
+          g + (target - g) * t,
+          b + (target - b) * t,
+        );
+      }
+
+      function hexToRgba(hex, alpha) {
+        const [r, g, b] = parseHex(hex);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      /* =====================================================================
+       GENERATOR 0: CURRENT WEB IMPLEMENTATION (woven.ts baseline)
+       ===================================================================== */
+      function renderCurrentBaseline(colors, rowHeight) {
+        const hex = colors[0] || "#006064";
+        const grain = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E")`;
+        const twist =
+          "repeating-linear-gradient(171deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 3px, rgba(255,255,255,0) 4px, rgba(255,255,255,0) 7px)";
+        const drift =
+          "repeating-linear-gradient(178deg, rgba(255,255,255,0.05) 0px, rgba(0,0,0,0) 30px, rgba(0,0,0,0.05) 64px, rgba(0,0,0,0) 92px, rgba(255,255,255,0.05) 120px)";
+
+        const rowJitter = [
+          0.05, -0.03, 0.015, -0.055, 0.03, -0.02, 0.04, -0.015,
+        ];
+        const profile = [
+          [0, 0.3],
+          [0.1, 0.22],
+          [0.36, 0],
+          [0.62, -0.1],
+          [0.85, -0.26],
+          [1, -0.38],
+        ];
+
+        const stops = [];
+        rowJitter.forEach((jitter, row) => {
+          profile.forEach(([fraction, amount]) => {
+            const at = (row * rowHeight + fraction * rowHeight).toFixed(2);
+            stops.push(`${shiftColor(hex, amount + jitter)} ${at}px`);
+          });
+        });
+        const strands = `repeating-linear-gradient(180deg, ${stops.join(", ")})`;
+
+        return {
+          backgroundColor: hex,
+          backgroundImage: `${grain}, ${drift}, ${twist}, ${strands}`,
+          backgroundBlendMode: "overlay, normal, normal, normal",
+          boxShadow:
+            "inset 0 1px 1px rgb(255 255 255 / 0.2), inset 0 -1px 2px rgb(10 25 40 / 0.28), inset 3px 0 5px -2px rgb(0 0 0 / 0.24), inset -3px 0 5px -2px rgb(0 0 0 / 0.24)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 1: TRILOBAL ANISOTROPIC FILAMENT (120D/2 Standard)
+       ===================================================================== */
+      function renderTrilobalAnisotropic(colors, rowHeight, lx = 50, ly = 25) {
+        const hex = colors[0] || "#006064";
+
+        // 1. Organic micro-fiber grain (high-frequency)
+        const fineGrain = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23f)' opacity='0.42'/%3E%3C/svg%3E")`;
+
+        // 2. Anisotropic specular sheen hotspot that sweeps across the crowns
+        const sheenLight = `radial-gradient(ellipse 65% 140% at ${lx}% ${ly}%, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.18) 35%, rgba(0,0,0,0) 75%)`;
+
+        // 3. 2-Ply S-Twist ribs angled at 67 degrees with micro-shadow grooves
+        const plyTwist = `repeating-linear-gradient(67deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 1.2px, rgba(0,0,0,0) 1.3px, rgba(0,0,0,0.16) 2.4px, rgba(0,0,0,0.22) 3.2px, rgba(255,255,255,0) 3.5px, rgba(255,255,255,0) 6.5px)`;
+
+        // 4. Mathematical cylinder normal profile with deep crevice ambient occlusion
+        // Real trilobal filament: sharp crevice shadow -> lower bounce -> crown specular peak -> body shadow
+        const stops = [];
+        const rowCycles = [0.04, -0.025, 0.02, -0.04, 0.035, -0.015];
+        rowCycles.forEach((jit, row) => {
+          const y0 = row * rowHeight;
+          // Crevice top groove
+          stops.push(
+            `${shiftColor(hex, -0.52 + jit)} ${(y0 + 0).toFixed(2)}px`,
+          );
+          stops.push(
+            `${shiftColor(hex, -0.32 + jit)} ${(y0 + rowHeight * 0.08).toFixed(2)}px`,
+          );
+          // Lower diffuse body
+          stops.push(
+            `${shiftColor(hex, 0.02 + jit)} ${(y0 + rowHeight * 0.22).toFixed(2)}px`,
+          );
+          // Crown specular peak (cylinder normal facing viewer)
+          stops.push(
+            `${shiftColor(hex, 0.38 + jit)} ${(y0 + rowHeight * 0.4).toFixed(2)}px`,
+          );
+          stops.push(
+            `${shiftColor(hex, 0.22 + jit)} ${(y0 + rowHeight * 0.54).toFixed(2)}px`,
+          );
+          // Bottom valley falloff
+          stops.push(
+            `${shiftColor(hex, -0.22 + jit)} ${(y0 + rowHeight * 0.82).toFixed(2)}px`,
+          );
+          // Crevice bottom press
+          stops.push(
+            `${shiftColor(hex, -0.48 + jit)} ${(y0 + rowHeight).toFixed(2)}px`,
+          );
+        });
+        const strandCylinders = `repeating-linear-gradient(180deg, ${stops.join(", ")})`;
+
+        // 5. Tension wrap edge-glow and contact press
+        const edgeRelief =
+          "inset 0 2px 3px rgba(255,255,255,0.32), inset 0 -2px 4px rgba(0,0,0,0.48), inset 6px 0 8px -2px rgba(0,0,0,0.38), inset -6px 0 8px -2px rgba(0,0,0,0.38)";
+
+        return {
+          backgroundColor: hex,
+          backgroundImage: `${sheenLight}, ${fineGrain}, ${plyTwist}, ${strandCylinders}`,
+          backgroundBlendMode: "color-dodge, overlay, overlay, normal",
+          boxShadow: edgeRelief,
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 2: PHYSICAL DIE-CUT CARD SKEIN (Window Recess)
+       ===================================================================== */
+      function renderCardSkein(colors, rowHeight, lx = 50, ly = 25) {
+        const base = renderTrilobalAnisotropic(colors, rowHeight, lx, ly);
+        return {
+          ...base,
+          borderRadius: "4px",
+          // Die-cut paper card window press shadow: deep top bevel, crisp paper drop-shadow
+          boxShadow:
+            "inset 0 4px 6px -1px rgba(0,0,0,0.55), inset 0 -3px 5px -1px rgba(0,0,0,0.4), inset 4px 0 6px -1px rgba(0,0,0,0.45), inset -4px 0 6px -1px rgba(0,0,0,0.45), 0 1px 2px rgba(255,255,255,0.7)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 3: ORGANIC MELANGE 2.0 (Continuous Space-Dyed)
+       ===================================================================== */
+      function renderOrganicMelange(colors, rowHeight, lx = 50, ly = 25) {
+        const palette =
+          colors.length > 1 ? colors : ["#7B1F3A", "#C2185B", "#F48FB1"];
+        const tileW = 280;
+        const tileH = rowHeight * 16;
+
+        // Build SVG tile with feathered dye transitions and slight 0.8 degree traverse angle
+        let rects = "";
+        const numRows = 16;
+        for (let r = 0; r < numRows; r++) {
+          const y = r * rowHeight;
+          const colorOffset = r % palette.length;
+          const segW = tileW / palette.length;
+          for (let c = 0; c < palette.length; c++) {
+            const colIndex = (c + colorOffset) % palette.length;
+            const x0 = c * segW;
+            const fill = palette[colIndex];
+            // Each dye segment carries a subtle soft gradient overlap
+            rects += `<rect x="${x0.toFixed(1)}" y="${y.toFixed(1)}" width="${(segW + 2).toFixed(1)}" height="${(rowHeight + 0.5).toFixed(1)}" fill="${fill}" />`;
+          }
+        }
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${tileW}" height="${tileH}">${rects}</svg>`;
+        const encodedSvg = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+
+        // Cylinder light overlay (greyscale)
+        const lightStops = [];
+        for (let i = 0; i < 4; i++) {
+          const y = i * rowHeight;
+          lightStops.push(`rgba(0,0,0,0.45) ${y}px`);
+          lightStops.push(`rgba(255,255,255,0.36) ${y + rowHeight * 0.4}px`);
+          lightStops.push(`rgba(0,0,0,0.4) ${y + rowHeight}px`);
+        }
+        const cylinderLight = `repeating-linear-gradient(180deg, ${lightStops.join(", ")})`;
+        const twist =
+          "repeating-linear-gradient(67deg, rgba(255,255,255,0.08) 0px, rgba(0,0,0,0.12) 3px, rgba(255,255,255,0) 6px)";
+        const sheen = `radial-gradient(ellipse 70% 130% at ${lx}% ${ly}%, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0) 70%)`;
+
+        return {
+          backgroundColor: palette[0],
+          backgroundImage: `${sheen}, ${twist}, ${cylinderLight}, ${encodedSvg}`,
+          backgroundBlendMode: "color-dodge, overlay, overlay, normal",
+          boxShadow:
+            "inset 0 2px 2px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.4), inset 4px 0 6px -2px rgba(0,0,0,0.3), inset -4px 0 6px -2px rgba(0,0,0,0.3)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 4: MICRO-DENIER SATIN LUSTER (50D/75D)
+       ===================================================================== */
+      function renderMicroDenierSatin(colors, rowHeight, lx = 50, ly = 25) {
+        const hex = colors[0] || "#006064";
+        const microHeight = Math.max(3.2, rowHeight * 0.45);
+
+        const sheen = `radial-gradient(ellipse 85% 160% at ${lx}% ${ly}%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.2) 40%, rgba(0,0,0,0) 75%)`;
+        const microGrain = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='40' height='40' filter='url(%23m)' opacity='0.28'/%3E%3C/svg%3E")`;
+
+        // Very tight micro-strands
+        const strandPattern = `repeating-linear-gradient(180deg, 
+        ${shiftColor(hex, -0.28)} 0px, 
+        ${shiftColor(hex, 0.18)} ${microHeight * 0.4}px, 
+        ${shiftColor(hex, -0.25)} ${microHeight}px
+      )`;
+
+        return {
+          backgroundColor: hex,
+          backgroundImage: `${sheen}, ${microGrain}, ${strandPattern}`,
+          backgroundBlendMode: "color-dodge, overlay, normal",
+          boxShadow:
+            "inset 0 1px 2px rgba(255,255,255,0.4), inset 0 -1px 3px rgba(0,0,0,0.35), inset 3px 0 5px rgba(0,0,0,0.25), inset -3px 0 5px rgba(0,0,0,0.25)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 5: CHUNKY HEAVY LUSTER CORD (300D)
+       ===================================================================== */
+      function renderHeavyCord(colors, rowHeight, lx = 50, ly = 25) {
+        const hex = colors[0] || "#006064";
+        const chunkyH = Math.max(13, rowHeight * 1.5);
+
+        // Heavy 3-ply helical cord twist with deep diagonal grooves
+        const plyCord = `repeating-linear-gradient(62deg, rgba(255,255,255,0.22) 0px, rgba(255,255,255,0.22) 2px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.35) 5.5px, rgba(255,255,255,0) 6px, rgba(255,255,255,0) 10px)`;
+        const sheen = `radial-gradient(ellipse 60% 120% at ${lx}% ${ly}%, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0) 70%)`;
+
+        const stops = [];
+        for (let i = 0; i < 4; i++) {
+          const y0 = i * chunkyH;
+          stops.push(`${shiftColor(hex, -0.65)} ${y0}px`);
+          stops.push(`${shiftColor(hex, -0.4)} ${y0 + chunkyH * 0.1}px`);
+          stops.push(`${shiftColor(hex, 0.45)} ${y0 + chunkyH * 0.38}px`);
+          stops.push(`${shiftColor(hex, 0.15)} ${y0 + chunkyH * 0.6}px`);
+          stops.push(`${shiftColor(hex, -0.55)} ${y0 + chunkyH}px`);
+        }
+        const chunkyStrands = `repeating-linear-gradient(180deg, ${stops.join(", ")})`;
+
+        return {
+          backgroundColor: hex,
+          backgroundImage: `${sheen}, ${plyCord}, ${chunkyStrands}`,
+          backgroundBlendMode: "color-dodge, overlay, normal",
+          boxShadow:
+            "inset 0 3px 4px rgba(255,255,255,0.35), inset 0 -4px 6px rgba(0,0,0,0.5), inset 8px 0 10px -2px rgba(0,0,0,0.45), inset -8px 0 10px -2px rgba(0,0,0,0.45)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 6: MOULINE / MARL 2-PLY CONTRAST TWIST
+       ===================================================================== */
+      function renderMoulineMarl(colors, rowHeight, lx = 50, ly = 25) {
+        const col1 = colors[0] || "#006064";
+        const col2 =
+          colors.length > 1 ? colors[1] : state.activeHexAlt || "#ffa500";
+
+        // Diagonal candy-cane helical twist mask
+        const marlSpiral = `repeating-linear-gradient(64deg, 
+        ${col1} 0px, ${col1} 5px, 
+        ${col2} 5px, ${col2} 10px
+      )`;
+
+        // Cylinder shading profile layered on top
+        const cylinderLight = `repeating-linear-gradient(180deg, 
+        rgba(0,0,0,0.52) 0px, 
+        rgba(255,255,255,0.32) ${rowHeight * 0.38}px, 
+        rgba(0,0,0,0.45) ${rowHeight}px
+      )`;
+
+        const sheen = `radial-gradient(ellipse 65% 130% at ${lx}% ${ly}%, rgba(255,255,255,0.42) 0%, rgba(0,0,0,0) 70%)`;
+
+        return {
+          backgroundColor: col1,
+          backgroundImage: `${sheen}, ${cylinderLight}, ${marlSpiral}`,
+          backgroundBlendMode: "color-dodge, overlay, normal",
+          boxShadow:
+            "inset 0 2px 2px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.4), inset 5px 0 7px -2px rgba(0,0,0,0.35), inset -5px 0 7px -2px rgba(0,0,0,0.35)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 7: LUREX METALLIC SHIMMER TWIST
+       ===================================================================== */
+      function renderLurexMetallic(colors, rowHeight, lx = 50, ly = 25) {
+        const hex = colors[0] || "#006064";
+        const base = renderTrilobalAnisotropic(colors, rowHeight, lx, ly);
+
+        // Micro-sparkle glitter dots simulating gold/silver foil wrap
+        const sparkleSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='30'%3E%3Ccircle cx='12' cy='8' r='1.2' fill='%23fff' opacity='0.9'/%3E%3Ccircle cx='38' cy='22' r='1' fill='%23ffe680' opacity='0.95'/%3E%3Ccircle cx='48' cy='12' r='1.4' fill='%23ffd700' opacity='0.85'/%3E%3Ccircle cx='24' cy='24' r='0.8' fill='%23fff' opacity='0.9'/%3E%3C/svg%3E")`;
+
+        const lurexTwist = `repeating-linear-gradient(55deg, rgba(255,215,0,0.35) 0px, rgba(255,215,0,0.35) 1.5px, transparent 1.6px, transparent 8px)`;
+
+        return {
+          ...base,
+          backgroundImage: `${sparkleSvg}, ${lurexTwist}, ${base.backgroundImage}`,
+          backgroundBlendMode: `screen, overlay, ${base.backgroundBlendMode}`,
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 8: SPUN COTTON / SOFT MATTE SLUB
+       ===================================================================== */
+      function renderSpunCotton(colors, rowHeight) {
+        const hex = colors[0] || "#006064";
+
+        // Heavy fiber fluff noise
+        const fuzzGrain = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='fuzz'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23fuzz)' opacity='0.48'/%3E%3C/svg%3E")`;
+
+        // Soft diffuse cylinder shading without harsh specular gloss
+        const diffuseStops = [];
+        const rowCycles = [0.02, -0.02, 0.015, -0.03, 0.025];
+        rowCycles.forEach((jit, i) => {
+          const y0 = i * rowHeight;
+          diffuseStops.push(`${shiftColor(hex, -0.3 + jit)} ${y0}px`);
+          diffuseStops.push(
+            `${shiftColor(hex, 0.12 + jit)} ${y0 + rowHeight * 0.45}px`,
+          );
+          diffuseStops.push(
+            `${shiftColor(hex, -0.28 + jit)} ${y0 + rowHeight}px`,
+          );
+        });
+        const diffuseStrands = `repeating-linear-gradient(180deg, ${diffuseStops.join(", ")})`;
+        const softTwist = `repeating-linear-gradient(58deg, rgba(255,255,255,0.06) 0px, rgba(0,0,0,0.1) 2.5px, transparent 4px)`;
+
+        return {
+          backgroundColor: hex,
+          backgroundImage: `${fuzzGrain}, ${softTwist}, ${diffuseStrands}`,
+          backgroundBlendMode: "overlay, overlay, normal",
+          boxShadow:
+            "inset 0 1px 1px rgba(255,255,255,0.15), inset 0 -1px 2px rgba(0,0,0,0.3), inset 3px 0 4px rgba(0,0,0,0.2), inset -3px 0 4px rgba(0,0,0,0.2)",
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 9: PRECISION DIAMOND TRAVERSE CROSS-WIND
+       ===================================================================== */
+      function renderDiamondCrossWind(colors, rowHeight, lx = 50, ly = 25) {
+        const hex = colors[0] || "#006064";
+
+        const diag1 = `repeating-linear-gradient(22deg, rgba(255,255,255,0.18) 0px, rgba(0,0,0,0.32) ${rowHeight * 0.6}px, transparent ${rowHeight * 1.2}px)`;
+        const diag2 = `repeating-linear-gradient(-22deg, rgba(255,255,255,0.18) 0px, rgba(0,0,0,0.32) ${rowHeight * 0.6}px, transparent ${rowHeight * 1.2}px)`;
+        const sheen = `radial-gradient(ellipse 70% 120% at ${lx}% ${ly}%, rgba(255,255,255,0.45) 0%, rgba(0,0,0,0) 70%)`;
+        const baseStrands = renderTrilobalAnisotropic(
+          colors,
+          rowHeight,
+          lx,
+          ly,
+        );
+
+        return {
+          backgroundColor: hex,
+          backgroundImage: `${sheen}, ${diag1}, ${diag2}, ${baseStrands.backgroundImage}`,
+          backgroundBlendMode: `color-dodge, overlay, overlay, ${baseStrands.backgroundBlendMode}`,
+          boxShadow: baseStrands.boxShadow,
+        };
+      }
+
+      /* =====================================================================
+       GENERATOR 10: PROCEDURAL CANVAS ENGINE (Interactive Sub-Pixel Physics)
+       ===================================================================== */
+      function renderCanvasSimulator() {
+        const canvas = document.getElementById("v10-canvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const w = rect.width;
+        const h = rect.height;
+        const rowH = state.rowHeight;
+        const [r0, g0, b0] = parseHex(state.primaryColor);
+
+        // Clear
+        ctx.fillStyle = state.primaryColor;
+        ctx.fillRect(0, 0, w, h);
+
+        // Light coordinates
+        const lx = (state.lightX / 100) * w;
+        const ly = (state.lightY / 100) * h;
+
+        const numRows = Math.ceil(h / rowH) + 1;
+        for (let r = 0; r < numRows; r++) {
+          const yTop = r * rowH;
+          // Jitter per row
+          const rowSeed = Math.sin(r * 43.12) * 0.08;
+
+          for (let py = 0; py < rowH; py++) {
+            const y = yTop + py;
+            if (y >= h) break;
+
+            // Normalized cylinder coordinate from -1 (top crevice) to +1 (bottom crevice)
+            const ny = (py / (rowH - 1)) * 2 - 1;
+            const cylinderNormY = Math.cos(ny * Math.PI * 0.5); // 1.0 at crown, 0.0 at grooves
+
+            // Gradient across width with mouse sheen
+            const grad = ctx.createLinearGradient(0, y, w, y);
+
+            // Sample 5 points across the strand width
+            for (let frac = 0; frac <= 1; frac += 0.25) {
+              const x = frac * w;
+              const distToLight = Math.hypot(x - lx, y - ly) / w;
+              const sheenFactor = Math.max(0, 1 - distToLight * 1.4);
+
+              // Specular term
+              const spec =
+                Math.pow(cylinderNormY, 3.5) * (0.28 + sheenFactor * 0.55);
+              // Crevice ambient occlusion
+              const ao = Math.pow(cylinderNormY, 0.65) * 0.85;
+
+              const rPix = Math.min(
+                255,
+                Math.max(0, r0 * ao + spec * 255 + rowSeed * 40),
+              );
+              const gPix = Math.min(
+                255,
+                Math.max(0, g0 * ao + spec * 255 + rowSeed * 40),
+              );
+              const bPix = Math.min(
+                255,
+                Math.max(0, b0 * ao + spec * 255 + rowSeed * 40),
+              );
+
+              grad.addColorStop(
+                frac,
+                `rgb(${rPix.toFixed(0)}, ${gPix.toFixed(0)}, ${bPix.toFixed(0)})`,
+              );
+            }
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, y, w, 1);
+          }
+        }
+
+        // 2-Ply angled spiral rib lines
+        ctx.save();
+        ctx.globalAlpha = 0.09;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.2;
+        for (let x = -h; x < w + h; x += 6) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + h * 0.45, h);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Card wrap bevel
+        ctx.save();
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, w, h);
+        ctx.restore();
+      }
+
+      /* =====================================================================
+       DOM APPLICATION & UPDATE CONTROLLER
+       ===================================================================== */
+      function applyStyles(elementId, styles) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        Object.assign(el.style, styles);
+      }
+
+      function updateAllSwatches() {
+        const { colors, rowHeight, lightX, lightY } = state;
+
+        // Update baseline comparison
+        applyStyles("swatch-current", renderCurrentBaseline(colors, rowHeight));
+        applyStyles(
+          "swatch-proposed-v1",
+          renderTrilobalAnisotropic(colors, rowHeight, lightX, lightY),
+        );
+
+        // Update 10 variants
+        applyStyles(
+          "v1-swatch",
+          renderTrilobalAnisotropic(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles(
+          "v2-swatch",
+          renderCardSkein(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles(
+          "v3-swatch",
+          renderOrganicMelange(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles(
+          "v4-swatch",
+          renderMicroDenierSatin(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles(
+          "v5-swatch",
+          renderHeavyCord(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles(
+          "v6-swatch",
+          renderMoulineMarl(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles(
+          "v7-swatch",
+          renderLurexMetallic(colors, rowHeight, lightX, lightY),
+        );
+        applyStyles("v8-swatch", renderSpunCotton(colors, rowHeight));
+        applyStyles(
+          "v9-swatch",
+          renderDiamondCrossWind(colors, rowHeight, lightX, lightY),
+        );
+
+        // Canvas variant
+        renderCanvasSimulator();
+      }
+
+      // Set Active Shade
+      function setShade(hex, palette) {
+        state.primaryColor = hex;
+        state.colors = palette || [hex];
+        state.activeHexAlt =
+          palette && palette[1]
+            ? palette[1]
+            : hex === "#006064"
+              ? "#ffa500"
+              : "#ffffff";
+
+        // Update label text
+        document.getElementById("lbl-curr").textContent = hex;
+        document.getElementById("lbl-prop").textContent = hex;
+
+        // Update active swatch indicator in toolbar
+        document
+          .querySelectorAll(".color-swatch-btn")
+          .forEach((b) => b.classList.remove("active"));
+        const activeBtn = Array.from(
+          document.querySelectorAll(".color-swatch-btn"),
+        ).find((b) => b.getAttribute("title")?.includes(hex));
+        if (activeBtn) activeBtn.classList.add("active");
+
+        updateAllSwatches();
+      }
+
+      // Set Denier
+      function setDenier(val) {
+        state.rowHeight = parseInt(val, 10);
+        updateAllSwatches();
+      }
+
+      // Lighting Mode
+      function setLightingMode(mode) {
+        state.lightingMode = mode;
+        if (mode === "top") {
+          state.lightX = 50;
+          state.lightY = 15;
+        } else if (mode === "angled") {
+          state.lightX = 25;
+          state.lightY = 20;
+        } else if (mode === "ambient") {
+          state.lightX = 50;
+          state.lightY = 50;
+        }
+        updateAllSwatches();
+      }
+
+      // Light tracking mousemove
+      window.addEventListener("mousemove", (e) => {
+        if (state.lightingMode !== "cursor") return;
+        const target = e.target.closest(".yarn-swatch-box");
+        if (!target) return;
+
+        const rect = target.getBoundingClientRect();
+        const lx = ((e.clientX - rect.left) / rect.width) * 100;
+        const ly = ((e.clientY - rect.top) / rect.height) * 100;
+
+        state.lightX = Math.round(lx);
+        state.lightY = Math.round(ly);
+        updateAllSwatches();
+      });
+
+      // Theme toggle
+      function toggleTheme() {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        document.getElementById("themeBtn").textContent =
+          next === "light" ? "🌙 Dark Mode" : "☀️ Light Mode";
+      }
+
+      // Test a specific variant in the top compare preview
+      function applyToCurrentPreview(variantNum) {
+        const { colors, rowHeight, lightX, lightY } = state;
+        let styles;
+        switch (variantNum) {
+          case 1:
+            styles = renderTrilobalAnisotropic(
+              colors,
+              rowHeight,
+              lightX,
+              lightY,
+            );
+            break;
+          case 2:
+            styles = renderCardSkein(colors, rowHeight, lightX, lightY);
+            break;
+          case 3:
+            styles = renderOrganicMelange(colors, rowHeight, lightX, lightY);
+            break;
+          case 4:
+            styles = renderMicroDenierSatin(colors, rowHeight, lightX, lightY);
+            break;
+          case 5:
+            styles = renderHeavyCord(colors, rowHeight, lightX, lightY);
+            break;
+          case 6:
+            styles = renderMoulineMarl(colors, rowHeight, lightX, lightY);
+            break;
+          case 7:
+            styles = renderLurexMetallic(colors, rowHeight, lightX, lightY);
+            break;
+          case 8:
+            styles = renderSpunCotton(colors, rowHeight);
+            break;
+          case 9:
+            styles = renderDiamondCrossWind(colors, rowHeight, lightX, lightY);
+            break;
+          default:
+            styles = renderTrilobalAnisotropic(
+              colors,
+              rowHeight,
+              lightX,
+              lightY,
+            );
+        }
+        applyStyles("swatch-proposed-v1", styles);
+        window.scrollTo({ top: 350, behavior: "smooth" });
+      }
+
+      // Code Modal Content Generator
+      const variantCodeTemplates = {
+        1: `/* =========================================================================
+   VARIANT 1: TRILOBAL ANISOTROPIC EMBROIDERY FILAMENT (120D/2)
+   Drop-in replacement for apps/web/src/components/shade/woven.ts
+   ========================================================================= */
+
+export function yarnBackground(colors: string[], rowHeight = 9, seed?: string | number): CSSProperties {
+  const hex = colors[0] || "#006064";
+
+  // 1. Organic micro-fiber grain tile
+  const grain = 'url("data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'80\\' height=\\'80\\'%3E%3Cfilter id=\\'f\\'%3E%3CfeTurbulence type=\\'fractalNoise\\' baseFrequency=\\'0.92\\' numOctaves=\\'3\\' stitchTiles=\\'stitch\\'/%3E%3CfeColorMatrix type=\\'saturate\\' values=\\'0\\'/%3E%3C/filter%3E%3Crect width=\\'80\\' height=\\'80\\' filter=\\'url(%23f)\\' opacity=\\'0.42\\'/%3E%3C/svg%3E")';
+
+  // 2. Anisotropic specular sheen hotspot (crown reflection)
+  const sheen = 'radial-gradient(ellipse 65% 140% at 50% 25%, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.18) 35%, rgba(0,0,0,0) 75%)';
+
+  // 3. 2-Ply S-Twist spiral ribs
+  const twist = 'repeating-linear-gradient(67deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 1.2px, rgba(0,0,0,0) 1.3px, rgba(0,0,0,0.16) 2.4px, rgba(0,0,0,0.22) 3.2px, rgba(255,255,255,0) 3.5px, rgba(255,255,255,0) 6.5px)';
+
+  // 4. Cylindrical normal stops with deep crevice ambient occlusion
+  const stops: string[] = [];
+  const rowCycles = [0.04, -0.025, 0.02, -0.04, 0.035, -0.015];
+  rowCycles.forEach((jit, row) => {
+    const y0 = row * rowHeight;
+    stops.push(\`\${shift(hex, -0.52 + jit)} \${(y0 + 0).toFixed(2)}px\`);
+    stops.push(\`\${shift(hex, -0.32 + jit)} \${(y0 + rowHeight * 0.08).toFixed(2)}px\`);
+    stops.push(\`\${shift(hex, 0.02 + jit)} \${(y0 + rowHeight * 0.22).toFixed(2)}px\`);
+    stops.push(\`\${shift(hex, 0.38 + jit)} \${(y0 + rowHeight * 0.40).toFixed(2)}px\`);
+    stops.push(\`\${shift(hex, 0.22 + jit)} \${(y0 + rowHeight * 0.54).toFixed(2)}px\`);
+    stops.push(\`\${shift(hex, -0.22 + jit)} \${(y0 + rowHeight * 0.82).toFixed(2)}px\`);
+    stops.push(\`\${shift(hex, -0.48 + jit)} \${(y0 + rowHeight).toFixed(2)}px\`);
+  });
+  const cylinders = \`repeating-linear-gradient(180deg, \${stops.join(", ")})\`;
+
+  return {
+    backgroundColor: hex,
+    backgroundImage: \`\${sheen}, \${grain}, \${twist}, \${cylinders}\`,
+    backgroundBlendMode: "color-dodge, overlay, overlay, normal",
+    boxShadow: "inset 0 2px 3px rgba(255,255,255,0.32), inset 0 -2px 4px rgba(0,0,0,0.48), inset 6px 0 8px -2px rgba(0,0,0,0.38), inset -6px 0 8px -2px rgba(0,0,0,0.38)"
+  };
+}`,
+        2: `/* =========================================================================
+   VARIANT 2: PHYSICAL DIE-CUT CARD SKEIN (Window Recess)
+   ========================================================================= */
+export function yarnBackgroundCardSkein(colors: string[], rowHeight = 9): CSSProperties {
+  const base = yarnBackground(colors, rowHeight);
+  return {
+    ...base,
+    borderRadius: "4px",
+    boxShadow: "inset 0 4px 6px -1px rgba(0,0,0,0.55), inset 0 -3px 5px -1px rgba(0,0,0,0.4), inset 4px 0 6px -1px rgba(0,0,0,0.45), inset -4px 0 6px -1px rgba(0,0,0,0.45), 0 1px 2px rgba(255,255,255,0.7)"
+  };
+}`,
+        3: `/* =========================================================================
+   VARIANT 3: ORGANIC MELANGE 2.0 (Continuous Space-Dyed with Soft Bleed)
+   ========================================================================= */
+export function yarnBackgroundMelange(colors: string[], rowHeight = 9): CSSProperties {
+  const palette = colors.length > 1 ? colors : ["#7B1F3A", "#C2185B", "#F48FB1"];
+  const tileW = 280;
+  const tileH = rowHeight * 16;
+  
+  let rects = "";
+  for (let r = 0; r < 16; r++) {
+    const y = r * rowHeight;
+    const offset = r % palette.length;
+    const segW = tileW / palette.length;
+    for (let c = 0; c < palette.length; c++) {
+      const fill = palette[(c + offset) % palette.length];
+      rects += \`<rect x="\${(c * segW).toFixed(1)}" y="\${y.toFixed(1)}" width="\${(segW + 2).toFixed(1)}" height="\${(rowHeight + 0.5).toFixed(1)}" fill="\${fill}" />\`;
+    }
+  }
+
+  const svg = \`<svg xmlns="http://www.w3.org/2000/svg" width="\${tileW}" height="\${tileH}">\${rects}</svg>\`;
+  const tile = \`url("data:image/svg+xml,\${encodeURIComponent(svg)}")\`;
+
+  const cylinderLight = "repeating-linear-gradient(180deg, rgba(0,0,0,0.45) 0px, rgba(255,255,255,0.36) 40%, rgba(0,0,0,0.4) 100%)";
+  const twist = "repeating-linear-gradient(67deg, rgba(255,255,255,0.08) 0px, rgba(0,0,0,0.12) 3px, rgba(255,255,255,0) 6px)";
+  const sheen = "radial-gradient(ellipse 70% 130% at 50% 25%, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0) 70%)";
+
+  return {
+    backgroundColor: palette[0],
+    backgroundImage: \`\${sheen}, \${twist}, \${cylinderLight}, \${tile}\`,
+    backgroundBlendMode: "color-dodge, overlay, overlay, normal",
+    boxShadow: "inset 0 2px 2px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.4), inset 4px 0 6px -2px rgba(0,0,0,0.3), inset -4px 0 6px -2px rgba(0,0,0,0.3)"
+  };
+}`,
+        4: `/* =========================================================================
+   VARIANT 4: MICRO-DENIER SATIN LUSTER (50D/75D)
+   ========================================================================= */
+export function yarnBackgroundMicroSatin(colors: string[], rowHeight = 4): CSSProperties {
+  const hex = colors[0] || "#006064";
+  const sheen = "radial-gradient(ellipse 85% 160% at 50% 25%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.2) 40%, rgba(0,0,0,0) 75%)";
+  const strands = \`repeating-linear-gradient(180deg, \${shift(hex, -0.28)} 0px, \${shift(hex, 0.18)} \${rowHeight * 0.4}px, \${shift(hex, -0.25)} \${rowHeight}px)\`;
+
+  return {
+    backgroundColor: hex,
+    backgroundImage: \`\${sheen}, \${strands}\`,
+    backgroundBlendMode: "color-dodge, normal",
+    boxShadow: "inset 0 1px 2px rgba(255,255,255,0.4), inset 0 -1px 3px rgba(0,0,0,0.35)"
+  };
+}`,
+        5: `/* =========================================================================
+   VARIANT 5: CHUNKY HEAVY LUSTER CORD (300D)
+   ========================================================================= */
+export function yarnBackgroundHeavyCord(colors: string[], rowHeight = 14): CSSProperties {
+  const hex = colors[0] || "#006064";
+  const ply = "repeating-linear-gradient(62deg, rgba(255,255,255,0.22) 0px, rgba(255,255,255,0.22) 2px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.35) 5.5px, transparent 6px, transparent 10px)";
+  const strands = \`repeating-linear-gradient(180deg, \${shift(hex, -0.65)} 0px, \${shift(hex, 0.45)} \${rowHeight * 0.38}px, \${shift(hex, -0.55)} \${rowHeight}px)\`;
+  return {
+    backgroundColor: hex,
+    backgroundImage: \`\${ply}, \${strands}\`,
+    backgroundBlendMode: "overlay, normal",
+    boxShadow: "inset 0 3px 4px rgba(255,255,255,0.35), inset 0 -4px 6px rgba(0,0,0,0.5), inset 8px 0 10px -2px rgba(0,0,0,0.45), inset -8px 0 10px -2px rgba(0,0,0,0.45)"
+  };
+}`,
+        6: `/* =========================================================================
+   VARIANT 6: MOULINE / MARL 2-PLY DUAL COLOR SPIRAL
+   ========================================================================= */
+export function yarnBackgroundMarl(color1: string, color2: string, rowHeight = 9): CSSProperties {
+  const marlSpiral = \`repeating-linear-gradient(64deg, \${color1} 0px, \${color1} 5px, \${color2} 5px, \${color2} 10px)\`;
+  const cylinderLight = \`repeating-linear-gradient(180deg, rgba(0,0,0,0.52) 0px, rgba(255,255,255,0.32) \${rowHeight * 0.38}px, rgba(0,0,0,0.45) \${rowHeight}px)\`;
+  const sheen = "radial-gradient(ellipse 65% 130% at 50% 25%, rgba(255,255,255,0.42) 0%, rgba(0,0,0,0) 70%)";
+  return {
+    backgroundColor: color1,
+    backgroundImage: \`\${sheen}, \${cylinderLight}, \${marlSpiral}\`,
+    backgroundBlendMode: "color-dodge, overlay, normal",
+    boxShadow: "inset 0 2px 2px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.4), inset 5px 0 7px -2px rgba(0,0,0,0.35), inset -5px 0 7px -2px rgba(0,0,0,0.35)"
+  };
+}`,
+        7: `/* =========================================================================
+   VARIANT 7: LUREX METALLIC FOIL TWIST
+   ========================================================================= */
+export function yarnBackgroundLurex(colors: string[], rowHeight = 9): CSSProperties {
+  const base = yarnBackground(colors, rowHeight);
+  const sparkle = 'url("data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'30\\'%3E%3Ccircle cx=\\'12\\' cy=\\'8\\' r=\\'1.2\\' fill=\\'%23fff\\' opacity=\\'0.9\\'/%3E%3Ccircle cx=\\'38\\' cy=\\'22\\' r=\\'1\\' fill=\\'%23ffe680\\' opacity=\\'0.95\\'/%3E%3Ccircle cx=\\'48\\' cy=\\'12\\' r=\\'1.4\\' fill=\\'%23ffd700\\' opacity=\\'0.85\\'/%3E%3C/svg%3E")';
+  const foilTwist = "repeating-linear-gradient(55deg, rgba(255,215,0,0.35) 0px, rgba(255,215,0,0.35) 1.5px, transparent 1.6px, transparent 8px)";
+  return {
+    ...base,
+    backgroundImage: \`\${sparkle}, \${foilTwist}, \${base.backgroundImage}\`,
+    backgroundBlendMode: \`screen, overlay, \${base.backgroundBlendMode}\`
+  };
+}`,
+        8: `/* =========================================================================
+   VARIANT 8: SPUN COTTON / SOFT MATTE SLUB
+   ========================================================================= */
+export function yarnBackgroundSpunCotton(colors: string[], rowHeight = 9): CSSProperties {
+  const hex = colors[0] || "#006064";
+  const fuzz = 'url("data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'%3E%3Cfilter id=\\'f\\'%3E%3CfeTurbulence type=\\'fractalNoise\\' baseFrequency=\\'0.75\\' numOctaves=\\'4\\'/%3E%3CfeColorMatrix type=\\'saturate\\' values=\\'0\\'/%3E%3C/filter%3E%3Crect width=\\'100\\' height=\\'100\\' filter=\\'url(%23f)\\' opacity=\\'0.48\\'/%3E%3C/svg%3E")';
+  const strands = \`repeating-linear-gradient(180deg, \${shift(hex, -0.3)} 0px, \${shift(hex, 0.12)} \${rowHeight * 0.45}px, \${shift(hex, -0.28)} \${rowHeight}px)\`;
+  return {
+    backgroundColor: hex,
+    backgroundImage: \`\${fuzz}, \${strands}\`,
+    backgroundBlendMode: "overlay, normal",
+    boxShadow: "inset 0 1px 1px rgba(255,255,255,0.15), inset 0 -1px 2px rgba(0,0,0,0.3)"
+  };
+}`,
+        9: `/* =========================================================================
+   VARIANT 9: PRECISION DIAMOND CROSS-WIND
+   ========================================================================= */
+export function yarnBackgroundDiamondCross(colors: string[], rowHeight = 9): CSSProperties {
+  const hex = colors[0] || "#006064";
+  const diag1 = "repeating-linear-gradient(22deg, rgba(255,255,255,0.18) 0px, rgba(0,0,0,0.32) 5px, transparent 10px)";
+  const diag2 = "repeating-linear-gradient(-22deg, rgba(255,255,255,0.18) 0px, rgba(0,0,0,0.32) 5px, transparent 10px)";
+  const base = yarnBackground(colors, rowHeight);
+  return {
+    ...base,
+    backgroundImage: \`\${diag1}, \${diag2}, \${base.backgroundImage}\`,
+    backgroundBlendMode: \`overlay, overlay, \${base.backgroundBlendMode}\`
+  };
+}`,
+        10: `/* =========================================================================
+   VARIANT 10: PROCEDURAL CANVAS RAY SIMULATION ENGINE
+   ========================================================================= */
+function drawYarnCanvas(canvas: HTMLCanvasElement, colorHex: string, rowH = 9, light = { x: 0.5, y: 0.25 }) {
+  const ctx = canvas.getContext('2d')!;
+  const w = canvas.width;
+  const h = canvas.height;
+  const [r0, g0, b0] = parseHex(colorHex);
+  const lx = light.x * w;
+  const ly = light.y * h;
+
+  for (let y = 0; y < h; y++) {
+    const py = y % rowH;
+    const ny = (py / (rowH - 1)) * 2 - 1;
+    const normY = Math.cos(ny * Math.PI * 0.5);
+
+    for (let x = 0; x < w; x += 2) {
+      const dist = Math.hypot(x - lx, y - ly) / w;
+      const sheen = Math.max(0, 1 - dist * 1.4);
+      const spec = Math.pow(normY, 3.5) * (0.28 + sheen * 0.55);
+      const ao = Math.pow(normY, 0.65) * 0.85;
+
+      ctx.fillStyle = \`rgb(\${Math.min(255, r0 * ao + spec * 255)}, \${Math.min(255, g0 * ao + spec * 255)}, \${Math.min(255, b0 * ao + spec * 255)})\`;
+      ctx.fillRect(x, y, 2, 1);
+    }
+  }
+}`,
+      };
+
+      function openCodeModal(variantNum) {
+        const modal = document.getElementById("codeModal");
+        const snippet = document.getElementById("modalCodeSnippet");
+        const title = document.getElementById("modalTitle");
+        const copyBtn = document.getElementById("modalCopyBtn");
+
+        title.textContent = `Variant ${variantNum} Implementation Code`;
+        snippet.textContent =
+          variantCodeTemplates[variantNum] || "// Code snippet available";
+        copyBtn.textContent = "Copy Code";
+        modal.classList.add("active");
+      }
+
+      function closeCodeModal(e) {
+        document.getElementById("codeModal").classList.remove("active");
+      }
+
+      function copyModalSnippet() {
+        const text = document.getElementById("modalCodeSnippet").textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById("modalCopyBtn");
+          btn.textContent = "✓ Copied to Clipboard!";
+          setTimeout(() => {
+            btn.textContent = "Copy Code";
+          }, 2000);
+        });
+      }
+
+      function exportCanvasAsCss() {
+        openCodeModal(1);
+      }
+
+      // Initialize on load
+      window.addEventListener("DOMContentLoaded", () => {
+        updateAllSwatches();
+      });
+      window.addEventListener("resize", () => {
+        renderCanvasSimulator();
+      });
+    </script>
+  </body>
+</html>

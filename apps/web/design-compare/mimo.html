@@ -1,0 +1,1700 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wound yarn swatch — 12 directions</title>
+    <style>
+      :root {
+        --canvas: #f4f5f7;
+        --surface: #ffffff;
+        --surface-2: #fafbfc;
+        --ink: #0b1b2b;
+        --ink-soft: #56677d;
+        --line: #e3e7ee;
+        --royal: #1d4ed8;
+        --sky: #38bdf8;
+        --navy: #0a1930;
+        --ring: rgb(29 78 216 / 0.5);
+        --shadow-card:
+          0 1px 2px rgb(11 27 43 / 0.06), 0 10px 28px -8px rgb(11 27 43 / 0.14);
+        --shadow-lift:
+          0 2px 6px rgb(11 27 43 / 0.08), 0 24px 48px -16px rgb(11 27 43 / 0.24);
+        --wrap-top: rgb(255 255 255 / 0.22);
+        --wrap-bottom: rgb(10 25 40 / 0.3);
+        --wrap-side: rgb(0 0 0 / 0.24);
+        --sheen: rgb(255 255 255 / 0.26);
+        color-scheme: light;
+      }
+      [data-theme="dark"] {
+        --canvas: #07101d;
+        --surface: #0e1b2e;
+        --surface-2: #101f35;
+        --ink: #e8eef7;
+        --ink-soft: #8fa2bd;
+        --line: #1e2e46;
+        --royal: #60a5fa;
+        --sky: #38bdf8;
+        --navy: #050d18;
+        --ring: rgb(56 189 248 / 0.55);
+        --shadow-card:
+          0 1px 2px rgb(0 0 0 / 0.4), 0 10px 28px -8px rgb(0 0 0 / 0.5);
+        --shadow-lift:
+          0 2px 6px rgb(0 0 0 / 0.5), 0 24px 48px -16px rgb(0 0 0 / 0.6);
+        --wrap-top: rgb(255 255 255 / 0.16);
+        --wrap-bottom: rgb(0 0 0 / 0.46);
+        --wrap-side: rgb(0 0 0 / 0.4);
+        --sheen: rgb(255 255 255 / 0.2);
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            120% 60% at 12% -8%,
+            rgb(56 189 248 / 0.1),
+            transparent 60%
+          ),
+          radial-gradient(
+            90% 50% at 88% 0%,
+            rgb(29 78 216 / 0.09),
+            transparent 55%
+          ),
+          var(--canvas);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono {
+        font-family:
+          "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+          monospace;
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 24px 64px;
+      }
+
+      header.top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 40px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+      }
+      .lede {
+        margin: 8px 0 0;
+        color: var(--ink-soft);
+        max-width: 62ch;
+      }
+      .count {
+        font-size: 11px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      /* --- controls bar --- */
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        margin-top: 20px;
+        padding: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px 22px;
+        align-items: center;
+        background: color-mix(in srgb, var(--surface) 82%, transparent);
+        backdrop-filter: blur(14px) saturate(1.5);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow-card);
+      }
+      .grp {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .grp > .lbl {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .grp .sep {
+        width: 1px;
+        height: 26px;
+        background: var(--line);
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        font-size: 12.5px;
+        font-weight: 600;
+        transition:
+          border-color 0.18s ease,
+          background 0.18s ease,
+          transform 0.12s ease,
+          box-shadow 0.18s ease;
+      }
+      .pill:hover {
+        border-color: color-mix(in srgb, var(--royal) 45%, var(--line));
+        transform: translateY(-1px);
+      }
+      .pill:active {
+        transform: scale(0.97);
+      }
+      .pill:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--ring);
+      }
+      .pill[aria-pressed="true"] {
+        background: color-mix(in srgb, var(--royal) 12%, var(--surface));
+        border-color: var(--royal);
+        color: var(--royal);
+      }
+      .pill .px {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--ink-soft);
+      }
+      .pill[aria-pressed="true"] .px {
+        color: inherit;
+        opacity: 0.8;
+      }
+
+      .way {
+        width: 40px;
+        height: 34px;
+        padding: 3px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        transition:
+          border-color 0.18s ease,
+          transform 0.12s ease,
+          box-shadow 0.18s ease;
+      }
+      .way:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--royal) 45%, var(--line));
+      }
+      .way:active {
+        transform: scale(0.95);
+      }
+      .way:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--ring);
+      }
+      .way[aria-pressed="true"] {
+        border-color: var(--royal);
+        box-shadow:
+          0 0 0 2px color-mix(in srgb, var(--royal) 35%, transparent),
+          inset 0 0 0 1px rgb(255 255 255 / 0.25);
+      }
+      .way i {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 6px;
+        box-shadow: inset 0 -6px 10px rgb(0 0 0 / 0.22);
+      }
+
+      .status {
+        margin-left: auto;
+        font-size: 11.5px;
+        letter-spacing: 0.02em;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+      .status b {
+        color: var(--royal);
+        font-weight: 600;
+      }
+
+      /* --- grid --- */
+      .grid {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+        gap: 20px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: var(--shadow-card);
+        transition:
+          transform 0.3s var(--ease, ease),
+          box-shadow 0.3s ease,
+          border-color 0.2s ease;
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lift);
+      }
+      .card.picked {
+        border-color: var(--royal);
+        box-shadow:
+          0 0 0 3px color-mix(in srgb, var(--royal) 25%, transparent),
+          var(--shadow-lift);
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .idx {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: var(--navy);
+        color: #dcecff;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        flex: none;
+      }
+      [data-theme="dark"] .idx {
+        background: #16304f;
+        color: #b9d7ff;
+      }
+      .card-head h2 {
+        margin: 0;
+        font-size: 15.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .card-head .kind {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .pick {
+        margin-left: auto;
+        height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: transparent;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+      .pick:hover {
+        color: var(--royal);
+        border-color: color-mix(in srgb, var(--royal) 50%, var(--line));
+      }
+      .pick:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--ring);
+      }
+      .card.picked .pick {
+        background: var(--royal);
+        border-color: var(--royal);
+        color: #fff;
+      }
+
+      .frame {
+        position: relative;
+        height: 176px;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgb(0 0 0 / 0.14);
+        background: var(--navy);
+      }
+      .frame .code {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        z-index: 3;
+        padding: 2.5px 7px;
+        border-radius: 6px;
+        background: rgb(6 14 26 / 0.72);
+        color: #eaf3ff;
+        font-family: ui-monospace, monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.05em;
+        backdrop-filter: blur(4px);
+      }
+      .frame .glass {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: linear-gradient(
+          104deg,
+          transparent 32%,
+          var(--sheen) 46%,
+          transparent 58%
+        );
+        opacity: 0;
+        transform: translateX(-40%);
+        transition:
+          opacity 0.45s ease,
+          transform 0.9s ease;
+      }
+      .card:hover .frame .glass {
+        opacity: 1;
+        transform: translateX(36%);
+      }
+
+      .tex {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        border-radius: inherit;
+        background-repeat: repeat;
+        box-shadow:
+          inset 0 1px 1px var(--wrap-top),
+          inset 0 -2px 4px var(--wrap-bottom),
+          inset 4px 0 6px -3px var(--wrap-side),
+          inset -4px 0 6px -3px var(--wrap-side);
+      }
+      .tex::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background-image: var(--aux-bg, none);
+        background-color: var(--aux-c, transparent);
+        background-size: var(--aux-size, auto);
+        background-repeat: var(--aux-rep, repeat);
+        background-position: var(--aux-pos, 0 0);
+        mask-image: var(--aux-mask, none);
+        mask-size: var(--aux-msize, auto);
+        mask-repeat: var(--aux-mrep, repeat);
+        opacity: var(--aux-op, 1);
+      }
+
+      .note {
+        margin: 10px 0 12px;
+        font-size: 13px;
+        color: var(--ink-soft);
+        min-height: 2.6em;
+      }
+
+      .dens {
+        display: flex;
+        gap: 8px;
+      }
+      .den {
+        flex: 1;
+        padding: 4px 4px 5px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        transition:
+          border-color 0.18s ease,
+          box-shadow 0.18s ease,
+          transform 0.12s ease;
+      }
+      .den:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--royal) 45%, var(--line));
+      }
+      .den:active {
+        transform: scale(0.97);
+      }
+      .den:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--ring);
+      }
+      .den[aria-pressed="true"] {
+        border-color: var(--royal);
+        background: color-mix(in srgb, var(--royal) 9%, var(--surface-2));
+      }
+      .den .mini {
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid rgb(0 0 0 / 0.16);
+        overflow: hidden;
+        position: relative;
+      }
+      .den .cap {
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        margin-top: 4px;
+        font-family: ui-monospace, monospace;
+        font-size: 9.5px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .den[aria-pressed="true"] .cap {
+        color: var(--royal);
+      }
+
+      footer {
+        margin-top: 34px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--ink-soft);
+      }
+
+      @media (max-width: 560px) {
+        .wrap {
+          padding: 20px 16px 48px;
+        }
+        .status {
+          margin-left: 0;
+          white-space: normal;
+        }
+        .frame {
+          height: 152px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <h1>Wound yarn swatch — 12 directions</h1>
+          <p class="lede">
+            Texture variants for the shade-card bands. One control set drives
+            every card: pick a denier, a colorway, then hit Pick on the one you
+            want.
+          </p>
+        </div>
+        <p class="count mono" id="count">12 VARIANTS</p>
+      </header>
+
+      <div class="bar" role="group" aria-label="Texture controls">
+        <div class="grp" id="deniers" role="group" aria-label="Denier">
+          <span class="lbl">Denier</span>
+        </div>
+        <div class="grp" id="ways" role="group" aria-label="Colorway">
+          <span class="lbl">Colorway</span>
+        </div>
+        <div class="grp" id="zooms" role="group" aria-label="Zoom">
+          <span class="lbl">Zoom</span>
+        </div>
+        <div class="grp">
+          <button class="pill" id="theme" type="button">Dark</button>
+        </div>
+        <p class="status mono" id="status" aria-live="polite"></p>
+      </div>
+
+      <main class="grid" id="grid"></main>
+
+      <footer>
+        <span class="mono">SEEDS STABLE PER COLORWAY · NO CDN · ONE FILE</span>
+        <span
+          >Say the number (e.g. “05”) and I wire it into the shade card.</span
+        >
+      </footer>
+    </div>
+
+    <script>
+      /* ------------------------------------------------------------------ *
+       * Color math + seeds
+       * ------------------------------------------------------------------ */
+      function parse(hex) {
+        const raw = hex.replace("#", "").trim();
+        const full =
+          raw.length === 3
+            ? raw
+                .split("")
+                .map((c) => c + c)
+                .join("")
+            : raw;
+        const n = Number.parseInt(full, 16);
+        if (!Number.isFinite(n)) return [128, 128, 128];
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+      function rgb(r, g, b, a) {
+        const c = (v) => Math.round(Math.min(255, Math.max(0, v)));
+        return a === undefined
+          ? `rgb(${c(r)} ${c(g)} ${c(b)})`
+          : `rgb(${c(r)} ${c(g)} ${c(b)} / ${a})`;
+      }
+      /** amount > 0 lightens toward white, amount < 0 darkens toward black. */
+      function shift(hex, amount) {
+        const [r, g, b] = parse(hex);
+        const t = amount >= 0 ? 255 : 0;
+        const k = Math.abs(amount);
+        return rgb(r + (t - r) * k, g + (t - g) * k, b + (t - b) * k);
+      }
+      function mix(a, b, t) {
+        const A = parse(a);
+        const B = parse(b);
+        return rgb(
+          A[0] + (B[0] - A[0]) * t,
+          A[1] + (B[1] - A[1]) * t,
+          A[2] + (B[2] - A[2]) * t,
+        );
+      }
+      function withA(hex, a) {
+        const [r, g, b] = parse(hex);
+        return rgb(r, g, b, a);
+      }
+      function hashSeed(input) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < input.length; i += 1) {
+          h ^= input.charCodeAt(i);
+          h = Math.imul(h, 0x01000193);
+        }
+        return h >>> 0;
+      }
+      function mulberry32(seed) {
+        let a = seed >>> 0;
+        return () => {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function svgUrl(svg) {
+        return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Shared texture constants
+       * ------------------------------------------------------------------ */
+      const GRAIN = svgUrl(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="140" height="140" filter="url(#g)" opacity="0.78"/></svg>`,
+      );
+      const GRAIN_SOFT = svgUrl(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="180" height="180" filter="url(#g)" opacity="0.4"/></svg>`,
+      );
+      const CLOUD = svgUrl(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="c"><feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="300" height="300" filter="url(#c)" opacity="0.62"/></svg>`,
+      );
+      /** Vertical pile fibers for chenille — soft, irregular, no grid. */
+      const PILE = (() => {
+        const W = 140;
+        const H = 140;
+        const rng = mulberry32(0x2545f491);
+        let s = "";
+        for (let i = 0; i < 130; i += 1) {
+          const x0 = (rng() * W).toFixed(1);
+          const y0 = (rng() * H).toFixed(1);
+          const len = (7 + rng() * 26).toFixed(1);
+          const dark = rng() > 0.5;
+          s += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${(+y0 + +len).toFixed(1)}" stroke="${dark ? "rgb(0 0 0 / 0.6)" : "rgb(255 255 255 / 0.6)"}" stroke-width="${(1 + rng() * 0.7).toFixed(1)}" opacity="${(0.1 + rng() * 0.24).toFixed(2)}"/>`;
+        }
+        return svgUrl(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${s}</svg>`,
+        );
+      })();
+
+      /** Stray fiber hairs lying along the strand — kills the plastic look. */
+      const HAIR = (() => {
+        const W = 200;
+        const H = 200;
+        const rng = mulberry32(0x9e3779b9);
+        let s = "";
+        for (let i = 0; i < 80; i += 1) {
+          const x0 = (rng() * W).toFixed(1);
+          const y0 = (rng() * H).toFixed(1);
+          const len = (5 + rng() * 18).toFixed(1);
+          const tilt = (rng() * 5 - 2.5).toFixed(1);
+          const dark = rng() > 0.5;
+          s += `<line x1="${x0}" y1="${y0}" x2="${(+x0 + +len).toFixed(1)}" y2="${(+y0 + +tilt).toFixed(1)}" stroke="${dark ? "rgb(0 0 0 / 0.6)" : "rgb(255 255 255 / 0.6)"}" stroke-width="1" opacity="${(0.16 + rng() * 0.3).toFixed(2)}"/>`;
+        }
+        return svgUrl(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${s}</svg>`,
+        );
+      })();
+
+      const DRIFT =
+        "repeating-linear-gradient(178deg, rgb(255 255 255 / 0.05) 0px, rgb(0 0 0 / 0) 30px, rgb(0 0 0 / 0.05) 64px, rgb(0 0 0 / 0) 92px, rgb(255 255 255 / 0.05) 120px)";
+
+      /** Cylinder profile inside one strand: crown → press groove. */
+      const PROFILE = [
+        [0, 0.08],
+        [0.06, 0.24],
+        [0.2, 0.3],
+        [0.38, 0.1],
+        [0.58, -0.08],
+        [0.8, -0.28],
+        [1, -0.46],
+      ];
+      /** Softer profile for pile fabrics (chenille, tweed). */
+      const PROFILE_SOFT = [
+        [0, 0.2],
+        [0.16, 0.14],
+        [0.44, 0.0],
+        [0.7, -0.08],
+        [1, -0.26],
+      ];
+      /** Sharp profile for silk: bright crown, hard press. */
+      const PROFILE_SILK = [
+        [0, 0.16],
+        [0.05, 0.3],
+        [0.14, 0.46],
+        [0.3, 0.16],
+        [0.52, -0.06],
+        [0.74, -0.26],
+        [0.9, -0.4],
+        [1, -0.44],
+      ];
+      /** Per-strand luminance jitter, 8-row cycle. */
+      const RJ = [0.05, -0.03, 0.015, -0.055, 0.03, -0.02, 0.04, -0.015];
+
+      /** Alpha light stops along a strand stack (works over any color). */
+      function lightStops(rowh, opts) {
+        const o = opts || {};
+        const amp = o.amp === undefined ? 1 : o.amp;
+        const profile = o.profile || PROFILE;
+        const jitter = o.jitter === undefined ? 1 : o.jitter;
+        const rows = o.rows || 8;
+        const out = [];
+        for (let i = 0; i < rows; i += 1) {
+          const j = RJ[i % RJ.length] * jitter;
+          profile.forEach(([f, a]) => {
+            const v = (a + j) * amp;
+            const y = i * rowh + f * rowh;
+            const tone =
+              v >= 0
+                ? `rgb(255 255 255 / ${Math.abs(v).toFixed(3)})`
+                : `rgb(0 0 0 / ${Math.abs(v).toFixed(3)})`;
+            out.push(`${tone} ${y.toFixed(2)}px`);
+          });
+        }
+        return out;
+      }
+      function cylLayer(rowh, opts) {
+        return `repeating-linear-gradient(180deg, ${lightStops(rowh, opts).join(", ")})`;
+      }
+      /** Diagonal strand shading (same stops, tilted axis). */
+      function cylLayerAt(rowh, angle, opts) {
+        return `repeating-linear-gradient(${angle}deg, ${lightStops(rowh, opts).join(", ")})`;
+      }
+
+      /** Horizontal color bands — one palette color per winding row. */
+      function rowBand(colors, rowh, heights) {
+        const stops = [];
+        if (heights) {
+          let y = 0;
+          let i = 0;
+          while (y < 260) {
+            const h = heights[i % heights.length];
+            stops.push(
+              `${colors[i % colors.length]} ${y.toFixed(1)}px ${Math.min(y + h, 300).toFixed(1)}px`,
+            );
+            y += h;
+            i += 1;
+          }
+        } else {
+          const n = Math.ceil(260 / rowh);
+          for (let i = 0; i < n; i += 1) {
+            stops.push(
+              `${colors[i % colors.length]} ${(i * rowh).toFixed(1)}px ${((i + 1) * rowh).toFixed(1)}px`,
+            );
+          }
+        }
+        return `repeating-linear-gradient(180deg, ${stops.join(", ")})`;
+      }
+      /** Same bands, tilted to run with a diagonal strand. */
+      function diagBand(colors, rowh, angle) {
+        const stops = [];
+        const n = Math.ceil(320 / rowh);
+        for (let i = 0; i < n; i += 1) {
+          stops.push(
+            `${colors[i % colors.length]} ${(i * rowh).toFixed(1)}px ${((i + 1) * rowh).toFixed(1)}px`,
+          );
+        }
+        return `repeating-linear-gradient(${angle}deg, ${stops.join(", ")})`;
+      }
+      /** Vertical color bands — one palette color per warp column. */
+      function colBand(colors, rowh) {
+        const stops = [];
+        const n = Math.ceil(320 / rowh);
+        for (let i = 0; i < n; i += 1) {
+          stops.push(
+            `${colors[i % colors.length]} ${(i * rowh).toFixed(1)}px ${((i + 1) * rowh).toFixed(1)}px`,
+          );
+        }
+        return `repeating-linear-gradient(90deg, ${stops.join(", ")})`;
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Continuous thread walker (multicolor yarn, seeded per colorway)
+       * ------------------------------------------------------------------ */
+      function threadSegments(colors, width, rowsCount, rowh, seed) {
+        const rng = mulberry32(hashSeed(seed));
+        const baseLen = rowh * 2.6;
+        const lengths = [];
+        const lengthAt = (j) => {
+          while (lengths.length <= j) {
+            lengths.push(baseLen * (0.7 + 0.6 * rng()));
+          }
+          return lengths[j];
+        };
+        const bounds = [0];
+        const ensure = (s) => {
+          while (bounds[bounds.length - 1] < s) {
+            bounds.push(
+              bounds[bounds.length - 1] + lengthAt(bounds.length - 1),
+            );
+          }
+        };
+        let cursor = rng() * baseLen;
+        let seg = 0;
+        ensure(cursor + 1);
+        while (bounds[seg + 1] <= cursor) seg += 1;
+
+        const rows = [];
+        for (let r = 0; r < rowsCount; r += 1) {
+          const rowStart = cursor;
+          const rowEnd = cursor + width;
+          cursor = rowEnd;
+          ensure(rowEnd + 1);
+          while (bounds[seg + 1] <= rowStart) seg += 1;
+          const out = [];
+          let s = seg;
+          while (bounds[s] < rowEnd) {
+            out.push({
+              x0: Math.max(bounds[s], rowStart) - rowStart,
+              x1: Math.min(bounds[s + 1], rowEnd) - rowStart,
+              ci: s % colors.length,
+            });
+            s += 1;
+          }
+          rows.push(out);
+        }
+        return rows;
+      }
+
+      function spaceDyeTile(x) {
+        const W = 768;
+        const rowsCount = Math.ceil(300 / x.rowh);
+        const H = rowsCount * x.rowh;
+        const rows = threadSegments(
+          x.colors,
+          W,
+          rowsCount,
+          x.rowh,
+          x.seed + "|sdyed",
+        );
+        let rects = "";
+        rows.forEach((segs, r) => {
+          const y = (r * x.rowh).toFixed(2);
+          const h = (x.rowh + 0.6).toFixed(2);
+          segs.forEach((s, i) => {
+            const c = x.colors[s.ci % x.colors.length];
+            rects += `<rect x="${s.x0.toFixed(2)}" y="${y}" width="${(s.x1 - s.x0 + 0.6).toFixed(2)}" height="${h}" fill="${c}"/>`;
+            if (i < segs.length - 1) {
+              const next = x.colors[(s.ci + 1) % x.colors.length];
+              rects += `<rect x="${(s.x1 - 1.4).toFixed(2)}" y="${y}" width="2.8" height="${h}" fill="${mix(c, next, 0.5)}"/>`;
+            }
+          });
+        });
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H.toFixed(2)}">${rects}</svg>`;
+        return svgUrl(svg);
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Knit stitch tile — one stockinette course per palette color
+       * ------------------------------------------------------------------ */
+      function knitTile(x) {
+        const rows = x.colors;
+        const VH = 150 * rows.length;
+        const tube = rows
+          .map((c, r) => {
+            const y0 = r * 150;
+            const body = `M 40 ${y0 + 4} C 58 ${y0 + 62} 86 ${y0 + 112} 110 ${y0 + 148} M 180 ${y0 + 4} C 162 ${y0 + 62} 134 ${y0 + 112} 110 ${y0 + 148}`;
+            const head = `M 34 ${y0 + 34} Q 110 ${y0 - 6} 186 ${y0 + 34}`;
+            return (
+              `<path d="${head}" fill="none" stroke="rgb(0 0 0 / 0.34)" stroke-width="44" stroke-linecap="round"/>` +
+              `<path d="${body}" fill="none" stroke="rgb(0 0 0 / 0.5)" stroke-width="66" stroke-linecap="round"/>` +
+              `<path d="${body}" fill="none" stroke="${c}" stroke-width="54" stroke-linecap="round"/>` +
+              `<path d="${body}" fill="none" stroke="rgb(255 255 255 / 0.42)" stroke-width="18" stroke-linecap="round" transform="translate(-9 -7)"/>` +
+              `<path d="${body}" fill="none" stroke="rgb(255 255 255 / 0.5)" stroke-width="7" stroke-linecap="round" transform="translate(-14 -10)"/>`
+            );
+          })
+          .join("");
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="${VH}" viewBox="0 0 220 ${VH}">${tube}</svg>`;
+        return {
+          url: svgUrl(svg),
+          tileW: x.rowh * 2.2,
+          tileH: x.rowh * 1.5 * rows.length,
+        };
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Donegal flecks + slub neps
+       * ------------------------------------------------------------------ */
+      function fleckTile(x) {
+        const W = 340;
+        const H = 340;
+        const rng = mulberry32(hashSeed(x.seed + "|fleck"));
+        const pool =
+          x.colors.length > 1
+            ? x.colors.concat(["#F2E9DA", "#15181F"])
+            : [mix(x.base, "#F2E9DA", 0.75), "#15181F", shift(x.base, 0.45)];
+        let s = "";
+        for (let i = 0; i < 170; i += 1) {
+          const c = pool[Math.floor(rng() * pool.length)];
+          s += `<circle cx="${(rng() * W).toFixed(1)}" cy="${(rng() * H).toFixed(1)}" r="${(0.7 + rng() * 1.5).toFixed(1)}" fill="${c}" opacity="${(0.45 + rng() * 0.45).toFixed(2)}"/>`;
+        }
+        for (let i = 0; i < 150; i += 1) {
+          const c = pool[Math.floor(rng() * pool.length)];
+          const x0 = (rng() * W).toFixed(1);
+          const y0 = (rng() * H).toFixed(1);
+          const len = (3 + rng() * 7).toFixed(1);
+          const dy = (rng() * 4 - 2).toFixed(1);
+          s += `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${(+y0 + +len).toFixed(1)}" stroke="${c}" stroke-width="1" opacity="${(0.22 + rng() * 0.35).toFixed(2)}" transform="rotate(${(+dy * 6).toFixed(0)} ${x0} ${y0})"/>`;
+        }
+        return svgUrl(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${s}</svg>`,
+        );
+      }
+      function nepTile(x) {
+        const W = 768;
+        const H = 300;
+        const rng = mulberry32(hashSeed(x.seed + "|nep"));
+        const pool =
+          x.colors.length > 1
+            ? x.colors
+            : [mix(x.base, "#F6EFE2", 0.7), shift(x.base, -0.55)];
+        let s = "";
+        const n = 14;
+        for (let i = 0; i < n; i += 1) {
+          const cx = rng() * W;
+          const cy = Math.floor(rng() * (H / x.rowh)) * x.rowh + x.rowh / 2;
+          const rx = x.rowh * (0.3 + rng() * 0.45);
+          const ry = x.rowh * (0.1 + rng() * 0.1);
+          const c = pool[Math.floor(rng() * pool.length)];
+          const rot = (rng() * 30 - 15).toFixed(0);
+          s += `<g transform="rotate(${rot} ${cx.toFixed(1)} ${cy.toFixed(1)})"><ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="rgb(0 0 0 / 0.3)"/><ellipse cx="${cx.toFixed(1)}" cy="${(cy - ry * 0.35).toFixed(1)}" rx="${(rx * 0.85).toFixed(1)}" ry="${(ry * 0.7).toFixed(1)}" fill="${c}" opacity="0.85"/><ellipse cx="${(cx - rx * 0.3).toFixed(1)}" cy="${(cy - ry * 0.5).toFixed(1)}" rx="${(rx * 0.3).toFixed(1)}" ry="${(ry * 0.25).toFixed(1)}" fill="rgb(255 255 255 / 0.28)"/></g>`;
+        }
+        return svgUrl(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${s}</svg>`,
+        );
+      }
+
+      /* ------------------------------------------------------------------ *
+       * The 12 painters — each returns a full background style + aux layer
+       * ------------------------------------------------------------------ */
+      const PAINTERS = {
+        /* 01 — Wound cylinder: the physical card, refined */
+        wound(x) {
+          const imgs = [
+            GRAIN,
+            HAIR,
+            DRIFT,
+            twistAt(171),
+            sideFall(),
+            cylLayer(x.rowh),
+          ];
+          const modes = [
+            "overlay",
+            "normal",
+            "normal",
+            "normal",
+            "soft-light",
+            "normal",
+          ];
+          if (x.colors.length > 1) {
+            imgs.push(rowBand(x.colors, x.rowh));
+            modes.push("normal");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+          };
+        },
+
+        /* 02 — Cross-wound cone: two wind angles crossing */
+        crosswound(x) {
+          const A = 16;
+          const imgs = [
+            GRAIN,
+            HAIR,
+            DRIFT,
+            cylLayerAt(x.rowh, 180 - A),
+            crossBar(A),
+            crossBar(-A, true),
+          ];
+          const modes = [
+            "overlay",
+            "normal",
+            "normal",
+            "normal",
+            "normal",
+            "normal",
+          ];
+          if (x.colors.length > 1) {
+            imgs.push(diagBand(x.colors, x.rowh, 180 - A));
+            modes.push("normal");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+          };
+        },
+
+        /* 03 — Rope ply: coarse strands with a visible S-twist */
+        rope(x) {
+          const w = Math.max(14, x.rowh * 2.2);
+          const amp = Math.min(1, Math.max(0.45, x.rowh / 18));
+          const imgs = [
+            GRAIN,
+            HAIR,
+            cylLayer(x.rowh, { amp: 1.15 }),
+            twistBox(w, x.rowh, amp),
+          ];
+          const modes = ["overlay", "normal", "normal", "normal"];
+          const sizes = ["auto", "auto", "auto", `${w}px ${x.rowh}px`];
+          const reps = ["repeat", "repeat", "repeat", "repeat"];
+          if (x.colors.length > 1) {
+            imgs.push(spaceDyeTile(x));
+            modes.push("normal");
+            sizes.push(
+              `768px ${(Math.ceil(300 / x.rowh) * x.rowh).toFixed(2)}px`,
+            );
+            reps.push("repeat-x");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+            backgroundSize: sizes.join(", "),
+            backgroundRepeat: reps.join(", "),
+          };
+        },
+
+        /* 04 — Marl: two plies barber-polled along the strand */
+        marl(x) {
+          const a = x.colors[0];
+          const b =
+            x.colors.length > 1 ? x.colors[1] : mix(x.base, "#FFF3DF", 0.66);
+          const s = Math.max(4, x.rowh * 0.52);
+          return {
+            backgroundColor: a,
+            backgroundImage: `${GRAIN}, ${HAIR}, ${DRIFT}, ${cylLayer(x.rowh)}, ${marlStripes(a, b, s)}`,
+            backgroundBlendMode: "overlay, normal, normal, normal, normal",
+          };
+        },
+
+        /* 05 — Space-dyed: one continuous thread across every row */
+        spacedye(x) {
+          const tileH = Math.ceil(300 / x.rowh) * x.rowh;
+          return {
+            backgroundColor: x.base,
+            backgroundImage: `${GRAIN}, ${HAIR}, ${DRIFT}, ${cylLayer(x.rowh)}, ${spaceDyeTile(x)}`,
+            backgroundBlendMode: "overlay, normal, normal, normal, normal",
+            backgroundSize: `auto, auto, auto, auto, 768px ${tileH.toFixed(2)}px`,
+            backgroundRepeat: "repeat, repeat, repeat, repeat, repeat-x",
+          };
+        },
+
+        /* 06 — Plain weave: warp over weft, over one under one */
+        weave(x) {
+          const imgs = [GRAIN, cylLayer(x.rowh, { amp: 1.05 })];
+          const modes = ["overlay", "normal"];
+          if (x.colors.length > 1) {
+            imgs.push(rowBand(x.colors, x.rowh));
+            modes.push("normal");
+          }
+          const aux =
+            x.colors.length > 1
+              ? `${cylLayer(x.rowh, { amp: 1.3, jitter: 0.5 })}, ${colBand(x.colors, x.rowh)}`
+              : `${cylLayer(x.rowh, { amp: 1.3, jitter: 0.5 })}, linear-gradient(${x.base}, ${x.base})`;
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+            aux: {
+              bg: aux,
+              mask: `repeating-conic-gradient(#000 0% 25%, #0000 0% 50%)`,
+              msize: `${x.rowh * 2}px ${x.rowh * 2}px`,
+            },
+          };
+        },
+
+        /* 07 — Stockinette knit: V-stitches stacked in columns */
+        knit(x) {
+          const t = knitTile(x);
+          return {
+            backgroundColor: mix(x.base, "#000000", 0.4),
+            backgroundImage: `${GRAIN}, ${HAIR}, ${t.url}`,
+            backgroundBlendMode: "overlay, normal, normal",
+            backgroundSize: `auto, auto, ${t.tileW.toFixed(1)}px ${t.tileH.toFixed(1)}px`,
+          };
+        },
+
+        /* 08 — Bouclé: looped pile, every loop catching light */
+        boucle(x) {
+          const w = x.rowh * 3.8;
+          const h = x.rowh * 2.5;
+          const imgs = [
+            GRAIN,
+            DRIFT,
+            cylLayer(x.rowh, { amp: 0.5 }),
+            loopShadow(),
+            loopGlow(),
+            loopShadow(),
+            loopGlow(),
+          ];
+          const modes = [
+            "overlay",
+            "normal",
+            "normal",
+            "normal",
+            "normal",
+            "normal",
+            "normal",
+          ];
+          const sizes = [
+            "auto",
+            "auto",
+            "auto",
+            `${w.toFixed(1)}px ${h.toFixed(1)}px`,
+            `${w.toFixed(1)}px ${h.toFixed(1)}px`,
+            `${w.toFixed(1)}px ${h.toFixed(1)}px`,
+            `${w.toFixed(1)}px ${h.toFixed(1)}px`,
+          ];
+          const pos = [
+            "0 0",
+            "0 0",
+            "0 0",
+            "0 0",
+            "0 0",
+            `${(w / 2).toFixed(1)}px ${(h / 2).toFixed(1)}px`,
+            `${(w / 2).toFixed(1)}px ${(h / 2).toFixed(1)}px`,
+          ];
+          if (x.colors.length > 1) {
+            imgs.push(rowBand(x.colors, x.rowh));
+            modes.push("normal");
+            sizes.push("auto");
+            pos.push("0 0");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+            backgroundSize: sizes.join(", "),
+            backgroundPosition: pos.join(", "),
+          };
+        },
+
+        /* 09 — Chenille: dense vertical pile with a soft sheen */
+        chenille(x) {
+          const imgs = [
+            GRAIN_SOFT,
+            CLOUD,
+            PILE,
+            pileSheen(),
+            cylLayer(x.rowh, { profile: PROFILE_SOFT, amp: 0.45 }),
+          ];
+          const modes = [
+            "overlay",
+            "soft-light",
+            "normal",
+            "soft-light",
+            "normal",
+          ];
+          if (x.colors.length > 1) {
+            imgs.push(rowBand(x.colors, x.rowh));
+            modes.push("normal");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+          };
+        },
+
+        /* 10 — Silk luster: fine strands with a hard specular crown */
+        silk(x) {
+          const imgs = [
+            GRAIN,
+            HAIR,
+            DRIFT,
+            twistAt(176, 0.7),
+            endFall(),
+            cylLayer(x.rowh, { profile: PROFILE_SILK, jitter: 0.5 }),
+          ];
+          const modes = [
+            "overlay",
+            "normal",
+            "normal",
+            "normal",
+            "soft-light",
+            "normal",
+          ];
+          const sizes = ["auto", "auto", "auto", "auto", "auto", "auto"];
+          const reps = [
+            "repeat",
+            "repeat",
+            "repeat",
+            "repeat",
+            "repeat",
+            "repeat",
+          ];
+          if (x.colors.length > 1) {
+            imgs.push(spaceDyeTile(x));
+            modes.push("normal");
+            sizes.push(
+              `768px ${(Math.ceil(300 / x.rowh) * x.rowh).toFixed(2)}px`,
+            );
+            reps.push("repeat-x");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+            backgroundSize: sizes.join(", "),
+            backgroundRepeat: reps.join(", "),
+          };
+        },
+
+        /* 11 — Donegal tweed: heathered base flecked with neps */
+        tweed(x) {
+          const heather =
+            x.colors.length > 1
+              ? mix(x.colors[0], "#F2E9DA", 0.2)
+              : mix(x.base, "#F2E9DA", 0.22);
+          return {
+            backgroundColor: heather,
+            backgroundImage: `${GRAIN_SOFT}, ${fleckTile(x)}, ${CLOUD}, ${HAIR}, ${cylLayer(x.rowh, { profile: PROFILE_SOFT, amp: 0.45 })}`,
+            backgroundBlendMode: "overlay, normal, soft-light, normal, normal",
+          };
+        },
+
+        /* 12 — Slub: irregular thick-thin strand with neps */
+        slub(x) {
+          const rng = mulberry32(hashSeed(x.seed + "|slub"));
+          const raw = [];
+          let total = 0;
+          while (total < 240) {
+            const h = x.rowh * (0.45 + rng() * 1.35);
+            raw.push(h);
+            total += h;
+          }
+          const k = 240 / total;
+          const heights = raw.map((h) => h * k);
+          const stops = [];
+          let y = 0;
+          let i = 0;
+          while (y < 240) {
+            const h = heights[i % heights.length];
+            const j = RJ[i % RJ.length] * 1.5;
+            PROFILE.forEach(([f, a]) => {
+              const v = (a + j) * 1.2;
+              const yy = y + f * h;
+              const tone =
+                v >= 0
+                  ? `rgb(255 255 255 / ${Math.abs(v).toFixed(3)})`
+                  : `rgb(0 0 0 / ${Math.abs(v).toFixed(3)})`;
+              stops.push(`${tone} ${yy.toFixed(2)}px`);
+            });
+            y += h;
+            i += 1;
+          }
+          const imgs = [
+            GRAIN,
+            HAIR,
+            DRIFT,
+            nepTile(x),
+            `repeating-linear-gradient(180deg, ${stops.join(", ")})`,
+          ];
+          const modes = ["overlay", "normal", "normal", "normal", "normal"];
+          if (x.colors.length > 1) {
+            imgs.push(rowBand(x.colors, x.rowh, heights));
+            modes.push("normal");
+          }
+          return {
+            backgroundColor: x.base,
+            backgroundImage: imgs.join(", "),
+            backgroundBlendMode: modes.join(", "),
+          };
+        },
+      };
+
+      /* --- small shared layers --- */
+      function twistAt(angle, strength) {
+        const s = strength === undefined ? 1 : strength;
+        return `repeating-linear-gradient(${angle}deg, rgb(255 255 255 / ${(0.05 * s).toFixed(3)}) 0px, rgb(255 255 255 / ${(0.05 * s).toFixed(3)}) 1px, rgb(0 0 0 / ${(0.045 * s).toFixed(3)}) 2px, rgb(0 0 0 / ${(0.045 * s).toFixed(3)}) 3px, rgb(255 255 255 / 0) 4px, rgb(255 255 255 / 0) 7px)`;
+      }
+      function sideFall() {
+        return "linear-gradient(90deg, rgb(0 0 0 / 0.2) 0px, rgb(0 0 0 / 0) 14%, rgb(255 255 255 / 0.05) 46%, rgb(0 0 0 / 0) 70%, rgb(0 0 0 / 0) 86%, rgb(0 0 0 / 0.24) 100%)";
+      }
+      function endFall() {
+        return "linear-gradient(90deg, rgb(0 0 0 / 0.26) 0px, rgb(255 255 255 / 0.1) 22%, rgb(255 255 255 / 0.16) 44%, rgb(0 0 0 / 0) 66%, rgb(0 0 0 / 0.22) 100%)";
+      }
+      function crossBar(angle, faint) {
+        const a = faint ? 0.055 : 0.075;
+        const d = faint ? 5 : 3.5;
+        return `repeating-linear-gradient(${90 + angle}deg, rgb(255 255 255 / ${a}) 0px, rgb(255 255 255 / ${a}) ${d}px, rgb(0 0 0 / ${faint ? 0.07 : 0.12}) ${d}px, rgb(0 0 0 / ${faint ? 0.07 : 0.12}) ${d + 1.6}px, rgb(0 0 0 / 0) ${d + 1.6}px, rgb(0 0 0 / 0) 26px)`;
+      }
+      function twistBox(w, rowh, amp) {
+        const a = amp === undefined ? 1 : amp;
+        const n = (v) => `rgb(255 255 255 / ${(v * a).toFixed(3)})`;
+        const d = (v) => `rgb(0 0 0 / ${(v * a).toFixed(3)})`;
+        return `linear-gradient(152deg, ${n(0.2)} 0px, ${n(0.06)} 18%, ${d(0.42)} 46%, ${d(0.26)} 58%, ${n(0.18)} 74%, ${n(0.2)} 100%)`;
+      }
+      function marlStripes(a, b, s) {
+        return `repeating-linear-gradient(114deg, ${a} 0px, ${a} ${s.toFixed(1)}px, ${b} ${s.toFixed(1)}px, ${b} ${(s * 2).toFixed(1)}px)`;
+      }
+      /** Bouclé loop: lit arc across the crown, shadow pooled underneath. */
+      function loopGlow() {
+        return "radial-gradient(closest-side at 50% 40%, rgb(0 0 0 / 0) 0px, rgb(0 0 0 / 0) 46%, rgb(255 255 255 / 0.3) 54%, rgb(255 255 255 / 0.44) 66%, rgb(255 255 255 / 0.1) 76%, rgb(255 255 255 / 0) 86%)";
+      }
+      function loopShadow() {
+        return "radial-gradient(closest-side at 50% 64%, rgb(0 0 0 / 0) 0px, rgb(0 0 0 / 0) 48%, rgb(0 0 0 / 0.42) 60%, rgb(0 0 0 / 0.28) 78%, rgb(0 0 0 / 0) 94%)";
+      }
+      function pileSheen() {
+        return "linear-gradient(112deg, rgb(255 255 255 / 0.12) 0px, rgb(255 255 255 / 0.03) 28%, rgb(0 0 0 / 0.08) 52%, rgb(255 255 255 / 0.06) 74%, rgb(0 0 0 / 0.1) 100%)";
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Variants, deniers, colorways
+       * ------------------------------------------------------------------ */
+      const VARIANTS = [
+        {
+          n: "01",
+          id: "wound",
+          name: "Wound cylinder",
+          kind: "current +",
+          note: "Rows shaded like a cylinder — the physical card, tightened: softer crown, cone falloff at both ends.",
+        },
+        {
+          n: "02",
+          id: "crosswound",
+          name: "Cross-wound cone",
+          kind: "winding",
+          note: "Two wind angles crossing, the way yarn actually builds on a cone instead of a flat card.",
+        },
+        {
+          n: "03",
+          id: "rope",
+          name: "Rope ply",
+          kind: "coarse",
+          note: "Thick strands with a visible S-twist and a deep groove between rows. Reads best at coarse denier.",
+        },
+        {
+          n: "04",
+          id: "marl",
+          name: "Marl twist",
+          kind: "2-ply",
+          note: "Two plies barber-polled along the strand — cream ply on solids, palette pair on multicolors.",
+        },
+        {
+          n: "05",
+          id: "spacedye",
+          name: "Space-dyed",
+          kind: "multicolor",
+          note: "One continuous thread carrying its palette across every row, dye bleeding softly at each join.",
+        },
+        {
+          n: "06",
+          id: "weave",
+          name: "Plain weave",
+          kind: "warp × weft",
+          note: "Warp over weft, over one under one — yarn as cloth, warp columns take the palette.",
+        },
+        {
+          n: "07",
+          id: "knit",
+          name: "Stockinette",
+          kind: "knit",
+          note: "V-stitches stacked in columns, each loop lit on the crown and shadowed where it dives under.",
+        },
+        {
+          n: "08",
+          id: "boucle",
+          name: "Bouclé loop",
+          kind: "loop pile",
+          note: "Looped pile in a staggered brick pattern — every loop holds its own ring of light.",
+        },
+        {
+          n: "09",
+          id: "chenille",
+          name: "Chenille",
+          kind: "pile",
+          note: "Dense vertical fibers under a soft diagonal sheen — fuzzy, matte, no hard strand edges.",
+        },
+        {
+          n: "10",
+          id: "silk",
+          name: "Silk luster",
+          kind: "fine",
+          note: "Fine strands with a hard specular crown and a light sweep across the band. Best at fine denier.",
+        },
+        {
+          n: "11",
+          id: "tweed",
+          name: "Donegal tweed",
+          kind: "heather",
+          note: "Heathered base flecked with colored neps and stray fibers, row shading kept quiet underneath.",
+        },
+        {
+          n: "12",
+          id: "slub",
+          name: "Slub",
+          kind: "irregular",
+          note: "Thick-thin strand with uneven row heights and the odd nep — the least machine-perfect of the set.",
+        },
+      ];
+
+      const DENIERS = [
+        { id: "fine", label: "Fine", px: 6 },
+        { id: "medium", label: "Medium", px: 11 },
+        { id: "coarse", label: "Coarse", px: 18 },
+      ];
+
+      const WAYS = [
+        { code: "57", name: "Marigold", colors: ["#FFA500"] },
+        { code: "63", name: "Teal", colors: ["#00838F"] },
+        { code: "65", name: "Magenta", colors: ["#E91E63"] },
+        { code: "88", name: "Indigo", colors: ["#1A237E"] },
+        { code: "83LL", name: "Oat", colors: ["#BCAAA4"] },
+        {
+          code: "64R",
+          name: "Berry",
+          colors: ["#7B1F3A", "#C2185B", "#F48FB1"],
+        },
+        {
+          code: "102DL",
+          name: "Ember",
+          colors: ["#FF8A65", "#FF7043", "#D84315"],
+        },
+        {
+          code: "69ND",
+          name: "Meadow",
+          colors: ["#66BB6A", "#AED581", "#C8E6C9"],
+        },
+        {
+          code: "88LD",
+          name: "Orchid",
+          colors: ["#880E4F", "#9C27B0", "#7B1FA2", "#4A148C"],
+        },
+      ];
+
+      const state = {
+        denier: "medium",
+        way: "63",
+        zoom: 1,
+        picked: null,
+      };
+
+      /* ------------------------------------------------------------------ *
+       * DOM build
+       * ------------------------------------------------------------------ */
+      const grid = document.getElementById("grid");
+
+      function el(tag, cls, text) {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text !== undefined) n.textContent = text;
+        return n;
+      }
+
+      function buildControls() {
+        const deniers = document.getElementById("deniers");
+        DENIERS.forEach((d) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "pill";
+          b.dataset.den = d.id;
+          b.innerHTML = `${d.label} <span class="px">${d.px}px</span>`;
+          b.addEventListener("click", () => {
+            state.denier = d.id;
+            render();
+          });
+          deniers.appendChild(b);
+        });
+
+        const ways = document.getElementById("ways");
+        WAYS.forEach((w) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "way";
+          b.dataset.way = w.code;
+          b.title = `${w.code} · ${w.name}`;
+          b.setAttribute("aria-label", `Colorway ${w.code} ${w.name}`);
+          const i = document.createElement("i");
+          i.dataset.chip = w.code;
+          b.appendChild(i);
+          b.addEventListener("click", () => {
+            state.way = w.code;
+            render();
+          });
+          ways.appendChild(b);
+        });
+
+        const zooms = document.getElementById("zooms");
+        [1, 2].forEach((z) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "pill";
+          b.dataset.zoom = String(z);
+          b.textContent = `${z}×`;
+          b.addEventListener("click", () => {
+            state.zoom = z;
+            render();
+          });
+          zooms.appendChild(b);
+        });
+
+        document.getElementById("theme").addEventListener("click", () => {
+          const dark =
+            document.documentElement.getAttribute("data-theme") === "dark";
+          document.documentElement.setAttribute(
+            "data-theme",
+            dark ? "light" : "dark",
+          );
+          document.getElementById("theme").textContent = dark
+            ? "Dark"
+            : "Light";
+          render();
+        });
+      }
+
+      function buildCards() {
+        VARIANTS.forEach((v) => {
+          const card = el("article", "card");
+          card.dataset.variant = v.id;
+
+          const head = el("div", "card-head");
+          head.appendChild(el("span", "idx", v.n));
+          const titles = el("div");
+          titles.appendChild(el("h2", "", v.name));
+          titles.appendChild(el("span", "kind", v.kind));
+          head.appendChild(titles);
+          const pick = document.createElement("button");
+          pick.type = "button";
+          pick.className = "pick";
+          pick.textContent = "Pick";
+          pick.setAttribute("aria-pressed", "false");
+          pick.addEventListener("click", () => {
+            state.picked = state.picked === v.n ? null : v.n;
+            render();
+          });
+          head.appendChild(pick);
+          card.appendChild(head);
+
+          const frame = el("div", "frame");
+          const tex = el("div", "tex");
+          tex.dataset.paint = v.id;
+          tex.dataset.main = "1";
+          frame.appendChild(tex);
+          frame.appendChild(el("span", "glass"));
+          frame.appendChild(el("span", "code", "KS-63"));
+          card.appendChild(frame);
+
+          card.appendChild(el("p", "note", v.note));
+
+          const dens = el("div", "dens");
+          dens.setAttribute("role", "group");
+          dens.setAttribute("aria-label", `Denier for ${v.n} ${v.name}`);
+          DENIERS.forEach((d) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "den";
+            b.dataset.den = d.id;
+            b.setAttribute("aria-pressed", "false");
+            const mini = el("div", "mini");
+            mini.dataset.paint = v.id;
+            mini.dataset.rowh = String(d.px);
+            b.appendChild(mini);
+            const cap = el("div", "cap");
+            cap.appendChild(el("span", "", d.label));
+            cap.appendChild(el("span", "", `${d.px}px`));
+            b.appendChild(cap);
+            b.addEventListener("click", () => {
+              state.denier = d.id;
+              render();
+            });
+            dens.appendChild(b);
+          });
+          card.appendChild(dens);
+
+          grid.appendChild(card);
+        });
+      }
+
+      /* ------------------------------------------------------------------ *
+       * Render
+       * ------------------------------------------------------------------ */
+      const BG_KEYS = [
+        "backgroundColor",
+        "backgroundImage",
+        "backgroundBlendMode",
+        "backgroundRepeat",
+        "backgroundSize",
+        "backgroundPosition",
+      ];
+      const AUX_KEYS = {
+        bg: "--aux-bg",
+        c: "--aux-c",
+        mask: "--aux-mask",
+        msize: "--aux-msize",
+        size: "--aux-size",
+        rep: "--aux-rep",
+        pos: "--aux-pos",
+        op: "--aux-op",
+      };
+
+      function paint(node, style) {
+        BG_KEYS.forEach((k) => {
+          node.style[k] = style[k] || "";
+        });
+        if (!style.backgroundRepeat) node.style.backgroundRepeat = "repeat";
+        if (!style.backgroundSize) node.style.backgroundSize = "auto";
+        Object.keys(AUX_KEYS).forEach((k) => {
+          node.style.setProperty(
+            AUX_KEYS[k],
+            style.aux && style.aux[k] ? style.aux[k] : "",
+          );
+        });
+      }
+
+      function currentWay() {
+        return WAYS.find((w) => w.code === state.way) || WAYS[0];
+      }
+      function currentRowh() {
+        const d = DENIERS.find((x) => x.id === state.denier) || DENIERS[1];
+        return d.px * state.zoom;
+      }
+
+      function render() {
+        const way = currentWay();
+        const ctx = {
+          colors: way.colors,
+          base: way.colors[0],
+          rowh: currentRowh(),
+          seed: way.code,
+        };
+
+        document.querySelectorAll("[data-paint]").forEach((node) => {
+          const painter = PAINTERS[node.dataset.paint];
+          if (!painter) return;
+          const rowh = node.dataset.rowh ? Number(node.dataset.rowh) : ctx.rowh;
+          paint(
+            node,
+            painter({
+              colors: way.colors,
+              base: way.colors[0],
+              rowh,
+              seed: way.code,
+            }),
+          );
+        });
+
+        /* colorway chips in the bar */
+        document.querySelectorAll("[data-chip]").forEach((node) => {
+          const w = WAYS.find((x) => x.code === node.dataset.chip);
+          if (!w) return;
+          paint(
+            node,
+            PAINTERS.wound({
+              colors: w.colors,
+              base: w.colors[0],
+              rowh: 5,
+              seed: w.code,
+            }),
+          );
+        });
+
+        /* pressed states */
+        document.querySelectorAll("[data-den]").forEach((b) => {
+          b.setAttribute(
+            "aria-pressed",
+            String(b.dataset.den === state.denier),
+          );
+        });
+        document.querySelectorAll("[data-way]").forEach((b) => {
+          b.setAttribute("aria-pressed", String(b.dataset.way === state.way));
+        });
+        document.querySelectorAll("[data-zoom]").forEach((b) => {
+          b.setAttribute(
+            "aria-pressed",
+            String(Number(b.dataset.zoom) === state.zoom),
+          );
+        });
+        document.querySelectorAll(".card").forEach((card) => {
+          const v = VARIANTS.find((x) => x.id === card.dataset.variant);
+          const on = state.picked === v.n;
+          card.classList.toggle("picked", on);
+          card.querySelector(".pick").setAttribute("aria-pressed", String(on));
+          card.querySelector(".pick").textContent = on
+            ? `Picked ${v.n}`
+            : "Pick";
+          card.querySelector(".code").textContent = `KS-${way.code}`;
+        });
+
+        const d = DENIERS.find((x) => x.id === state.denier);
+        const v = VARIANTS.find((x) => x.n === state.picked);
+        const status = document.getElementById("status");
+        status.innerHTML =
+          `${way.code} · ${way.name} · ${d.label} ${d.px}px` +
+          (state.zoom === 2 ? " · 2×" : "") +
+          (v ? ` · PICK <b>${v.n} ${v.name}</b>` : " · PICK —");
+      }
+
+      buildControls();
+      buildCards();
+      render();
+    </script>
+  </body>
+</html>
