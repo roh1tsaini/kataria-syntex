@@ -36,9 +36,9 @@ permissions:
   contents: read
 
 # Artifacts hand off the shared app renderer and installers between jobs. R2
-# remains the release distribution. Three-day retention limits temporary storage.
+# remains the release distribution. One-day retention limits temporary storage.
 env:
-  RELEASE_ARTIFACT_RETENTION_DAYS: 3
+  RELEASE_ARTIFACT_RETENTION_DAYS: 1
 
 jobs:
   gate:
@@ -485,3 +485,35 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/app
           command: deploy
+
+  cleanup-history:
+    name: "Keep the latest five workflow runs"
+    if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    needs: [gate, deploy-web, desktop, android, publish-r2, deploy-app]
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Delete older completed runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_IDS_FILE="$RUNNER_TEMP/completed-run-ids.txt"
+          gh api --paginate "repos/$GH_REPO/actions/runs?status=completed&per_page=100&sort=created&direction=desc" --jq '.workflow_runs[].id' > "$RUN_IDS_FILE"
+          mapfile -t completed_run_ids < "$RUN_IDS_FILE"
+
+          kept_count=0
+          for run_id in "${completed_run_ids[@]}"; do
+            if [ "$run_id" = "$CURRENT_RUN_ID" ]; then
+              continue
+            fi
+            if [ "$kept_count" -lt 5 ]; then
+              kept_count=$((kept_count + 1))
+              continue
+            fi
+            gh api --method DELETE "repos/$GH_REPO/actions/runs/$run_id"
+          done
