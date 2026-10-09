@@ -487,7 +487,7 @@ jobs:
           command: deploy
 
   cleanup-history:
-    name: "Keep the latest five workflow runs"
+    name: "Keep the latest five Pipeline runs"
     if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     needs: [gate, deploy-web, desktop, android, publish-r2, deploy-app]
     runs-on: ubuntu-24.04
@@ -503,7 +503,7 @@ jobs:
         run: |
           set -euo pipefail
           RUN_IDS_FILE="$RUNNER_TEMP/completed-run-ids.txt"
-          gh api --paginate "repos/$GH_REPO/actions/runs?status=completed&per_page=100&sort=created&direction=desc" --jq '.workflow_runs[].id' > "$RUN_IDS_FILE"
+          gh api --paginate "repos/$GH_REPO/actions/workflows/pipeline.yml/runs?status=completed&per_page=100&sort=created&direction=desc" --jq '.workflow_runs[].id' > "$RUN_IDS_FILE"
           mapfile -t completed_run_ids < "$RUN_IDS_FILE"
 
           kept_count=0
