@@ -40,9 +40,9 @@ import java.security.MessageDigest
  *   only: the unknown-sources settings page opens exclusively from here.
  *
  * Single-flight: a second op while one is live is rejected, so the JS store
- * never runs two downloads against one progress surface. A slot whose
- * callback was lost (Android can kill the process behind the settings
- * screen) is taken over after OP_STALE_MS instead of wedging the app.
+ * never runs two downloads against one progress surface. Android may keep the
+ * permission settings open for an unknown length of time, so the active call
+ * stays pending until Android returns or destroys the activity.
  */
 @CapacitorPlugin(name = "Installer")
 class InstallerPlugin : Plugin() {
@@ -52,33 +52,22 @@ class InstallerPlugin : Plugin() {
         const val BUFFER_SIZE = 64 * 1024
         const val PROGRESS_THROTTLE_MS = 200L
         const val DEFAULT_FILENAME = "ks-biz-app.apk"
-        /** How long one op may hold the single-flight slot before a new call
-         *  takes it over — see claimOp. */
-        const val OP_STALE_MS = 5 * 60 * 1000L
     }
 
     private var activeOp: PluginCall? = null
-    private var activeOpAt = 0L
 
     /**
-     * Claims the single-flight slot; rejects the call when a live op holds it.
-     * A slot older than OP_STALE_MS is a lost callback, not a running op —
-     * Android can kill the process behind the install-permission settings
-     * screen — so it is taken over and the orphaned call is failed, otherwise
-     * the app could never stage or install again.
+     * Claims the single-flight slot; rejects a second call while the first
+     * download or installer permission flow is still active.
      */
     @Synchronized
     private fun claimOp(call: PluginCall): Boolean {
         val current = activeOp
         if (current != null) {
-            if (System.currentTimeMillis() - activeOpAt < OP_STALE_MS) {
-                call.reject("already_in_progress")
-                return false
-            }
-            finishCall(current, "stalled", null)
+            call.reject("already_in_progress")
+            return false
         }
         activeOp = call
-        activeOpAt = System.currentTimeMillis()
         return true
     }
 

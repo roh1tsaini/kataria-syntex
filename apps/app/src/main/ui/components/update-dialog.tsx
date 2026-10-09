@@ -1,7 +1,7 @@
 /**
  * Blocking update dialog — rendered once in App and shown whenever the
- * update store carries a requiredMinVersion (server 426, or a published
- * minVersion this build is below). Undismissable by design: the API carries
+ * update store carries a requiredMinVersion from the live server's 426.
+ * Undismissable by design: the API carries
  * no backward compatibility, so a client below the floor has nothing useful
  * to do.
  *
@@ -16,8 +16,7 @@
  * that failed, so a release that is not published yet never reads as "no
  * network".
  */
-import { useUpdates } from "@/store/updates";
-import type { UpdateFailure } from "@/store/updates";
+import { UPDATE_FAILURE_COPY, useUpdates } from "@/store/updates";
 import { updateAction, type UpdateAction } from "@/lib/platform";
 import { Button } from "@/ui/components/ui/button";
 import { ProgressBar } from "@/ui/components/progress-bar";
@@ -54,22 +53,6 @@ const COPY: Record<UpdateAction, { description: string; cta: string }> = {
   },
 };
 
-/** Which step failed, in plain terms. Being specific matters here: the old
- *  catch-all blamed the connection for a release that was not published. */
-const FAILURE_COPY: Record<UpdateFailure, string> = {
-  manifest_unavailable:
-    "Couldn't reach the update service. Check your connection, then try again.",
-  check_failed:
-    "Couldn't reach the update service. Check your connection, then try again.",
-  publish_pending:
-    "The required update is still being published. Try again in a minute.",
-  download_failed: "The download didn't finish. Try again.",
-  integrity_failed: "The download didn't verify. Try again.",
-  install_blocked:
-    "Allow installs from this app in the settings Android opened, then try again. The first install also runs a Play Protect scan — this APK is the official Kataria Syntex release; choose Install anyway.",
-  stalled: "Android didn't come back from the install screen. Try again.",
-};
-
 export function UpdateDialog() {
   const requiredMinVersion = useUpdates((s) => s.requiredMinVersion);
   const installUpdate = useUpdates((s) => s.installUpdate);
@@ -78,7 +61,7 @@ export function UpdateDialog() {
   const failure = useUpdates((s) => s.failure);
   const action = updateAction();
   const copy = COPY[action];
-  const busy = status === "downloading";
+  const busy = status === "downloading" || status === "installing";
 
   return (
     <Dialog open={!!requiredMinVersion}>
@@ -98,7 +81,7 @@ export function UpdateDialog() {
             <DialogDescription>{copy.description}</DialogDescription>
           </DialogHeader>
         </div>
-        {busy && progress && (
+        {status === "downloading" && progress && (
           <ProgressBar
             percent={progress.percent}
             totalBytes={progress.totalBytes}
@@ -106,7 +89,7 @@ export function UpdateDialog() {
         )}
         {status === "error" && (
           <p className="text-center text-xs text-muted-foreground">
-            {failure ? FAILURE_COPY[failure] : "Try again."}
+            {failure ? UPDATE_FAILURE_COPY[failure] : "Tap to retry."}
           </p>
         )}
         <Button

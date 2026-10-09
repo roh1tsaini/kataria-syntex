@@ -975,7 +975,7 @@
   }
 }
 
-/* Notification banner (Section 3, Section 5) — sonner ships 400ms `ease` transitions, which
+/* Notification toast (Section 3, Section 5) — sonner ships 400ms `ease` transitions, which
    is not the house curve. Scoped one level deeper than sonner's own selectors
    so the override holds whatever order the injected stylesheet lands in.
    Reduced motion is already collapsed by the block above. */

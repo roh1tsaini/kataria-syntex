@@ -1,6 +1,6 @@
 {
   "name": "@kataria-syntex/biz-app",
-  "version": "0.24.1",
+  "version": "0.24.2",
   "minAppVersion": "0.24.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,6 @@
   "dependencies": {
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.2",
-    "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/network": "^8.0.1",
     "@capacitor/preferences": "^8.0.1",
     "@kataria-syntex/app-core": "*",

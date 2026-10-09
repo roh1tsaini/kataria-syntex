@@ -1,11 +1,11 @@
 import { Toaster as Sonner } from "sonner";
 import { useTheme } from "@/ui/hooks/use-theme";
 
-/** Banner sits below the notch / status bar, not at the raw window edge. */
+/** Toast sits below the notch / status bar, not at the raw window edge. */
 const TOP_OFFSET = "calc(16px + env(safe-area-inset-top, 0px))";
 
 /**
- * Notification banner (design.md Section 3) — the web surface for app-core's toast
+ * Notification toast (design.md Section 3) — the web surface for app-core's toast
  * sink. Top-centre, drops from the top edge, title + optional description, a
  * tinted status glyph, at most three visible, tap-to-dismiss via the close
  * button or a swipe. Dwell is per kind and set at the sink (`main.tsx`).

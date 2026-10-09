@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Monitor,
@@ -10,8 +10,8 @@ import {
   Sun,
   type LucideIcon,
 } from "lucide-react";
-import { useUpdates } from "@/store/updates";
-import { isPlainBrowser } from "@/lib/platform";
+import { UPDATE_FAILURE_COPY, useUpdates } from "@/store/updates";
+import { isPlainBrowser, updateAction } from "@/lib/platform";
 import { useTheme, type ThemePreference } from "@/ui/hooks/use-theme";
 import { SettingsWindow } from "@/ui/components/settings-window";
 import { Skeleton } from "@/ui/components/motion";
@@ -167,25 +167,33 @@ function SettingsRow({
   );
 }
 
-/** "Check for updates" row — manual check, plus the deliberate install action
- * only on hosts that need one (macOS dmg, Android APK, Windows/Linux restart).
- * Web needs no action at all: index.html revalidates on every navigation, so
- * the fresh shell arrives on the next load with no prompt and no reload. */
+/** Manual check, Retry after failure, and each shell's update action. */
 function UpdateRow() {
   const checkNow = useUpdates((s) => s.checkNow);
+  const retryUpdate = useUpdates((s) => s.retryUpdate);
   const installUpdate = useUpdates((s) => s.installUpdate);
   const latestVersion = useUpdates((s) => s.latestVersion);
   const checking = useUpdates((s) => s.checking);
   const status = useUpdates((s) => s.status);
   const progress = useUpdates((s) => s.progress);
+  const failure = useUpdates((s) => s.failure);
   const [result, setResult] = useState<string | null>(null);
+  const [retryInFlight, setRetryInFlight] = useState(false);
 
   const web = isPlainBrowser();
+  const action = updateAction();
   const installable = !web && latestVersion !== null && status === "ready";
   const downloading = status === "downloading";
+  const installing = status === "installing";
+  const busy = downloading || installing;
+  const retrying = failure !== null || retryInFlight;
   // A deploy streaming on web is a readout, not an action — there is nothing
   // to install.
-  const showAction = installable || (downloading && !web);
+  const showAction = !retryInFlight && (installable || (busy && !web));
+
+  useEffect(() => {
+    if (retryInFlight && !checking && !busy) setRetryInFlight(false);
+  }, [busy, checking, retryInFlight]);
 
   const check = async () => {
     setResult(null);
@@ -193,16 +201,33 @@ function UpdateRow() {
     setResult(
       outcome === "up-to-date"
         ? "You're on the latest version."
-        : outcome === "error"
-          ? "Couldn't reach the update service."
-          : web
-            ? "A new version is ready — it applies the next time you open the app."
-            : null,
+        : outcome === "available" && web
+          ? "A new version is ready — it applies the next time you open the app."
+          : null,
     );
   };
 
+  const retry = async () => {
+    setRetryInFlight(true);
+    try {
+      await retryUpdate();
+    } finally {
+      const current = useUpdates.getState();
+      if (
+        !current.checking &&
+        current.status !== "downloading" &&
+        current.status !== "installing"
+      ) {
+        setRetryInFlight(false);
+      }
+    }
+  };
+
   return (
-    <SettingsRow label="Updates" hint={result ?? undefined}>
+    <SettingsRow
+      label="Updates"
+      hint={failure ? UPDATE_FAILURE_COPY[failure] : (result ?? undefined)}
+    >
       <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-center sm:gap-3 sm:[flex-direction:row]">
         {downloading && progress ? (
           <ProgressBar
@@ -220,22 +245,26 @@ function UpdateRow() {
             size="sm"
             className="h-8 shrink-0"
             onClick={() => void installUpdate()}
-            disabled={downloading}
-            loading={downloading}
+            disabled={busy}
+            loading={busy}
           >
-            {downloading ? "Downloading…" : "Update"}
+            {action === "restart"
+              ? "Restart to update"
+              : action === "download"
+                ? "Download update"
+                : "Update"}
           </Button>
         ) : (
           <Button
             size="sm"
             variant="outline"
             className="h-8 shrink-0"
-            onClick={() => void check()}
-            disabled={checking}
-            loading={checking}
+            onClick={() => void (retrying ? retry() : check())}
+            disabled={checking || retryInFlight}
+            loading={checking || retryInFlight}
           >
             <RefreshCw className="size-3.5" aria-hidden />
-            Check
+            {retrying ? "Retry" : "Check"}
           </Button>
         )}
       </div>

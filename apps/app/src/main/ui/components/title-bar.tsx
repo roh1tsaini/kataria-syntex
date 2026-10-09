@@ -79,7 +79,7 @@ function ControlButton({
 
 /** The window's single drag rect, across the top 3.5rem. Rendered FIRST in
  * the App root — that position is the whole correctness argument: every other
- * app-region surface (sidebar brand row, header, update banner, overlays,
+ * app-region surface (sidebar brand row, header, overlays,
  * window controls) is a descendant or a later sibling, so last-rect-wins
  * always resolves onto that surface and never leaves a control stranded under
  * the strip. Electron-only, and `hidden` from print. */

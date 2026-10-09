@@ -2,13 +2,12 @@
  * Desktop auto-update — the main-process half of the update system.
  *
  * Windows/Linux: electron-updater (generic provider) against the Worker's
- *   /releases/app/desktop — checks at launch and every 4h, downloads
- *   silently, applies on quit. Status is pushed to the renderer over the
- *   kc:update:status event; the renderer owns all UI (banner, toast,
- *   Settings row).
+ *   /releases/app/desktop. The renderer owns one check schedule; this module
+ *   coalesces overlapping IPC requests, downloads silently, and applies on
+ *   quit. Status is pushed to the renderer over kc:update:status.
  * macOS: unsigned builds cannot self-install, so electron-updater never
- *   starts here. The renderer polls the same published manifest the
- *   /download page reads and offers the dmg download (kc:open-external).
+ *   starts here. The renderer checks the shared release info and offers the
+ *   manual DMG download (kc:open-external).
  */
 import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
 import { autoUpdater } from "electron-updater";
@@ -31,8 +30,6 @@ export type UpdateStatus =
     }
   | { kind: "ready"; version: string }
   | { kind: "error"; message: string };
-
-const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
 /** True once update-downloaded fires for the current staging. The renderer
  *  only asks for a restart when its own state says "ready" (same event), so
@@ -109,22 +106,34 @@ export function initUpdater(
     broadcast({ kind: "ready", version: info.version ?? "" });
   });
   autoUpdater.on("error", () => {
-    // Background checks fail silently (offline desktops are normal); the
-    // renderer surfaces the failure only for its manual Settings check.
     broadcast({ kind: "error", message: "update_check_failed" });
   });
 
-  ipcMain.handle("kc:update:check", async (event): Promise<UpdateStatus> => {
-    if (!isTrusted(event)) return { kind: "idle" };
-    try {
-      const res = await autoUpdater.checkForUpdates();
-      const v = res?.updateInfo?.version ?? "";
-      return compareVersions(v, app.getVersion()) > 0
-        ? { kind: "available", version: v }
-        : { kind: "not-available" };
-    } catch {
-      return { kind: "error", message: "update_check_failed" };
-    }
+  let checkInFlight: Promise<UpdateStatus> | null = null;
+  ipcMain.handle("kc:update:check", (event): Promise<UpdateStatus> => {
+    if (!isTrusted(event)) return Promise.resolve({ kind: "idle" });
+    if (checkInFlight) return checkInFlight;
+    const flight = (async (): Promise<UpdateStatus> => {
+      try {
+        const res = await autoUpdater.checkForUpdates();
+        const version = res?.updateInfo?.version ?? "";
+        return compareVersions(version, app.getVersion()) > 0
+          ? { kind: "available", version }
+          : { kind: "not-available" };
+      } catch {
+        return { kind: "error", message: "update_check_failed" };
+      }
+    })();
+    checkInFlight = flight;
+    void flight.then(
+      () => {
+        if (checkInFlight === flight) checkInFlight = null;
+      },
+      () => {
+        if (checkInFlight === flight) checkInFlight = null;
+      },
+    );
+    return flight;
   });
   ipcMain.handle("kc:update:restart", (event) => {
     if (!isTrusted(event)) return;
@@ -134,16 +143,6 @@ export function initUpdater(
     // app and changed nothing".
     if (staged) autoUpdater.quitAndInstall();
   });
-
-  // Silent check. checkForUpdatesAndNotify() would raise an OS notification —
-  // the desktop shell never interrupts: the download is background work and
-  // the installer applies on the user's next quit (autoInstallOnAppQuit).
-  // Settings exposes the deliberate "restart now" action.
-  void autoUpdater.checkForUpdates().catch(() => {});
-  setInterval(
-    () => void autoUpdater.checkForUpdates().catch(() => {}),
-    CHECK_INTERVAL_MS,
-  );
 }
 
 function compareVersions(a: string, b: string): number {

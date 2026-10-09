@@ -376,11 +376,12 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 - **Web** — session cookie; updates apply on next navigation (HTML always
   revalidated, only content-hashed assets immutable). A lazy chunk gone
   stale after a deploy reloads the page once (`lib/lazy-route.ts`), then
-  the ErrorBoundary takes a second failure.
+  the ErrorBoundary takes a second failure. Only the live server's 426
+  response can require an update.
 - **Desktop** — Electron `app://` handler sets explicit cache headers
-  (custom protocols cache against the URL otherwise); updates stage
-  silently and install on quit (Windows/Linux); macOS has no silent
-  install — its dmg banner is the one non-blocking update announce.
+  (custom protocols cache against the URL otherwise). Windows/Linux stage
+  updates silently and install on quit. macOS uses a manual DMG download
+  from Settings.
 - **Android** — `apps/android` wraps the same bundle at `https://localhost`,
   so the API origin is baked in at build (`VITE_API_URL`);
   `apps/android/scripts/build-web.ts` fails the build if missing and
@@ -412,7 +413,9 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   the signed APK against the deployed worker (`vars.APP_URL`), install the
   artifact.
 - `app/build.gradle` reads `apps/app/package.json` for `versionName` and
-  derives `versionCode = major*10000 + minor*100 + patch`.
+  derives `versionCode = major*1000000 + minor*1000 + patch`.
+- `major` is non-negative; `minor` and `patch` stay below 1000; the result
+  stays between 1 and 2100000000.
 - ARM-only: `abiFilters 'armeabi-v7a', 'arm64-v8a'`.
 - `manifestPlaceholders.APP_HOST` comes from `-PAPP_HOST` (CI passes the
   bare FQDN from `vars.APP_URL`; local builds default to `localhost`). The
@@ -433,22 +436,28 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 
 #### 5.3 · Update mechanisms
 
-| Surface   | Check                                       | Channel                              | UI                                                                                        |
-| --------- | ------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
-| Web       | navigation                                  | revalidated HTML                     | silent — next navigation runs the fresh build; a deploy floor reloads once silently first |
-| Win/Linux | launch + 30-min interval (electron-updater) | R2 `latest.yml` / `latest-linux.yml` | silent download → dock badge (installs on quit; no in-app surface)                        |
-| macOS     | launch (manifest) + hourly interval         | R2 `latest.json` (`mac` key)         | windowed in-app banner — manual `.dmg` install                                            |
-| Android   | launch + 4h interval                        | R2 `latest.json` (`android` key)     | silent background staging → one system notification per release → Settings action         |
-| Server    | per request (version floor)                 | `426 update_required`                | undismissable `update-dialog.tsx` — host-appropriate action                               |
+| Surface   | Check                                                    | Channel                          | UI                                                                                         |
+| --------- | -------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
+| Web       | next navigation                                          | revalidated HTML                 | routine releases are silent; live server 426 is the only required-update signal            |
+| Win/Linux | launch/return, internet return, every 4 foreground hours | generated Electron feed          | notice once per release; download silently; install on quit; Settings can restart or retry |
+| macOS     | launch/return, internet return, every 4 foreground hours | shared `latest.json` (`mac`)     | notice once per release; download the DMG manually from Settings                           |
+| Android   | launch/return, internet return, every 4 foreground hours | shared `latest.json` (`android`) | auto-download on any connection; install only from Settings; failures have Retry           |
+| Server    | when a request is below the live version floor           | `426 update_required`            | undismissable `update-dialog.tsx` — host-appropriate action                                |
 
 **Principles**
 
-- Every check is silent until there is a user action with a finish line.
-- One surface per severity: background apply (web) → dock badge (win/linux) →
-  system notification + Settings row (Android) → non-blocking banner (macOS
-  dmg) → blocking dialog (server floor).
-- Desktop never auto-installs a visible restart — downloads stage in the
-  background and install on quit (Windows/Linux) or manual dmg swap (macOS).
+- Android and Electron notices are in-app only and appear only while the app
+  is on screen. `updates.announcedVersion` prevents repeats after dismissal
+  or later launches.
+- Windows/Linux Electron and Android notices say the update is downloading.
+  macOS says the DMG is available from Settings.
+- Android installer opens only after a Settings tap. Its permission flow has
+  no fixed timeout; Settings offers Retry after a failure.
+- Electron uses one renderer-owned checker. Windows/Linux downloads stage in
+  the background, install on normal app close, and can restart from Settings.
+- macOS stays on a manual DMG download from Settings.
+- Android and Electron failures appear in Settings with Retry.
+- Routine web releases stay silent; only the live server's 426 can block work.
 - Web has no UI for routine deploys; revalidated HTML picks up the new build
   on next navigation.
 - The 426 dialog action leads somewhere installable on every host.
@@ -563,7 +572,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 - Loading — skeleton shimmer blocks shaped like the content, no spinners
   (`design.md` Section 3.1).
 - Errors/toasts — copy via `friendlyError`.
-- Update surfaces (banner, dialog, entry screen) — visual contract in
+- Update surfaces (notice, dialog, entry screen) — visual contract in
   `design.md` Section 3.3–3.4; behaviour in Section 5.3.
 
 ### 11 · Infra facts
@@ -612,9 +621,9 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 - CI guards satisfiability: the gate job fails when `minAppVersion >
 version`, and `deploy-app` runs after `publish-r2` when a release is being
   published.
-- Release info `app/android/latest.json` carries `version`, `releasedAt`,
-  per-platform paths, and the APK's `sha256`/`size`. Electron's Windows/Linux
-  feed files are generated from this release info and the built installers.
+- One generated `app/android/latest.json` carries `version`, `releasedAt`,
+  per-platform paths, and the APK's `sha256`/`size`. The download page and app
+  checks read it; Electron's Windows/Linux feeds are generated from it.
 - Only the live server's `426 update_required` response makes an update
   mandatory; the release-info file never carries an update floor.
 

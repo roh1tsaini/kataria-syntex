@@ -113,6 +113,55 @@ export function updateAction(): UpdateAction {
   return usesManifestUpdateFlow() ? "download" : "restart";
 }
 
+export type UpdateNoticePhase = "found" | "ready";
+
+export function updateNoticeCopy(
+  version: string,
+  phase: UpdateNoticePhase,
+): { title: string; description: string } | null {
+  const host = detectHost();
+  if (host === "web") return null;
+  if (host === "android") {
+    return phase === "found"
+      ? {
+          title: "Update found",
+          description: `Version ${version} is downloading in the background.`,
+        }
+      : {
+          title: "Update downloaded",
+          description: `Version ${version} is downloaded. Open Settings and tap Update.`,
+        };
+  }
+  if (usesManifestUpdateFlow()) {
+    return {
+      title: "Update available",
+      description: `Version ${version} is available. Download it from Settings.`,
+    };
+  }
+  return phase === "found"
+    ? {
+        title: "Update found",
+        description: `Version ${version} is downloading in the background.`,
+      }
+    : {
+        title: "Update downloaded",
+        description: `Version ${version} is ready. Open Settings to restart and update.`,
+      };
+}
+
+/** Retry the same user action after an Android or macOS handoff failed. */
+export function retryUpdateUsesAction(failure: string | null): boolean {
+  const host = detectHost();
+  if (host === "android") {
+    return failure === "install_blocked" || failure === "install_failed";
+  }
+  return (
+    host === "electron" &&
+    usesManifestUpdateFlow() &&
+    failure === "download_failed"
+  );
+}
+
 /** OS key for download recommendations (entry + download pages). Cosmetic —
  * detection is never load-bearing and every platform stays selectable. The
  * one UA read in the app for platform display decisions. */
@@ -252,6 +301,79 @@ function windowNetworkListener(
   return () => {
     window.removeEventListener("online", online);
     window.removeEventListener("offline", offline);
+  };
+}
+
+/** Checks only while the app is visible; returning and reconnecting check now. */
+export function watchUpdateCheckTriggers(
+  checkNow: (queueIfInFlight?: boolean) => void,
+  intervalMs: number,
+  onForeground?: () => void,
+): () => void {
+  let foreground = document.visibilityState === "visible";
+  let online = navigator.onLine;
+  let timer: number | null = null;
+
+  const clearTimer = () => {
+    if (timer === null) return;
+    window.clearInterval(timer);
+    timer = null;
+  };
+  const schedule = () => {
+    clearTimer();
+    if (foreground)
+      timer = window.setInterval(() => checkNow(true), intervalMs);
+  };
+  const setForeground = (next: boolean, forceCheck = false) => {
+    const changed = foreground !== next;
+    foreground = next;
+    schedule();
+    if (foreground && (changed || forceCheck)) {
+      onForeground?.();
+      checkNow(true);
+    }
+  };
+  const onVisibilityChange = () =>
+    setForeground(document.visibilityState === "visible");
+  const onNetworkChange = (connected: boolean) => {
+    const returned = !online && connected;
+    online = connected;
+    if (returned && foreground) checkNow(true);
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  const host = detectHost();
+  let removeNetworkListener: () => void;
+  let removeAppListener = () => {};
+  if (host === "android") {
+    removeNetworkListener = nativeListener(
+      () =>
+        import("@capacitor/network").then(({ Network }) =>
+          Network.addListener("networkStatusChange", ({ connected }) =>
+            onNetworkChange(connected),
+          ),
+        ),
+      () => windowNetworkListener(onNetworkChange),
+    );
+    removeAppListener = nativeListener(
+      () =>
+        import("@capacitor/app").then(({ App }) =>
+          App.addListener("appStateChange", ({ isActive }) =>
+            setForeground(isActive, isActive),
+          ),
+        ),
+      () => () => {},
+    );
+  } else {
+    removeNetworkListener = windowNetworkListener(onNetworkChange);
+  }
+
+  schedule();
+  return () => {
+    clearTimer();
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    removeNetworkListener();
+    removeAppListener();
   };
 }
 
@@ -501,97 +623,6 @@ export async function reloadOnStaleAndroidBundle(): Promise<void> {
     window.location.replace(url.toString());
   } catch {
     // Bridge unavailable (bundle previewed in a browser) — nothing to check.
-  }
-}
-
-// ── Android release announcement (LocalNotifications) ────────────────────────
-
-/** Version last announced via a system notification (per-release dedupe). */
-const NOTIFIED_KEY = "android.updateNotifiedVersion";
-
-function alreadyNotified(version: string): boolean {
-  try {
-    return localStorage.getItem(NOTIFIED_KEY) === version;
-  } catch {
-    return false;
-  }
-}
-
-function markNotified(version: string): void {
-  try {
-    localStorage.setItem(NOTIFIED_KEY, version);
-  } catch {
-    // Storage unavailable — worst case is one repeat per launch, which the
-    // Settings row already makes harmless.
-  }
-}
-
-/**
- * Announces a downloaded release with a system notification, once per
- * version. Fires after the APK has landed in app-private cache and the
- * system installer is one tap away, so the notification is a summons to
- * install, not a promise of a download. The Android 13+ permission prompt
- * stays contextual — never at boot. Denial only silences the announcement;
- * the Updates row in Settings keeps the install path.
- */
-export async function notifyAndroidUpdateAvailable(
-  version: string,
-): Promise<void> {
-  if (detectHost() !== "android") return;
-  if (alreadyNotified(version)) return;
-  try {
-    const { LocalNotifications } =
-      await import("@capacitor/local-notifications");
-    const perm = await LocalNotifications.requestPermissions();
-    if (perm.display !== "granted") return;
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: 1, // one slot — a newer release replaces the pending announce
-          title: `Kataria Syntex v${version} ready to install`,
-          body: "Downloaded — tap to install the update.",
-          extra: { version },
-          schedule: { at: new Date(Date.now() + 1_000) },
-        },
-      ],
-    });
-    markNotified(version);
-  } catch {
-    // Bridge missing or plugin not synced — the Settings row still carries
-    // the update.
-  }
-}
-
-let notificationTapWired = false;
-
-/**
- * Wires the announcement's tap to the Updates screen, once per app lifetime.
- * A tap while the app is backgrounded (or killed) re-launches it and this
- * listener receives the same `localNotificationActionPerformed` event, so
- * navigation happens after boot either way.
- */
-export async function initAndroidUpdateNotifications(): Promise<void> {
-  if (detectHost() !== "android" || notificationTapWired) return;
-  notificationTapWired = true;
-  try {
-    const { LocalNotifications } =
-      await import("@capacitor/local-notifications");
-    await LocalNotifications.addListener(
-      "localNotificationActionPerformed",
-      () => {
-        // Client-side navigation inside the WebView: push the Updates route
-        // and let the router's popstate listener pick it up. The app's own
-        // deep-link seam (kataria://) is reserved for the QR flows.
-        try {
-          window.history.pushState(null, "", "/settings");
-          window.dispatchEvent(new PopStateEvent("popstate"));
-        } catch {
-          // Navigation failed — the update still shows in Settings manually.
-        }
-      },
-    );
-  } catch {
-    // Plugin unavailable — announcements stay in the Settings row.
   }
 }
 

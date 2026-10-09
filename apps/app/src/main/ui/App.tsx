@@ -76,9 +76,8 @@ export function App() {
     // Bootstrap is fully self-contained: catches network errors, 401s, and
     // falls back to cached session or guest status (no unhandled rejections).
     void bootstrap();
-    // Update wiring for every host: the boot manifest check + 4h poll (a web
-    // deploy applies itself on the next navigation — no surface, no reload);
-    // the Android bundle check, native pollers and Electron events start here.
+    // Start update checks for Android and Electron. Web deploys apply on the
+    // next navigation; only a live server 426 can require one.
     initUpdateChecks();
   }, [bootstrap]);
 
