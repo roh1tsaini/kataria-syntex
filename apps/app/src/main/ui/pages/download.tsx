@@ -9,9 +9,8 @@
  * installer in memory; the browser's downloader is better at it and needs
  * no UI here.
  *
- * The manifest is fetched with cache: no-store so a release published inside
- * the browser's 60s max-age window is picked up on the next page load, not
- * the next hour.
+ * The browser reuses the latest manifest for its 60s max-age window, keeping
+ * repeat visits fast while picking up a new release within a minute.
  *
  * OS detection only picks the recommended card; every platform stays
  * clickable (detection can be wrong).
@@ -47,9 +46,7 @@ type ReleaseInfo = {
 async function fetchRelease(): Promise<ReleaseInfo | null> {
   try {
     const res = await fetch(`${apiOrigin()}/releases/app/android/latest.json`, {
-      // Manifests are served with max-age=60; the browser HTTP cache would
-      // delay a new release by up to that window — bypass it.
-      cache: "no-store",
+      cache: "default",
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return null;

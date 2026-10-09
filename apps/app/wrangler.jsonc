@@ -39,16 +39,6 @@
       "bucket_name": "ks-releases",
     },
   ],
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["RealtimeRoom"],
-    },
-    {
-      "tag": "v2",
-      "deleted_classes": ["RealtimeRoom"],
-    },
-  ],
   "vars": {
     // Non-secret config. Secrets (PINGRAM_API_KEY etc.) live in .dev.vars
     // locally and `wrangler secret put` in production.

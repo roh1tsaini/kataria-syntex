@@ -1,4 +1,4 @@
-export const RELEASE_CONTENT_TYPES: Record<string, string> = {
+const RELEASE_CONTENT_TYPES: Record<string, string> = {
   ".apk": "application/vnd.android.package-archive",
   ".exe": "application/vnd.microsoft.portable-executable",
   ".dmg": "application/x-apple-diskimage",

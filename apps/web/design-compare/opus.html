@@ -1,0 +1,2989 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Shade card — 10 yarn presentations · Kataria Syntex</title>
+    <meta
+      name="description"
+      content="Compare ten yarn shade presentations: wound strip, window ticket, cone, spool, hank, tuft, loop, satin stitch, fan deck and macro strand. Denier, luster and colour mode are live."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f3f0ea;
+        --bg-2: #eae5db;
+        --paper: #ffffff;
+        --ink: #0e1a2b;
+        --ink-soft: #5d6777;
+        --line: #e0d9cc;
+        --royal: #1e3a8a;
+        --royal-soft: rgb(30 58 138 / 0.09);
+        --navy: #0b1f3a;
+        --ticket: #f7f2e7;
+        --ticket-ink: #1a2333;
+        --ticket-soft: #6d6658;
+        --wall: #eee9df;
+        --floor: #e0d7c6;
+        --tray: #dcd3c2;
+        --shadow-card:
+          0 1px 2px rgb(14 26 43 / 0.05), 0 10px 30px -14px rgb(14 26 43 / 0.22);
+        --shadow-obj:
+          0 1px 1px rgb(20 16 10 / 0.14), 0 6px 16px -6px rgb(20 16 10 / 0.32);
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --r-stage: 24px;
+        --r-card: 12px;
+        color-scheme: light;
+      }
+      [data-theme="dark"] {
+        --bg: #0a0d14;
+        --bg-2: #0f131c;
+        --paper: #131926;
+        --ink: #e8ecf3;
+        --ink-soft: #8c96a8;
+        --line: #222b3a;
+        --royal: #93abff;
+        --royal-soft: rgb(147 171 255 / 0.13);
+        --navy: #e8ecf3;
+        --ticket: #ece5d6;
+        --ticket-ink: #1a2333;
+        --ticket-soft: #6d6658;
+        --wall: #121823;
+        --floor: #0c1018;
+        --tray: #161d29;
+        --shadow-card:
+          0 1px 2px rgb(0 0 0 / 0.5), 0 14px 36px -16px rgb(0 0 0 / 0.8);
+        --shadow-obj:
+          0 1px 1px rgb(0 0 0 / 0.4), 0 8px 18px -6px rgb(0 0 0 / 0.7);
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          400 15px/1.55 Inter,
+          system-ui,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        transition:
+          background-color 0.4s var(--ease-out),
+          color 0.4s var(--ease-out);
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 clamp(16px, 4vw, 40px);
+      }
+      .mono {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+      }
+
+      /* header */
+      .top {
+        padding: clamp(36px, 6vw, 72px) 0 28px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font:
+          500 11px/1 "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .brand i {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: conic-gradient(
+          from 200deg,
+          #c62828,
+          #ff6f00,
+          #ffd700,
+          #2e7d32,
+          #00acc1,
+          #1565c0,
+          #7b1fa2,
+          #c62828
+        );
+        box-shadow:
+          inset 0 0 0 1px rgb(255 255 255 / 0.35),
+          0 2px 6px -2px rgb(0 0 0 / 0.4);
+      }
+      h1 {
+        font:
+          700 clamp(30px, 5vw, 54px)/1.04 "Space Grotesk",
+          sans-serif;
+        letter-spacing: -0.025em;
+        margin: 18px 0 12px;
+        color: var(--navy);
+        max-width: 16ch;
+      }
+      .lede {
+        max-width: 60ch;
+        color: var(--ink-soft);
+        margin: 0;
+        font-size: clamp(15px, 1.6vw, 17px);
+      }
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 26px;
+      }
+      .nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 13px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--ink);
+        text-decoration: none;
+        font-size: 13px;
+        transition:
+          border-color 0.25s,
+          transform 0.35s var(--ease-out),
+          box-shadow 0.25s;
+      }
+      .nav a b {
+        font:
+          500 11px "IBM Plex Mono",
+          monospace;
+        color: var(--ink-soft);
+      }
+      .nav a:hover {
+        border-color: var(--royal);
+        transform: translateY(-1px);
+      }
+      .nav a.is-picked {
+        border-color: var(--royal);
+        box-shadow: 0 0 0 3px var(--royal-soft);
+      }
+      .nav a.is-picked b {
+        color: var(--royal);
+      }
+
+      /* control bar */
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        padding: 10px 0;
+        background: color-mix(in oklab, var(--bg) 78%, transparent);
+        backdrop-filter: saturate(1.4) blur(16px);
+        -webkit-backdrop-filter: saturate(1.4) blur(16px);
+        border-bottom: 1px solid
+          color-mix(in oklab, var(--line) 70%, transparent);
+      }
+      .bar .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 18px;
+      }
+      .ctl {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ctl > span {
+        font:
+          500 10.5px/1 "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .seg {
+        display: flex;
+        padding: 3px;
+        gap: 2px;
+        border-radius: 999px;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        overflow-x: auto;
+        scrollbar-width: none;
+        max-width: 100%;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--ink-soft);
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background-color 0.25s var(--ease-out),
+          color 0.25s,
+          box-shadow 0.25s;
+      }
+      .seg button:hover {
+        color: var(--ink);
+      }
+      .seg button[aria-checked="true"] {
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow:
+          0 1px 2px rgb(0 0 0 / 0.1),
+          0 0 0 1px var(--line);
+      }
+      .seg button:focus-visible,
+      .it:focus-visible,
+      .pick:focus-visible,
+      .icon-btn:focus-visible,
+      .nav a:focus-visible {
+        outline: 2px solid var(--royal);
+        outline-offset: 2px;
+      }
+      .bar .end {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .shortlist {
+        font:
+          500 12px "IBM Plex Mono",
+          monospace;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+      .shortlist b {
+        color: var(--royal);
+        font-weight: 600;
+      }
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        cursor: pointer;
+        transition: transform 0.35s var(--ease-out);
+      }
+      .icon-btn:hover {
+        transform: rotate(-18deg);
+      }
+      .icon-btn svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      /* direction section */
+      .dir {
+        padding: clamp(40px, 6vw, 72px) 0 0;
+        scroll-margin-top: 70px;
+      }
+      .dir-head {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 6px 18px;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+      .num {
+        font:
+          600 13px/1 "IBM Plex Mono",
+          monospace;
+        color: var(--royal);
+        padding: 7px 9px;
+        border-radius: 8px;
+        background: var(--royal-soft);
+        margin-top: 3px;
+      }
+      .dir h2 {
+        font:
+          600 clamp(22px, 2.6vw, 28px)/1.15 "Space Grotesk",
+          sans-serif;
+        letter-spacing: -0.015em;
+        margin: 0;
+        color: var(--navy);
+      }
+      .ref {
+        font:
+          500 11px/1.4 "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin: 6px 0 0;
+      }
+      .desc {
+        margin: 6px 0 0;
+        color: var(--ink-soft);
+        max-width: 62ch;
+      }
+      .pick {
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition:
+          border-color 0.25s,
+          background-color 0.25s,
+          color 0.25s,
+          transform 0.35s var(--ease-out);
+      }
+      .pick svg {
+        width: 15px;
+        height: 15px;
+        transition: transform 0.45s var(--ease-out);
+      }
+      .pick:hover {
+        border-color: var(--royal);
+      }
+      .pick[aria-pressed="true"] {
+        background: var(--royal);
+        border-color: var(--royal);
+        color: #fff;
+      }
+      [data-theme="dark"] .pick[aria-pressed="true"] {
+        color: #0a0d14;
+      }
+      .pick[aria-pressed="true"] svg {
+        transform: rotate(72deg) scale(1.1);
+      }
+      .pick[aria-pressed="true"] svg path {
+        fill: currentColor;
+      }
+
+      .stage {
+        position: relative;
+        border-radius: var(--r-stage);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-card);
+        padding: clamp(18px, 3vw, 34px);
+        overflow: hidden;
+        background: var(--paper);
+      }
+
+      /* generic item */
+      .it {
+        position: relative;
+        border: 0;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+        text-align: center;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .it canvas {
+        display: block;
+        opacity: 0;
+        transition: opacity 0.5s var(--ease-out);
+      }
+      .it canvas.ready {
+        opacity: 1;
+      }
+      .code {
+        display: block;
+        font:
+          500 11px/1 "IBM Plex Mono",
+          monospace;
+        color: var(--ink);
+        margin-top: 8px;
+        letter-spacing: 0.02em;
+      }
+      .meta {
+        display: block;
+        font:
+          400 10px/1.2 "IBM Plex Mono",
+          monospace;
+        color: var(--ink-soft);
+        margin-top: 4px;
+        white-space: nowrap;
+      }
+      .shimmer {
+        background: linear-gradient(
+            100deg,
+            rgb(128 128 128 / 0.1) 30%,
+            rgb(128 128 128 / 0.22) 50%,
+            rgb(128 128 128 / 0.1) 70%
+          )
+          0 0/300% 100%;
+        animation: sh 1.4s linear infinite;
+      }
+      @keyframes sh {
+        to {
+          background-position: -150% 0;
+        }
+      }
+
+      /* 01 wound strip */
+      .s-wound {
+        background: var(--bg-2);
+      }
+      .cardpage {
+        background: var(--ticket);
+        border-radius: 10px;
+        padding: 18px 18px 20px;
+        box-shadow:
+          0 1px 1px rgb(0 0 0 / 0.08),
+          0 18px 40px -22px rgb(0 0 0 / 0.45);
+        color: var(--ticket-ink);
+      }
+      .cardpage-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid rgb(26 35 51 / 0.14);
+        padding-bottom: 10px;
+        margin-bottom: 16px;
+        font:
+          500 10px/1 "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ticket-soft);
+      }
+      .grid-wound {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        gap: 18px 12px;
+        justify-items: center;
+      }
+      .sw {
+        position: relative;
+        display: block;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow:
+          0 1px 1px rgb(20 14 6 / 0.22),
+          0 4px 10px -4px rgb(20 14 6 / 0.38);
+        transition:
+          transform 0.45s var(--ease-out),
+          box-shadow 0.45s var(--ease-out);
+      }
+      .sw::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow:
+          inset 0 1px 0 rgb(255 255 255 / 0.28),
+          inset 0 -2px 3px rgb(0 0 0 / 0.22);
+      }
+      .cardpage .code,
+      .cardpage .meta,
+      .ticket .meta,
+      .tuftcard .meta,
+      .tuftcard .code {
+        color: var(--ticket-ink);
+      }
+      .cardpage .meta,
+      .ticket .meta,
+      .tuftcard .meta {
+        color: var(--ticket-soft);
+      }
+      .it:hover .sw,
+      .it:focus-visible .sw {
+        transform: translateY(-4px);
+        box-shadow:
+          0 2px 2px rgb(20 14 6 / 0.2),
+          0 14px 22px -8px rgb(20 14 6 / 0.45);
+      }
+
+      /* 02 window ticket */
+      .s-ticket {
+        background: radial-gradient(
+          120% 90% at 20% 0%,
+          var(--paper),
+          var(--bg-2)
+        );
+      }
+      .grid-ticket {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 22px 16px;
+        justify-items: center;
+      }
+      .ticket {
+        width: 132px;
+        padding: 12px 12px 14px;
+        border-radius: 12px;
+        background: var(--ticket);
+        box-shadow:
+          0 1px 1px rgb(0 0 0 / 0.1),
+          0 14px 26px -16px rgb(0 0 0 / 0.5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition:
+          transform 0.5s var(--ease-out),
+          box-shadow 0.5s var(--ease-out);
+        transform-origin: 50% 8px;
+      }
+      .it:hover .ticket,
+      .it:focus-visible .ticket {
+        transform: rotate(-2.2deg) translateY(-3px);
+        box-shadow:
+          0 1px 1px rgb(0 0 0 / 0.1),
+          0 22px 30px -14px rgb(0 0 0 / 0.55);
+      }
+      .tk-hole {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 50% 40%,
+          rgb(0 0 0 / 0.55),
+          rgb(0 0 0 / 0.2) 70%
+        );
+        box-shadow: 0 1px 0 rgb(255 255 255 / 0.7);
+      }
+      .tk-brand {
+        font:
+          600 8.5px/1 "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.2em;
+        color: var(--ticket-soft);
+        margin: 9px 0 9px;
+      }
+      .tk-win {
+        position: relative;
+        display: block;
+        border-radius: 9px;
+        overflow: hidden;
+        background: #1a1510;
+      }
+      .tk-win::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow:
+          inset 0 3px 5px rgb(0 0 0 / 0.55),
+          inset 0 -1px 0 rgb(255 255 255 / 0.5),
+          inset 0 0 0 1px rgb(0 0 0 / 0.18);
+      }
+      .tk-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        width: 100%;
+        margin-top: 11px;
+        padding: 0 2px;
+      }
+      .tk-code {
+        font:
+          700 21px/1 "Space Grotesk",
+          sans-serif;
+        letter-spacing: -0.02em;
+        color: var(--ticket-ink);
+      }
+      .tk-den {
+        font:
+          600 10px/1 "IBM Plex Mono",
+          monospace;
+        color: var(--ticket-ink);
+      }
+      .ticket .meta {
+        align-self: flex-start;
+        padding: 0 2px;
+      }
+
+      /* 03 cone / 04 spool */
+      .s-cone {
+        background: linear-gradient(
+          180deg,
+          var(--wall) 0 64%,
+          var(--floor) 64% 100%
+        );
+      }
+      .s-cone::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 64%;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgb(255 255 255 / 0.5),
+          transparent
+        );
+      }
+      .grid-obj {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px 8px;
+        justify-items: center;
+      }
+      .s-spool .grid-obj {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      }
+      .obj {
+        display: block;
+        transition: transform 0.55s var(--ease-out);
+      }
+      .it:hover .obj,
+      .it:focus-visible .obj {
+        transform: translateY(-6px) scale(1.02);
+      }
+      .tag {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 4px;
+        padding: 6px 10px 7px;
+        border-radius: 7px;
+        background: var(--ticket);
+        box-shadow: var(--shadow-obj);
+      }
+      .tag .code {
+        margin: 0;
+        color: var(--ticket-ink);
+      }
+      .tag .meta {
+        color: var(--ticket-soft);
+      }
+      .s-spool {
+        background: var(--bg-2);
+      }
+      .tray {
+        border-radius: 18px;
+        padding: 22px 14px 16px;
+        background: linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--tray) 80%, #000 6%),
+          var(--tray)
+        );
+        box-shadow:
+          inset 0 2px 6px rgb(0 0 0 / 0.18),
+          inset 0 -1px 0 rgb(255 255 255 / 0.4);
+      }
+
+      /* 05 hank */
+      .s-hank {
+        background: linear-gradient(180deg, var(--wall), var(--bg-2));
+        padding-top: 0;
+      }
+      .rod {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 20px;
+        height: 12px;
+        background: linear-gradient(
+          180deg,
+          #f3f4f6,
+          #a7adb6 45%,
+          #6b727d 60%,
+          #c9ced6
+        );
+        box-shadow: 0 6px 10px -4px rgb(0 0 0 / 0.45);
+        z-index: 2;
+      }
+      .grid-hank {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+        gap: 8px;
+        justify-items: center;
+        padding-top: 20px;
+      }
+      .grid-hank .it canvas {
+        transform-origin: 50% 0;
+        transition:
+          opacity 0.5s var(--ease-out),
+          transform 0.9s var(--ease-out);
+      }
+      .grid-hank .it:hover canvas,
+      .grid-hank .it:focus-visible canvas {
+        transform: rotate(2.5deg);
+      }
+
+      /* 06 tuft */
+      .s-tuft {
+        background: var(--bg-2);
+      }
+      .grid-tuft {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 16px;
+      }
+      .tuftcard {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 8px 14px;
+        border-radius: var(--r-card);
+        background: var(--ticket);
+        box-shadow:
+          0 1px 1px rgb(0 0 0 / 0.08),
+          0 12px 22px -16px rgb(0 0 0 / 0.5);
+        transition: transform 0.5s var(--ease-out);
+      }
+      .it:hover .tuftcard,
+      .it:focus-visible .tuftcard {
+        transform: translateY(-4px);
+      }
+
+      /* 07 loop */
+      .s-loop {
+        background: var(--bg-2);
+      }
+      .floss {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(98px, 1fr));
+        justify-items: center;
+        padding: 0 6px;
+      }
+      .floss::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 86px;
+        border-radius: 12px;
+        background: var(--ticket);
+        box-shadow:
+          0 1px 1px rgb(0 0 0 / 0.08),
+          0 14px 24px -18px rgb(0 0 0 / 0.5);
+      }
+      .floss .it {
+        padding-top: 10px;
+      }
+      .floss .code {
+        margin: 0 0 4px;
+        color: var(--ticket-ink);
+        position: relative;
+      }
+      .floss .meta {
+        position: relative;
+        color: var(--ticket-soft);
+        margin: 0 0 4px;
+      }
+      .floss canvas {
+        position: relative;
+        margin-top: 2px;
+        transform-origin: 50% 16px;
+        transition:
+          opacity 0.5s var(--ease-out),
+          transform 1.1s var(--ease-out);
+      }
+      .floss .it:hover canvas,
+      .floss .it:focus-visible canvas {
+        transform: rotate(-4deg);
+      }
+
+      /* 08 satin */
+      .s-satin {
+        background: radial-gradient(
+          100% 80% at 50% 0%,
+          var(--paper),
+          var(--bg-2)
+        );
+      }
+      .grid-satin {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+        gap: 18px 12px;
+        justify-items: center;
+      }
+      .grid-satin canvas {
+        filter: drop-shadow(0 10px 14px rgb(0 0 0 / 0.28));
+        transition:
+          opacity 0.5s var(--ease-out),
+          transform 0.6s var(--ease-out);
+      }
+      .grid-satin .it:hover canvas,
+      .grid-satin .it:focus-visible canvas {
+        transform: rotate(-6deg) scale(1.03);
+      }
+
+      /* 09 fan */
+      .s-fan {
+        background: radial-gradient(
+          90% 100% at 50% 100%,
+          var(--paper),
+          var(--bg-2)
+        );
+        padding-bottom: 10px;
+      }
+      .fan {
+        position: relative;
+        height: 370px;
+        --spread: 5.2deg;
+        transition: none;
+      }
+      .fan:hover,
+      .fan:focus-within {
+        --spread: 9.4deg;
+      }
+      .fan .it {
+        position: absolute;
+        left: calc(50% - 25px);
+        bottom: 28px;
+        width: 50px;
+        height: 262px;
+        transform-origin: 50% calc(100% - 20px);
+        transform: rotate(calc((var(--i) - var(--mid)) * var(--spread)))
+          translateY(var(--lift, 0px));
+        transition: transform 0.7s var(--ease-out);
+      }
+      .fan .it:hover,
+      .fan .it:focus-visible {
+        --lift: -22px;
+      }
+      .strip {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 50px;
+        height: 262px;
+        border-radius: 9px;
+        background: var(--ticket);
+        padding: 5px 5px 0;
+        box-shadow:
+          0 1px 1px rgb(0 0 0 / 0.12),
+          0 10px 18px -10px rgb(0 0 0 / 0.5);
+      }
+      .strip .sw {
+        border-radius: 5px;
+      }
+      .strip .code {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        margin-top: 10px;
+        font-size: 10.5px;
+        color: var(--ticket-ink);
+      }
+      .rivet {
+        position: absolute;
+        left: calc(50% - 7px);
+        bottom: 41px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        z-index: 30;
+        background: radial-gradient(
+          circle at 35% 30%,
+          #fff,
+          #b9bec7 45%,
+          #5f6670
+        );
+        box-shadow: 0 2px 4px rgb(0 0 0 / 0.45);
+        pointer-events: none;
+      }
+      @media (max-width: 640px) {
+        .fan {
+          transform: scale(0.68);
+          transform-origin: 50% 100%;
+          height: 300px;
+          margin-top: -40px;
+        }
+      }
+
+      /* 10 macro */
+      .s-macro {
+        background: var(--bg-2);
+      }
+      .grid-macro {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 18px;
+      }
+      .macro {
+        display: block;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: var(--shadow-obj);
+        transition: transform 0.5s var(--ease-out);
+      }
+      .it:hover .macro,
+      .it:focus-visible .macro {
+        transform: translateY(-3px);
+      }
+      .macro-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 4px 0;
+      }
+      .macro-row .code,
+      .macro-row .meta {
+        margin: 0;
+      }
+
+      /* detail dialog */
+      dialog.detail {
+        border: 0;
+        padding: 0;
+        border-radius: 22px;
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.55);
+        max-width: min(960px, calc(100vw - 24px));
+        max-height: calc(100dvh - 24px);
+        overflow: auto;
+      }
+      dialog.detail::backdrop {
+        background: rgb(8 12 20 / 0.5);
+        backdrop-filter: blur(6px);
+      }
+      dialog.detail[open] {
+        animation: pop 0.45s var(--ease-out);
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: translateY(12px) scale(0.97);
+        }
+      }
+      .d-in {
+        display: grid;
+        grid-template-columns: auto minmax(220px, 280px);
+        gap: 0;
+      }
+      .d-vis {
+        display: grid;
+        place-items: center;
+        padding: 26px;
+        background: var(--bg-2);
+        min-height: 300px;
+      }
+      .d-vis canvas {
+        display: block;
+        max-width: 100%;
+        height: auto !important;
+      }
+      .d-vis.paperish {
+        background: var(--ticket);
+      }
+      .d-info {
+        padding: 26px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .d-info h3 {
+        font:
+          700 34px/1 "Space Grotesk",
+          sans-serif;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: var(--navy);
+      }
+      .d-info dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 9px 14px;
+        font-size: 13px;
+      }
+      .d-info dt {
+        font:
+          500 10.5px/1.6 "IBM Plex Mono",
+          monospace;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .d-info dd {
+        margin: 0;
+      }
+      .dots {
+        display: inline-flex;
+        gap: 4px;
+        vertical-align: middle;
+        margin-left: 6px;
+      }
+      .dots i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
+      }
+      .d-close {
+        margin-top: auto;
+        align-self: flex-start;
+      }
+      @media (max-width: 720px) {
+        .d-in {
+          grid-template-columns: 1fr;
+        }
+        .d-vis {
+          padding: 16px;
+        }
+      }
+
+      footer {
+        padding: 64px 0 48px;
+        color: var(--ink-soft);
+        font:
+          400 12px "IBM Plex Mono",
+          monospace;
+      }
+      @media (max-width: 720px) {
+        .dir-head {
+          grid-template-columns: auto 1fr;
+        }
+        .pick {
+          grid-column: 1 / -1;
+          justify-self: start;
+        }
+        .bar .end {
+          margin-left: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top wrap">
+      <div class="brand">
+        <i aria-hidden="true"></i>Kataria Syntex · Shade card study
+      </div>
+      <h1>Ten ways to show a shade</h1>
+      <p class="lede">
+        Every swatch is drawn from yarn physics, not images. Denier sets strand
+        thickness, luster sets sheen, colour mode sets the dye. Click any swatch
+        for a close view. Shortlist the ones you like.
+      </p>
+      <nav class="nav" id="nav" aria-label="Directions"></nav>
+    </header>
+
+    <div class="bar" role="toolbar" aria-label="Swatch settings">
+      <div class="wrap">
+        <div class="ctl">
+          <span id="lbl-den">Denier</span>
+          <div
+            class="seg"
+            role="radiogroup"
+            aria-labelledby="lbl-den"
+            data-key="denier"
+          >
+            <button role="radio" data-val="mixed">Mixed</button
+            ><button role="radio" data-val="75">75D</button
+            ><button role="radio" data-val="120">120D</button
+            ><button role="radio" data-val="150">150D</button
+            ><button role="radio" data-val="300">300D</button
+            ><button role="radio" data-val="600">600D</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span id="lbl-lus">Luster</span>
+          <div
+            class="seg"
+            role="radiogroup"
+            aria-labelledby="lbl-lus"
+            data-key="luster"
+          >
+            <button role="radio" data-val="bright">Bright</button
+            ><button role="radio" data-val="semi">Semi-dull</button
+            ><button role="radio" data-val="matt">Matt</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span id="lbl-col">Colour</span>
+          <div
+            class="seg"
+            role="radiogroup"
+            aria-labelledby="lbl-col"
+            data-key="mode"
+          >
+            <button role="radio" data-val="mixed">Mixed</button
+            ><button role="radio" data-val="card">As on card</button
+            ><button role="radio" data-val="solid">Solid</button
+            ><button role="radio" data-val="space">Space-dyed</button
+            ><button role="radio" data-val="ombre">Ombré</button
+            ><button role="radio" data-val="twist">Twist</button
+            ><button role="radio" data-val="zari">Zari</button>
+          </div>
+        </div>
+        <div class="end">
+          <span class="shortlist" id="shortlist" aria-live="polite"></span>
+          <button class="icon-btn" id="theme" aria-label="Toggle dark mode">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <main class="wrap" id="main"></main>
+
+    <dialog class="detail" id="detail" aria-labelledby="d-title">
+      <div class="d-in">
+        <div class="d-vis" id="d-vis"><canvas id="d-canvas"></canvas></div>
+        <div class="d-info">
+          <h3 id="d-title"></h3>
+          <dl id="d-list"></dl>
+          <button class="pick d-close" id="d-close">Close</button>
+        </div>
+      </div>
+    </dialog>
+
+    <footer class="wrap">
+      opus.html · design compare · delete once a direction is chosen
+    </footer>
+
+    <script>
+      "use strict";
+      /* ---------------------------------------------------------------- data */
+      const SET = [
+        { code: "89D", hex: "#C62828", page: 9 },
+        {
+          code: "64R",
+          hex: "#7B1F3A",
+          page: 7,
+          colors: ["#7B1F3A", "#C2185B", "#F48FB1"],
+        },
+        { code: "95", hex: "#FF6F00", page: 10 },
+        { code: "58", hex: "#FFD700", page: 7 },
+        { code: "71", hex: "#2E7D32", page: 8 },
+        { code: "62", hex: "#00ACC1", page: 7 },
+        { code: "88S", hex: "#1565C0", page: 9 },
+        {
+          code: "88LD",
+          hex: "#880E4F",
+          page: 9,
+          colors: ["#880E4F", "#9C27B0", "#7B1FA2", "#4A148C"],
+        },
+        { code: "88N", hex: "#7B1FA2", page: 9 },
+        { code: "82D", hex: "#4E342E", page: 9 },
+        { code: "93N", hex: "#546E7A", page: 10 },
+        { code: "90NL", hex: "#FFCCBC", page: 10 },
+      ];
+      /* Multicolour palettes for shades the card prints as single colours. */
+      const MULTI = [
+        ["#B71C1C", "#F57C00", "#FDD835", "#43A047", "#1E88E5", "#5E35B1"],
+        ["#0D3B66", "#1E88E5", "#80DEEA", "#F1EBDD"],
+        ["#E65100", "#FFB300", "#FFF176"],
+        ["#1B5E20", "#00897B", "#4DD0E1"],
+        ["#4A148C", "#8E24AA", "#F06292", "#FFB74D"],
+        ["#3E2723", "#8D6E63", "#D7CCC8"],
+        ["#AD1457", "#FFD54F"],
+        ["#006064", "#F1EBDD", "#C62828"],
+        ["#263238", "#78909C", "#ECEFF1"],
+      ];
+      const DEN_CYCLE = [
+        120, 75, 300, 150, 600, 120, 450, 75, 150, 300, 120, 600,
+      ];
+      const MODE_CYCLE = [
+        "solid",
+        "space",
+        "solid",
+        "twist",
+        "ombre",
+        "solid",
+        "zari",
+        "space",
+        "solid",
+        "twist",
+        "ombre",
+        "solid",
+      ];
+      const MODE_LABEL = {
+        solid: "Solid",
+        space: "Space-dyed",
+        ombre: "Ombré",
+        twist: "2-ply twist",
+        zari: "Zari",
+      };
+      const LUSTER_LABEL = {
+        bright: "Bright",
+        semi: "Semi-dull",
+        matt: "Matt",
+      };
+
+      const VARIANTS = [
+        {
+          key: "wound",
+          name: "Wound strip",
+          ref: "RAJ · Vardhman · Madura strip cards",
+          desc: "Yarn wound edge to edge on a card strip. Closest to the printed card.",
+          count: 12,
+          W: 88,
+          H: 132,
+          dW: 300,
+          dH: 450,
+        },
+        {
+          key: "ticket",
+          name: "Window ticket",
+          ref: "Madeira · Gunold · Coats tickets",
+          desc: "One ticket per shade, with a punched window over the wound yarn.",
+          count: 8,
+          W: 108,
+          H: 112,
+          dW: 340,
+          dH: 352,
+        },
+        {
+          key: "cone",
+          name: "Mill cone",
+          ref: "Spinning-mill sample cones",
+          desc: "Cross-wound cone on a paper tube, the way yarn leaves the mill.",
+          count: 6,
+          W: 150,
+          H: 200,
+          dW: 390,
+          dH: 520,
+        },
+        {
+          key: "spool",
+          name: "Spool",
+          ref: "Embroidery thread spools",
+          desc: "Parallel-wound spool with flanges, the way embroiderers buy it.",
+          count: 8,
+          W: 104,
+          H: 160,
+          dW: 330,
+          dH: 508,
+        },
+        {
+          key: "hank",
+          name: "Twisted hank",
+          ref: "Silk and space-dyed hanks",
+          desc: "Twisted hank on a rod with a paper band. Best for multicolour.",
+          count: 6,
+          W: 112,
+          H: 290,
+          dW: 220,
+          dH: 570,
+        },
+        {
+          key: "tuft",
+          name: "Cut tuft",
+          ref: "Anchor · DMC tuft cards",
+          desc: "A cut tuft pushed through a slit in the card. Shows loose filament.",
+          count: 8,
+          W: 112,
+          H: 128,
+          dW: 360,
+          dH: 412,
+        },
+        {
+          key: "loop",
+          name: "Hanging loop",
+          ref: "DMC floss cards",
+          desc: "A loop through a punched hole. Shows how light runs along the thread.",
+          count: 8,
+          W: 96,
+          H: 196,
+          dW: 250,
+          dH: 510,
+        },
+        {
+          key: "satin",
+          name: "Satin leaf",
+          ref: "Embroidery sample hoop",
+          desc: "The shade stitched as a satin leaf on cloth, the way the buyer uses it.",
+          count: 6,
+          W: 168,
+          H: 168,
+          dW: 470,
+          dH: 470,
+        },
+        {
+          key: "fan",
+          name: "Fan deck",
+          ref: "Pantone-style fan",
+          desc: "Card strips fanned from one rivet. Hover to spread, click a strip to open it.",
+          count: 12,
+          W: 40,
+          H: 172,
+          dW: 190,
+          dH: 560,
+        },
+        {
+          key: "macro",
+          name: "Macro strand",
+          ref: "Lab view",
+          desc: "One strand at close range. Ply twist and denier are readable.",
+          count: 4,
+          W: 300,
+          H: 112,
+          dW: 640,
+          dH: 240,
+        },
+      ];
+
+      /* ---------------------------------------------------------------- math */
+      const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+      function h2(x, y) {
+        let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0;
+        h = Math.imul(h ^ (h >>> 13), 1274126177);
+        h ^= h >>> 16;
+        return (h >>> 0) / 4294967296;
+      }
+      function vnoise(x, y) {
+        const xi = Math.floor(x),
+          yi = Math.floor(y);
+        let xf = x - xi,
+          yf = y - yi;
+        xf = xf * xf * (3 - 2 * xf);
+        yf = yf * yf * (3 - 2 * yf);
+        const a = h2(xi, yi),
+          b = h2(xi + 1, yi),
+          c = h2(xi, yi + 1),
+          d = h2(xi + 1, yi + 1);
+        return a + (b - a) * xf + (c - a) * yf + (a - b - c + d) * xf * yf;
+      }
+      function mulberry32(a) {
+        return () => {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function hashStr(s) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < s.length; i++) {
+          h ^= s.charCodeAt(i);
+          h = Math.imul(h, 0x01000193);
+        }
+        return h >>> 0;
+      }
+
+      /* --------------------------------------------------------------- colour */
+      /* Shading runs in linear light; sRGB only at the edges. */
+      const S2L = new Float32Array(256);
+      for (let i = 0; i < 256; i++) {
+        const c = i / 255;
+        S2L[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      }
+      const L2S = new Uint8ClampedArray(4097);
+      for (let i = 0; i <= 4096; i++) {
+        const l = i / 4096;
+        L2S[i] = Math.round(
+          255 *
+            (l <= 0.0031308 ? l * 12.92 : 1.055 * Math.pow(l, 1 / 2.4) - 0.055),
+        );
+      }
+      function hexLin(hex) {
+        const n = parseInt(hex.slice(1), 16);
+        return [S2L[(n >> 16) & 255], S2L[(n >> 8) & 255], S2L[n & 255]];
+      }
+      function enc(x) {
+        if (x > 0.82) x = 0.82 + 0.18 * (1 - Math.exp(-(x - 0.82) / 0.18));
+        return L2S[x <= 0 ? 0 : x >= 1 ? 4096 : (x * 4096) | 0];
+      }
+      const lumLin = (l) => 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+      function shiftHex(hex, amt) {
+        const n = parseInt(hex.slice(1), 16),
+          tgt = amt >= 0 ? 255 : 0,
+          k = Math.abs(amt);
+        const ch = (v) =>
+          Math.round(v + (tgt - v) * k)
+            .toString(16)
+            .padStart(2, "0");
+        return "#" + ch((n >> 16) & 255) + ch((n >> 8) & 255) + ch(n & 255);
+      }
+      const O = new Float32Array(3);
+      const C = new Float32Array(4);
+      const css = () => `rgb(${enc(O[0])},${enc(O[1])},${enc(O[2])})`;
+
+      /* --------------------------------------------------------------- thread */
+      /* One continuous thread. sample(s, ply) gives the dye at length s on ply. */
+      function makeThread(kind, colsHex, seed, unit, metalHex) {
+        const cols = colsHex.map(hexLin),
+          n = cols.length;
+        const thr = {
+          kind,
+          plies: kind === "zari" ? 3 : 2,
+          cols,
+          hex: colsHex,
+          metalHex,
+        };
+        const put = (c, m) => {
+          C[0] = c[0];
+          C[1] = c[1];
+          C[2] = c[2];
+          C[3] = m;
+        };
+        if (kind === "space") {
+          const r = mulberry32(seed),
+            segN = n * 6,
+            B = [0];
+          for (let i = 0; i < segN; i++)
+            B.push(B[i] + unit * (0.55 + 0.95 * r()));
+          const P = B[segN],
+            bleed = unit * 0.18;
+          thr.sample = (s) => {
+            let m = s % P;
+            if (m < 0) m += P;
+            let lo = 0,
+              hi = segN - 1;
+            while (lo < hi) {
+              const mid = (lo + hi + 1) >> 1;
+              if (B[mid] <= m) lo = mid;
+              else hi = mid - 1;
+            }
+            const c = cols[lo % n],
+              d0 = m - B[lo],
+              d1 = B[lo + 1] - m;
+            let w = 0,
+              oc = c;
+            if (d0 < bleed) {
+              w = 0.5 * (1 - d0 / bleed);
+              oc = cols[(lo - 1 + n) % n];
+            } else if (d1 < bleed) {
+              w = 0.5 * (1 - d1 / bleed);
+              oc = cols[(lo + 1) % n];
+            }
+            C[0] = c[0] + (oc[0] - c[0]) * w;
+            C[1] = c[1] + (oc[1] - c[1]) * w;
+            C[2] = c[2] + (oc[2] - c[2]) * w;
+            C[3] = 0;
+          };
+        } else if (kind === "ombre") {
+          const L = unit * 1.4;
+          thr.sample = (s) => {
+            const m = s / L;
+            let i = Math.floor(m),
+              f = clamp01((m - i - 0.3) / 0.7);
+            f = f * f * (3 - 2 * f);
+            i = ((i % n) + n) % n;
+            const a = cols[i],
+              b = cols[(i + 1) % n];
+            C[0] = a[0] + (b[0] - a[0]) * f;
+            C[1] = a[1] + (b[1] - a[1]) * f;
+            C[2] = a[2] + (b[2] - a[2]) * f;
+            C[3] = 0;
+          };
+        } else if (kind === "twist") {
+          thr.sample = (s, ply) => put(cols[ply % n], 0);
+        } else if (kind === "zari") {
+          const metal = hexLin(metalHex);
+          thr.sample = (s, ply) =>
+            ply === 2 ? put(metal, 1) : put(cols[0], 0);
+        } else {
+          thr.sample = () => put(cols[0], 0);
+        }
+        return thr;
+      }
+
+      const LUSTER = {
+        bright: {
+          shin: 40,
+          spec: 0.72,
+          streak: 0.2,
+          ply: 0.24,
+          amb: 0.13,
+          fuzz: 0,
+        },
+        semi: {
+          shin: 15,
+          spec: 0.3,
+          streak: 0.3,
+          ply: 0.36,
+          amb: 0.15,
+          fuzz: 0.25,
+        },
+        matt: {
+          shin: 5,
+          spec: 0.06,
+          streak: 0.42,
+          ply: 0.48,
+          amb: 0.17,
+          fuzz: 1,
+        },
+      };
+      function params(sw, t) {
+        return { ...LUSTER[sw.luster], t, sf: 0.55 / t };
+      }
+
+      /* Light from upper left, viewer on +z. */
+      const LX0 = -0.42,
+        LY0 = -0.62,
+        LZ0 = 0.66;
+      const _ln = Math.hypot(LX0, LY0, LZ0),
+        LX = LX0 / _ln,
+        LY = LY0 / _ln,
+        LZ = LZ0 / _ln;
+      const _hn = Math.hypot(LX, LY, LZ + 1),
+        HX = LX / _hn,
+        HY = LY / _hn,
+        HZ = (LZ + 1) / _hn;
+      const EXPO = 1.16;
+
+      /*
+       * Shade one point of one strand.
+       * s  = length along the thread (ply twist + dye), v = -1..1 across the strand,
+       * N  = surface normal of the form underneath, T = strand tangent, B = across.
+       * Strand = cylinder; ply twist = diagonal ridges; fibre streaks run along s.
+       */
+      function shade(
+        thr,
+        P,
+        s,
+        v,
+        Nx,
+        Ny,
+        Nz,
+        Tx,
+        Ty,
+        Tz,
+        Bx,
+        By,
+        Bz,
+        seed,
+        ao,
+        sc,
+      ) {
+        const t = P.t,
+          cv = Math.sqrt(Math.max(0, 1 - v * v));
+        const k = (s + v * 0.36 * t) / (0.92 * t);
+        const kf = Math.floor(k),
+          u = k - kf,
+          pl = thr.plies,
+          ply = ((kf % pl) + pl) % pl;
+        const bulge = Math.sin(Math.PI * u),
+          tilt = Math.cos(Math.PI * u) * P.ply;
+        let nx = Nx * cv + Bx * v + Tx * tilt,
+          ny = Ny * cv + By * v + Ty * tilt,
+          nz = Nz * cv + Bz * v + Tz * tilt;
+        const inv = 1 / Math.sqrt(nx * nx + ny * ny + nz * nz);
+        nx *= inv;
+        ny *= inv;
+        nz *= inv;
+        thr.sample(sc === undefined ? s : sc, ply);
+        const ndl = nx * LX + ny * LY + nz * LZ,
+          dif = Math.max(0, (ndl + 0.2) / 1.2);
+        const ndh = Math.max(0, nx * HX + ny * HY + nz * HZ);
+        const th = Tx * HX + Ty * HY + Tz * HZ,
+          kk = 1 - th * th;
+        const metal = C[3];
+        const st =
+          1 +
+          (vnoise(s * P.sf + seed * 13.7, u * 4.5 + ply * 7.3 + seed) - 0.5) *
+            (metal ? 0.7 : P.streak);
+        const occ = ao * (0.55 + 0.45 * bulge) * (0.42 + 0.58 * Math.sqrt(cv));
+        let sp =
+          Math.pow(ndh, metal ? 70 : P.shin) *
+          kk *
+          kk *
+          (0.3 + 0.7 * bulge * bulge);
+        if (metal) {
+          const g = (0.08 + 0.5 * dif) * occ * st * EXPO;
+          sp *= 2.4 * ao;
+          const spark =
+            vnoise(s * 1.9 + seed, u * 3.1) > 0.8 ? 0.9 * bulge * ao : 0;
+          O[0] = C[0] * (g + sp + spark);
+          O[1] = C[1] * (g + sp + spark);
+          O[2] = C[2] * (g + sp + spark);
+        } else {
+          const l = (P.amb + 0.92 * dif) * occ * st * EXPO;
+          sp *= P.spec * ao;
+          O[0] = C[0] * l + sp;
+          O[1] = C[1] * l + sp;
+          O[2] = C[2] * l + sp;
+        }
+      }
+
+      /* -------------------------------------------------------------- canvas */
+      const DPR = () => Math.min(2, window.devicePixelRatio || 1);
+      const LAYER = document.createElement("canvas");
+      function setup(cv, W, H) {
+        const dpr = DPR(),
+          w = Math.round(W * dpr),
+          h = Math.round(H * dpr);
+        cv.width = w;
+        cv.height = h;
+        cv.style.width = W + "px";
+        cv.style.height = H + "px";
+        const ctx = cv.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        return { ctx, dpr, w, h };
+      }
+      /* Per-pixel pass: fn(X, Y) writes O and returns coverage (0..1). */
+      function yarnLayer(w, h, dpr, fn, fuzzAmt, seed) {
+        LAYER.width = w;
+        LAYER.height = h;
+        const lc = LAYER.getContext("2d"),
+          img = lc.createImageData(w, h),
+          d = img.data;
+        let i = 0;
+        for (let y = 0; y < h; y++) {
+          const Y = (y + 0.5) / dpr;
+          for (let x = 0; x < w; x++, i += 4) {
+            const a = fn((x + 0.5) / dpr, Y);
+            if (a > 0) {
+              d[i] = enc(O[0]);
+              d[i + 1] = enc(O[1]);
+              d[i + 2] = enc(O[2]);
+              d[i + 3] = a >= 1 ? 255 : (a * 255) | 0;
+            }
+          }
+        }
+        lc.putImageData(img, 0, 0);
+        if (fuzzAmt > 0) {
+          /* Spun / matt yarn: loose fibre ends, kept to yarn pixels only. */
+          const r = mulberry32(seed ^ 0x51ed),
+            W = w / dpr,
+            H = h / dpr,
+            n = Math.round(((W * H) / 34) * fuzzAmt);
+          lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+          lc.globalCompositeOperation = "source-atop";
+          lc.lineCap = "round";
+          for (let k = 0; k < n; k++) {
+            const x = r() * W,
+              y = r() * H,
+              len = 1.4 + r() * 4.2,
+              a = (r() - 0.5) * 2.4;
+            lc.strokeStyle =
+              r() > 0.45
+                ? `rgba(255,255,255,${0.1 + r() * 0.16})`
+                : `rgba(0,0,0,${0.08 + r() * 0.14})`;
+            lc.lineWidth = 0.3 + r() * 0.3;
+            lc.beginPath();
+            lc.moveTo(x, y);
+            lc.quadraticCurveTo(
+              x + Math.cos(a) * len * 0.5 + (r() - 0.5) * 2,
+              y + Math.sin(a) * len * 0.5 + (r() - 0.5) * 2,
+              x + Math.cos(a) * len,
+              y + Math.sin(a) * len,
+            );
+            lc.stroke();
+          }
+          lc.globalCompositeOperation = "source-over";
+          lc.setTransform(1, 0, 0, 1, 0, 0);
+        }
+        return LAYER;
+      }
+      function blit(ctx, dpr, layer) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(layer, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      function groundShadow(ctx, cx, cy, rx, ry, alpha) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(1, ry / rx);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+        g.addColorStop(0, `rgba(8,10,16,${alpha})`);
+        g.addColorStop(0.55, `rgba(8,10,16,${alpha * 0.35})`);
+        g.addColorStop(1, "rgba(8,10,16,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, rx, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      /* Bezier sampled into a polyline with a target step. */
+      function bez(p0x, p0y, c1x, c1y, c2x, c2y, p3x, p3y, step) {
+        const est =
+          Math.hypot(c1x - p0x, c1y - p0y) +
+          Math.hypot(c2x - c1x, c2y - c1y) +
+          Math.hypot(p3x - c2x, p3y - c2y);
+        const n = Math.max(4, Math.ceil(est / step)),
+          out = [];
+        for (let i = 0; i <= n; i++) {
+          const t = i / n,
+            m = 1 - t;
+          out.push([
+            m * m * m * p0x +
+              3 * m * m * t * c1x +
+              3 * m * t * t * c2x +
+              t * t * t * p3x,
+            m * m * m * p0y +
+              3 * m * m * t * c1y +
+              3 * m * t * t * c2y +
+              t * t * t * p3y,
+          ]);
+        }
+        return out;
+      }
+      /* Strand along a path, drawn as shaded lanes across its width. */
+      function strandPath(ctx, pts, width, lanes, thr, P, s0, ao, seed) {
+        let s = s0;
+        ctx.lineCap = "round";
+        const lw = (width / lanes) * 1.3;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const x0 = pts[i][0],
+            y0 = pts[i][1],
+            x1 = pts[i + 1][0],
+            y1 = pts[i + 1][1];
+          let tx = x1 - x0,
+            ty = y1 - y0;
+          const len = Math.hypot(tx, ty) || 1e-6;
+          tx /= len;
+          ty /= len;
+          const nx = -ty,
+            ny = tx;
+          for (let k = 0; k < lanes; k++) {
+            const v = -1 + (2 * k + 1) / lanes,
+              off = v * width * 0.5;
+            shade(
+              thr,
+              P,
+              s + len * 0.5,
+              v,
+              0,
+              0,
+              1,
+              tx,
+              ty,
+              0,
+              nx,
+              ny,
+              0,
+              seed,
+              ao,
+            );
+            ctx.strokeStyle = css();
+            ctx.lineWidth = lw;
+            ctx.beginPath();
+            ctx.moveTo(x0 + nx * off, y0 + ny * off);
+            ctx.lineTo(x1 + nx * off, y1 + ny * off);
+            ctx.stroke();
+          }
+          s += len;
+        }
+      }
+      function cross(ax, ay, az, bx, by, bz) {
+        const x = ay * bz - az * by,
+          y = az * bx - ax * bz,
+          z = ax * by - ay * bx,
+          n = 1 / (Math.hypot(x, y, z) || 1);
+        return [x * n, y * n, z * n];
+      }
+      const ticketHex = () =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--ticket")
+          .trim() || "#F7F2E7";
+
+      /* ------------------------------------------------------------ renderers */
+
+      /* 01 / 02 / 09 — strands wound flat across a card strip. */
+      function renderWound(cv, sw, W, H, z, wrap) {
+        const { ctx, dpr, w, h } = setup(cv, W, H);
+        const t = sw.t * z,
+          P = params(sw, t),
+          thr = sw.thread,
+          sd = sw.nseed;
+        const edge = wrap ? Math.min(5.5 * z, W * 0.09) : 0,
+          rowLen = W * 2.1 + 3;
+        const fn = (X, Y) => {
+          const yy =
+            Y +
+            (vnoise(X / (40 * z) + sd, Y / (t * 2.6) + sd) - 0.5) * t * 0.42;
+          const rf = yy / t,
+            row = Math.floor(rf),
+            v = (rf - row) * 2 - 1;
+          let Nx = 0,
+            Nz = 1,
+            Tx = 1,
+            Tz = 0,
+            ao = 1 + (h2(row, sw.seedInt) - 0.5) * 0.12;
+          if (edge) {
+            const dl = X,
+              dr = W - X,
+              d = dl < dr ? dl : dr;
+            if (d < edge) {
+              const sg = dl < dr ? -1 : 1,
+                a = (1 - d / edge) * 1.2,
+                sn = Math.sin(a),
+                cs = Math.cos(a);
+              Nx = sg * sn;
+              Nz = cs;
+              Tx = cs;
+              Tz = -sg * sn;
+              ao *= 0.5 + 0.5 * Math.sqrt(d / edge);
+            }
+          }
+          shade(
+            thr,
+            P,
+            row * rowLen + X,
+            v,
+            Nx,
+            0,
+            Nz,
+            Tx,
+            0,
+            Tz,
+            0,
+            1,
+            0,
+            sd + row * 0.618,
+            ao,
+          );
+          return 1;
+        };
+        blit(ctx, dpr, yarnLayer(w, h, dpr, fn, P.fuzz, sw.seedInt));
+      }
+
+      /* 03 — cross-wound cone: two helix families in alternating ribbons. */
+      function drawTube(ctx, cx, yt, yb, rTop, rBot, e) {
+        const g = ctx.createLinearGradient(cx - rBot, 0, cx + rBot, 0);
+        g.addColorStop(0, "#7d5f36");
+        g.addColorStop(0.22, "#cfae7b");
+        g.addColorStop(0.42, "#ecd5aa");
+        g.addColorStop(0.72, "#b08955");
+        g.addColorStop(1, "#6a4e2c");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(cx - rTop, yt);
+        ctx.lineTo(cx - rBot, yb);
+        ctx.ellipse(cx, yb, rBot, e * rBot, 0, Math.PI, 0, true);
+        ctx.lineTo(cx + rTop, yt);
+        ctx.ellipse(cx, yt, rTop, e * rTop, 0, 0, Math.PI, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#e9d3a8";
+        ctx.beginPath();
+        ctx.ellipse(cx, yt, rTop, e * rTop, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const gi = ctx.createLinearGradient(0, yt - e * rTop, 0, yt + e * rTop);
+        gi.addColorStop(0, "#1e140a");
+        gi.addColorStop(1, "#4a3419");
+        ctx.fillStyle = gi;
+        ctx.beginPath();
+        ctx.ellipse(
+          cx,
+          yt + 0.4,
+          rTop * 0.8,
+          e * rTop * 0.8,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+      function renderCone(cv, sw, W, H, z) {
+        const { ctx, dpr, w, h } = setup(cv, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cx = W / 2,
+          y0 = H * 0.2,
+          y1 = H * 0.86,
+          rt = W * 0.15,
+          rb = W * 0.4,
+          e = 0.24,
+          tR = rt * 0.56;
+        groundShadow(
+          ctx,
+          cx,
+          y1 + e * rb * 0.55,
+          rb * 1.18,
+          e * rb * 1.05,
+          0.34,
+        );
+        drawTube(ctx, cx, H * 0.05, y0 + e * tR * 0.6, tR * 0.86, tR, e);
+        const t = sw.t * z * 0.8,
+          P = params(sw, t),
+          thr = sw.thread,
+          sd = sw.nseed;
+        const slope = (rb - rt) / (y1 - y0),
+          nrm = 1 / Math.hypot(1, slope),
+          nyc = -slope * nrm;
+        const phi = 0.21,
+          sp = Math.sin(phi),
+          cp = Math.cos(phi),
+          band = t * 5.5;
+        const fn = (X, Y) => {
+          let hp = Y,
+            r = rt,
+            dx = 0,
+            ct = 1,
+            ok = true;
+          for (let k = 0; k < 4; k++) {
+            let f = (hp - y0) / (y1 - y0);
+            f = f < 0 ? 0 : f > 1 ? 1 : f;
+            r = rt + (rb - rt) * f;
+            dx = (X - cx) / r;
+            if (dx <= -1 || dx >= 1) {
+              ok = false;
+              break;
+            }
+            ct = Math.sqrt(1 - dx * dx);
+            hp = Y - e * r * ct;
+          }
+          if (ok && hp >= y0 && hp <= y1) {
+            const a = clamp01(
+              Math.min((1 - Math.abs(dx)) * r, y1 - hp) * dpr + 0.3,
+            );
+            const arc = Math.asin(dx) * r,
+              aA = -arc * sp + hp * cp,
+              aB = arc * sp + hp * cp;
+            const topA =
+              ((Math.floor(aA / band) + Math.floor(aB / band)) & 1) === 0;
+            const across = topA ? aA : aB,
+              along = topA ? arc * cp + hp * sp : arc * cp - hp * sp;
+            const rf = across / t,
+              row = Math.floor(rf),
+              v = (rf - row) * 2 - 1;
+            const other = topA ? aB : aA,
+              fo = other / band - Math.floor(other / band),
+              de = Math.min(fo, 1 - fo) * band;
+            const ao =
+              (0.5 + 0.5 * clamp01(de / (t * 1.1))) *
+              (1 + (h2(row, topA ? 11 : 23) - 0.5) * 0.1);
+            const Nx = dx * nrm,
+              Ny = nyc,
+              Nz = ct * nrm,
+              sg = topA ? 1 : -1;
+            let Tx = cp * ct,
+              Ty = sg * sp,
+              Tz = -cp * dx;
+            const tn = 1 / Math.hypot(Tx, Ty, Tz);
+            Tx *= tn;
+            Ty *= tn;
+            Tz *= tn;
+            const B = cross(Nx, Ny, Nz, Tx, Ty, Tz);
+            shade(
+              thr,
+              P,
+              row * W * 4 + along,
+              v,
+              Nx,
+              Ny,
+              Nz,
+              Tx,
+              Ty,
+              Tz,
+              B[0],
+              B[1],
+              B[2],
+              sd + row * 0.618 + (topA ? 0 : 40),
+              ao,
+            );
+            return a;
+          }
+          /* Top shoulder: concentric rings around the tube. */
+          const ddx = X - cx,
+            ddy = (Y - y0) / e,
+            rr = Math.hypot(ddx, ddy);
+          if (rr < rt + 0.6 && rr > tR) {
+            if (Math.abs(ddx) < tR && Y < y0) return 0;
+            const rf = rr / t,
+              row = Math.floor(rf),
+              v = (rf - row) * 2 - 1;
+            let Tx = -ddy / rr,
+              Ty = (e * ddx) / rr;
+            const tn = 1 / (Math.hypot(Tx, Ty) || 1);
+            Tx *= tn;
+            Ty *= tn;
+            const Nx = (ddx / rt) * 0.2,
+              Ny = -0.9,
+              Nz = 0.42,
+              nn = 1 / Math.hypot(Nx, Ny, Nz);
+            const B = cross(Nx * nn, Ny * nn, Nz * nn, Tx, Ty, 0);
+            shade(
+              thr,
+              P,
+              row * W * 4 + Math.atan2(ddy, ddx) * rr,
+              v,
+              Nx * nn,
+              Ny * nn,
+              Nz * nn,
+              Tx,
+              Ty,
+              0,
+              B[0],
+              B[1],
+              B[2],
+              sd + row,
+              0.8 + 0.2 * clamp01((rr - tR) / (t * 2)),
+            );
+            return clamp01((rt - rr) * dpr + 0.5);
+          }
+          return 0;
+        };
+        blit(ctx, dpr, yarnLayer(w, h, dpr, fn, P.fuzz, sw.seedInt));
+      }
+
+      /* 04 — parallel-wound spool between two flanges. */
+      function disc(ctx, cx, yTop, r, e, th, hole) {
+        const g = ctx.createLinearGradient(cx - r, 0, cx + r, 0);
+        g.addColorStop(0, "#8f897d");
+        g.addColorStop(0.28, "#f2eee6");
+        g.addColorStop(0.55, "#d3cdc1");
+        g.addColorStop(1, "#8a8478");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(cx + r, yTop);
+        ctx.lineTo(cx + r, yTop + th);
+        ctx.ellipse(cx, yTop + th, r, e * r, 0, 0, Math.PI, false);
+        ctx.lineTo(cx - r, yTop);
+        ctx.ellipse(cx, yTop, r, e * r, 0, Math.PI, 0, true);
+        ctx.closePath();
+        ctx.fill();
+        const gt = ctx.createLinearGradient(
+          cx - r,
+          yTop - e * r,
+          cx + r * 0.6,
+          yTop + e * r,
+        );
+        gt.addColorStop(0, "#ffffff");
+        gt.addColorStop(0.6, "#ebe6dc");
+        gt.addColorStop(1, "#cfc8bb");
+        ctx.fillStyle = gt;
+        ctx.beginPath();
+        ctx.ellipse(cx, yTop, r, e * r, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.85)";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.ellipse(cx, yTop, r - 0.4, e * r - 0.3, 0, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+        if (hole) {
+          const hr = r * 0.2;
+          ctx.fillStyle = "#c9c2b5";
+          ctx.beginPath();
+          ctx.ellipse(cx, yTop, hr * 1.35, e * hr * 1.35, 0, 0, Math.PI * 2);
+          ctx.fill();
+          const gh = ctx.createLinearGradient(
+            0,
+            yTop - e * hr,
+            0,
+            yTop + e * hr,
+          );
+          gh.addColorStop(0, "#15120d");
+          gh.addColorStop(1, "#4b4539");
+          ctx.fillStyle = gh;
+          ctx.beginPath();
+          ctx.ellipse(cx, yTop, hr, e * hr, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      function renderSpool(cv, sw, W, H, z) {
+        const { ctx, dpr, w, h } = setup(cv, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cx = W / 2,
+          e = 0.22,
+          R = W * 0.29,
+          FR = W * 0.43,
+          ft = H * 0.035,
+          yA = H * 0.15,
+          yB = H * 0.84;
+        groundShadow(
+          ctx,
+          cx,
+          yB + ft + e * FR * 0.5,
+          FR * 1.15,
+          e * FR * 1.1,
+          0.32,
+        );
+        disc(ctx, cx, yB, FR, e, ft, false);
+        const t = sw.t * z * 0.72,
+          P = params(sw, t),
+          thr = sw.thread,
+          sd = sw.nseed;
+        const phi = 0.035,
+          sp = Math.sin(phi),
+          cp = Math.cos(phi),
+          circ = Math.PI * 2 * R;
+        const fn = (X, Y) => {
+          const dx = (X - cx) / R;
+          if (dx <= -1 || dx >= 1) return 0;
+          const ct = Math.sqrt(1 - dx * dx),
+            hp = Y - e * R * ct;
+          if (hp < yA - 2 || hp > yB) return 0;
+          const a = clamp01(
+            Math.min((1 - Math.abs(dx)) * R, yB - hp) * dpr + 0.3,
+          );
+          const arc = Math.asin(dx) * R;
+          const across =
+            hp * cp -
+            arc * sp +
+            (vnoise(arc / (26 * z) + sd, hp / (t * 3)) - 0.5) * t * 0.3;
+          const rf = across / t,
+            row = Math.floor(rf),
+            v = (rf - row) * 2 - 1;
+          let Tx = cp * ct,
+            Ty = sp,
+            Tz = -cp * dx;
+          const tn = 1 / Math.hypot(Tx, Ty, Tz);
+          Tx *= tn;
+          Ty *= tn;
+          Tz *= tn;
+          const B = cross(dx, 0, ct, Tx, Ty, Tz);
+          const ao =
+            (0.5 + 0.5 * clamp01((hp - yA) / (t * 2.5))) *
+            (0.55 + 0.45 * clamp01((yB - hp) / (t * 2.5))) *
+            (1 + (h2(row, sw.seedInt) - 0.5) * 0.1);
+          shade(
+            thr,
+            P,
+            row * circ + arc * cp + hp * sp,
+            v,
+            dx,
+            0,
+            ct,
+            Tx,
+            Ty,
+            Tz,
+            B[0],
+            B[1],
+            B[2],
+            sd + row * 0.618,
+            ao,
+          );
+          return a;
+        };
+        blit(ctx, dpr, yarnLayer(w, h, dpr, fn, P.fuzz, sw.seedInt));
+        disc(ctx, cx, yA - ft, FR, e, ft, true);
+      }
+
+      /* 05 — two-ply twisted hank; each ply carries its own fine strands. */
+      function renderHank(cv, sw, W, H, z) {
+        const { ctx, dpr, w, h } = setup(cv, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cx = W / 2,
+          R = W * 0.2,
+          yEnd = H * 0.96,
+          t = sw.t * z * 0.7,
+          P = params(sw, t),
+          thr = sw.thread,
+          sd = sw.nseed;
+        const kTw = 1.05,
+          Pp = R * 1.55,
+          cn = 1 / Math.hypot(1, kTw);
+        const fn = (X, Y) => {
+          let r = R * (1 + 0.035 * Math.sin((Y * 0.045) / z + sd));
+          const capC = yEnd - r;
+          if (Y > capC) {
+            const dy = Y - capC;
+            if (dy >= r) return 0;
+            r = Math.sqrt(r * r - dy * dy);
+          }
+          const dx = (X - cx) / r;
+          if (dx <= -1 || dx >= 1) return 0;
+          const ct = Math.sqrt(1 - dx * dx),
+            a = clamp01((1 - Math.abs(dx)) * r * dpr + 0.3);
+          const arc = Math.asin(dx) * R,
+            k = (Y + arc * kTw) / Pp,
+            kf = Math.floor(k),
+            u = k - kf,
+            big = kf & 1;
+          const bul = Math.sin(Math.PI * u),
+            tl = -Math.cos(Math.PI * u) * 0.75;
+          /* across-ply direction on the rope surface */
+          const Ax = kTw * cn * ct,
+            Ay = cn,
+            Az = -kTw * cn * dx;
+          let Nx = dx + Ax * tl,
+            Ny = Ay * tl,
+            Nz = ct + Az * tl;
+          const nn = 1 / Math.hypot(Nx, Ny, Nz);
+          Nx *= nn;
+          Ny *= nn;
+          Nz *= nn;
+          let Tx = cn * ct,
+            Ty = -kTw * cn,
+            Tz = -cn * dx;
+          const tn = 1 / Math.hypot(Tx, Ty, Tz);
+          Tx *= tn;
+          Ty *= tn;
+          Tz *= tn;
+          const B = cross(Nx, Ny, Nz, Tx, Ty, Tz);
+          const rf = (u * Pp * cn) / t + big * 0.5,
+            row = Math.floor(rf),
+            v = (rf - row) * 2 - 1;
+          const along = (arc - kTw * Y) * cn;
+          shade(
+            thr,
+            P,
+            along + row * 97,
+            v,
+            Nx,
+            Ny,
+            Nz,
+            Tx,
+            Ty,
+            Tz,
+            B[0],
+            B[1],
+            B[2],
+            sd + row * 0.618 + big * 30,
+            0.28 + 0.72 * Math.pow(bul, 0.6),
+            (Y * 2.3) / z + row * 0.9,
+          );
+          return a;
+        };
+        blit(ctx, dpr, yarnLayer(w, h, dpr, fn, P.fuzz, sw.seedInt));
+        /* paper band */
+        const by = H * 0.34,
+          bh = 22 * z,
+          bx = cx - R * 1.05,
+          bw = R * 2.1;
+        ctx.fillStyle = "rgba(0,0,0,.22)";
+        ctx.fillRect(bx, by + bh - 1, bw, 2.5 * z);
+        ctx.fillStyle = "#F4EEE1";
+        ctx.fillRect(bx, by, bw, bh);
+        const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+        g.addColorStop(0, "rgba(40,30,15,.45)");
+        g.addColorStop(0.25, "rgba(255,255,255,.1)");
+        g.addColorStop(0.45, "rgba(255,255,255,.25)");
+        g.addColorStop(0.8, "rgba(40,30,15,.12)");
+        g.addColorStop(1, "rgba(40,30,15,.5)");
+        ctx.fillStyle = g;
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = "#1A2333";
+        ctx.font = `600 ${10 * z}px "IBM Plex Mono", monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(sw.shade.code, cx, by + bh / 2 + 0.5);
+      }
+
+      /* 06 — cut tuft rising out of a slit in the card. */
+      function renderTuft(cv, sw, W, H, z) {
+        const { ctx, dpr } = setup(cv, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cx = W / 2,
+          by = H * 0.82,
+          r = mulberry32(sw.seedInt ^ 0x9e37);
+        const t = sw.t * z * 0.52,
+          P = params(sw, t),
+          thr = sw.thread;
+        ctx.fillStyle = "rgba(20,14,8,.6)";
+        ctx.beginPath();
+        ctx.ellipse(cx, by + 1, W * 0.17, 1.7 * z, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const n = Math.round(54 / Math.sqrt(sw.den / 75)) + 12;
+        const fibres = Array.from({ length: n }, () => ({
+          d: r(),
+          a: r(),
+          b: r(),
+          c: r(),
+          s: r() * 4000,
+        })).sort((p, q) => p.d - q.d);
+        for (const f of fibres) {
+          const bx = cx + (f.a - 0.5) * W * 0.26,
+            ang = -Math.PI / 2 + (f.a - 0.5) * 1.3 + (f.b - 0.5) * 0.4,
+            L = H * (0.5 + 0.26 * f.c);
+          const ex = bx + Math.cos(ang) * L * 0.92,
+            ey =
+              by +
+              Math.sin(ang) * L * 0.92 +
+              Math.abs(Math.cos(ang)) * L * 0.14;
+          const pts = bez(
+            bx,
+            by + 2,
+            bx + (ex - bx) * 0.05,
+            by - L * 0.35,
+            bx + (ex - bx) * 0.55,
+            ey + L * 0.12,
+            ex,
+            ey,
+            Math.max(0.7, t * 0.4),
+          );
+          const ao = 0.5 + 0.5 * f.d;
+          strandPath(ctx, pts, t, 3, thr, P, f.s, ao, f.s * 0.001);
+          /* frayed tip */
+          const [lx, ly] = pts[pts.length - 2];
+          const ta = Math.atan2(ey - ly, ex - lx);
+          for (const da of [-0.22, 0.2]) {
+            const fl = (2 + r() * 4) * z;
+            strandPath(
+              ctx,
+              [
+                [ex, ey],
+                [
+                  ex + Math.cos(ta + da) * fl * 0.5,
+                  ey + Math.sin(ta + da) * fl * 0.5,
+                ],
+                [
+                  ex + Math.cos(ta + da * 1.4) * fl,
+                  ey + Math.sin(ta + da * 1.4) * fl,
+                ],
+              ],
+              t * 0.4,
+              1,
+              thr,
+              P,
+              f.s + 900,
+              ao * 0.9,
+              f.s * 0.001,
+            );
+          }
+        }
+        ctx.fillStyle = ticketHex();
+        ctx.fillRect(0, by + 1.4 * z, W, H - by);
+        const lg = ctx.createLinearGradient(0, by + 1, 0, by + 6 * z);
+        lg.addColorStop(0, "rgba(0,0,0,.2)");
+        lg.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = lg;
+        ctx.fillRect(cx - W * 0.2, by + 1.4 * z, W * 0.4, 5 * z);
+      }
+
+      /* 07 — a floss loop hanging from a punched hole. */
+      function renderLoop(cv, sw, W, H, z) {
+        const { ctx, dpr } = setup(cv, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cx = W / 2,
+          hy = 16 * z,
+          hr = 4.4 * z,
+          r = mulberry32(sw.seedInt);
+        ctx.fillStyle = "rgba(255,255,255,.7)";
+        ctx.beginPath();
+        ctx.ellipse(cx, hy + 0.9, hr + 0.8, hr * 0.78 + 0.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const hg = ctx.createRadialGradient(cx, hy - 1, 0, cx, hy, hr);
+        hg.addColorStop(0, "#0d0a06");
+        hg.addColorStop(1, "#3b3122");
+        ctx.fillStyle = hg;
+        ctx.beginPath();
+        ctx.ellipse(cx, hy, hr, hr * 0.78, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const width = sw.t * z * 1.3,
+          P = params(sw, width),
+          thr = sw.thread;
+        const bot = H * 0.93,
+          spr = W * (0.29 + 0.05 * r()),
+          step = Math.max(0.7, width * 0.3);
+        const legA = bez(
+          cx - 1,
+          hy,
+          cx - spr * 1.2,
+          hy + H * 0.3,
+          cx - spr * 0.95,
+          bot + H * 0.02,
+          cx + spr * 0.08,
+          bot,
+          step,
+        );
+        const legB = bez(
+          cx + spr * 0.08,
+          bot,
+          cx + spr * 1.05,
+          bot - H * 0.02,
+          cx + spr * 1.12,
+          hy + H * 0.36,
+          cx + 1.2,
+          hy,
+          step,
+        );
+        const lenA = legA.reduce(
+          (acc, p, i) =>
+            i
+              ? acc + Math.hypot(p[0] - legA[i - 1][0], p[1] - legA[i - 1][1])
+              : 0,
+          0,
+        );
+        ctx.save();
+        ctx.filter = `blur(${2.2 * z}px)`;
+        ctx.strokeStyle = "rgba(20,14,6,.22)";
+        ctx.lineWidth = width;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        [...legA, ...legB].forEach((p, i) =>
+          i
+            ? ctx.lineTo(p[0] + 2 * z, p[1] + 3 * z)
+            : ctx.moveTo(p[0] + 2 * z, p[1] + 3 * z),
+        );
+        ctx.stroke();
+        ctx.restore();
+        const seed = sw.nseed;
+        strandPath(ctx, legB, width, 6, thr, P, lenA, 0.8, seed);
+        strandPath(ctx, legA, width, 6, thr, P, 0, 1, seed);
+      }
+
+      /* 08 — fishbone satin leaf on cloth in a wooden hoop. */
+      function renderSatin(cv, sw, W, H, z) {
+        const { ctx, dpr, w, h } = setup(cv, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cx = W / 2,
+          cy = H / 2,
+          Rh = W * 0.42;
+        const a = W * 0.3,
+          b = W * 0.135,
+          beta = -0.72,
+          cb = Math.cos(beta),
+          sb = Math.sin(beta);
+        const gam = 0.95,
+          cg = Math.cos(gam),
+          sgm = Math.sin(gam),
+          cot = cg / sgm;
+        const t = sw.t * z * 0.62,
+          P = params(sw, t),
+          thr = sw.thread,
+          sd = sw.nseed;
+        const dark = lumLin(thr.cols[0]) > 0.28 || sw.mode === "zari";
+        const cloth = hexLin(dark ? "#1B2130" : "#E9E1CF"),
+          tf = 1.9 * z;
+        const dx0 = t / sgm,
+          A2 = (cg * cg) / (a * a) + (sgm * sgm) / (b * b),
+          sx = 1.6 * z,
+          sy = 2.6 * z;
+        const fn = (X, Y) => {
+          const qx = X - cx,
+            qy = Y - cy,
+            rr = Math.hypot(qx, qy);
+          if (rr > Rh + 1) return 0;
+          const cover = clamp01((Rh - rr) * dpr + 0.5);
+          const x = qx * cb + qy * sb,
+            y = -qx * sb + qy * cb,
+            sg = y >= 0 ? 1 : -1,
+            ay = Math.abs(y);
+          const pAlong = ay / sgm,
+            x0 = x - ay * cot,
+            rf = x0 / dx0,
+            row = Math.floor(rf),
+            v = (rf - row) * 2 - 1;
+          const x0c = (row + 0.5) * dx0,
+            Bq = (2 * x0c * cg) / (a * a),
+            Cq = (x0c * x0c) / (a * a) - 1,
+            disc = Bq * Bq - 4 * A2 * Cq;
+          let done = false;
+          if (Cq < 0 && disc > 0) {
+            const pE =
+              (-Bq + Math.sqrt(disc)) / (2 * A2) +
+              (h2(row, sg * 7 + 3) - 0.5) * t * 0.6;
+            const p0 = t * 0.3 + (h2(row, sg * 5 + 1) - 0.5) * t * 0.4;
+            if (pAlong > p0 && pAlong < pE) {
+              const de = Math.min(pAlong - p0, pE - pAlong),
+                taper = clamp01(de / (t * 0.9)),
+                vv = v / (0.55 + 0.45 * taper);
+              if (vv > -1 && vv < 1) {
+                const nlx = (x / a) * 0.6,
+                  nly = (y / b) * 0.45;
+                let Nx = nlx * cb - nly * sb,
+                  Ny = nlx * sb + nly * cb,
+                  Nz = 1;
+                const nn = 1 / Math.hypot(Nx, Ny, Nz);
+                Nx *= nn;
+                Ny *= nn;
+                Nz *= nn;
+                const tlx = cg,
+                  tly = sg * sgm,
+                  Tx = tlx * cb - tly * sb,
+                  Ty = tlx * sb + tly * cb;
+                const B = cross(Nx, Ny, Nz, Tx, Ty, 0);
+                shade(
+                  thr,
+                  P,
+                  pAlong + row * a * 3,
+                  vv,
+                  Nx,
+                  Ny,
+                  Nz,
+                  Tx,
+                  Ty,
+                  0,
+                  B[0],
+                  B[1],
+                  B[2],
+                  sd + row * 0.618 + (sg > 0 ? 0 : 50),
+                  (0.7 + 0.3 * taper) *
+                    (0.72 + 0.28 * clamp01(pAlong / (t * 3))),
+                );
+                done = true;
+              }
+            }
+          }
+          if (!done) {
+            const i = Math.floor(X / tf),
+              j = Math.floor(Y / tf),
+              over = (i + j) & 1,
+              f = over ? X / tf - i : Y / tf - j,
+              fv = f * 2 - 1;
+            const m =
+              (0.74 + 0.26 * Math.sqrt(1 - fv * fv)) *
+              (0.9 +
+                0.18 *
+                  vnoise(over ? X * 0.9 : X * 0.1, over ? Y * 0.1 : Y * 0.9)) *
+              (over ? 1 : 0.92);
+            const ox = qx - sx,
+              oy = qy - sy,
+              lx = ox * cb + oy * sb,
+              ly = -ox * sb + oy * cb,
+              el = Math.sqrt((lx * lx) / (a * a) + (ly * ly) / (b * b));
+            const shd = 1 - 0.42 * clamp01((1.1 - el) / 0.16);
+            O[0] = cloth[0] * m * shd;
+            O[1] = cloth[1] * m * shd;
+            O[2] = cloth[2] * m * shd;
+          }
+          const hs = 0.55 + 0.45 * clamp01((Rh - rr) / (7 * z));
+          O[0] *= hs;
+          O[1] *= hs;
+          O[2] *= hs;
+          return cover;
+        };
+        blit(ctx, dpr, yarnLayer(w, h, dpr, fn, 0, sw.seedInt));
+        const lw = W * 0.055,
+          rr = Rh + lw / 2 - 0.5;
+        const g = ctx.createLinearGradient(cx - rr, cy - rr, cx + rr, cy + rr);
+        g.addColorStop(0, "#ebcd98");
+        g.addColorStop(0.5, "#c8995e");
+        g.addColorStop(1, "#8a5f30");
+        ctx.strokeStyle = g;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(255,240,210,.55)";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rr + lw / 2 - 0.6, Math.PI * 1.05, Math.PI * 1.75);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(40,20,5,.35)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, rr - lw / 2 + 0.4, 0, Math.PI * 2);
+        ctx.stroke();
+        const bw = lw * 1.1,
+          bh2 = lw * 1.5,
+          bxp = cx - bw / 2,
+          byp = cy - rr - bh2 * 0.9;
+        const bg = ctx.createLinearGradient(bxp, 0, bxp + bw, 0);
+        bg.addColorStop(0, "#7b6a3c");
+        bg.addColorStop(0.45, "#f2e3a6");
+        bg.addColorStop(1, "#6d5c30");
+        ctx.fillStyle = bg;
+        ctx.beginPath();
+        ctx.roundRect(bxp, byp, bw, bh2, 1.5 * z);
+        ctx.fill();
+      }
+
+      /* 10 — single strand, macro, lying on paper. */
+      function renderMacro(cv, sw, W, H, z) {
+        const { ctx, dpr, w, h } = setup(cv, W, H);
+        const t = 6.5 * Math.sqrt(sw.den / 75) * z,
+          P = { ...params(sw, t), ply: params(sw, t).ply * 1.35 },
+          thr = sw.thread,
+          sd = sw.nseed;
+        const A = H * 0.15,
+          om = (2 * Math.PI) / (W * 0.95),
+          ph = sd,
+          paper = hexLin(ticketHex()),
+          hw = t / 2;
+        const fn = (X, Y) => {
+          const ycs = H / 2 + 4 * z + A * Math.sin((X - 3 * z) * om + ph),
+            sls = A * om * Math.cos((X - 3 * z) * om + ph);
+          const ds = Math.abs(Y - ycs) / Math.sqrt(1 + sls * sls) - hw;
+          const m =
+            (0.95 +
+              0.07 * vnoise(X * 0.5, Y * 0.5) +
+              0.03 * vnoise(X * 3, Y * 3)) *
+            (1 - 0.38 * Math.exp(-Math.max(0, ds) / (3.2 * z)));
+          const pr = paper[0] * m,
+            pg = paper[1] * m,
+            pb = paper[2] * m;
+          const yc = H / 2 + A * Math.sin(X * om + ph),
+            sl = A * om * Math.cos(X * om + ph),
+            cs = 1 / Math.sqrt(1 + sl * sl);
+          const d = (Y - yc) * cs,
+            al = clamp01((hw - Math.abs(d)) * dpr + 0.5);
+          if (al > 0) {
+            const v = Math.max(-0.999, Math.min(0.999, d / hw));
+            shade(
+              thr,
+              P,
+              X * 1.06,
+              v,
+              0,
+              0,
+              1,
+              cs,
+              sl * cs,
+              0,
+              -sl * cs,
+              cs,
+              0,
+              sd,
+              1,
+            );
+            O[0] = pr + (O[0] - pr) * al;
+            O[1] = pg + (O[1] - pg) * al;
+            O[2] = pb + (O[2] - pb) * al;
+          } else {
+            O[0] = pr;
+            O[1] = pg;
+            O[2] = pb;
+          }
+          return 1;
+        };
+        blit(ctx, dpr, yarnLayer(w, h, dpr, fn, 0, sw.seedInt));
+        if (P.fuzz > 0) {
+          const r = mulberry32(sw.seedInt),
+            n = Math.round(W * 0.9 * P.fuzz);
+          ctx.lineCap = "round";
+          for (let k = 0; k < n; k++) {
+            const X = r() * W,
+              yc = H / 2 + A * Math.sin(X * om + ph),
+              side = r() > 0.5 ? 1 : -1,
+              y = yc + side * hw * (0.7 + r() * 0.3),
+              len = (2 + r() * 5) * z;
+            ctx.strokeStyle = `rgba(${enc(thr.cols[0][0] * 0.9)},${enc(thr.cols[0][1] * 0.9)},${enc(thr.cols[0][2] * 0.9)},${0.35 + r() * 0.4})`;
+            ctx.lineWidth = 0.35 * z;
+            ctx.beginPath();
+            ctx.moveTo(X, y);
+            ctx.quadraticCurveTo(
+              X + (r() - 0.5) * len,
+              y + side * len * 0.6,
+              X + (r() - 0.5) * len * 1.4,
+              y + side * len,
+            );
+            ctx.stroke();
+          }
+        }
+      }
+
+      const RENDER = {
+        wound: (cv, sw, W, H, z) => renderWound(cv, sw, W, H, z, true),
+        ticket: (cv, sw, W, H, z) => renderWound(cv, sw, W, H, z, false),
+        cone: renderCone,
+        spool: renderSpool,
+        hank: renderHank,
+        tuft: renderTuft,
+        loop: renderLoop,
+        satin: renderSatin,
+        fan: (cv, sw, W, H, z) => renderWound(cv, sw, W, H, z, true),
+        macro: renderMacro,
+      };
+
+      /* -------------------------------------------------------------- swatches */
+      const state = { denier: "mixed", luster: "bright", mode: "mixed" };
+      const isCool = (hex) => {
+        const n = parseInt(hex.slice(1), 16);
+        return (n & 255) > ((n >> 16) & 255);
+      };
+      function swatchFor(i) {
+        const shade = SET[i % SET.length];
+        const den =
+          state.denier === "mixed"
+            ? DEN_CYCLE[i % DEN_CYCLE.length]
+            : Number(state.denier);
+        let mode =
+          state.mode === "mixed"
+            ? MODE_CYCLE[i % MODE_CYCLE.length]
+            : state.mode;
+        if (mode === "card") mode = shade.colors ? "space" : "solid";
+        let cols,
+          metal = null;
+        if (mode === "space") cols = shade.colors || MULTI[i % MULTI.length];
+        else if (mode === "ombre")
+          cols = shade.colors || [
+            shiftHex(shade.hex, -0.4),
+            shade.hex,
+            shiftHex(shade.hex, 0.45),
+          ];
+        else if (mode === "twist")
+          cols = [
+            shade.hex,
+            lumLin(hexLin(shade.hex)) > 0.3 ? "#26324A" : "#EFE8DA",
+          ];
+        else if (mode === "zari") {
+          cols = [shade.hex];
+          metal = isCool(shade.hex) ? "#CDD3DC" : "#DDB862";
+        } else cols = [shade.hex];
+        const seedInt = hashStr(shade.code + "|" + mode + "|" + i);
+        return {
+          shade,
+          den,
+          mode,
+          luster: state.luster,
+          seedInt,
+          nseed: (seedInt % 1000) / 7.3,
+          t: 2.4 * Math.sqrt(den / 75),
+          thread: makeThread(mode, cols, seedInt, 64, metal),
+        };
+      }
+      const diameter = (den) => (0.0119 * Math.sqrt(den / 1.52)).toFixed(2);
+
+      /* ------------------------------------------------------------- building */
+      const main = document.getElementById("main");
+      const registry = new Map();
+      const picked = new Set(
+        JSON.parse(localStorage.getItem("opus-shortlist") || "[]"),
+      );
+
+      function itemHTML(v, i) {
+        const sh = SET[i % SET.length];
+        const cvs = `<canvas width="1" height="1"></canvas>`;
+        switch (v.key) {
+          case "wound":
+            return `<span class="sw shimmer" style="width:${v.W}px;height:${v.H}px">${cvs}</span><span class="code">${sh.code}</span><span class="meta"></span>`;
+          case "ticket":
+            return `<span class="ticket"><span class="tk-hole"></span><span class="tk-brand">KATARIA SYNTEX</span><span class="tk-win shimmer" style="width:${v.W}px;height:${v.H}px">${cvs}</span><span class="tk-row"><span class="tk-code">${sh.code}</span><span class="tk-den"></span></span><span class="meta"></span></span>`;
+          case "cone":
+          case "spool":
+            return `<span class="obj">${cvs}</span><span class="tag"><span class="code">${sh.code}</span><span class="meta"></span></span>`;
+          case "hank":
+            return `${cvs}<span class="meta"></span>`;
+          case "tuft":
+            return `<span class="tuftcard">${cvs}<span class="code">${sh.code}</span><span class="meta"></span></span>`;
+          case "loop":
+            return `<span class="code">${sh.code}</span><span class="meta"></span>${cvs}`;
+          case "satin":
+            return `${cvs}<span class="code">${sh.code}</span><span class="meta"></span>`;
+          case "fan":
+            return `<span class="strip"><span class="sw shimmer" style="width:${v.W}px;height:${v.H}px">${cvs}</span><span class="code">${sh.code}</span></span>`;
+          case "macro":
+            return `<span class="macro shimmer" style="height:${v.H}px">${cvs}</span><span class="macro-row"><span class="code">${sh.code}</span><span class="meta"></span></span>`;
+        }
+        return cvs;
+      }
+      const GRID = {
+        wound: "grid-wound",
+        ticket: "grid-ticket",
+        cone: "grid-obj",
+        spool: "grid-obj",
+        hank: "grid-hank",
+        tuft: "grid-tuft",
+        loop: "floss",
+        satin: "grid-satin",
+        fan: "fan",
+        macro: "grid-macro",
+      };
+
+      VARIANTS.forEach((v, vi) => {
+        const num = String(vi + 1).padStart(2, "0");
+        v.num = num;
+        const sec = document.createElement("section");
+        sec.className = "dir";
+        sec.id = "v-" + v.key;
+        sec.setAttribute("aria-labelledby", "h-" + v.key);
+        const items = Array.from(
+          { length: v.count },
+          (_, i) =>
+            `<button class="it" data-v="${v.key}" data-i="${i}" style="--i:${i}" aria-label="Shade ${SET[i % SET.length].code}, open close view">${itemHTML(v, i)}</button>`,
+        ).join("");
+        let inner = `<div class="${GRID[v.key]}" style="--mid:${(v.count - 1) / 2}">${items}${v.key === "fan" ? '<span class="rivet"></span>' : ""}</div>`;
+        if (v.key === "wound")
+          inner = `<div class="cardpage"><div class="cardpage-head"><span>RAJ embroidery yarn · Viscose filament</span><span>Page 9</span></div>${inner}</div>`;
+        if (v.key === "spool") inner = `<div class="tray">${inner}</div>`;
+        if (v.key === "hank") inner = `<div class="rod"></div>${inner}`;
+        sec.innerHTML = `
+    <div class="dir-head">
+      <span class="num">${num}</span>
+      <div><h2 id="h-${v.key}">${v.name}</h2><p class="ref">${v.ref}</p><p class="desc">${v.desc}</p></div>
+      <button class="pick" data-pick="${num}" aria-pressed="${picked.has(num)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>Shortlist</button>
+    </div>
+    <div class="stage s-${v.key}">${inner}</div>`;
+        main.appendChild(sec);
+        sec.querySelectorAll(".it").forEach((el) => {
+          const i = Number(el.dataset.i);
+          registry.set(el.querySelector("canvas"), { v, i, el });
+        });
+        const a = document.createElement("a");
+        a.href = "#v-" + v.key;
+        a.dataset.num = num;
+        a.innerHTML = `<b>${num}</b>${v.name}`;
+        document.getElementById("nav").appendChild(a);
+      });
+
+      function refreshLabels() {
+        for (const { v, i, el } of registry.values()) {
+          const sw = swatchFor(i),
+            meta = el.querySelector(".meta");
+          const txt = `${sw.den}D · ${MODE_LABEL[sw.mode]}`;
+          if (meta)
+            meta.textContent =
+              v.key === "macro"
+                ? `${txt} · Ø ${diameter(sw.den)} mm`
+                : v.key === "ticket"
+                  ? MODE_LABEL[sw.mode]
+                  : txt;
+          const den = el.querySelector(".tk-den");
+          if (den) den.textContent = sw.den + "D";
+          el.title = `${sw.shade.code} · ${txt}`;
+        }
+      }
+      function refreshShortlist() {
+        const list = [...picked].sort();
+        document.getElementById("shortlist").innerHTML = list.length
+          ? `Shortlist <b>${list.join(" · ")}</b>`
+          : "Shortlist —";
+        document
+          .querySelectorAll("#nav a")
+          .forEach((a) =>
+            a.classList.toggle("is-picked", picked.has(a.dataset.num)),
+          );
+        localStorage.setItem("opus-shortlist", JSON.stringify(list));
+      }
+
+      /* -------------------------------------------------------- render queue */
+      const dirty = new Set(registry.keys()),
+        visible = new Set();
+      let pumping = false,
+        fontsReady = false;
+      function draw(cv) {
+        const { v, i } = registry.get(cv);
+        RENDER[v.key](cv, swatchFor(i), v.W, v.H, 1);
+        cv.classList.add("ready");
+        cv.parentElement.classList.remove("shimmer");
+      }
+      function step() {
+        const t0 = performance.now();
+        for (const cv of visible) {
+          if (!dirty.has(cv)) continue;
+          dirty.delete(cv);
+          draw(cv);
+          if (performance.now() - t0 > 14) break;
+        }
+        if ([...visible].some((cv) => dirty.has(cv)))
+          requestAnimationFrame(step);
+        else pumping = false;
+      }
+      function pump() {
+        if (!fontsReady || pumping) return;
+        pumping = true;
+        requestAnimationFrame(step);
+      }
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries)
+            e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
+          pump();
+        },
+        { rootMargin: "300px 0px" },
+      );
+      registry.forEach((_, cv) => io.observe(cv));
+      function invalidate() {
+        registry.forEach((_, cv) => dirty.add(cv));
+        refreshLabels();
+        pump();
+      }
+
+      /* -------------------------------------------------------------- controls */
+      document.querySelectorAll(".seg").forEach((seg) => {
+        const key = seg.dataset.key;
+        const sync = () =>
+          seg.querySelectorAll("button").forEach((b) => {
+            const on = b.dataset.val === state[key];
+            b.setAttribute("aria-checked", on);
+            b.tabIndex = on ? 0 : -1;
+          });
+        seg.addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b || state[key] === b.dataset.val) return;
+          state[key] = b.dataset.val;
+          sync();
+          invalidate();
+        });
+        seg.addEventListener("keydown", (e) => {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          const bs = [...seg.querySelectorAll("button")],
+            idx = bs.findIndex((b) => b.dataset.val === state[key]);
+          const nb =
+            bs[
+              (idx + (e.key === "ArrowRight" ? 1 : -1) + bs.length) % bs.length
+            ];
+          nb.click();
+          nb.focus();
+          e.preventDefault();
+        });
+        sync();
+      });
+      document.addEventListener("click", (e) => {
+        const p = e.target.closest("[data-pick]");
+        if (p) {
+          const n = p.dataset.pick;
+          picked.has(n) ? picked.delete(n) : picked.add(n);
+          p.setAttribute("aria-pressed", picked.has(n));
+          refreshShortlist();
+        }
+      });
+      const root = document.documentElement;
+      root.dataset.theme =
+        localStorage.getItem("opus-theme") ||
+        (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.getElementById("theme").addEventListener("click", () => {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        localStorage.setItem("opus-theme", root.dataset.theme);
+        /* Tuft card lip and macro paper are painted from --ticket. */
+        registry.forEach(({ v }, cv) => {
+          if (v.key === "tuft" || v.key === "macro") dirty.add(cv);
+        });
+        pump();
+      });
+
+      /* ---------------------------------------------------------------- detail */
+      const dlg = document.getElementById("detail");
+      main.addEventListener("click", (e) => {
+        const it = e.target.closest(".it");
+        if (!it) return;
+        const v = VARIANTS.find((x) => x.key === it.dataset.v),
+          i = Number(it.dataset.i),
+          sw = swatchFor(i);
+        const z = v.dW / v.W,
+          cv = document.getElementById("d-canvas");
+        document
+          .getElementById("d-vis")
+          .classList.toggle("paperish", ["tuft", "loop"].includes(v.key));
+        document.getElementById("d-title").textContent = sw.shade.code;
+        const dots = sw.thread.hex
+          .concat(sw.thread.metalHex ? [sw.thread.metalHex] : [])
+          .map((c) => `<i style="background:${c}"></i>`)
+          .join("");
+        document.getElementById("d-list").innerHTML = `
+    <dt>Direction</dt><dd>${v.num} · ${v.name}</dd>
+    <dt>Card page</dt><dd>${sw.shade.page}</dd>
+    <dt>Denier</dt><dd>${sw.den}D</dd>
+    <dt>Diameter</dt><dd>Ø ${diameter(sw.den)} mm (viscose)</dd>
+    <dt>Luster</dt><dd>${LUSTER_LABEL[sw.luster]}</dd>
+    <dt>Colour</dt><dd>${MODE_LABEL[sw.mode]}<span class="dots">${dots}</span></dd>`;
+        dlg.showModal();
+        requestAnimationFrame(() => RENDER[v.key](cv, sw, v.dW, v.dH, z));
+      });
+      document
+        .getElementById("d-close")
+        .addEventListener("click", () => dlg.close());
+      dlg.addEventListener("click", (e) => {
+        if (e.target === dlg) dlg.close();
+      });
+
+      refreshLabels();
+      refreshShortlist();
+      document.fonts.ready.then(() => {
+        fontsReady = true;
+        pump();
+      });
+    </script>
+  </body>
+</html>

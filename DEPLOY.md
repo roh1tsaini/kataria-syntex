@@ -12,7 +12,7 @@ Cloudflare — free tier only.
 | Databases    | Cloudflare **D1** (SQLite)         | `ks-biz-app-db`, `ks-web-db`     |
 | CI/CD        | GitHub Actions                     | auto-deploys on push to `main`   |
 
-Worker bindings, hostnames and the release bucket: `apps/app/APP.md`
+Worker bindings, hostnames and the release bucket: `apps/app/spec.md`
 Section 11. Database and bucket names repeat here on purpose — the commands in
 this guide type them.
 
@@ -49,20 +49,24 @@ APK).
 Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
 1. `gate` — typecheck + lint + format + build concurrently via Turbo. Resolves
-   whether the push introduces a new release version compared to live R2.
+   whether the push introduces a new release version and uploads the shared
+   `apps/app` renderer for later jobs.
 2. `deploy-web` — runs immediately in parallel on push: ensure website D1
    (`ks-web-db`) → migrate → build Vinext → deploy website worker.
-3. `desktop` + `android` — installers (win-x64, mac-arm64, linux-x64) and
-   signed APK with Gradle caching, in parallel with `deploy-web`. Runs on release
-   pushes and manual dispatches (skipped on routine non-release commits and PRs).
-4. `publish-r2` — ensures `ks-releases` bucket exists, installs dependencies,
-   uploads installers + writes update manifests with latest-only retention.
-5. `deploy-app` — app: build SPA → ensure D1 (`ks-biz-app-db`) → migrate →
-   deploy Worker. Runs on push; when a release is being published, it runs after
-   `publish-r2` so clients never hit a version floor before the release is live.
+3. `desktop` + `android` — download the shared renderer, then create the
+   Windows, macOS and Linux installers and signed APK. Runs on release pushes
+   and manual dispatches (skipped on routine non-release commits and PRs).
+4. `publish-r2` — ensures `ks-releases` bucket exists, uploads installers,
+   generates one `app/android/latest.json` release-info file and derives the
+   Windows/Linux Electron feeds from it. Keeps only the current release.
+5. `deploy-app` — download the shared renderer → ensure D1 (`ks-biz-app-db`) →
+   migrate → deploy Worker. Release pushes and manual all-target runs deploy
+   after `publish-r2` so clients never hit a version floor before the release is live.
 
 Manual dispatch (Actions → Pipeline) can rebuild only `desktop` or only
-`android` via the `targets` choice.
+`android` via the `targets` choice. `targets: all` is limited to `main` and also
+deploys the app Worker after R2 publication. Manual runs wait behind an active
+push; a newer push cancels an older manual run.
 
 After the first app deploy, set `APP_URL` (step 2) so native builds can reach
 the API.
@@ -136,15 +140,17 @@ Bump `version` in `apps/app/package.json`, push, then Repo → Actions →
 **Pipeline** → Run workflow:
 
 - `targets: all | desktop | android` — desktop-only skips the 90-min APK job.
-- Push or dispatch with `targets: all` uploads the `.exe` / `.dmg` / `.AppImage` / `.apk`
-  files and writes update manifests to R2. Re-releasing requires a new `version`.
+- Push or dispatch on `main` with `targets: all` uploads the `.exe` / `.dmg` /
+  `.AppImage` / `.apk` files and publishes release info plus Electron feeds to
+  R2. The app Worker deploy follows successful publication. Re-releasing
+  requires a new `version`.
 
 Android signing uses the secrets from first-time setup step 5 — the APK job
 fails fast when they are absent. The APK job builds `apps/app`, runs
 `bunx cap sync android` from `apps/android`, then gradle; the signing config
 is read from `apps/android/android/keystore.properties` written by CI.
 
-Version floor, `versionCode` and manifest fields: `apps/app/APP.md` Section 12.
+Version floor, `versionCode` and manifest fields: `apps/app/spec.md` Section 12.
 
 ### Monitoring
 

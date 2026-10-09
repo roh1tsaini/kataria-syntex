@@ -34,10 +34,9 @@
  *   app/desktop/linux/<*.AppImage>         + latest-linux.yml
  *   app/desktop/mac/<*.dmg>                (no yml — unsigned, no updater)
  *   app/android/Kataria-Syntex-Biz-App-<version>.apk
- *   app/android/latest.json                — version + minVersion (only when
- *                                            a breaking change shipped) + paths
- *                                            + the APK's sha256/size (the
- *                                            on-device stager verifies them)
+ *   app/android/latest.json                — shared release info used by
+ *                                            download and app checks; Electron
+ *                                            feeds are generated from it
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -174,9 +173,7 @@ function readMinVersion(): string {
 const files = walk(DIST);
 const winSetup = files.find((f) => basename(f).endsWith(".exe"));
 const winBlockmap = files.find((f) => basename(f).endsWith(".exe.blockmap"));
-const winYml = files.find((f) => basename(f) === "latest.yml");
 const linuxImage = files.find((f) => basename(f).endsWith(".AppImage"));
-const linuxYml = files.find((f) => basename(f) === "latest-linux.yml");
 const macDmg = files.find((f) => basename(f).endsWith(".dmg"));
 const macBlockmap = files.find((f) => basename(f).endsWith(".dmg.blockmap"));
 const apk = files.find((f) => basename(f).endsWith(".apk"));
@@ -206,9 +203,7 @@ if (process.env.ONLY_IF_VERSION_CHANGED === "1") {
 
 const missing = [
   ["win setup", winSetup],
-  ["win latest.yml", winYml],
   ["linux AppImage", linuxImage],
-  ["linux latest-linux.yml", linuxYml],
   ["mac dmg", macDmg],
   ["android apk", apk],
 ].filter(([, v]) => !v);
@@ -244,7 +239,7 @@ if (
   );
 }
 
-// 1) Upload versioned artifacts (immutable cache) + blockmaps + updater ymls.
+// 1) Upload versioned installers and blockmaps.
 const ARTIFACT_CACHE = "public, max-age=31536000, immutable";
 const uploads: Array<{ key: string; file: string }> = [];
 if (winSetup)
@@ -254,16 +249,10 @@ if (winBlockmap)
     key: keyFor(winBlockmap, "desktop/win"),
     file: winBlockmap,
   });
-if (winYml) uploads.push({ key: keyFor(winYml, "desktop/win"), file: winYml });
 if (linuxImage)
   uploads.push({
     key: keyFor(linuxImage, "desktop/linux"),
     file: linuxImage,
-  });
-if (linuxYml)
-  uploads.push({
-    key: keyFor(linuxYml, "desktop/linux"),
-    file: linuxYml,
   });
 if (macDmg) uploads.push({ key: keyFor(macDmg, "desktop/mac"), file: macDmg });
 if (macBlockmap)
@@ -278,25 +267,18 @@ for (const { key, file } of uploads) {
     key,
     readFileSync(file),
     releaseContentType(basename(key)),
-    basename(key).endsWith(".yml") ? "public, max-age=60" : ARTIFACT_CACHE,
+    ARTIFACT_CACHE,
   );
 }
 
-// 2) The unified manifest — Android + macOS Electron + /download page read it.
+// 2) The unified release info — Android, macOS Electron and /download read it.
 // Paths are the public /releases/* URLs every client resolves directly.
-// minVersion is omitted entirely when no breaking change has shipped:
-// "0.0.0" is a truthy string, so a client reading it as a floor raises the
-// undismissable update dialog for nothing (apps/app#A0). Absence is the
-// unambiguous "no floor". Read and validated above, before any R2 write.
-// The Android manifest carries the APK's SHA-256 + size so the on-device
-// stager verifies bytes before they can reach the system installer. A
-// manifest without them (older release) simply skips verification.
+// Required updates come only from the live app server. The package floor is
+// still checked against this release above, but is not published in this file.
+// Android carries APK SHA-256 + size so the stager can verify the download.
 const apkBytes = apk === undefined ? null : readFileSync(apk);
 const manifest = {
   version: VERSION,
-  ...(hasUpdateFloor(publishedMinVersion)
-    ? { minVersion: publishedMinVersion }
-    : {}),
   releasedAt: new Date().toISOString(),
   android:
     apk && apkBytes
@@ -316,29 +298,77 @@ const manifest = {
       : {}),
   },
 };
+
+type DesktopPlatform = "win" | "linux";
+function makeElectronFeed(platform: DesktopPlatform): {
+  key: string;
+  body: Buffer;
+} {
+  const artifact = platform === "win" ? winSetup : linuxImage;
+  const folder = platform === "win" ? "desktop/win" : "desktop/linux";
+  const path = manifest.desktop[platform];
+  if (!artifact || !path)
+    fail(`Cannot make ${platform} feed without its installer.`);
+  const bytes = readFileSync(artifact);
+  const filename = basename(path);
+  const sha512 = createHash("sha512").update(bytes).digest("base64");
+  const quotedFilename = JSON.stringify(filename);
+  const body = Buffer.from(
+    [
+      `version: ${JSON.stringify(manifest.version)}`,
+      "files:",
+      `  - url: ${quotedFilename}`,
+      `    sha512: ${sha512}`,
+      `    size: ${bytes.length}`,
+      `path: ${quotedFilename}`,
+      `sha512: ${sha512}`,
+      `releaseDate: ${JSON.stringify(manifest.releasedAt)}`,
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  return {
+    key: `${PREFIX}/${folder}/${platform === "win" ? "latest.yml" : "latest-linux.yml"}`,
+    body,
+  };
+}
+
+// 3) Electron requires fixed per-platform feed filenames. Derive both from
+// release info and the installer bytes, then publish release info last.
+const electronFeeds = [makeElectronFeed("win"), makeElectronFeed("linux")];
+for (const feed of electronFeeds) {
+  await putObject(
+    feed.key,
+    feed.body,
+    releaseContentType(basename(feed.key)),
+    "public, max-age=60",
+  );
+}
+const releaseInfoKey = `${PREFIX}/android/latest.json`;
 await putObject(
-  `${PREFIX}/android/latest.json`,
+  releaseInfoKey,
   Buffer.from(JSON.stringify(manifest, null, 2), "utf8"),
   "application/json",
   "public, max-age=60",
 );
 
-// 3) Latest-only retention: delete everything under app/ that this release
+// 4) Latest-only retention: delete everything under app/ that this release
 // did not just upload.
 const keep = new Set<string>(uploads.map(({ key }) => key));
-keep.add(`${PREFIX}/android/latest.json`);
+keep.add(releaseInfoKey);
+for (const feed of electronFeeds) keep.add(feed.key);
 for (const key of await listKeys()) {
   if (!keep.has(key)) await deleteObject(key);
 }
 
-// 4) Smoke check — every public URL this release advertises must resolve on
-// the live origin, and the updater ymls must reference the stored filenames.
+// 5) Smoke check — every advertised URL and generated Electron feed resolves.
 // A release that fails here is broken for real clients; exit non-zero.
 const publicUrls = [
   ...uploads
     .filter(({ key }) => !key.endsWith(".blockmap"))
     .map(({ key }) => releaseUrl(key)),
-  releaseUrl(`${PREFIX}/android/latest.json`),
+  ...electronFeeds.map(({ key }) => releaseUrl(key)),
+  releaseUrl(releaseInfoKey),
 ];
 let smokeFailed = false;
 for (const url of publicUrls) {
@@ -350,16 +380,16 @@ for (const url of publicUrls) {
     console.error(`SMOKE FAIL ${res.status} ${url}`);
   }
 }
-for (const [yml, artifact] of [
-  [winYml, winSetup],
-  [linuxYml, linuxImage],
+for (const [feed, artifact] of [
+  [electronFeeds[0], winSetup],
+  [electronFeeds[1], linuxImage],
 ] as const) {
-  if (!yml || !artifact) continue;
-  const text = readFileSync(yml, "utf8");
+  if (!artifact) continue;
+  const text = feed.body.toString("utf8");
   if (!text.includes(basename(artifact))) {
     smokeFailed = true;
     console.error(
-      `SMOKE FAIL ${basename(yml)} does not reference ${basename(artifact)} — updater would 404.`,
+      `SMOKE FAIL ${basename(feed.key)} does not reference ${basename(artifact)} — updater would 404.`,
     );
   }
 }

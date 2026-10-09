@@ -1,22 +1,277 @@
-# apps/app — product reference
+# apps/app — spec
 
-Business app for Kataria Syntex. Facts here are verified against code —
-update this doc in the same change as the code. Current state only.
+What this file owns: the business app, in two parts.
 
-**Owns:** database, API, auth, platforms, updates, infra facts, caching,
-offline reachability for this app.
-**Does not own:** design values (`design.md`) · ops/CI/secrets/backups
-(`DEPLOY.md`) · agent rules (`AGENTS.md`) · repo layout (`README.md`).
+- Part 1 — Business: screens, fields and data. The owner's plan.
+- Part 2 — Tech: database, API, auth, platforms, updates, infra, caching. Verified against code, current state only.
+- Logic, calculations, numbering and edge cases: `rules.md`.
+- UI values: `design.md`.
+- Ops, CI, secrets, backups: `DEPLOY.md`.
+- Section numbers (1 to 14) belong to Part 2. Links like "`spec.md` Section 5.1" mean Part 2.
+- Items under **Open** and **Conflicts** are not decided. Nothing in them is built.
 
-Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands ·
-5 Platforms (5.1 per-shell, 5.2 Android project, 5.3 update mechanisms) ·
-6 Database · 7 API · 8 Auth & security · 9 Offline & reachability ·
-10 App UI · 11 Infra facts · 12 Updates & versioning · 13 Caching ·
-14 Dev & test.
+## Part 1 — Business
 
----
+**Overview**
 
-## 1 · What it is
+- Internal app for yarn job work: soft, dye, final coning, pack, deliver
+- Tracks stock only: where it is, what stage, who owns it
+- No prices, billing, payments or accounting (schema stays open to add later)
+- One app on Android, Windows, Linux, macOS and web (shells: Section 5)
+- English only
+- No data import from the old software
+- Simple fields, short forms, smart defaults, last picks remembered
+- Load: 4 to 10 users on a normal day, 20 to 50 challans on a busy day
+
+**Auth**
+
+- Mechanics, limits and tables: Section 8
+- Methods: email OTP, phone OTP, optional password, QR login, Telegram
+- OTP sender: Pingram, free tier only
+- Pingram free tier: 100 SMS or 3,000 emails per month (pricing page, checked 6 Oct 2026)
+- Telegram: a bot on the admin's account sends the login code or approval to the admin
+- Admin can pass a Telegram code to any user
+- SMS monthly cap is set in settings
+- More channels and their priority: Open
+
+**Roles and permissions**
+
+- Admin: everything. Invites users, makes all entries, edits saved entries, makes challans
+- Packer: packing screen only, can only add
+- Admin can give "make challans" to other users
+- Only admin edits anything saved
+- Every edit logs who, when and the old value
+- No other roles
+- Data: `users` gets `role` and `status`; new `permissions(user_id, key, on)`, `audit_log(id, user_id, action, entity, old, new, at)`
+
+**Companies**
+
+- Admin adds own companies and switches from the top of the app
+- Per company: name, address, gstin, pan, mobile, terms text, challan series, stock, lot numbers
+- Shared across companies: parties, color book, tare items, denier/quality list
+- Data: `companies(id, name, address, gstin, pan, mobile, terms)`
+
+**Parties (one list)**
+
+- One list for suppliers, customers and job workers, each with tags
+- Fields: name, tags, address, gstin, mobile
+- Many delivery locations per party, one default
+- Job worker extra: dye batch capacity (cones), pending alert days, kg basis (includes tubes: yes, no, not sure)
+- Built-in job worker "in-house" for own dyeing, with its own capacity
+- Data: `parties(id, name, tags, address, gstin, mobile)`, `locations(id, party_id, name, address, is_default)`, `job_workers(party_id, capacity_cones, alert_days, kg_basis)`
+
+**Stock model**
+
+- Unit of stock is a batch
+- Batch: lot no, owner, holder, stage, denier/quality, color, cones, kg, parent links
+- Owner: one of my companies or a customer
+- Holder: my factory, a job worker, or in transit
+- Operations: receive, send, return, process, split, merge, reject, adjust, change owner
+- Every operation links parent to child
+- "History" button on any batch shows where it came from
+- Data: `batches(id, lot_no, company_id, owner_id, holder_id, stage, denier, color_id, cones, kg)`, `movements(id, type, from_batch, to_batch, kg, cones, by, at)`, `links(parent_id, child_id, share)`
+
+**Denier/quality list (settings)**
+
+- Managed list, shared across companies
+- Forms pick from it
+
+**Raw material in**
+
+- Fields: date (today), supplier, owner, net kg
+- Optional: gross, supplier lot, denier, supplier challan no
+- Owner dropdown groups: my companies, customers
+- Owner type (own stock or customer yarn) fills itself from the pick
+- Totals only, no box rows
+- Optional photo scan fills the form (see Scan challan)
+
+**Soft and sacks**
+
+- Raw and soft are one stock, tracked in kg only
+- Soft yarn is packed in sacks and held with sack count and kg
+- Softening is not a separate stage
+- Sacking keeps the lot number
+
+**Send to job worker**
+
+- Fields: job worker, lot, denier, color, cones, gross, less (auto), nett, bags
+- Color default: "white grey (undyed)"
+- Totals only, one row
+- Cones split into dye batches by worker capacity
+- Warns if cones are not a multiple of capacity, suggests topping up
+- Color per batch: one color for all (default) or a different color per batch
+- Challan prints as one summary row or one row per dye batch
+- Making the send-out challan moves stock to the job worker
+
+**Receive from job worker**
+
+- Pick job worker, app lists their open send-outs, pick one
+- Rows prefill per dye batch: color, cones, bags
+- User types only kg per row from their challan (optional)
+- "Received in full" button skips everything else
+- Partial returns allowed
+- Color different from plan is flagged
+- Optional: their challan no
+- Each dyed batch gets a new lot no and its color
+
+**In-house dyeing**
+
+- Same flow as a job worker, using the "in-house" worker
+- Pick recipe from the color book, dye amounts scale to kg
+- No challan needed
+
+**Final coning**
+
+- Pick dyed lot, final cones prefilled with the dyed count, one tap to accept
+- Count can be changed
+- Optional rejected count with reason (color, damage, other)
+- Rejected cones go to reject stock, flow in `rules.md` (Reject loop)
+- Re-soft is an entry: weight in kg, marked "re-dye"
+
+**Packing (packer screen)**
+
+- Header: date (auto), lot, color, denier (from batch), tube type, box type (last used remembered)
+- Rows: box no (auto), gross, box tare, cones
+- Less and nett are auto
+- Entries wait as "packed, waiting for challan"
+- A box with two lots uses the same box no on two lines
+- Data: `boxes(id, box_no, company_id, batch_id, lot_no, gross, tare, cones, nett, packed_by, packed_at, challan_id, status)`
+
+**Tare items (settings)**
+
+- List: type (tube, box, bag), name, weight per piece in grams
+- Helper: weigh N pieces, enter the total, average fills in
+- Dropdowns on forms, last pick remembered per stage and denier
+- Manual less override allowed
+- Tubes and cartons are not tracked as stock
+- Data: `tare_items(id, type, name, grams, active)`
+
+**Challans**
+
+- Types: job worker send-out, delivery, return, custom
+- Each type has: heading text, series code (JW1, DC1), direction, item type (yarn or other), columns, stock effect, copies
+- Firm name is the same on every type, the heading carries the type
+- Fields: date, number, my company, party, deliver at, vehicle no, driver, remarks, e-way bill no (optional), hsn (optional)
+- Delivery rows: packed boxes, or kg from a lot at any stage
+- Send-out rows: totals
+- Totals are automatic
+- Copies: original, duplicate, triplicate
+- Print on A5, share as PDF
+- Making a challan moves the stock by itself, no second entry
+- Local deliveries go with the delivery challan, out of state goes with the party report attached to the e-way bill
+- Data: `challan_types(id, heading, series, direction, columns, stock_effect)`, `challans(id, company_id, type_id, number, date, party_id, location_id, vehicle, driver, remarks, eway_no, status)`, `challan_rows(id, challan_id, box_id, lot_no, denier, color_id, cones, gross, less, nett, bags)`
+
+**Orders and kanban**
+
+- Order: party, color, kg, denier/quality, due date, notes
+- On create the app checks stock and says what is missing
+- Matching stock is reserved
+- Status fills from linked batches, progress bar in kg
+- Partial delivery, change and cancel allowed
+- Kanban columns: raw/soft stock, sacks, at job worker, dyed, final coning, packed, delivered
+- Cards are batches tagged with their order, filter by order
+- Reject loop shows as an arrow from final coning back to soft
+- Moving a card (or "move to next" on phone) opens a prefilled confirm
+- Columns can be renamed or hidden
+- Data: `orders(id, party_id, color_id, kg, denier, due, notes, status)`, `order_batches(order_id, batch_id, kg)`
+
+**Color book (with recipes)**
+
+- One section
+- Color: name, code (like maroon-8016), party, sample photo (optional), notes, dark flag
+- Built-in "white grey (undyed)"
+- New color from an order or challan: type the name only, fill the rest later
+- Same color name from different parties stays separate
+- Recipes live inside each color, a color can have several
+- Recipe: dye/chemical name and qty per kg, time, temperature, optional steps
+- Recipe versions: old one kept and marked
+- Recipe can be tagged with yarn type (polyester, viscose)
+- Amounts scale to the batch kg
+- A dyeing entry records which recipe was used
+- Data: `colors(id, name, code, party_id, photo, notes, is_dark)`, `recipes(id, color_id, version, yarn_type, time, temp, steps)`, `recipe_items(recipe_id, name, qty_per_kg)`
+
+**Reports (every report exports Excel and PDF)**
+
+- Yarn pending at job workers: sent minus received, per worker and lot, days waiting
+- Weight gain/loss per job worker and in-house: % over time, normal range, odd batches flagged
+- Party report: party and date range, PDF like the old sales challan report, optional cones column, sorted by date
+- Stock by stage and owner
+- Order status
+- Excel and PDF are made on the device
+
+**Alerts**
+
+- Triggers: `rules.md`
+- Shown as a badge in the app and sent to the admin's Telegram bot
+- A daily check runs them
+
+**Monthly stock check**
+
+- App lists expected stock by lot
+- Tick "matches", type a count only where it differs
+- Last counted date shown per lot
+
+**Scan challan (optional)**
+
+- Upload one photo, or two for a multi-page challan
+- Step 1: on-device OCR (PaddleOCR in the browser) plus label matching fills header and totals
+- Step 2: if totals are not found, Workers AI free tier
+- Step 3: if that is used up for the day, type totals by hand
+- Raw material keeps totals only, rows are used for the check
+
+**Printing**
+
+- Challan on A5, PDF for everything
+
+**Settings**
+
+- Companies, users and invites, tare items, denier/quality list, challan types and series
+- Alert limits, monthly SMS cap, Telegram bot link
+- Party list and color book have their own sections
+
+**Open**
+
+- Raw material in: record box count and box weight so raw can be sold in the supplier's boxes
+- Challan rows without a box: which fields they hold
+- Daily backup file sent to the admin's Telegram
+- Keep the scanned photo with the entry
+- Admin logs out any user's device
+- Which company a packer packs for
+- Other OTP channels and their priority
+- Pingram SMS to India numbers: free-tier coverage to check
+- Workers AI free allowance: verify before scan is built
+- HSN code on job work challans (ask your CA)
+- Meaning of "remarks" on the party report (ship-to?)
+- Sticker labels: content, fields, sheet size, who prints
+- Other challan types: heading, series, direction, columns, stock effect
+- Prices and billing
+- Dashboard draft, not approved:
+  - Today: boxes packed, challans made, kg delivered
+  - Yarn at job workers with days waiting, red when over the limit
+  - Orders due soon and overdue
+  - Stock by stage (kg and cones), filter by owner
+  - Reject stock count
+  - Alerts list
+  - Quick buttons: raw in, send, receive, pack, new challan
+  - Packer sees only the packing screen and his entries today
+
+**Conflicts (plan vs current app, owner decides)**
+
+- Sign-up
+  - Plan: admin invites users from settings
+  - App: anyone can sign up with name, OTP and optional password (Section 8)
+- OTP cap
+  - Plan: monthly SMS cap set by admin in settings
+  - App: global cap of 300 sends per day set by env var `OTP_DAILY_BUDGET` (Section 8, Section 11)
+  - Pingram free tier: 100 SMS or 3,000 emails per month
+
+## Part 2 — Tech
+
+Facts here are verified against code — update this part in the same change as the code. Current state only.
+
+Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands · 5 Platforms (5.1 per-shell, 5.2 Android project, 5.3 update mechanisms) · 6 Database · 7 API · 8 Auth & security · 9 Offline & reachability · 10 App UI · 11 Infra facts · 12 Updates & versioning · 13 Caching · 14 Dev & test.
+
+### 1 · What it is
 
 **Overview**
 
@@ -29,7 +284,7 @@ Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands ·
 - Signed-in users land on an empty home screen inside `AppShell` (`/`), with
   navigation to Connected Devices (`/devices`) and Settings (`/settings`).
 
-## 2 · Tech stack
+### 2 · Tech stack
 
 | Layer        | Tech                                                   |
 | ------------ | ------------------------------------------------------ |
@@ -44,7 +299,7 @@ Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands ·
 | Icons/assets | sharp                                                  |
 | Toolchain    | Bun 1.4.2 + Turborepo                                  |
 
-## 3 · Source map
+### 3 · Source map
 
 ```
 apps/app/
@@ -75,13 +330,13 @@ packages/shared/src/             # pure shared data & validation — no platform
 └── index.ts, cn.ts, errors.ts, format.ts, products.ts, releases.ts, semver.ts, shades.ts, validation.ts
 ```
 
-## 4 · Commands
+### 4 · Commands
 
 All commands: `AGENTS.md` Section 3. This app's build notes:
 
-- `electron:package` — CI runs `build` + `build:electron` + `electron-builder`
-  with per-platform builder args instead (`pipeline.yml`); keep both spellings
-  in sync.
+- `electron:package` — local packaging command. CI builds one shared renderer
+  and reuses it for Electron, Android and Worker deployment (`DEPLOY.md`
+  Section 3).
 - `build:electron` bundles main/preload and bakes `APP_URL` into
   `KC_API_ORIGIN`; it fails without `APP_URL`. `electron/dev.ts` deliberately
   skips the bake and points at `localhost:3000`.
@@ -92,7 +347,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 - Web, Electron and Android compile as one renderer bundle; `apps/android`
   typechecks and syncs (`bunx cap sync android`) against `packages/app-core`.
 
-## 5 · Platforms
+### 5 · Platforms
 
 **Shell matrix**
 
@@ -114,7 +369,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 | Desktop | Electron 43, `app://` custom protocol | OS keychain via IPC + safeStorage |
 | Android | Capacitor 8 WebView                   | `@capacitor/preferences`          |
 
-### 5.1 · Per-platform behaviour
+#### 5.1 · Per-platform behaviour
 
 **Shell differences**
 
@@ -143,7 +398,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 - Signed-in users never see it; native shells redirect `/` and `/download`
   to `/auth`.
 
-### 5.2 · Android native project
+#### 5.2 · Android native project
 
 **Gradle & manifest**
 
@@ -176,7 +431,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   manifest, fires `FileProvider` `ACTION_VIEW`).
 - Commands: `AGENTS.md` Section 3.
 
-### 5.3 · Update mechanisms
+#### 5.3 · Update mechanisms
 
 | Surface   | Check                                       | Channel                              | UI                                                                                        |
 | --------- | ------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
@@ -209,7 +464,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   locked; camera granted to app origins for QR scan; packaged renderer served
   at `app://bundle/` with SPA deep-link fallback.
 
-## 6 · Database
+### 6 · Database
 
 **Schema & migrations**
 
@@ -232,7 +487,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 | `qr_logins`      | short-lived QR login codes (10-min TTL, single-use claim)       |
 | `rate_limits`    | per-key request budgets                                         |
 
-## 7 · API
+### 7 · API
 
 Hono app mounted on `/api/*` (`src/server/index.ts`).
 
@@ -253,7 +508,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 | `auth` (+ `auth-otp`/`auth-password`/`auth-qr`/`auth-session`/`auth-shared`) | lookup, OTP, password, QR login, sessions  |
 | `health`                                                                     | `GET /api/health` and `GET /api/health/db` |
 
-## 8 · Auth & security
+### 8 · Auth & security
 
 | Method    | Web | Desktop | Android |
 | --------- | --- | ------- | ------- |
@@ -286,7 +541,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
   verify OTP → `POST /api/auth/signup`.
 - Dev user — phone `+91 63515 70979`, OTP-only, no password.
 
-## 9 · Offline & reachability
+### 9 · Offline & reachability
 
 | Piece        | Behaviour                                                                                                               |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
@@ -295,7 +550,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 | 401 handling | any 401 wipes client caches (`invalidateDataCaches`) and cached session snapshot (`clearSessionCache`), resets to guest |
 | Banner       | `OfflineBanner` shows a persistent warning strip while `useSync.online` is `false`                                      |
 
-## 10 · App UI
+### 10 · App UI
 
 **UI contract**
 
@@ -311,7 +566,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 - Update surfaces (banner, dialog, entry screen) — visual contract in
   `design.md` Section 3.3–3.4; behaviour in Section 5.3.
 
-## 11 · Infra facts
+### 11 · Infra facts
 
 | Piece    | Choice                                                                                                                                            |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -335,14 +590,14 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 
 **Free-tier limits** (Cloudflare — re-verify before claiming; limits change)
 
-| Service | Limit                                                                      |
-| ------- | -------------------------------------------------------------------------- |
-| Workers | 100k requests/day · 10 ms CPU/invocation                                   |
-| D1      | 500 MB · 5M reads + 100k writes/day · Time Travel 7 days                   |
-| R2      | 10 GB · Class B 10M/mo · Class A 1M/mo · egress free (~400 MB/release set) |
-| Pingram | PAID per SMS/email — the only cost line; OTP ceilings exist because of it  |
+| Service | Limit                                                                                                 |
+| ------- | ----------------------------------------------------------------------------------------------------- |
+| Workers | 100k requests/day · 10 ms CPU/invocation                                                              |
+| D1      | 500 MB · 5M reads + 100k writes/day · Time Travel 7 days                                              |
+| R2      | 10 GB · Class B 10M/mo · Class A 1M/mo · egress free (~400 MB/release set)                            |
+| Pingram | Free tier only: 100 SMS or 3,000 emails/month (pingram.io/pricing, checked 6 Oct 2026) — no paid plan |
 
-## 12 · Updates & versioning
+### 12 · Updates & versioning
 
 **Version floor & manifest**
 
@@ -357,10 +612,13 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 - CI guards satisfiability: the gate job fails when `minAppVersion >
 version`, and `deploy-app` runs after `publish-r2` when a release is being
   published.
-- Manifest `app/android/latest.json` carries `version`, `minVersion`,
-  `releasedAt`, per-platform paths, and the APK's `sha256`/`size`.
+- Release info `app/android/latest.json` carries `version`, `releasedAt`,
+  per-platform paths, and the APK's `sha256`/`size`. Electron's Windows/Linux
+  feed files are generated from this release info and the built installers.
+- Only the live server's `426 update_required` response makes an update
+  mandatory; the release-info file never carries an update floor.
 
-## 13 · Caching
+### 13 · Caching
 
 | Layer                 | Owner / file                                         | Policy                                                                                                                                      |
 | --------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -368,7 +626,7 @@ version`, and `deploy-app` runs after `publish-r2` when a release is being
 | HTTP — API + releases | `src/server/index.ts` middleware · `lib/releases.ts` | Every `/api/*` response: `Cache-Control: no-store`. Release manifests `max-age=60`; versioned artifacts `immutable`.                        |
 | Client data           | `packages/app-core/src/data-caches.ts`               | Registered client caches (`invalidateDataCaches`) + cached auth user snapshot (`clearSessionCache`) are wiped on logout/401/account switch. |
 
-## 14 · Dev & test
+### 14 · Dev & test
 
 - Local D1 — `.wrangler/state/v3/d1/…sqlite` (plain SQLite, readable);
   `bun run db:migrate:local` applies migrations.

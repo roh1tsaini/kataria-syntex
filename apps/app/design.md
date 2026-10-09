@@ -463,7 +463,7 @@ text-foreground` while a sub is active. The collapsed rail keeps the
 `apps/android` is a Capacitor 8 WebView over the same `apps/app` bundle —
 no second UI, no Android token set, nothing to port. The phone renders the
 web layout at the `≤sm` breakpoint (Section 4). Behaviour, adapter
-branching, and release steps live in `APP.md` Section 5 — this document
+branching, and release steps live in `spec.md` Section 5 — this document
 keeps only the visual contract: the update gate renders as an undismissable
 bottom sheet (Section 3.3), and routine APK availability stays in Settings
 as OS chrome, not an in-app surface.
@@ -590,7 +590,7 @@ change, in the same change:
    describe what IS now — current state only, no history narration.
 3. One bundle, one UI — a change to any section is a change to every shell
    that renders it. Platform-specific behaviour belongs only in
-   `apps/app/APP.md` (Section 5.1), never as a UI fork here. Run the
+   `apps/app/spec.md` (Section 5.1), never as a UI fork here. Run the
    verification protocol in `AGENTS.md` Sections 2.3–2.4.
 4. If code and this document disagree, the mismatch ships fixed in the
    same change, never deferred.

@@ -8,12 +8,9 @@ export const EASE_DRAWER: readonly [number, number, number, number] = [
   0.32, 0.72, 0, 1,
 ] as const;
 
-/** Durations in seconds - 120 press / 140 fast / 200 base / 400 max. */
+/** Durations in seconds - 200 base. */
 const DURATIONS = {
-  press: 0.12,
-  fast: 0.14,
   base: 0.2,
-  max: 0.4,
 } as const;
 
 /** Apple springs - critically damped by default, bounce only for momentum */

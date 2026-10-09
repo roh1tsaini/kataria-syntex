@@ -21,11 +21,6 @@ const config: CapacitorConfig = {
       backgroundColor: "#0a0a0a",
       overlaysWebView: false,
     },
-    Camera: {
-      // QR scanning reads the live preview, not a captured still — no
-      // saveToGallery, no photo permissions beyond the camera itself.
-      permissions: ["camera"],
-    },
   },
 };
 

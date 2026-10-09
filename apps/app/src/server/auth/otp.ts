@@ -253,7 +253,7 @@ export async function verifyOtp(
   if (toDate(row.expiresAt).getTime() < Date.now())
     return { status: "expired" };
 
-  if (!(await timingSafeEqual(row.code, await sha256Hex(code)))) {
+  if (!timingSafeEqual(row.code, await sha256Hex(code))) {
     // Atomic increment — a JS read-modify-write would let parallel guesses
     // all read the same count and bypass OTP_MAX_ATTEMPTS.
     const attempts = row.attempts + 1;

@@ -1,7 +1,7 @@
 name: Pipeline
 
 # One workflow for everything:
-#   gate → [deploy-web, desktop, android] in parallel
+#   gate (shared app renderer) → [deploy-web, desktop, android] in parallel
 #   [desktop, android] → publish-r2 → deploy-app
 #
 # Runs on GitHub-hosted runners. Public repository with free runner minutes.
@@ -28,16 +28,17 @@ on:
 
 concurrency:
   group: pipeline-${{ github.ref }}
-  cancel-in-progress: true
+  # A manual run must not cancel a push already deploying this branch. A newer
+  # push can still cancel an older manual run so the newest commit wins.
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 permissions:
   contents: read
 
-# Artifacts only hand off installers between jobs — the real distribution is
-# R2. Short retention keeps the account's artifact storage quota free (each run
-# uploads ~400MB of installers).
+# Artifacts hand off the shared app renderer and installers between jobs. R2
+# remains the release distribution. Three-day retention limits temporary storage.
 env:
-  ACTIONS_ARTIFACT_RETENTION_DAYS: 3
+  RELEASE_ARTIFACT_RETENTION_DAYS: 3
 
 jobs:
   gate:
@@ -49,6 +50,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Require main for release publication
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.targets == 'all' && github.ref != 'refs/heads/main' }}
+        shell: bash
+        run: |
+          echo "::error::Run an all-target release from main so only main can publish to R2."
+          exit 1
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -58,6 +66,8 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Typecheck, lint, and build
+        env:
+          VITE_API_URL: ${{ vars.APP_URL }}
         run: bunx turbo run typecheck lint build
 
       - name: Format check
@@ -105,6 +115,15 @@ jobs:
             fi
           fi
           echo "is_release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload shared app renderer
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ks-biz-app-renderer
+          path: apps/app/dist
+          if-no-files-found: error
+          retention-days: ${{ env.RELEASE_ARTIFACT_RETENTION_DAYS }}
 
   deploy-web:
     name: "Deploy Website to Cloudflare"
@@ -174,9 +193,7 @@ jobs:
           - platform: windows-latest
             name: windows-x64
             builder_args: --win
-            bundle_path: |
-              apps/app/release/*.exe*
-              apps/app/release/latest.yml
+            bundle_path: apps/app/release/*.exe*
           - platform: macos-latest
             name: macos-arm64
             builder_args: --mac
@@ -184,11 +201,15 @@ jobs:
           - platform: ubuntu-24.04
             name: linux-x64
             builder_args: --linux
-            bundle_path: |
-              apps/app/release/*.AppImage
-              apps/app/release/latest-linux.yml
+            bundle_path: apps/app/release/*.AppImage
     steps:
       - uses: actions/checkout@v6
+
+      - name: Download shared app renderer
+        uses: actions/download-artifact@v8
+        with:
+          name: ks-biz-app-renderer
+          path: apps/app/dist
 
       - name: Require APP_URL variable
         shell: bash
@@ -199,9 +220,6 @@ jobs:
             echo "::error::Set the repository variable APP_URL (app FQDN, no trailing slash) before building native apps."
             exit 1
           fi
-          APP_HOST="https://${APP_URL#*://}"
-          APP_HOST="${APP_HOST%/}"
-          echo "VITE_API_URL=$APP_HOST" >> "$GITHUB_ENV"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -211,14 +229,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # build:electron bakes APP_URL into the main process (KC_API_ORIGIN);
-      # the renderer build precedes it so electron-builder packages both.
-      - name: Build renderer + main/preload + package
+      # The gate's renderer artifact is shared across shells. This step builds
+      # only Electron's main/preload and packages this platform's installer.
+      - name: Build main/preload + package
         working-directory: apps/app
         env:
           APP_URL: ${{ vars.APP_URL }}
         run: |
-          bun run build
           bun run build:electron
           bunx electron-builder --config electron-builder.yml ${{ matrix.builder_args }}
 
@@ -228,6 +245,7 @@ jobs:
           name: ks-biz-app-${{ matrix.name }}
           path: ${{ matrix.bundle_path }}
           if-no-files-found: error
+          retention-days: ${{ env.RELEASE_ARTIFACT_RETENTION_DAYS }}
 
   android:
     name: "Android APK (ARM phones)"
@@ -237,6 +255,12 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
+
+      - name: Download shared app renderer
+        uses: actions/download-artifact@v8
+        with:
+          name: ks-biz-app-renderer
+          path: apps/app/dist
 
       # Fast fail: validate required variables and secrets immediately before heavy tool installs
       - name: Validate environment and signing secrets
@@ -260,9 +284,6 @@ jobs:
             echo "::error::ANDROID_KEY_ALIAS or ANDROID_KEY_PASSWORD secret is missing."
             exit 1
           fi
-          APP_HOST="https://${APP_URL#*://}"
-          APP_HOST="${APP_HOST%/}"
-          echo "VITE_API_URL=$APP_HOST" >> "$GITHUB_ENV"
           echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.p12"
           cat > apps/android/android/keystore.properties <<EOF
           storeFile=$RUNNER_TEMP/keystore.p12
@@ -296,16 +317,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build web bundle + sync Capacitor
+      - name: Sync shared web bundle into Android
         # cap sync runs from apps/android — it owns capacitor.config.ts (which
-        # points webDir at ../app/dist) and the Capacitor CLI dependency.
-        # build:web:apk (not the plain web build) bakes VITE_API_URL and fails
-        # without it — the WebView origin is not the API, so an unbaked bundle
-        # reads as offline forever on a connected device.
+        # points webDir at ../app/dist) and the Capacitor CLI dependency. The
+        # gate built this bundle with VITE_API_URL and the artifact is shared
+        # with the web and Electron shells.
         working-directory: apps/android
-        run: |
-          bun run build:web:apk
-          bunx cap sync android
+        run: bunx cap sync android
 
       - name: Build signed release APK
         working-directory: apps/android/android
@@ -328,6 +346,7 @@ jobs:
           name: ks-biz-app-android
           path: apps/android/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+          retention-days: ${{ env.RELEASE_ARTIFACT_RETENTION_DAYS }}
 
   publish-r2:
     name: "Publish releases to R2"
@@ -378,7 +397,7 @@ jobs:
       - name: Inspect downloaded files
         run: ls -laR dist
 
-      - name: Upload to R2 + verify release (latest-only retention)
+      - name: Generate release info and Electron feeds, publish to R2
         working-directory: apps/app
         env:
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -392,15 +411,21 @@ jobs:
 
   deploy-app:
     name: "Deploy App to Cloudflare"
-    # Deploys the business app worker. When a release is active, it runs
-    # after publish-r2 succeeds so clients never receive 426 update_required
-    # before the corresponding release is live on R2. If native builds fail,
-    # deploy-app does NOT execute.
-    if: ${{ github.event_name == 'push' && !cancelled() && needs.gate.result == 'success' && (needs.gate.outputs.is_release != 'true' || needs.publish-r2.result == 'success') }}
+    # Deploys the business app worker. Release pushes and manual all-target
+    # runs deploy only after publish-r2 succeeds, so clients never receive 426
+    # update_required before the matching release is live. Failed native builds
+    # prevent the app deploy.
+    if: ${{ !cancelled() && needs.gate.result == 'success' && ((github.event_name == 'push' && (needs.gate.outputs.is_release != 'true' || needs.publish-r2.result == 'success')) || (github.event_name == 'workflow_dispatch' && inputs.targets == 'all' && github.ref == 'refs/heads/main' && needs.publish-r2.result == 'success')) }}
     needs: [gate, publish-r2]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+
+      - name: Download shared app renderer
+        uses: actions/download-artifact@v8
+        with:
+          name: ks-biz-app-renderer
+          path: apps/app/dist
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -409,9 +434,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
-
-      - name: Build app SPA
-        run: bun run --cwd apps/app build
 
       # Auto-provisions the DB and injects its real id into wrangler.jsonc on
       # the runner, so a fresh Cloudflare account needs no manual dashboard

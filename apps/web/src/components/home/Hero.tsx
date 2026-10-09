@@ -3,13 +3,13 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { site } from "@/content/site";
 import {
+  cn,
   shades,
   shadeBand,
   isLightShade,
   type Shade,
 } from "@kataria-syntex/shared";
 import { YarnSwatch } from "@/components/shade/YarnSwatch";
-import { cn } from "@kataria-syntex/shared";
 
 /**
  * Home hero — aurora wash over the shared blue canvas, with a floating

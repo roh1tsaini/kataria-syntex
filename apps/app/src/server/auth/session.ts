@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { toIso } from "../lib/datetime";
+import { toDate, toIso } from "../lib/datetime";
 import { getCookie } from "hono/cookie";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb, type Db } from "../lib/db";
@@ -26,11 +26,6 @@ export type AuthVariables = {
 
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-function toDate(dateStr: string | null | undefined): Date | null {
-  if (!dateStr) return null;
-  return new Date(dateStr);
-}
-
 export const requireAuth = createMiddleware<
   { Bindings: Env } & { Variables: AuthVariables }
 >(async (c, next) => {
@@ -55,7 +50,7 @@ export const requireAuth = createMiddleware<
   if (!session || session.revokedAt) return apiError(c, "unauthorized", 401);
 
   const now = new Date();
-  const expiresAt = toDate(session.expiresAt);
+  const expiresAt = session.expiresAt ? toDate(session.expiresAt) : null;
   if (expiresAt && expiresAt.getTime() <= now.getTime()) {
     await db.delete(sessions).where(eq(sessions.id, session.id));
     return apiError(c, "unauthorized", 401);
@@ -80,7 +75,7 @@ export const requireAuth = createMiddleware<
   // lastSeenAt is presence info, not per-request state — throttle the
   // write so an active session costs at most one D1 write per 5 minutes.
   const lastSeen = toDate(device.lastSeenAt);
-  if (!lastSeen || now.getTime() - lastSeen.getTime() > 5 * 60 * 1000) {
+  if (now.getTime() - lastSeen.getTime() > 5 * 60 * 1000) {
     await db
       .update(devices)
       .set({ lastSeenAt: toIso(now) })

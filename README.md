@@ -17,7 +17,7 @@ Bun workspaces + Turborepo; Bun is the only package manager.
 
 The Android shell renders the same built `apps/app` bundle — one product,
 three shells, no separate Android UI (`AGENTS.md` Section 2.3). Its native project
-and per-platform behaviour are documented in `apps/app/APP.md` (Section 5.1, Section 5.2).
+and per-platform behaviour are documented in `apps/app/spec.md` (Section 5.1, Section 5.2).
 
 Install, build, dev servers and the required gates: `AGENTS.md` Section 3.
 
@@ -25,7 +25,8 @@ Install, build, dev servers and the required gates: `AGENTS.md` Section 3.
 
 - `AGENTS.md` — working agreement + doc rules: parity, gates, commands
 - `DEPLOY.md` — deploy & maintenance on GitHub + Cloudflare
-- `apps/app/APP.md` — business app reference (incl. the Android shell)
+- `apps/app/spec.md` — business app: screens, fields, data, and tech reference (incl. the Android shell)
+- `apps/app/rules.md` — business app logic, calculations, numbering
 - `apps/app/design.md` — app design system
 - `apps/web/APP.md` — website reference
 - `apps/web/design.md` — website design system

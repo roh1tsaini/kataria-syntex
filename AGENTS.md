@@ -63,7 +63,7 @@ well-organized, short, and true.
 ## 2. Repo map
 
 Workspace layout and per-workspace stack: `README.md`. Session storage per
-shell and the owner-fixed build targets: `apps/app/APP.md` Section 5.
+shell and the owner-fixed build targets: `apps/app/spec.md` Section 5.
 
 ## 2.1 Platforms
 
@@ -123,7 +123,7 @@ Rules only — the values live in one place each:
 - **Visual** — contract in `apps/app/design.md`; tokens in `globals.css`, no
   Android token-conversion step. Phone-scale contract in `design.md` Section 4.1.
 - **Behavior** — same validation, navigation targets, confirmations, toasts
-  (copy via `friendlyError`); per-shell detail in `apps/app/APP.md` Section 5.1.
+  (copy via `friendlyError`); per-shell detail in `apps/app/spec.md` Section 5.1.
 - **Data** — same fields and sorting; date/number formatting is owned by
   `apps/app/design.md` Section 2.4.1.
 - **Motion** — presets in `apps/app/src/main/ui/lib/motion.ts`, grammar in
@@ -147,7 +147,7 @@ Rules only — the values live in one place each:
    `bunx cap sync android` (apps/android). CI does this; run both locally to
    verify.
 6. Update docs in the same change: `design.md` (any untrue section) and
-   `apps/app/APP.md` Section 5.1 (per-platform behaviour).
+   `apps/app/spec.md` Section 5.1 (per-platform behaviour).
 7. Platform limits (APK self-update): surface the exact gap to the
    owner. Never silently diverge, and never copy a web bug — report it to the
    owner.
@@ -228,7 +228,7 @@ bun run build:web     # plain vite build of apps/app
 bun run sync      # build apps/app + cap sync android
 bun run open      # open android/ in Android Studio
 bun run build:apk # cap sync + gradlew assembleRelease (Android SDK required;
-                  # see apps/app/APP.md Section 5.2)
+                  # see apps/app/spec.md Section 5.2)
 bun run typecheck # bunx tsc --noEmit
 bun run lint      # eslint .
 ```
@@ -280,9 +280,9 @@ bun run lint      # eslint .
 2. **Bump `version` after coding.** Whenever an AI session finishes a
    change that warrants a release, it bumps `apps/app/package.json`
    `version` (patch for fixes, minor for features) as part of that change.
-   Why the bump is the release action: `apps/app/APP.md` Section 12.
+   Why the bump is the release action: `apps/app/spec.md` Section 12.
 3. Releases ship from the `ks-releases` R2 bucket (`/releases/*` on the app
-   Worker) — see `apps/app/APP.md` Section 12. Latest version only; the manifest
+   Worker) — see `apps/app/spec.md` Section 12. Latest version only; the manifest
    is `app/android/latest.json`.
 
 ## 4.1 Decision authority (owner-mandated, overrides everything)
@@ -323,8 +323,9 @@ automated in `.github/workflows/pipeline.yml`.
 
 ## 5. apps/app working agreement (owner-mandated, always applies)
 
-SPEC.md/BUILD.md are **deleted** (readable from git history only). The
-code and the owner's word are the truth.
+The business is written in `apps/app/spec.md` (screens, fields, data) and
+`apps/app/rules.md` (logic, calculations, numbering). The owner's word beats
+both.
 
 - **The owner's spoken word is the single source of truth.** If a rule
   isn't written anywhere: ask the owner, then code it.
@@ -335,9 +336,10 @@ code and the owner's word are the truth.
   unwritten rule.
 - **Docs are maintained continuously — like code.** Every session that
   changes behavior updates the owning file in the same change.
-  Owner files: `apps/app/APP.md` (tech, DB, API,
-  auth) · `apps/app/design.md` (UI) · `DEPLOY.md` (ops) · `AGENTS.md`
-  (this file). One fact lives in exactly one of them (Section 1.1).
+  Owner files: `apps/app/spec.md` (business screens, fields, data, and
+  tech: DB, API, auth) · `apps/app/rules.md` (business logic) ·
+  `apps/app/design.md` (UI) · `DEPLOY.md` (ops) · `AGENTS.md` (this
+  file). One fact lives in exactly one of them (Section 1.1).
 - A feature/UI request on the business app is a one-bundle request — it
   reaches every shell (Section 2.3). Never scope one shell out on your own.
 - No shortcuts, no placeholders, no template code. Best practices + latest
@@ -398,7 +400,7 @@ code and the owner's word are the truth.
 - HTTP: content-hashed URLs may be `immutable`; everything else (HTML, SW
   scripts, manifests) is revalidated (`max-age=0, must-revalidate`) or
   short-TTL. API responses are always `no-store`. apps/app's concrete
-  policy lives in `apps/app/APP.md` Section 13.
+  policy lives in `apps/app/spec.md` Section 13.
 - Client caches (module-level, store, runtime) are keyed by account
   and wiped on logout/401/account switch
   (`packages/app-core/src/data-caches.ts`). Stale-while-revalidate UIs must

@@ -4,13 +4,9 @@
     "jsx": "react-jsx",
     "lib": ["dom", "esnext"],
     "types": ["bun"],
-    "verbatimModuleSyntax": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "verbatimModuleSyntax": true
   },
   "include": [
-    "src",
     "scripts",
     "capacitor.config.ts",
     "*.ts",
