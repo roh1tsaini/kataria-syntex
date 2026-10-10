@@ -389,19 +389,18 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   `versionName` with the executing bundle (`reloadOnStaleAndroidBundle`) so
   a replaced APK never runs a stale bundle.
 
-**Logged-out entry (web only)**
+**Logged-out download page (web only)**
 
-- `/` unauthenticated → two-path entry screen (`ui/pages/entry.tsx`):
-  Sign in / Install for a detected supported OS and CPU target, or Get the
-  app when no supported target is detected.
-- `/downloads` reads all installer paths from the published manifest.
-  A detected supported OS and CPU target get the primary download; other builds appear as
-  compact rows. Unknown OS, CPU target, and iOS browsers get the web action and all four
+- `/` redirects to `/downloads`, the single download page.
+- `/downloads` reads installer paths from the published manifest.
+- A detected supported OS and CPU target get the primary download. Other
+  builds appear as compact rows.
+- Unknown OS, CPU target, and iOS browsers get the web action and all four
   installer rows without a recommendation.
 - `Use web version` opens `/auth`. Installation notes are available in one
   collapsed section.
-- Signed-in users never see it; native shells redirect `/` and `/downloads`
-  to `/auth`.
+- Signed-in users opening `/` get the app shell. Native shells redirect `/`
+  and `/downloads` to `/auth`.
 
 #### 5.2 · Android native project
 
@@ -576,8 +575,8 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 - Loading — skeleton shimmer blocks shaped like the content, no spinners
   (`design.md` Section 3.1).
 - Errors/toasts — copy via `friendlyError`.
-- Update surfaces (notice, dialog, entry screen) — visual contract in
-  `design.md` Section 3.3–3.4; behaviour in Section 5.3.
+- Update surfaces (notice, dialog) — visual contract in `design.md` Section
+  3.3; behaviour in Section 5.3.
 
 ### 11 · Infra facts
 

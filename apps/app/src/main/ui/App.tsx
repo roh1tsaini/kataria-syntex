@@ -3,7 +3,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@kataria-syntex/app-core";
 import { initUpdateChecks } from "@/store/updates";
 import { lazyRoute } from "@/lib/lazy-route";
-import { isNative, isPlainBrowser } from "@/lib/platform";
+import { isNative } from "@/lib/platform";
 import { GuestRoute, ProtectedRoute } from "@/ui/components/protected-route";
 import { AppShell } from "@/ui/components/app-shell";
 import { Toaster } from "@/ui/components/toast";
@@ -18,9 +18,6 @@ import { NotFoundPage } from "@/ui/pages/not-found";
 
 const AuthPage = lazyRoute(() =>
   import("@/ui/pages/auth").then((m) => ({ default: m.AuthPage })),
-);
-const EntryPage = lazyRoute(() =>
-  import("@/ui/pages/entry").then((m) => ({ default: m.EntryPage })),
 );
 const DownloadPage = lazyRoute(() =>
   import("@/ui/pages/download").then((m) => ({ default: m.DownloadPage })),
@@ -41,15 +38,12 @@ function Home() {
   return <div className="min-h-[60vh]" />;
 }
 
-/** "/" when signed out — the two-path entry screen (plain browser only).
- * Native shells (Electron, Android) ARE the app: they
- * skip the marketing screen and go straight to sign-in. Signed-in users get
- * the full shell (this route sits outside the layout's guest redirect). */
-function EntryOrHome() {
+/** Signed-out browsers open the canonical download page. Native shells go
+ * straight to sign-in; signed-in users get the full app shell. */
+function HomeOrDownload() {
   const status = useAuth((s) => s.status);
   if (status === "guest") {
-    if (!isPlainBrowser()) return <Navigate to="/auth" replace />;
-    return <EntryPage />;
+    return <Navigate to={isNative() ? "/auth" : "/downloads"} replace />;
   }
   return (
     <ProtectedRoute>
@@ -133,7 +127,7 @@ export function App() {
                 path="/"
                 element={
                   <Suspense fallback={null}>
-                    <EntryOrHome />
+                    <HomeOrDownload />
                   </Suspense>
                 }
               />

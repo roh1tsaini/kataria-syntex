@@ -19,7 +19,7 @@ Contents: 1 Principles · 2 Foundations (2.1 spacing, 2.2 radius, 2.3
 control heights, 2.4 type, 2.4.1 dates & numbers, 2.5
 color, 2.6 shadows, 2.7 icon buttons, 2.7.1 window chrome, 2.7.2 floating
 phone navigation, 2.8 app identity) · 3 Components · 3.1 skeletons · 3.2
-notification toast · 3.3 update surfaces · 3.4 entry/download · 4 Layout
+notification toast · 3.3 update surfaces · 3.4 download page · 4 Layout
 (4.1 Android shell) ·
 5 Motion (5.1 overlay surfaces) · 6 Accessibility · 7 Codebase map · 8 Checklist ·
 9 Currency.
@@ -129,14 +129,7 @@ no text-transform on body copy.
 
 - Semantic tokens only (`bg-card`, `text-muted-foreground`, …) — never raw
   oklch in components. One neutral monochrome accent flows through `--a-*`
-  — no picker, no hue anywhere. One exception: the pre-auth ambient wash
-  (`entry-wash.tsx`, entry only) — a pale periwinkle sky on the
-  window base with one luminous core melting into the center (content sits
-  in the light) and four wide cloud banks drifting slowly across it
-  (transform-only, 38–47s alternate; a static grain layer in
-  `.entry-wash::after` hides banding). Light: airy periwinkle + white core.
-  Dark: deep indigo night with a dim core glow. Tokens live in
-  `globals.css` (`.entry-wash`); components never declare their own blues.
+  — no picker or hue.
 - Surface hierarchy: `background` (window) < `card` (content). Light mode:
   slightly recessed window, white cards. Dark: elevated cards on
   near-black. Never invert the hierarchy.
@@ -340,7 +333,7 @@ placeholders, fallbacks) — never the app name.
 | Update notice (`updates.ts`, `toast.tsx`)               | Top-centre notification toast — full visual contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Update gate (`update-surface.tsx`, `update-dialog.tsx`) | The one undismissable dialog — full contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Progress bar (`progress-bar.tsx`)                       | Download/install progress — track `bg-muted` h-2 radius-full, fill `bg-primary` width 0–100% with `transition-[width] duration-200 ease-out` (no JS animation loop: the store already throttles samples and a CSS transition absorbs their spacing). Readout is `formatUpdateProgress` (percent · total size) in `tabular-nums` 12px muted — no transferred bytes, no ETA. `role="progressbar"` + `aria-valuenow`; a `totalBytes` of 0 means unknown and the bar shows an indeterminate shimmer instead of a lying 0%. Never a spinner (Section 3.1).                             |
-| Entry / download pages (`entry.tsx`, `download.tsx`)    | Pre-auth surfaces; entry uses the ambient wash and download uses the neutral background — full contract in Section 3.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Download page (`download.tsx`)                          | Public pre-auth page on a neutral background — full contract in Section 3.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### 3.1 Loading skeletons — every screen gets its own shape
 
@@ -399,11 +392,10 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
   At `≤sm` (including the Android shell) it renders as an undismissable
   bottom sheet against the same contract.
 
-### 3.4 Entry / download pages (`entry.tsx`, `download.tsx`)
+### 3.4 Download page (`download.tsx`)
 
-- Entry keeps the auth lockup (44px "K" tile + 17px semibold name) on the
-  ambient wash. It has `Sign in` and one install link. `platform.ts` supplies
-  `Get the app` when the browser has no supported installer.
+- A signed-out browser opening `/` goes to `/downloads`. This is the single
+  public download page.
 - Download uses the neutral page background, the same lockup, and a 640px
   content width. One page title and one version/status line sit above the
   download choices.
@@ -422,7 +414,7 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
   second progress indicator. The release manifest supplies every URL.
 - Loading uses button-shaped skeletons. An unavailable release has one
   status line and disabled download actions. Spinners are not used.
-- Entry and downloads render only in a plain browser (`isPlainBrowser()` in
+- Downloads render only in a plain browser (`isPlainBrowser()` in
   `platform.ts`). Electron and Android are the app; `/downloads` redirects to
   `/auth` in those shells.
 

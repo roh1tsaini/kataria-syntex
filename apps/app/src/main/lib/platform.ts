@@ -244,18 +244,6 @@ export async function detectPlatformKey(): Promise<DownloadPlatformKey | null> {
   return null;
 }
 
-/** Entry action copy, kept beside the supported-target detection. */
-export function platformInstallLabel(key: DownloadPlatformKey | null): string {
-  if (!key) return "Get the app";
-  const name = {
-    win: "Windows",
-    mac: "macOS",
-    linux: "Linux",
-    android: "Android",
-  }[key];
-  return `Install for ${name}`;
-}
-
 // ── Android storage (Capacitor Preferences behind a sync map) ───────────────
 
 /** Bearer-token key in Preferences. Kept out of the session map below so
