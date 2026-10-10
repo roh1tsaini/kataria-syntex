@@ -392,10 +392,14 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 **Logged-out entry (web only)**
 
 - `/` unauthenticated → two-path entry screen (`ui/pages/entry.tsx`):
-  Sign in / Install for the detected OS.
-- `/download` — all four installers (paths from the published manifest,
-  brand glyphs `ui/components/brand-icons.tsx`) with a "This device"
-  recommendation.
+  Sign in / Install for a detected supported OS and CPU target, or Get the
+  app when no supported target is detected.
+- `/download` reads all installer paths from the published manifest.
+  A detected supported OS and CPU target get the primary download; other builds appear as
+  compact rows. Unknown OS, CPU target, and iOS browsers get the web action and all four
+  installer rows without a recommendation.
+- `Use web version` opens `/auth`. Installation notes are available in one
+  collapsed section.
 - Signed-in users never see it; native shells redirect `/` and `/download`
   to `/auth`.
 

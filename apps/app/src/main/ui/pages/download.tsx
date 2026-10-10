@@ -1,71 +1,108 @@
 /**
- * Download / get-the-app page — public surface for staff onboarding and the
- * macOS redownload flow. Reads the same published manifest the updaters use
- * (latest.json from /releases), so it never needs its own deploy.
- *
- * Artifacts download through the browser itself: the card is a plain link to
- * the /releases/* URL, the browser's own download bar shows progress, and
- * this page shows none. A blob hand-rolled in-page would keep a copy of the
- * installer in memory; the browser's downloader is better at it and needs
- * no UI here.
- *
- * The browser reuses the latest manifest for its 60s max-age window, keeping
- * repeat visits fast while picking up a new release within a minute.
- *
- * OS detection only picks the recommended card; every platform stays
- * clickable (detection can be wrong).
+ * Public browser download page. The published release manifest supplies every
+ * installer URL, while the browser owns the file transfer and its progress.
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, Download, Globe } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { apiOrigin } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
-import { EntryWash } from "@/ui/components/entry-wash";
+import { Skeleton } from "@/ui/components/motion";
 import {
   AndroidGlyph,
   AppleGlyph,
   LinuxGlyph,
   WindowsGlyph,
 } from "@/ui/components/brand-icons";
-import { EASE_OUT } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
-
-import { detectPlatformKey } from "@/lib/platform";
-
-type PlatformKey = "win" | "mac" | "linux" | "android";
+import { detectPlatformKey, type DownloadPlatformKey } from "@/lib/platform";
 
 type ReleaseInfo = {
   version: string;
-  releasedAt: string | null;
-  paths: Partial<Record<PlatformKey, string>>;
+  paths: Partial<Record<DownloadPlatformKey, string>>;
 };
+
+type PlatformMeta = {
+  name: string;
+  file: string;
+  note: string;
+  icon: typeof WindowsGlyph;
+};
+
+const PLATFORM_ORDER: readonly DownloadPlatformKey[] = [
+  "win",
+  "mac",
+  "linux",
+  "android",
+];
+
+const PLATFORM_META: Record<DownloadPlatformKey, PlatformMeta> = {
+  win: {
+    name: "Windows",
+    file: "x64 · Setup .exe",
+    note: 'Unsigned — SmartScreen: "More info → Run anyway".',
+    icon: WindowsGlyph,
+  },
+  mac: {
+    name: "macOS",
+    file: "Apple Silicon · .dmg",
+    note: "Right-click the app → Open on first launch.",
+    icon: AppleGlyph,
+  },
+  linux: {
+    name: "Linux",
+    file: "x64 · AppImage",
+    note: "Make the file executable, then run it.",
+    icon: LinuxGlyph,
+  },
+  android: {
+    name: "Android",
+    file: "Universal APK",
+    note: 'Allow "Install unknown apps" once.',
+    icon: AndroidGlyph,
+  },
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function releasePath(value: unknown): string | undefined {
+  return typeof value === "string" && value.startsWith("/releases/")
+    ? value
+    : undefined;
+}
 
 async function fetchRelease(): Promise<ReleaseInfo | null> {
   try {
-    const res = await fetch(`${apiOrigin()}/releases/app/android/latest.json`, {
-      cache: "default",
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) return null;
-    const body: unknown = await res.json();
-    if (body === null || typeof body !== "object") return null;
-    const rec = body as Record<string, unknown>;
-    if (typeof rec.version !== "string") return null;
-    const android = rec.android as { apk?: unknown } | undefined;
-    const desktop = rec.desktop as Record<string, unknown> | undefined;
-    const pick = (v: unknown): string | undefined =>
-      typeof v === "string" && v.startsWith("/releases/") ? v : undefined;
+    const response = await fetch(
+      `${apiOrigin()}/releases/app/android/latest.json`,
+      {
+        cache: "default",
+        signal: AbortSignal.timeout(20_000),
+      },
+    );
+    if (!response.ok) return null;
+
+    const body = asRecord(await response.json());
+    if (typeof body?.version !== "string" || body.version.trim() === "") {
+      return null;
+    }
+
+    const android = asRecord(body.android);
+    const desktop = asRecord(body.desktop);
     return {
-      version: rec.version,
-      releasedAt: typeof rec.releasedAt === "string" ? rec.releasedAt : null,
+      version: body.version,
       paths: {
-        android: pick(android?.apk),
-        win: pick(desktop?.win),
-        mac: pick(desktop?.mac),
-        linux: pick(desktop?.linux),
+        android: releasePath(android?.apk),
+        win: releasePath(desktop?.win),
+        mac: releasePath(desktop?.mac),
+        linux: releasePath(desktop?.linux),
       },
     };
   } catch {
@@ -73,129 +110,146 @@ async function fetchRelease(): Promise<ReleaseInfo | null> {
   }
 }
 
-/** Best-effort platform guess for the recommended card. */
-const PLATFORM_META: Record<
-  PlatformKey,
-  { name: string; file: string; note: string; icon: typeof WindowsGlyph }
-> = {
-  win: {
-    name: "Windows",
-    file: "Setup .exe",
-    note: 'Unsigned — SmartScreen: "More info → Run anyway".',
-    icon: WindowsGlyph,
-  },
-  mac: {
-    name: "macOS",
-    file: "Apple Silicon .dmg",
-    note: "Right-click the app → Open on first launch.",
-    icon: AppleGlyph,
-  },
-  linux: {
-    name: "Linux",
-    file: "AppImage",
-    note: "chmod +x, then run.",
-    icon: LinuxGlyph,
-  },
-  android: {
-    name: "Android",
-    file: "APK (all devices)",
-    note: 'Allow "Install unknown apps" once.',
-    icon: AndroidGlyph,
-  },
-};
+function DownloadAction({
+  href,
+  label,
+  loading,
+  releaseLoaded,
+  recommended = false,
+}: {
+  href: string | null;
+  label: string;
+  loading: boolean;
+  releaseLoaded: boolean;
+  recommended?: boolean;
+}) {
+  if (loading) {
+    return (
+      <Skeleton
+        className={cn(
+          "h-11 w-24 shrink-0 rounded-full sm:h-8",
+          recommended && "w-44 sm:h-11",
+        )}
+      />
+    );
+  }
 
-function PlatformCard({
+  if (!href) {
+    return (
+      <Button
+        variant="outline"
+        size={recommended ? "lg" : "sm"}
+        disabled
+        className="shrink-0"
+      >
+        {releaseLoaded ? "Unavailable" : label}
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      asChild
+      variant={recommended ? "default" : "outline"}
+      size={recommended ? "lg" : "sm"}
+      className="shrink-0"
+    >
+      <a href={href} download>
+        <Download aria-hidden />
+        {label}
+      </a>
+    </Button>
+  );
+}
+
+function PlatformRow({
   platform,
   href,
-  recommended,
+  loading,
+  releaseLoaded,
 }: {
-  platform: PlatformKey;
+  platform: DownloadPlatformKey;
   href: string | null;
-  recommended: boolean;
+  loading: boolean;
+  releaseLoaded: boolean;
 }) {
   const meta = PLATFORM_META[platform];
   const Icon = meta.icon;
-  const reduceMotion = useReducedMotion();
+
   return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: reduceMotion ? 0 : 0.24, ease: EASE_OUT }}
-    >
-      <Card
-        className={cn(
-          "glass-card shadow-soft overflow-hidden transition-colors",
-          recommended && "border-accent/40",
-        )}
-      >
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
-            <Icon className="size-5" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[15px] font-semibold leading-none tracking-tight">
-                {meta.name}
-              </span>
-              {recommended && (
-                <span className="rounded-sm border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground">
-                  This device
-                </span>
-              )}
-            </div>
-            <p className="mt-1 truncate text-xs text-muted-foreground">
-              {`${meta.file} · ${meta.note}`}
-            </p>
-          </div>
-          {href ? (
-            // A plain anchor with download: the browser's own download manager
-            // owns the transfer and its progress, and the tab never navigates
-            // to the artifact URL — an HTML response there (fallback, error)
-            // downloads as a file instead of replacing this page with a 404.
-            <Button asChild variant={recommended ? "default" : "outline"}>
-              <a href={href} download>
-                <Download className="size-4" aria-hidden />
-                Download
-              </a>
-            </Button>
-          ) : (
-            <Button variant="outline" disabled>
-              Unavailable
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
+    <li className="flex min-h-16 items-center gap-3 px-4 py-2">
+      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold leading-tight">
+          {meta.name}
+        </span>
+        <span className="mt-1 block truncate text-xs text-muted-foreground">
+          {meta.file}
+        </span>
+      </span>
+      <DownloadAction
+        href={href}
+        label="Download"
+        loading={loading}
+        releaseLoaded={releaseLoaded}
+      />
+    </li>
+  );
+}
+
+function InstallationNotes() {
+  return (
+    <details className="rounded-lg border border-border bg-card">
+      <summary className="min-h-11 cursor-pointer px-4 py-3 text-[13px] font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        Installation notes
+      </summary>
+      <ul className="space-y-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+        {PLATFORM_ORDER.map((platform) => (
+          <li key={platform}>
+            <span className="font-medium text-foreground">
+              {PLATFORM_META[platform].name}:
+            </span>{" "}
+            {PLATFORM_META[platform].note}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
 export function DownloadPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [platform] = useState<PlatformKey>(() => detectPlatformKey() ?? "win");
+  const [platform, setPlatform] = useState<DownloadPlatformKey | null>(null);
 
   useEffect(() => {
     let alive = true;
-    void fetchRelease().then((r) => {
-      if (alive) {
-        setRelease(r);
-        setLoading(false);
-      }
+    void detectPlatformKey().then((detectedPlatform) => {
+      if (alive) setPlatform(detectedPlatform);
     });
+    void fetchRelease().then((nextRelease) => {
+      if (!alive) return;
+      setRelease(nextRelease);
+      setLoading(false);
+    });
+
     return () => {
       alive = false;
     };
   }, []);
 
-  const url = (p: PlatformKey): string | null => {
-    const path = release?.paths[p];
+  const hrefFor = (key: DownloadPlatformKey): string | null => {
+    const path = release?.paths[key];
     return path ? `${apiOrigin()}${path}` : null;
   };
+  const recommended = platform ? PLATFORM_META[platform] : null;
+  const otherPlatforms = PLATFORM_ORDER.filter((key) => key !== platform);
 
   return (
-    <div className="entry-stage flex min-h-dvh flex-col items-center bg-background px-4 py-10 sm:px-6">
-      <EntryWash />
-      <div className="flex w-full max-w-md flex-col items-center gap-6 sm:max-w-lg">
+    <main className="min-h-dvh bg-background px-4 py-10 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[40rem] flex-col gap-8">
         <div className="flex items-center gap-3">
           <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
             <span
@@ -210,35 +264,121 @@ export function DownloadPage() {
           </div>
         </div>
 
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Get the app</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {loading
-              ? "Checking the latest version…"
-              : release
-                ? `Latest version ${release.version}`
-                : "Release info is unavailable right now."}
-          </p>
-        </div>
+        <header className="space-y-2">
+          <h1 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold leading-[1.05] tracking-[-0.022em]">
+            Get the app
+          </h1>
+          <div
+            className="min-h-5 text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            {loading ? (
+              <Skeleton className="mt-1 h-3 w-36" />
+            ) : release ? (
+              `Latest version ${release.version}`
+            ) : (
+              "Release info is unavailable right now."
+            )}
+          </div>
+        </header>
 
-        <div className="flex w-full flex-col gap-3">
-          {(["win", "mac", "linux", "android"] as const).map((p) => (
-            <PlatformCard
-              key={p}
-              platform={p}
-              href={url(p)}
-              recommended={p === platform}
-            />
-          ))}
-        </div>
+        <div className="flex flex-col gap-6" aria-busy={loading}>
+          {recommended ? (
+            <section className="space-y-3" aria-labelledby="recommended-title">
+              <h2
+                id="recommended-title"
+                className="text-[13px] font-medium text-muted-foreground"
+              >
+                Recommended for this device
+              </h2>
+              <Card className="border-accent/40">
+                <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                    <recommended.icon className="size-5" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-semibold leading-tight">
+                      {recommended.name}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {recommended.file}
+                    </span>
+                  </span>
+                  <DownloadAction
+                    href={platform ? hrefFor(platform) : null}
+                    label={`Download for ${recommended.name}`}
+                    loading={loading}
+                    releaseLoaded={release !== null}
+                    recommended
+                  />
+                </CardContent>
+                <div className="border-t border-border px-4 sm:px-5">
+                  <Button asChild variant="link" className="min-h-11 px-0">
+                    <Link to="/auth">
+                      Use web version
+                      <ArrowRight aria-hidden />
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
+            </section>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                  <Globe className="size-5" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold leading-tight">
+                    Use the web version
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Choose an installer or open the web app.
+                  </span>
+                </span>
+                <Button asChild size="lg" className="shrink-0">
+                  <Link to="/auth">
+                    Open web app
+                    <ArrowRight aria-hidden />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-        <Button asChild variant="link" className="min-h-11">
-          <Link to="/auth">
-            Continue to sign in
-            <ArrowRight className="size-4" aria-hidden />
-          </Link>
-        </Button>
+          <section
+            className="space-y-3"
+            aria-labelledby="other-downloads-title"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h2
+                id="other-downloads-title"
+                className="text-[15px] font-semibold tracking-tight"
+              >
+                {recommended ? "Other devices" : "Available downloads"}
+              </h2>
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <ul className="divide-y divide-border">
+                  {otherPlatforms.map((key) => (
+                    <PlatformRow
+                      key={key}
+                      platform={key}
+                      href={hrefFor(key)}
+                      loading={loading}
+                      releaseLoaded={release !== null}
+                    />
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </section>
+
+          <InstallationNotes />
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

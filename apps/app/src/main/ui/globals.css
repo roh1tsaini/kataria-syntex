@@ -571,7 +571,7 @@
     );
   }
 
-  /* Pre-auth ambient wash — entry (/) + download (/download) only. A pale
+  /* Pre-auth ambient wash — entry (/) only. A pale
     periwinkle sky with one luminous core melting into the center — content
     sits in the light — and four wide cloud banks drifting slowly across it.
     This is the one place blue hue is allowed (Section 2.5): everywhere else stays
@@ -816,20 +816,6 @@
     height: 100%;
     display: block;
     transition: opacity 240ms var(--ease-out);
-  }
-
-  /* Frosted card for content floating directly on the wash (download) */
-  .glass-card {
-    background: color-mix(in oklch, var(--card) 72%, transparent);
-    backdrop-filter: blur(16px) saturate(1.5);
-    -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    .glass-card {
-      background: var(--card);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
   }
 }
 

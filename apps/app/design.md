@@ -130,7 +130,7 @@ no text-transform on body copy.
 - Semantic tokens only (`bg-card`, `text-muted-foreground`, …) — never raw
   oklch in components. One neutral monochrome accent flows through `--a-*`
   — no picker, no hue anywhere. One exception: the pre-auth ambient wash
-  (`entry-wash.tsx`, entry + download only) — a pale periwinkle sky on the
+  (`entry-wash.tsx`, entry only) — a pale periwinkle sky on the
   window base with one luminous core melting into the center (content sits
   in the light) and four wide cloud banks drifting slowly across it
   (transform-only, 38–47s alternate; a static grain layer in
@@ -163,7 +163,6 @@ no text-transform on body copy.
   - Floating capsule / circle navigation: `capsule-surface` / `menu-float-circle` with `backdrop-filter: blur(12px) saturate(1.4)` and `color-mix(in oklch, var(--card) 78%, transparent)`
   - Sticky mobile action bars (`.sticky-action-bar`): `backdrop-filter: blur(12px) saturate(1.4)` and `color-mix(in oklch, var(--card) 85%, transparent)`
   - Dialog & settings scrims: `bg-black/40 backdrop-blur-[4px]`
-  - Glass cards (`.glass-card`): `backdrop-filter: blur(16px) saturate(1.5)` with `color-mix(in oklch, var(--card) 72%, transparent)`
   - Under `prefers-reduced-transparency: reduce`, all frosted glass surfaces collapse to solid background/card fills and remove backdrop filters.
 - Header right side: the company name is bare muted text — no bordered
   chips, no boxed backgrounds in the chrome row.
@@ -341,7 +340,7 @@ placeholders, fallbacks) — never the app name.
 | Update notice (`updates.ts`, `toast.tsx`)               | Top-centre notification toast — full visual contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Update gate (`update-surface.tsx`, `update-dialog.tsx`) | The one undismissable dialog — full contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Progress bar (`progress-bar.tsx`)                       | Download/install progress — track `bg-muted` h-2 radius-full, fill `bg-primary` width 0–100% with `transition-[width] duration-200 ease-out` (no JS animation loop: the store already throttles samples and a CSS transition absorbs their spacing). Readout is `formatUpdateProgress` (percent · total size) in `tabular-nums` 12px muted — no transferred bytes, no ETA. `role="progressbar"` + `aria-valuenow`; a `totalBytes` of 0 means unknown and the bar shows an indeterminate shimmer instead of a lying 0%. Never a spinner (Section 3.1).                             |
-| Entry / download pages (`entry.tsx`, `download.tsx`)    | Pre-auth surfaces on the ambient wash — full contract in Section 3.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Entry / download pages (`entry.tsx`, `download.tsx`)    | Pre-auth surfaces; entry uses the ambient wash and download uses the neutral background — full contract in Section 3.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ### 3.1 Loading skeletons — every screen gets its own shape
 
@@ -402,22 +401,30 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
 
 ### 3.4 Entry / download pages (`entry.tsx`, `download.tsx`)
 
-Pre-auth surfaces sharing the auth header lockup (44px "K" tile + 17px
-semibold name) on the ambient wash (`.entry-stage` + `EntryWash`). Entry is
-bare and copy-free: centered lockup, `Sign in` default button, hairline
-"or" divider, `Install for {platform}` outline button (plain browsers
-only) — no card, no taglines, no helper text. Download keeps the same wash
-behind the version line + platform cards. Platform cards reuse Card +
-brand glyphs (`brand-icons.tsx`, currentColor fill, 20px) and float as
-frosted glass on the wash (`.glass-card`: translucent card + backdrop
-blur, solid under `prefers-reduced-transparency`); the recommended card
-gets the accent border, never a solid fill. Detection is cosmetic — every
-card stays clickable. Each card's Download button is a plain anchor to its
-`/releases/*` URL — the browser's own download bar owns progress and the
-card shows none (a blob hand-rolled in-page would hold the whole installer
-in memory). Install/download is plain-browser only (`isPlainBrowser()` in
-platform.ts): Electron and Android ARE the app — entry never renders for
-them and /download redirects to /auth.
+- Entry keeps the auth lockup (44px "K" tile + 17px semibold name) on the
+  ambient wash. It has `Sign in` and one install link. `platform.ts` supplies
+  `Get the app` when the browser has no supported installer.
+- Download uses the neutral page background, the same lockup, and a 640px
+  content width. One page title and one version/status line sit above the
+  download choices.
+- A detected Windows x64, macOS arm64, Linux x64, or Android build gets one
+  recommended Card with its brand glyph, package type, and primary Download
+  action. CPU detection uses browser hints where available. The accent border
+  marks the card; it has no solid accent fill.
+- The web action is `Use web version` and opens `/auth`. It appears below the
+  recommended download. When the OS or supported CPU target is unknown, it is
+  the main action and all installer rows remain available.
+- All remaining builds appear as compact rows in one Card. If detection is
+  unavailable, all four rows appear. `Installation notes` is one collapsed
+  native disclosure with the per-platform instructions.
+- Download actions are plain anchors to their `/releases/*` URL. The browser
+  owns transfer progress; the page does not buffer installers or show a
+  second progress indicator. The release manifest supplies every URL.
+- Loading uses button-shaped skeletons. An unavailable release has one
+  status line and disabled download actions. Spinners are not used.
+- Entry and download render only in a plain browser (`isPlainBrowser()` in
+  `platform.ts`). Electron and Android are the app; `/download` redirects to
+  `/auth` in those shells.
 
 ## 4. Layout
 

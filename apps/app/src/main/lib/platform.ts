@@ -162,27 +162,98 @@ export function retryUpdateUsesAction(failure: string | null): boolean {
   );
 }
 
-/** OS key for download recommendations (entry + download pages). Cosmetic —
- * detection is never load-bearing and every platform stays selectable. The
- * one UA read in the app for platform display decisions. */
-export function detectPlatformKey():
-  "win" | "mac" | "linux" | "android" | null {
+export type DownloadPlatformKey = "win" | "mac" | "linux" | "android";
+
+type OperatingSystem = DownloadPlatformKey | "ios";
+type ArchitectureHints = { architecture: string; bitness: string };
+
+type UserAgentDataLike = {
+  getHighEntropyValues?: (hints: string[]) => Promise<unknown>;
+};
+
+function detectOperatingSystem(): OperatingSystem | null {
   const ua = navigator.userAgent;
   if (/android/i.test(ua)) return "android";
-  if (/iphone|ipad|mac/i.test(ua)) return "mac";
+  if (
+    /iphone|ipad|ipod/i.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  ) {
+    return null;
+  }
   if (/win/i.test(ua)) return "win";
+  if (/macintosh|mac os x/i.test(ua)) return "mac";
   if (/linux/i.test(ua)) return "linux";
   return null;
 }
 
-/** Human-readable OS name — derived from the same sniff as
- * detectPlatformKey, so the two surfaces can never disagree. */
-export function detectPlatformLabel(): string {
-  const key = detectPlatformKey();
-  if (!key) return "this device";
-  return { win: "Windows", mac: "macOS", linux: "Linux", android: "Android" }[
-    key
-  ];
+async function readArchitectureHints(): Promise<ArchitectureHints | null> {
+  const userAgentData = (
+    navigator as Navigator & { userAgentData?: UserAgentDataLike }
+  ).userAgentData;
+  if (!userAgentData?.getHighEntropyValues) return null;
+
+  try {
+    const value: unknown = await userAgentData.getHighEntropyValues([
+      "architecture",
+      "bitness",
+    ]);
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return null;
+    }
+    const record = value as Record<string, unknown>;
+    if (
+      typeof record.architecture !== "string" ||
+      typeof record.bitness !== "string"
+    ) {
+      return null;
+    }
+    return {
+      architecture: record.architecture.toLowerCase(),
+      bitness: record.bitness,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Recommends only builds whose published CPU target can be identified. */
+export async function detectPlatformKey(): Promise<DownloadPlatformKey | null> {
+  const system = detectOperatingSystem();
+  if (!system || system === "ios") return null;
+  if (system === "android") return "android";
+
+  const architecture = await readArchitectureHints();
+  if (architecture) {
+    if (architecture.bitness !== "64") return null;
+    if (system === "win" && architecture.architecture === "x86") return "win";
+    if (
+      system === "mac" &&
+      ["arm", "arm64"].includes(architecture.architecture)
+    ) {
+      return "mac";
+    }
+    if (system === "linux" && architecture.architecture === "x86") {
+      return "linux";
+    }
+    return null;
+  }
+
+  const ua = navigator.userAgent;
+  if (system === "win" && /\b(?:win64|x64|wow64)\b/i.test(ua)) return "win";
+  if (system === "linux" && /\b(?:x86_64|amd64)\b/i.test(ua)) return "linux";
+  return null;
+}
+
+/** Entry action copy, kept beside the supported-target detection. */
+export function platformInstallLabel(key: DownloadPlatformKey | null): string {
+  if (!key) return "Get the app";
+  const name = {
+    win: "Windows",
+    mac: "macOS",
+    linux: "Linux",
+    android: "Android",
+  }[key];
+  return `Install for ${name}`;
 }
 
 // ── Android storage (Capacitor Preferences behind a sync map) ───────────────

@@ -1,5 +1,5 @@
 /**
- * Ambient wash behind the pre-auth surfaces (entry + download).
+ * Ambient wash behind the pre-auth entry screen.
  * Layered: the CSS periwinkle sky paints first (and stays as the fallback),
  * four wide cloud banks drift across it on slow transform keyframes, and
  * EntryFluid mounts a WebGL2 fluid gradient on top when WebGL2 is available

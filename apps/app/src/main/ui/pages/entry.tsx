@@ -2,16 +2,22 @@
  * Entry screen — what a logged-out visitor sees at "/" in a plain browser.
  * Two paths, nothing else: sign in here (web) or install it on this
  * device. Platform detection only names the install button; the download
- * page keeps every platform reachable. No taglines, no helper copy.
+ * page keeps every platform reachable. Unsupported browsers get a general
+ * app link instead of an incorrect OS-specific install label.
  *
  * Native shells (Electron, Android) never render this — App.tsx sends them
  * straight to /auth.
  */
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Download } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
-import { detectPlatformLabel, isPlainBrowser } from "@/lib/platform";
+import {
+  detectPlatformKey,
+  isPlainBrowser,
+  platformInstallLabel,
+} from "@/lib/platform";
 import { Button } from "@/ui/components/ui/button";
 import { EntryWash } from "@/ui/components/entry-wash";
 import { EASE_OUT } from "@/ui/lib/motion";
@@ -19,8 +25,18 @@ import { EASE_OUT } from "@/ui/lib/motion";
 export function EntryPage() {
   const reduceMotion = useReducedMotion();
   const showInstall = isPlainBrowser();
-  const platform = detectPlatformLabel();
+  const [installLabel, setInstallLabel] = useState("Get the app");
   const rise = reduceMotion ? 0 : 6;
+
+  useEffect(() => {
+    let alive = true;
+    void detectPlatformKey().then((platform) => {
+      if (alive) setInstallLabel(platformInstallLabel(platform));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <div className="entry-stage flex min-h-dvh flex-col items-center justify-center gap-7 bg-background p-4 sm:p-6">
@@ -70,7 +86,7 @@ export function EntryPage() {
             <Button asChild size="lg" variant="outline" className="w-full">
               <Link to="/download">
                 <Download className="size-4" aria-hidden />
-                Install for {platform}
+                {installLabel}
               </Link>
             </Button>
           </>
