@@ -60,7 +60,7 @@ function EntryOrHome() {
   );
 }
 
-/** Native shells ARE the installed app — /download has nothing to offer
+/** Native shells ARE the installed app — /downloads has nothing to offer
  * them, so it sends them to sign-in instead. Browsers keep the page. */
 function DownloadOrAuth() {
   if (isNative()) return <Navigate to="/auth" replace />;
@@ -122,7 +122,7 @@ export function App() {
                 }
               />
               <Route
-                path="/download"
+                path="/downloads"
                 element={
                   <Suspense fallback={null}>
                     <DownloadOrAuth />

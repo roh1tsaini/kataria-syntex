@@ -528,7 +528,7 @@ export function AuthPage() {
       </div>
       {isPlainBrowser() && (
         <Link
-          to="/download"
+          to="/downloads"
           className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
         >
           Get the app for desktop or Android

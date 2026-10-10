@@ -84,7 +84,7 @@ export function EntryPage() {
               <span className="h-px flex-1 bg-border" />
             </div>
             <Button asChild size="lg" variant="outline" className="w-full">
-              <Link to="/download">
+              <Link to="/downloads">
                 <Download className="size-4" aria-hidden />
                 {installLabel}
               </Link>

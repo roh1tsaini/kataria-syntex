@@ -422,8 +422,8 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
   second progress indicator. The release manifest supplies every URL.
 - Loading uses button-shaped skeletons. An unavailable release has one
   status line and disabled download actions. Spinners are not used.
-- Entry and download render only in a plain browser (`isPlainBrowser()` in
-  `platform.ts`). Electron and Android are the app; `/download` redirects to
+- Entry and downloads render only in a plain browser (`isPlainBrowser()` in
+  `platform.ts`). Electron and Android are the app; `/downloads` redirects to
   `/auth` in those shells.
 
 ## 4. Layout

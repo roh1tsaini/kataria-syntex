@@ -3,7 +3,7 @@
  * manifests read straight out of the `ks-releases` R2 bucket. The URL path
  * after /releases/ IS the object key (CI owns the layout: app/desktop/…,
  * app/android/…). This route is public: the artifacts are not secrets and
- * the /download page plus native updaters fetch them without a session.
+ * the /downloads page plus native updaters fetch them without a session.
  *
  * Ranged reads are the whole point of this route. electron-updater downloads
  * in byte slices to build its blockmap diff, and R2 serves a slice through

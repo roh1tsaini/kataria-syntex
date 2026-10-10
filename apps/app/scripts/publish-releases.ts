@@ -271,7 +271,7 @@ for (const { key, file } of uploads) {
   );
 }
 
-// 2) The unified release info — Android, macOS Electron and /download read it.
+// 2) The unified release info — Android, macOS Electron and /downloads read it.
 // Paths are the public /releases/* URLs every client resolves directly.
 // Required updates come only from the live app server. The package floor is
 // still checked against this release above, but is not published in this file.

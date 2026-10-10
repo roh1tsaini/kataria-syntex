@@ -394,13 +394,13 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
 - `/` unauthenticated → two-path entry screen (`ui/pages/entry.tsx`):
   Sign in / Install for a detected supported OS and CPU target, or Get the
   app when no supported target is detected.
-- `/download` reads all installer paths from the published manifest.
+- `/downloads` reads all installer paths from the published manifest.
   A detected supported OS and CPU target get the primary download; other builds appear as
   compact rows. Unknown OS, CPU target, and iOS browsers get the web action and all four
   installer rows without a recommendation.
 - `Use web version` opens `/auth`. Installation notes are available in one
   collapsed section.
-- Signed-in users never see it; native shells redirect `/` and `/download`
+- Signed-in users never see it; native shells redirect `/` and `/downloads`
   to `/auth`.
 
 #### 5.2 · Android native project
