@@ -27,7 +27,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/ui/components/ui/field";
-import { EASE_OUT, SPRING } from "@/ui/lib/motion";
+import { EASE_OUT, MORPH, MORPH_EXIT, SPRING } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
 import { safeNextPath } from "@/ui/lib/next-path";
 
@@ -244,7 +244,7 @@ function OtpStep({
           <Button
             variant="link"
             onClick={onUsePassword}
-            className="min-h-11 w-full text-xs text-muted-foreground underline"
+            className="w-full text-muted-foreground underline"
           >
             Use password instead
           </Button>
@@ -418,7 +418,7 @@ function MethodTab({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "relative flex h-11 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors duration-150 sm:h-10",
+        "btn-motion relative flex h-11 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium touch-44 sm:h-10",
         active
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground",
@@ -527,12 +527,9 @@ export function AuthPage() {
         </div>
       </div>
       {isPlainBrowser() && (
-        <Link
-          to="/downloads"
-          className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
-        >
-          Get the app for desktop or Android
-        </Link>
+        <Button asChild variant="link" className="text-muted-foreground">
+          <Link to="/downloads">Get the app for desktop or Android</Link>
+        </Button>
       )}
       <motion.div
         initial={{
@@ -571,13 +568,10 @@ export function AuthPage() {
                     : {
                         opacity: 0,
                         gridTemplateRows: "0fr",
-                        transition: { duration: 0.16, ease: EASE_OUT },
+                        transition: MORPH_EXIT,
                       }
                 }
-                transition={{
-                  duration: reduceMotion ? 0 : 0.2,
-                  ease: EASE_OUT,
-                }}
+                transition={reduceMotion ? { duration: 0 } : MORPH}
               >
                 <div className="min-h-0 overflow-hidden">
                   {step === "home" && (

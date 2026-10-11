@@ -157,9 +157,7 @@ function SettingsRow({
   return (
     <div className="flex flex-col gap-2 border-b border-border px-4 py-3 last:border-b-0 sm:min-h-11 sm:flex-row sm:items-center sm:gap-4 sm:py-2">
       <div className="min-w-0 flex-1">
-        <Label htmlFor={htmlFor} className="text-sm font-medium">
-          {label}
-        </Label>
+        <Label htmlFor={htmlFor}>{label}</Label>
         {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
       </div>
       {children}
@@ -242,8 +240,7 @@ function UpdateRow() {
         ) : null}
         {showAction ? (
           <Button
-            size="sm"
-            className="h-8 shrink-0"
+            className="shrink-0"
             onClick={() => void installUpdate()}
             disabled={busy}
             loading={busy}
@@ -256,9 +253,8 @@ function UpdateRow() {
           </Button>
         ) : (
           <Button
-            size="sm"
             variant="outline"
-            className="h-8 shrink-0"
+            className="shrink-0"
             onClick={() => void (retrying ? retry() : check())}
             disabled={checking || retryInFlight}
             loading={checking || retryInFlight}
@@ -337,7 +333,7 @@ export function SettingsPage() {
                   aria-current={selected}
                   onClick={() => setSection(id)}
                   className={cn(
-                    "btn-motion flex min-h-11 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] touch-44",
+                    "app-nav-row btn-motion w-full text-left",
                     selected
                       ? "bg-accent font-medium text-accent-foreground"
                       : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",

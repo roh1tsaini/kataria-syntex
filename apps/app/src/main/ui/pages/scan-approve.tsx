@@ -94,7 +94,7 @@ export function ScanApprovePage() {
       >
         <Card>
           <CardHeader>
-            <div className="grid size-10 place-items-center rounded-md bg-accent text-accent-foreground">
+            <div className="content-icon-tile bg-accent text-accent-foreground">
               {approvedAs ? (
                 <CheckCircle2 className="size-5" aria-hidden />
               ) : (

@@ -10,6 +10,8 @@
 :root {
   --wc-w: 0px;
   --tl-inset: 0px;
+  --duration-morph-open: 380ms;
+  --duration-morph-exit: 300ms;
   /* One window-control button. The cluster reservation (--wc-w) is derived
      from this, so a coarse pointer's 44px floor can never widen the controls
      past the space the header reserved for them. */
@@ -34,6 +36,28 @@
     min-height: 2.75rem;
     min-width: 2.75rem;
   }
+}
+
+@utility morph-grid {
+  --morph-duration: var(--duration-morph-exit);
+  transition:
+    grid-template-rows var(--morph-duration) var(--ease-morph),
+    opacity var(--morph-duration) var(--ease-morph);
+}
+
+@utility morph-transform {
+  --morph-duration: var(--duration-morph-exit);
+  transition: transform var(--morph-duration) var(--ease-morph);
+}
+
+@utility morph-layout {
+  --morph-duration: var(--duration-morph-exit);
+  transition-duration: var(--morph-duration);
+  transition-timing-function: var(--ease-morph);
+}
+
+@utility morph-open {
+  --morph-duration: var(--duration-morph-open);
 }
 
 /* Hide scrollbars while keeping the area scrollable (horizontal chip strips). */
@@ -479,6 +503,53 @@
       transform 100ms var(--ease-out);
   }
 
+  .btn-motion:active {
+    transform: scale(0.97);
+  }
+
+  .content-icon-tile {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .app-nav-row,
+  .app-nav-subrow {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    padding: 0.375rem 0.5rem;
+  }
+
+  .app-nav-row {
+    font-size: 0.8125rem;
+  }
+
+  .app-nav-subrow {
+    font-size: 0.75rem;
+  }
+
+  @media (min-width: 40rem) {
+    .app-nav-row,
+    .app-nav-subrow {
+      min-height: 2.5rem;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .app-nav-row,
+    .app-nav-subrow {
+      min-height: 2.75rem;
+    }
+  }
+
   .field-control {
     border-radius: var(--radius-md);
     background-color: var(--card);
@@ -654,6 +725,10 @@
   html {
     scroll-behavior: auto;
   }
+
+  .btn-motion:active {
+    transform: none;
+  }
 }
 
 .phone-navigation {
@@ -744,21 +819,21 @@
    Reduced motion is already collapsed by the block above. */
 [data-sonner-toaster] [data-sonner-toast] {
   transition:
-    transform 380ms var(--ease-out),
-    opacity 380ms var(--ease-out),
-    height 380ms var(--ease-out),
+    transform var(--duration-morph-open) var(--ease-out),
+    opacity var(--duration-morph-open) var(--ease-out),
+    height var(--duration-morph-open) var(--ease-morph),
     box-shadow 200ms var(--ease-out);
 }
 
 /* Exits mirror entries ~20% faster (Section 5 rule 2). */
 [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
   transition:
-    transform 300ms var(--ease-out),
-    opacity 300ms var(--ease-out),
-    height 300ms var(--ease-out),
+    transform var(--duration-morph-exit) var(--ease-out),
+    opacity var(--duration-morph-exit) var(--ease-out),
+    height var(--duration-morph-exit) var(--ease-morph),
     box-shadow 200ms var(--ease-out);
 }
 
 [data-sonner-toaster] [data-sonner-toast] > * {
-  transition: opacity 380ms var(--ease-out);
+  transition: opacity var(--duration-morph-open) var(--ease-out);
 }

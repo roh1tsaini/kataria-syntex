@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { ChevronDown, Globe, Monitor, Smartphone, Trash2 } from "lucide-react";
+import { Globe, Monitor, Smartphone, Trash2 } from "lucide-react";
 import { QrApproveDialog } from "@/ui/components/qr-approve-dialog";
+import { MorphChevron, MorphPanel } from "@/ui/components/ui/disclosure";
 import { Button } from "@/ui/components/ui/button";
+import { CircleButton } from "@/ui/components/ui/circle-button";
 import { Badge } from "@/ui/components/ui/badge";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import {
@@ -57,9 +59,7 @@ function DeviceRow({
 
   return (
     <div className="flex items-start gap-3 border-b border-border/65 px-4 py-3 last:border-b-0 sm:px-5">
-      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-        {platformIcon(device.platform)}
-      </span>
+      <span className="content-icon-tile">{platformIcon(device.platform)}</span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-sm font-semibold">{device.label}</span>
@@ -77,41 +77,53 @@ function DeviceRow({
         </div>
         {device.userAgent && (
           <>
-            <button
+            <Button
+              variant="ghost"
               type="button"
+              id={`device-details-trigger-${device.id}`}
               onClick={() => setDetailsOpen((v) => !v)}
               aria-expanded={detailsOpen}
-              className="btn-motion -ml-2 mt-1 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground touch-44 [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground"
+              aria-controls={`device-details-${device.id}`}
+              className="-ml-2 mt-1 w-fit max-w-full justify-start gap-1 px-2 text-[13px] text-muted-foreground"
             >
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform duration-200 ease-[var(--ease-out)]",
-                  detailsOpen && "rotate-180",
-                )}
-                aria-hidden
-              />
-              Technical details
-            </button>
-            {detailsOpen && (
+              <MorphChevron open={detailsOpen} className="size-3.5" />
+              <span className="truncate">Technical details</span>
+            </Button>
+            <MorphPanel
+              id={`device-details-${device.id}`}
+              role="region"
+              aria-labelledby={`device-details-trigger-${device.id}`}
+              open={detailsOpen}
+            >
               <p className="mt-1 break-all font-mono text-[11px] leading-relaxed text-muted-foreground/80">
                 {device.userAgent}
               </p>
-            )}
+            </MorphPanel>
           </>
         )}
       </div>
       {!device.isCurrent && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          disabled={deleting}
-          className="size-11 shrink-0 rounded-full px-0 text-destructive touch-44 sm:h-8 sm:w-auto sm:px-3"
-          aria-label={`Revoke ${device.label}`}
-        >
-          <Trash2 className="size-4" aria-hidden />
-          <span className="hidden sm:inline">Revoke</span>
-        </Button>
+        <>
+          <CircleButton
+            onClick={onDelete}
+            disabled={deleting}
+            className="text-destructive [@media(hover:hover)]:hover:text-destructive active:text-destructive sm:hidden"
+            aria-label={`Revoke ${device.label}`}
+            title={`Revoke ${device.label}`}
+          >
+            <Trash2 aria-hidden />
+          </CircleButton>
+          <Button
+            variant="ghost"
+            onClick={onDelete}
+            disabled={deleting}
+            className="hidden shrink-0 text-destructive sm:inline-flex"
+            aria-label={`Revoke ${device.label}`}
+          >
+            <Trash2 aria-hidden />
+            <span>Revoke</span>
+          </Button>
+        </>
       )}
     </div>
   );
@@ -132,7 +144,7 @@ function DevicesPanelSkeleton() {
             <Skeleton className="h-3 w-52" />
           </div>
           {i > 0 && (
-            <Skeleton className="size-11 shrink-0 rounded-full sm:h-8 sm:w-20 touch-44" />
+            <Skeleton className="size-11 shrink-0 rounded-full sm:h-10 sm:w-24 touch-44" />
           )}
         </div>
       ))}
@@ -204,7 +216,6 @@ export function DevicesPanel() {
           {loadError}
           <Button
             variant="outline"
-            size="sm"
             onClick={() => void load()}
             disabled={loading}
             loading={loading}
@@ -225,9 +236,7 @@ export function DevicesPanel() {
               {ordered.length} {ordered.length === 1 ? "device" : "devices"}
             </Badge>
             <Button
-              size="sm"
               variant="outline"
-              className="h-8"
               onClick={() => setQrApproveOpen(true)}
               title="Scan or type the QR code shown on another device to log it in"
             >

@@ -70,7 +70,7 @@ function DevicesSkeleton() {
               <Skeleton className="h-4 w-40" />
               <Skeleton className="mt-1.5 h-3 w-56" />
             </div>
-            <Skeleton className="size-11 shrink-0 rounded-full sm:h-8 sm:w-20 touch-44" />
+            <Skeleton className="size-11 shrink-0 rounded-full sm:h-10 sm:w-24 touch-44" />
           </div>
         ))}
       </div>

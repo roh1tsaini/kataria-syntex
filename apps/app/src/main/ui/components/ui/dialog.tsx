@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 import { cn } from "@/ui/lib/cn";
+import { CircleButton } from "@/ui/components/ui/circle-button";
 import { EASE_OUT, MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 
 type DialogContextType = { open: boolean };
@@ -126,9 +127,14 @@ export const DialogContent = React.forwardRef<
             >
               {children}
               {!hideClose && (
-                <DialogPrimitive.Close className="absolute right-4 top-4 grid size-11 place-items-center rounded-full opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-10">
-                  <X className="size-4" aria-hidden />
-                  <span className="sr-only">Close</span>
+                <DialogPrimitive.Close asChild>
+                  <CircleButton
+                    className="absolute right-4 top-4 z-10 bg-card/80 opacity-70 backdrop-blur-sm hover:opacity-100"
+                    aria-label="Close dialog"
+                    title="Close dialog"
+                  >
+                    <X aria-hidden />
+                  </CircleButton>
                 </DialogPrimitive.Close>
               )}
             </motion.div>

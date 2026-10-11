@@ -73,7 +73,7 @@ export function UpdateDialog() {
         hideClose
       >
         <div className="flex items-start gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+          <div className="content-icon-tile bg-primary/10 text-primary">
             <RefreshCw className="size-5" aria-hidden />
           </div>
           <DialogHeader className="gap-1">

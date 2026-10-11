@@ -10,6 +10,7 @@ import { apiOrigin } from "@kataria-syntex/app-core";
 import { Button } from "@/ui/components/ui/button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import { Skeleton } from "@/ui/components/motion";
+import { MorphPanel, MorphPlusMinus } from "@/ui/components/ui/disclosure";
 import {
   AndroidGlyph,
   AppleGlyph,
@@ -127,8 +128,8 @@ function DownloadAction({
     return (
       <Skeleton
         className={cn(
-          "h-11 w-24 shrink-0 rounded-full sm:h-8",
-          recommended && "w-44 sm:h-11",
+          "h-11 w-24 shrink-0 rounded-full sm:h-10",
+          recommended && "w-44",
         )}
       />
     );
@@ -136,12 +137,7 @@ function DownloadAction({
 
   if (!href) {
     return (
-      <Button
-        variant="outline"
-        size={recommended ? "lg" : "sm"}
-        disabled
-        className="shrink-0"
-      >
+      <Button variant="outline" disabled className="shrink-0">
         {releaseLoaded ? "Unavailable" : label}
       </Button>
     );
@@ -151,7 +147,6 @@ function DownloadAction({
     <Button
       asChild
       variant={recommended ? "default" : "outline"}
-      size={recommended ? "lg" : "sm"}
       className="shrink-0"
     >
       <a href={href} download>
@@ -178,7 +173,7 @@ function PlatformRow({
 
   return (
     <li className="flex min-h-16 items-center gap-3 px-4 py-2">
-      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
+      <span className="content-icon-tile">
         <Icon className="size-5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
@@ -200,22 +195,54 @@ function PlatformRow({
 }
 
 function InstallationNotes() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <details className="rounded-lg border border-border bg-card">
-      <summary className="min-h-11 cursor-pointer px-4 py-3 text-[13px] font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-        Installation notes
-      </summary>
-      <ul className="space-y-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
-        {PLATFORM_ORDER.map((platform) => (
-          <li key={platform}>
-            <span className="font-medium text-foreground">
-              {PLATFORM_META[platform].name}:
-            </span>{" "}
-            {PLATFORM_META[platform].note}
-          </li>
-        ))}
-      </ul>
-    </details>
+    <section
+      aria-labelledby="installation-notes-title"
+      className="overflow-hidden rounded-lg border border-border bg-card"
+    >
+      <Button
+        id="installation-notes-trigger"
+        type="button"
+        variant="ghost"
+        aria-expanded={open}
+        aria-controls="installation-notes-panel"
+        onClick={() => setOpen((value) => !value)}
+        className="w-full justify-start rounded-none px-4 font-semibold focus-visible:ring-inset focus-visible:ring-offset-0"
+      >
+        <span id="installation-notes-title">Installation notes</span>
+        <span className="flex-1" />
+        <span className="text-xs font-normal text-muted-foreground">
+          4 platforms
+        </span>
+        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border/60 text-muted-foreground">
+          <MorphPlusMinus open={open} />
+        </span>
+      </Button>
+      <MorphPanel
+        id="installation-notes-panel"
+        role="region"
+        aria-labelledby="installation-notes-trigger"
+        open={open}
+      >
+        <ul className="mx-4 border-t border-border pb-2 pt-1 text-xs">
+          {PLATFORM_ORDER.map((platform) => (
+            <li
+              key={platform}
+              className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 border-b border-border py-2 last:border-b-0"
+            >
+              <span className="font-medium text-foreground">
+                {PLATFORM_META[platform].name}
+              </span>
+              <span className="text-muted-foreground">
+                {PLATFORM_META[platform].note}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </MorphPanel>
+    </section>
   );
 }
 
@@ -265,9 +292,7 @@ export function DownloadPage() {
         </div>
 
         <header className="space-y-2">
-          <h1 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold leading-[1.05] tracking-[-0.022em]">
-            Get the app
-          </h1>
+          <h1 className="page-title">Get the app</h1>
           <div
             className="min-h-5 text-sm text-muted-foreground"
             role="status"
@@ -294,7 +319,7 @@ export function DownloadPage() {
               </h2>
               <Card className="border-accent/40">
                 <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                  <span className="content-icon-tile">
                     <recommended.icon className="size-5" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -314,7 +339,7 @@ export function DownloadPage() {
                   />
                 </CardContent>
                 <div className="border-t border-border px-4 sm:px-5">
-                  <Button asChild variant="link" className="min-h-11 px-0">
+                  <Button asChild variant="link">
                     <Link to="/auth">
                       Use web version
                       <ArrowRight aria-hidden />
@@ -326,7 +351,7 @@ export function DownloadPage() {
           ) : (
             <Card>
               <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                <span className="content-icon-tile">
                   <Globe className="size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -337,7 +362,7 @@ export function DownloadPage() {
                     Choose an installer or open the web app.
                   </span>
                 </span>
-                <Button asChild size="lg" className="shrink-0">
+                <Button asChild className="shrink-0">
                   <Link to="/auth">
                     Open web app
                     <ArrowRight aria-hidden />

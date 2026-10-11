@@ -8,7 +8,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/ui/lib/cn";
 
 const buttonVariants = cva(
-  "btn-motion inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+  "btn-motion inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 touch-44 sm:h-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
     variants: {
       variant: {
@@ -27,10 +27,8 @@ const buttonVariants = cva(
         link: "text-foreground underline-offset-4 [@media(hover:hover)]:hover:underline",
       },
       size: {
-        default: "h-11 px-4 py-2 sm:h-10 touch-44",
-        sm: "h-11 px-3 text-[13px] sm:h-8 touch-44",
-        lg: "h-11 px-6 sm:h-11",
-        icon: "size-11 sm:size-10 touch-44",
+        default: "",
+        icon: "size-11 px-0 sm:size-10",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

@@ -11,17 +11,10 @@ import {
 } from "react";
 import { NavLink, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import {
-  Building2,
-  ChevronDown,
-  LogOut,
-  Moon,
-  PanelLeft,
-  Sun,
-  X,
-} from "lucide-react";
+import { Building2, LogOut, Moon, PanelLeft, Sun, X } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
+import { MorphChevron, MorphPanel } from "@/ui/components/ui/disclosure";
 import { TabBar, type TabBarItem } from "@/ui/components/ui/tab-bar";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
 import { PageTransition } from "@/ui/components/motion";
@@ -37,7 +30,7 @@ import {
   type NavSection,
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
-import { EASE_OUT, EASE_DRAWER } from "@/ui/lib/motion";
+import { EASE_OUT, EASE_DRAWER, MORPH, MORPH_EXIT } from "@/ui/lib/motion";
 import { dragStyle, noDragStyle } from "@/ui/components/title-bar";
 
 function Brand({ compact }: { compact?: boolean }) {
@@ -82,40 +75,34 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
-/** Expanded sidebar navigation with collapsible groups. `roomy` = full-screen
- * mobile sizing: taller rows, larger type and icons. */
+/** Expanded sidebar navigation with collapsible groups. */
 function NavList({
+  idPrefix,
   sections,
   expanded,
   onToggleGroup,
   pathname,
   search,
   onNavigate,
-  roomy = false,
 }: {
+  idPrefix: string;
   sections: NavSection[];
   expanded: Record<string, boolean>;
   onToggleGroup: (to: string) => void;
   pathname: string;
   search: string;
   onNavigate?: () => void;
-  roomy?: boolean;
 }) {
-  const rowCls = roomy
-    ? "min-h-12 gap-3 rounded-md px-3 text-[15px]"
-    : "min-h-11 gap-2 rounded-md px-2 py-1.5 text-[13px] sm:min-h-10";
-  const iconCls = roomy ? "size-5" : "size-4";
-  const chevronCls = roomy ? "size-4" : "size-3.5";
-  const subRowCls = roomy
-    ? "min-h-11 gap-2.5 px-3 text-[13px]"
-    : "gap-2 px-2 py-1.5 text-xs";
-  const subDotCls = roomy ? "size-1.5" : "size-1";
+  const rowCls = "app-nav-row";
+  const iconCls = "size-4";
+  const chevronCls = "size-3.5";
+  const subDotCls = "size-1";
 
   return (
     <nav
       className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]",
-        roomy ? "px-3 py-3" : "px-2 py-2",
+        "px-3 py-3",
       )}
     >
       {sections.map((section, i) => (
@@ -125,6 +112,7 @@ function NavList({
             {section.items.map((item) => {
               const active = isItemActive(item, pathname);
               const hasSubs = !!item.subItems?.length;
+              const panelId = `${idPrefix}-nav-group-${encodeURIComponent(item.to)}`;
               const anySubActive =
                 item.subItems?.some((sub) =>
                   isSubActive(sub, pathname, search),
@@ -138,8 +126,9 @@ function NavList({
                       type="button"
                       onClick={() => onToggleGroup(item.to)}
                       aria-expanded={isExpanded}
+                      aria-controls={panelId}
                       className={cn(
-                        "flex w-full items-center transition-colors duration-150 ease-[var(--ease-out)]",
+                        "btn-motion flex w-full items-center",
                         rowCls,
                         anySubActive
                           ? "font-medium text-foreground"
@@ -153,13 +142,13 @@ function NavList({
                       <span className="min-w-0 flex-1 truncate text-left">
                         {item.label}
                       </span>
-                      <ChevronDown
+                      <MorphChevron
+                        open={isExpanded}
                         className={cn(
                           chevronCls,
-                          "shrink-0 opacity-60 transition-transform duration-150",
-                          isExpanded ? "rotate-0" : "-rotate-90",
+                          "-rotate-90 shrink-0 opacity-60",
+                          isExpanded && "rotate-0",
                         )}
-                        aria-hidden
                       />
                     </button>
                   ) : (
@@ -168,7 +157,7 @@ function NavList({
                       end={item.end}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center transition-colors duration-150 ease-[var(--ease-out)]",
+                        "btn-motion flex items-center",
                         rowCls,
                         active
                           ? "bg-accent font-medium text-accent-foreground"
@@ -185,57 +174,43 @@ function NavList({
                     </NavLink>
                   )}
                   {hasSubs && (
-                    <div
-                      className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-[380ms] ease-[var(--ease-morph)]",
-                        isExpanded
-                          ? "mt-0.5 grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0",
-                      )}
-                    >
-                      <div className="min-h-0 overflow-hidden">
-                        <div
-                          className={cn(
-                            "flex flex-col gap-0.5 border-l border-border pl-3",
-                            roomy ? "ml-5" : "ml-4",
-                          )}
-                        >
-                          {item.subItems?.map((sub) => {
-                            const subActive = isSubActive(
-                              sub,
-                              pathname,
-                              search,
-                            );
-                            return (
-                              <NavLink
-                                key={sub.to}
-                                to={sub.to}
-                                onClick={onNavigate}
+                    <MorphPanel id={panelId} open={isExpanded}>
+                      <div
+                        className={cn(
+                          "flex flex-col gap-0.5 border-l border-border pl-3 pt-0.5",
+                          "ml-4",
+                        )}
+                      >
+                        {item.subItems?.map((sub) => {
+                          const subActive = isSubActive(sub, pathname, search);
+                          return (
+                            <NavLink
+                              key={sub.to}
+                              to={sub.to}
+                              onClick={onNavigate}
+                              className={cn(
+                                "app-nav-subrow btn-motion",
+                                subActive
+                                  ? "bg-accent font-medium text-accent-foreground"
+                                  : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted/60 [@media(hover:hover)]:hover:text-foreground",
+                              )}
+                            >
+                              <span
                                 className={cn(
-                                  "flex items-center rounded-md transition-colors duration-150",
-                                  subRowCls,
+                                  subDotCls,
+                                  "shrink-0 rounded-full",
                                   subActive
-                                    ? "bg-accent font-medium text-accent-foreground"
-                                    : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted/60 [@media(hover:hover)]:hover:text-foreground",
+                                    ? "bg-accent-foreground"
+                                    : "bg-muted-foreground/40",
                                 )}
-                              >
-                                <span
-                                  className={cn(
-                                    subDotCls,
-                                    "shrink-0 rounded-full",
-                                    subActive
-                                      ? "bg-accent-foreground"
-                                      : "bg-muted-foreground/40",
-                                  )}
-                                  aria-hidden
-                                />
-                                <span className="truncate">{sub.label}</span>
-                              </NavLink>
-                            );
-                          })}
-                        </div>
+                                aria-hidden
+                              />
+                              <span className="truncate">{sub.label}</span>
+                            </NavLink>
+                          );
+                        })}
                       </div>
-                    </div>
+                    </MorphPanel>
                   )}
                 </div>
               );
@@ -277,7 +252,7 @@ function NavRail({
               title={item.label}
               aria-label={item.label}
               className={cn(
-                "grid size-10 shrink-0 place-items-center rounded-md transition-colors duration-150 touch-44",
+                "btn-motion grid size-10 shrink-0 place-items-center rounded-md touch-44",
                 active
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
@@ -376,7 +351,7 @@ function UserFooter({ compact }: { compact?: boolean }) {
   );
 }
 
-/** Mobile full-screen nav: brand header, roomy nav, footer with identity
+/** Mobile full-screen nav: brand header, shared nav rows, footer with identity
  * left and theme/logout actions right. */
 function MobileDrawerContent({
   sections,
@@ -434,13 +409,13 @@ function MobileDrawerContent({
       </div>
 
       <NavList
+        idPrefix="drawer"
         sections={sections}
         expanded={expanded}
         onToggleGroup={toggleGroup}
         pathname={pathname}
         search={search}
         onNavigate={onClose}
-        roomy
       />
 
       <div className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]">
@@ -761,13 +736,22 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
             itself carries no app-region: its brand row owns the window's
             top-left drag band (see the row below), and every row under it is
             ordinary clickable surface. */}
-        <aside
+        <motion.aside
+          layout
+          layoutRoot
+          transition={{
+            layout: reduceMotion
+              ? { duration: 0 }
+              : railOpen
+                ? MORPH
+                : MORPH_EXIT,
+          }}
           onMouseEnter={onRailEnter}
           onMouseLeave={onRailLeave}
           className={cn(
             // Full window height — the brand row is the top-left corner of
             // the window; --tl-inset clears the macOS traffic lights above it.
-            "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card pt-[var(--tl-inset)] transition-[width] duration-200 ease-[var(--ease-drawer)] motion-reduce:transition-none md:flex",
+            "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card pt-[var(--tl-inset)] md:flex",
             railOpen ? "w-60" : "w-14",
           )}
         >
@@ -852,6 +836,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                   </CircleButton>
                 </div>
                 <NavList
+                  idPrefix="sidebar"
                   sections={sections}
                   expanded={expanded}
                   onToggleGroup={toggleGroup}
@@ -862,16 +847,15 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
               </motion.div>
             )}
           </AnimatePresence>
-        </aside>
+        </motion.aside>
 
-        {/* Content column sits next to the sidebar; no reflow animation.
-            Desktop: the header stays a fixed row and the routed content
+        {/* Desktop: the header stays a fixed row and the routed content
             scrolls in .shell-scroll below it, so the page scrollbar starts
             under the header line — never beside the window controls. */}
         <div
           className={cn(
-            "app-shell-col flex min-h-dvh flex-col",
-            railCollapsed ? "md:pl-14" : "md:pl-60",
+            "app-shell-col flex min-h-dvh flex-col transition-[padding-left] morph-layout motion-reduce:transition-none",
+            railCollapsed ? "md:pl-14" : "morph-open md:pl-60",
           )}
         >
           <HeaderBar
