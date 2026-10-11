@@ -48,7 +48,8 @@ APK).
 
 Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
-1. `gate` — typecheck + lint + format + build concurrently via Turbo. Resolves
+1. `prune-artifacts` deletes artifacts from completed Pipeline runs before a
+   new upload. `gate` — typecheck + lint + format + build via Turbo — resolves
    whether the push introduces a new release version and uploads the shared
    `apps/app` renderer for later jobs.
 2. `deploy-web` — runs immediately in parallel on push: ensure website D1
@@ -62,11 +63,15 @@ Push to `main`. One workflow (`pipeline.yml`) runs everything:
 5. `deploy-app` — download the shared renderer → ensure D1 (`ks-biz-app-db`) →
    migrate → deploy Worker. Release pushes and manual all-target runs deploy
    after `publish-r2` so clients never hit a version floor before the release is live.
+6. `cleanup-artifacts` deletes this run's GitHub Actions artifacts after all
+   jobs finish. Artifacts only hand files between jobs; published releases live
+   in R2. One-day artifact retention is a fallback if cleanup cannot run.
 
 Manual dispatch (Actions → Pipeline) can rebuild only `desktop` or only
 `android` via the `targets` choice. `targets: all` is limited to `main` and also
 deploys the app Worker after R2 publication. Manual runs wait behind an active
-push; a newer push cancels an older manual run.
+push; a newer push cancels an older manual run. Manual build artifacts are
+deleted when the run finishes.
 
 After the first app deploy, set `APP_URL` (step 2) so native builds can reach
 the API.

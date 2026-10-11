@@ -4,7 +4,8 @@ name: Pipeline
 #   gate (shared app renderer) → [deploy-web, desktop, android] in parallel
 #   [desktop, android] → publish-r2 → deploy-app
 #
-# Runs on GitHub-hosted runners. Public repository with free runner minutes.
+# Runs on GitHub-hosted runners. Temporary workflow artifacts are cleaned up
+# before uploads and after all jobs finish.
 # Native packaging (desktop installers + Android APK) is gated to release pushes
 # (when apps/app/package.json version differs from live R2 manifest) and manual
 # workflow_dispatch runs, avoiding ~15 min of wasted compute on routine PRs and
@@ -35,14 +36,56 @@ concurrency:
 permissions:
   contents: read
 
-# Artifacts hand off the shared app renderer and installers between jobs. R2
-# remains the release distribution. One-day retention limits temporary storage.
+# Artifacts hand off the shared app renderer and installers between jobs. The
+# pipeline deletes them before and after each run. One-day retention is a
+# fallback if cleanup cannot run. R2 remains the release distribution.
 env:
   RELEASE_ARTIFACT_RETENTION_DAYS: 1
 
 jobs:
+  prune-artifacts:
+    name: "Free storage from completed Pipeline artifacts"
+    concurrency:
+      group: pipeline-artifact-prune-${{ github.repository }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Delete artifacts from completed Pipeline runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "Pull requests do not upload artifacts; skipping cleanup."
+            exit 0
+          fi
+          RUN_IDS_FILE="$RUNNER_TEMP/completed-run-ids.txt"
+          gh api --paginate "repos/$GH_REPO/actions/workflows/pipeline.yml/runs?status=completed&per_page=100&sort=created&direction=desc" --jq '.workflow_runs[].id' > "$RUN_IDS_FILE"
+          declare -A completed_run_ids=()
+          while IFS= read -r run_id; do
+            [ -n "$run_id" ] || continue
+            completed_run_ids["$run_id"]=1
+          done < "$RUN_IDS_FILE"
+
+          ARTIFACTS_FILE="$RUNNER_TEMP/existing-artifacts.tsv"
+          gh api --paginate "repos/$GH_REPO/actions/artifacts?per_page=100" --jq '.artifacts[] | [.id, (.workflow_run.id // "")] | @tsv' > "$ARTIFACTS_FILE"
+          while IFS=$'\t' read -r artifact_id run_id; do
+            [ -n "$artifact_id" ] || continue
+            if [ -n "$run_id" ]; then
+              if [ -n "${completed_run_ids[$run_id]+x}" ]; then
+                gh api --method DELETE "repos/$GH_REPO/actions/artifacts/$artifact_id"
+              fi
+            fi
+          done < "$ARTIFACTS_FILE"
+
   gate:
     name: "Gate: typecheck, lint, format, build"
+    needs: prune-artifacts
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version_info.outputs.version }}
@@ -489,7 +532,16 @@ jobs:
   cleanup-history:
     name: "Keep the latest five Pipeline runs"
     if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-    needs: [gate, deploy-web, desktop, android, publish-r2, deploy-app]
+    needs:
+      [
+        gate,
+        deploy-web,
+        desktop,
+        android,
+        publish-r2,
+        deploy-app,
+        cleanup-artifacts,
+      ]
     runs-on: ubuntu-24.04
     permissions:
       actions: write
@@ -517,3 +569,35 @@ jobs:
             fi
             gh api --method DELETE "repos/$GH_REPO/actions/runs/$run_id"
           done
+
+  cleanup-artifacts:
+    name: "Delete this run's temporary artifacts"
+    if: ${{ always() && github.event_name != 'pull_request' }}
+    needs:
+      [
+        prune-artifacts,
+        gate,
+        deploy-web,
+        desktop,
+        android,
+        publish-r2,
+        deploy-app,
+      ]
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Delete artifacts after all consumers finish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_IDS_FILE="$RUNNER_TEMP/current-run-artifact-ids.txt"
+          gh api --paginate "repos/$GH_REPO/actions/runs/$CURRENT_RUN_ID/artifacts?per_page=100" --jq '.artifacts[].id' > "$ARTIFACT_IDS_FILE"
+          while IFS= read -r artifact_id; do
+            [ -n "$artifact_id" ] || continue
+            gh api --method DELETE "repos/$GH_REPO/actions/artifacts/$artifact_id"
+          done < "$ARTIFACT_IDS_FILE"

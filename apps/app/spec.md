@@ -341,7 +341,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   `KC_API_ORIGIN`; it fails without `APP_URL`. `electron/dev.ts` deliberately
   skips the bake and points at `localhost:3000`.
 - `release/` (400MB+ binaries) is excluded from `turbo.json` outputs —
-  CI artifacts, never cached.
+  CI artifacts, never cached. Artifact cleanup: `DEPLOY.md` Section 3.
 - Done = typecheck + lint + format + build green from repo root AND the
   feature works when run (`AGENTS.md` Section 2.4).
 - Web, Electron and Android compile as one renderer bundle; `apps/android`
