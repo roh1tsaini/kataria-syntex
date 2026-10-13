@@ -51,17 +51,3 @@ export function MorphChevron({
     />
   );
 }
-
-export function MorphPlusMinus({ open }: { open: boolean }) {
-  return (
-    <span className="relative grid size-3 place-items-center" aria-hidden>
-      <span className="absolute h-px w-3 rounded-full bg-current" />
-      <span
-        className={cn(
-          "absolute h-3 w-px rounded-full bg-current morph-transform",
-          open && "scale-y-0 morph-open",
-        )}
-      />
-    </span>
-  );
-}

@@ -4,13 +4,15 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Download, Globe } from "lucide-react";
+import { ArrowRight, Download, Globe, Moon, Sun } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { apiOrigin } from "@kataria-syntex/app-core";
+import { detectPlatformKey, type DownloadPlatformKey } from "@/lib/platform";
+import { useTheme } from "@/ui/hooks/use-theme";
 import { Button } from "@/ui/components/ui/button";
+import { CircleButton } from "@/ui/components/ui/circle-button";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import { Skeleton } from "@/ui/components/motion";
-import { MorphPanel, MorphPlusMinus } from "@/ui/components/ui/disclosure";
 import {
   AndroidGlyph,
   AppleGlyph,
@@ -18,17 +20,10 @@ import {
   WindowsGlyph,
 } from "@/ui/components/brand-icons";
 import { cn } from "@/ui/lib/cn";
-import { detectPlatformKey, type DownloadPlatformKey } from "@/lib/platform";
-
-type ReleaseInfo = {
-  version: string;
-  paths: Partial<Record<DownloadPlatformKey, string>>;
-};
 
 type PlatformMeta = {
   name: string;
   file: string;
-  note: string;
   icon: typeof WindowsGlyph;
 };
 
@@ -43,27 +38,28 @@ const PLATFORM_META: Record<DownloadPlatformKey, PlatformMeta> = {
   win: {
     name: "Windows",
     file: "x64 · Setup .exe",
-    note: 'Unsigned — SmartScreen: "More info → Run anyway".',
     icon: WindowsGlyph,
   },
   mac: {
     name: "macOS",
     file: "Apple Silicon · .dmg",
-    note: "Right-click the app → Open on first launch.",
     icon: AppleGlyph,
   },
   linux: {
     name: "Linux",
     file: "x64 · AppImage",
-    note: "Make the file executable, then run it.",
     icon: LinuxGlyph,
   },
   android: {
     name: "Android",
     file: "Universal APK",
-    note: 'Allow "Install unknown apps" once.',
     icon: AndroidGlyph,
   },
+};
+
+type ReleaseInfo = {
+  version: string;
+  paths: Partial<Record<DownloadPlatformKey, string>>;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -97,6 +93,7 @@ async function fetchRelease(): Promise<ReleaseInfo | null> {
 
     const android = asRecord(body.android);
     const desktop = asRecord(body.desktop);
+
     return {
       version: body.version,
       paths: {
@@ -129,7 +126,7 @@ function DownloadAction({
       <Skeleton
         className={cn(
           "h-11 w-24 shrink-0 rounded-full sm:h-10",
-          recommended && "w-44",
+          recommended && "w-36",
         )}
       />
     );
@@ -180,7 +177,7 @@ function PlatformRow({
         <span className="block text-[15px] font-semibold leading-tight">
           {meta.name}
         </span>
-        <span className="mt-1 block truncate text-xs text-muted-foreground">
+        <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
           {meta.file}
         </span>
       </span>
@@ -194,62 +191,11 @@ function PlatformRow({
   );
 }
 
-function InstallationNotes() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <section
-      aria-labelledby="installation-notes-title"
-      className="overflow-hidden rounded-lg border border-border bg-card"
-    >
-      <Button
-        id="installation-notes-trigger"
-        type="button"
-        variant="ghost"
-        aria-expanded={open}
-        aria-controls="installation-notes-panel"
-        onClick={() => setOpen((value) => !value)}
-        className="w-full justify-start rounded-none px-4 font-semibold focus-visible:ring-inset focus-visible:ring-offset-0"
-      >
-        <span id="installation-notes-title">Installation notes</span>
-        <span className="flex-1" />
-        <span className="text-xs font-normal text-muted-foreground">
-          4 platforms
-        </span>
-        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-border/60 text-muted-foreground">
-          <MorphPlusMinus open={open} />
-        </span>
-      </Button>
-      <MorphPanel
-        id="installation-notes-panel"
-        role="region"
-        aria-labelledby="installation-notes-trigger"
-        open={open}
-      >
-        <ul className="mx-4 border-t border-border pb-2 pt-1 text-xs">
-          {PLATFORM_ORDER.map((platform) => (
-            <li
-              key={platform}
-              className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 border-b border-border py-2 last:border-b-0"
-            >
-              <span className="font-medium text-foreground">
-                {PLATFORM_META[platform].name}
-              </span>
-              <span className="text-muted-foreground">
-                {PLATFORM_META[platform].note}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </MorphPanel>
-    </section>
-  );
-}
-
 export function DownloadPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [platform, setPlatform] = useState<DownloadPlatformKey | null>(null);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     let alive = true;
@@ -277,24 +223,33 @@ export function DownloadPage() {
   return (
     <main className="min-h-dvh bg-background px-4 py-10 sm:px-6">
       <div className="mx-auto flex w-full max-w-[40rem] flex-col gap-8">
-        <div className="flex items-center gap-3">
-          <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
-            <span
-              className="text-lg font-semibold leading-none tracking-tight"
-              aria-hidden
-            >
-              K
-            </span>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
+              <span
+                className="text-lg font-semibold leading-none tracking-tight"
+                aria-hidden
+              >
+                K
+              </span>
+            </div>
+            <div className="text-[17px] font-semibold tracking-tight">
+              {COMPANY_DETAILS.name} Biz App
+            </div>
           </div>
-          <div className="text-[17px] font-semibold tracking-tight">
-            {COMPANY_DETAILS.name} Biz App
-          </div>
+          <CircleButton
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Light theme" : "Dark theme"}
+            aria-label={theme === "dark" ? "Light theme" : "Dark theme"}
+          >
+            {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+          </CircleButton>
         </div>
 
         <header className="space-y-2">
           <h1 className="page-title">Get the app</h1>
           <div
-            className="min-h-5 text-sm text-muted-foreground"
+            className="min-h-5 text-sm tabular-nums text-muted-foreground"
             role="status"
             aria-live="polite"
           >
@@ -326,7 +281,7 @@ export function DownloadPage() {
                     <span className="block text-[15px] font-semibold leading-tight">
                       {recommended.name}
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
+                    <span className="mt-0.5 block text-[13px] text-muted-foreground">
                       {recommended.file}
                     </span>
                   </span>
@@ -338,15 +293,19 @@ export function DownloadPage() {
                     recommended
                   />
                 </CardContent>
-                <div className="border-t border-border px-4 sm:px-5">
-                  <Button asChild variant="link">
-                    <Link to="/auth">
-                      Use web version
-                      <ArrowRight aria-hidden />
-                    </Link>
-                  </Button>
-                </div>
               </Card>
+              <div className="flex justify-center pt-1">
+                <Button
+                  asChild
+                  variant="link"
+                  className="text-muted-foreground"
+                >
+                  <Link to="/auth" className="gap-1.5 text-[13px]">
+                    Use web version
+                    <ArrowRight aria-hidden className="size-3.5" />
+                  </Link>
+                </Button>
+              </div>
             </section>
           ) : (
             <Card>
@@ -358,7 +317,7 @@ export function DownloadPage() {
                   <span className="block text-[15px] font-semibold leading-tight">
                     Use the web version
                   </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
+                  <span className="mt-0.5 block text-[13px] text-muted-foreground">
                     Choose an installer or open the web app.
                   </span>
                 </span>
@@ -400,8 +359,6 @@ export function DownloadPage() {
               </CardContent>
             </Card>
           </section>
-
-          <InstallationNotes />
         </div>
       </div>
     </main>

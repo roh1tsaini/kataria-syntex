@@ -406,13 +406,15 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
   recommended Card with its brand glyph, package type, and primary Download
   action. CPU detection uses browser hints where available. The accent border
   marks the card; it has no solid accent fill.
-- The Linux brand glyph is the monochrome Tux penguin.
+- The Linux brand glyph is the monochrome Tux penguin on a square `0 0 24 24`
+  viewBox. Every glyph is sized by width and height alone — no per-glyph viewBox
+  overrides and no letterboxing.
 - The web action is `Use web version` and opens `/auth`. It appears below the
   recommended download. When the OS or supported CPU target is unknown, it is
   the main action and all installer rows remain available.
 - All remaining builds appear as compact rows in one Card. If detection is
-  unavailable, all four rows appear. `Installation notes` is a collapsed
-  plus/minus disclosure with aligned platform rows and a shared morph panel.
+  unavailable, all four rows appear. The page carries no installation-instructions
+  disclosure.
 - Download actions are plain anchors to their `/releases/*` URL. The browser
   owns transfer progress; the page does not buffer installers or show a
   second progress indicator. The release manifest supplies every URL.

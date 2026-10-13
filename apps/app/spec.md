@@ -397,8 +397,7 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   builds appear as compact rows.
 - Unknown OS, CPU target, and iOS browsers get the web action and all four
   installer rows without a recommendation.
-- `Use web version` opens `/auth`. Installation notes are available in one
-  collapsed section.
+- `Use web version` opens `/auth`.
 - Signed-in users opening `/` get the app shell. Native shells redirect `/`
   and `/downloads` to `/auth`.
 
