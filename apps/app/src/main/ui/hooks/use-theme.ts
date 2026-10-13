@@ -5,6 +5,12 @@ type Theme = "light" | "dark";
 
 export type ThemePreference = "light" | "dark" | "system";
 
+export type ToggleThemeEvent =
+  | React.MouseEvent
+  | MouseEvent
+  | { clientX: number; clientY: number }
+  | undefined;
+
 const THEME_KEY = "kataria-theme";
 
 function systemTheme(): Theme {
@@ -104,16 +110,69 @@ export function useTheme() {
     emit();
   }, []);
 
-  const toggleTheme = useCallback(() => {
+  const toggleTheme = useCallback((event?: ToggleThemeEvent) => {
     const next: Theme = current === "dark" ? "light" : "dark";
-    current = next;
-    try {
-      localStorage.setItem(THEME_KEY, next);
-    } catch {
-      // Storage unavailable (private mode) — theme still applies for this session.
+
+    const changeTheme = () => {
+      current = next;
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch {
+        // Storage unavailable (private mode) — theme still applies for this session.
+      }
+      apply(next);
+      emit();
+    };
+
+    const isReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (
+      typeof document === "undefined" ||
+      !("startViewTransition" in document) ||
+      isReducedMotion
+    ) {
+      changeTheme();
+      return;
     }
-    apply(next);
-    emit();
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+
+    if (event && "clientX" in event && typeof event.clientX === "number") {
+      x = event.clientX;
+      y = event.clientY;
+    }
+
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    );
+
+    const transition = document.startViewTransition(() => {
+      changeTheme();
+    });
+
+    transition.ready
+      .then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${endRadius}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 400,
+            easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+            pseudoElement: "::view-transition-new(root)",
+          } as KeyframeAnimationOptions,
+        );
+      })
+      .catch(() => {
+        // Fallback in case animation rejects
+      });
   }, []);
 
   return { theme, preference, setTheme, toggleTheme };

@@ -805,12 +805,17 @@
   }
 }
 
-/* View-transitions soft fade when supported */
-@supports (view-transition-name: root) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 0.22s;
-  }
+/* View-transitions circular reveal (Telegram-style expand from tap / toggle) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
 }
 
 /* Notification toast (Section 3, Section 5) — sonner ships 400ms `ease` transitions, which
