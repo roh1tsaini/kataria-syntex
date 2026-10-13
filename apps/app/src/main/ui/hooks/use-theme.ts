@@ -110,7 +110,7 @@ export function useTheme() {
     emit();
   }, []);
 
-  const toggleTheme = useCallback((event?: ToggleThemeEvent) => {
+  const toggleTheme = useCallback((_event?: ToggleThemeEvent) => {
     const next: Theme = current === "dark" ? "light" : "dark";
 
     const changeTheme = () => {
@@ -137,18 +137,10 @@ export function useTheme() {
       return;
     }
 
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 2;
-
-    if (event && "clientX" in event && typeof event.clientX === "number") {
-      x = event.clientX;
-      y = event.clientY;
-    }
-
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
-    );
+    // Stripe Center Iris: concentric circle expanding from viewport center
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const endRadius = Math.hypot(cx, cy);
 
     const transition = document.startViewTransition(() => {
       changeTheme();
@@ -159,12 +151,12 @@ export function useTheme() {
         document.documentElement.animate(
           {
             clipPath: [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${endRadius}px at ${x}px ${y}px)`,
+              `circle(0px at ${cx}px ${cy}px)`,
+              `circle(${endRadius}px at ${cx}px ${cy}px)`,
             ],
           },
           {
-            duration: 550,
+            duration: 450,
             easing: "cubic-bezier(0.2, 0, 0, 1)",
             pseudoElement: "::view-transition-new(root)",
           } as KeyframeAnimationOptions,
