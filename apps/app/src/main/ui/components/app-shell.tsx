@@ -11,7 +11,17 @@ import {
 } from "react";
 import { NavLink, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Building2, LogOut, Moon, PanelLeft, Sun, X } from "lucide-react";
+import {
+  Building2,
+  LayoutGrid,
+  List,
+  LogOut,
+  Moon,
+  PanelLeft,
+  Search,
+  Sun,
+  X,
+} from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { MorphChevron, MorphPanel } from "@/ui/components/ui/disclosure";
@@ -31,7 +41,49 @@ import {
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
 import { EASE_OUT, EASE_DRAWER, MORPH, MORPH_EXIT } from "@/ui/lib/motion";
+import {
+  readNavDensity,
+  writeNavDensity,
+  type NavDensity,
+} from "@/ui/lib/nav-prefs";
 import { dragStyle, noDragStyle } from "@/ui/components/title-bar";
+
+/** List/Grid switch — the one control that changes how the nav itself reads.
+ *  Two or more adjacent icon buttons share one capsule (design.md Section 2.7). */
+function NavDensityToggle({
+  value,
+  onChange,
+}: {
+  value: NavDensity;
+  onChange: (next: NavDensity) => void;
+}) {
+  const options: { value: NavDensity; label: string; Icon: typeof List }[] = [
+    { value: "list", label: "List", Icon: List },
+    { value: "grid", label: "Grid", Icon: LayoutGrid },
+  ];
+  return (
+    <div className="flex shrink-0 items-center gap-1 rounded-full bg-muted/60 p-1 shadow-[var(--specular)]">
+      {options.map(({ value: v, label, Icon }) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          aria-pressed={value === v}
+          title={`${label} layout`}
+          aria-label={`${label} layout`}
+          className={cn(
+            "btn-motion grid size-9 place-items-center rounded-full",
+            value === v
+              ? "bg-card text-foreground shadow-[var(--shadow-soft)]"
+              : "text-muted-foreground [@media(hover:hover)]:hover:text-foreground",
+          )}
+        >
+          <Icon className="size-4" aria-hidden />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Brand({ compact }: { compact?: boolean }) {
   if (compact) {
@@ -84,6 +136,7 @@ function NavList({
   pathname,
   search,
   onNavigate,
+  density = "list",
 }: {
   idPrefix: string;
   sections: NavSection[];
@@ -92,26 +145,34 @@ function NavList({
   pathname: string;
   search: string;
   onNavigate?: () => void;
+  density?: NavDensity;
 }) {
   const rowCls = "app-nav-row";
   const iconCls = "size-4";
   const chevronCls = "size-3.5";
   const subDotCls = "size-1";
+  const grid = density === "grid";
+
+  // Grid tiles are a fixed shape, so a group with sub-items does not tile —
+  // it keeps the list rendering and carries its children underneath.
+  const itemsCls = grid ? "grid grid-cols-2 gap-2" : "flex flex-col gap-0.5";
+  const sectionCls = grid ? "flex flex-col gap-2" : "flex flex-col gap-0.5";
 
   return (
     <nav
       className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]",
-        "px-3 py-3",
+        grid ? "px-3 py-3" : "px-3 py-3",
       )}
     >
       {sections.map((section, i) => (
         <div key={section.title} className={cn(i > 0 && "mt-3")}>
           <SectionLabel>{section.title}</SectionLabel>
-          <div className="flex flex-col gap-0.5">
+          <div className={itemsCls}>
             {section.items.map((item) => {
               const active = isItemActive(item, pathname);
               const hasSubs = !!item.subItems?.length;
+              const asTile = grid && !hasSubs;
               const panelId = `${idPrefix}-nav-group-${encodeURIComponent(item.to)}`;
               const anySubActive =
                 item.subItems?.some((sub) =>
@@ -157,18 +218,34 @@ function NavList({
                       end={item.end}
                       onClick={onNavigate}
                       className={cn(
-                        "btn-motion flex items-center",
-                        rowCls,
-                        active
+                        asTile
+                          ? "btn-motion flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-center text-[13px] [@media(hover:hover)]:hover:bg-muted"
+                          : "btn-motion flex items-center",
+                        asTile ? null : rowCls,
+                        active && asTile
+                          ? "border-foreground bg-accent text-accent-foreground"
+                          : "",
+                        active && !asTile
                           ? "bg-accent font-medium text-accent-foreground"
-                          : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+                          : "",
+                        !asTile &&
+                          "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
                       )}
                     >
                       <item.icon
-                        className={cn(iconCls, "shrink-0")}
+                        className={cn(
+                          asTile ? "size-5 shrink-0" : iconCls,
+                          "shrink-0",
+                        )}
                         aria-hidden
                       />
-                      <span className="min-w-0 flex-1 truncate">
+                      <span
+                        className={cn(
+                          asTile
+                            ? "line-clamp-2 leading-snug"
+                            : "min-w-0 flex-1 truncate",
+                        )}
+                      >
                         {item.label}
                       </span>
                     </NavLink>
@@ -219,6 +296,51 @@ function NavList({
         </div>
       ))}
     </nav>
+  );
+}
+
+/** Nav filter for the desktop sidebar. Typing narrows the nav list in place;
+ *  an empty query shows everything, and Escape clears the field. */
+function NavSearch({
+  value,
+  onChange,
+  inputRef,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="shrink-0 px-3 pt-3">
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <input
+          ref={inputRef}
+          type="search"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && value) {
+              e.stopPropagation();
+              onChange("");
+            }
+          }}
+          placeholder="Search"
+          aria-label="Search navigation"
+          className={cn(
+            "h-8 w-full rounded-md border border-transparent bg-muted pl-9 pr-12 text-[13px]",
+            "text-foreground placeholder:text-muted-foreground",
+            "[&::-webkit-search-cancel-button]:appearance-none",
+          )}
+        />
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[5px] border border-border bg-card px-1.5 py-px text-[10px] font-medium text-muted-foreground">
+          ⌘K
+        </kbd>
+      </div>
+    </div>
   );
 }
 
@@ -370,6 +492,19 @@ function MobileDrawerContent({
   const { theme, toggleTheme } = useTheme();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loggingOut, setLoggingOut] = useState(false);
+  // Read once per account; the key is account-scoped, so a sign-in as
+  // someone else starts from that account's own choice.
+  const accountId = user?.id ?? null;
+  const [density, setDensity] = useState<NavDensity>(() =>
+    readNavDensity(accountId),
+  );
+  useEffect(() => {
+    setDensity(readNavDensity(accountId));
+  }, [accountId]);
+  const changeDensity = (next: NavDensity) => {
+    setDensity(next);
+    writeNavDensity(accountId, next);
+  };
   const toggleGroup = (to: string) =>
     setExpanded((prev) => ({ ...prev, [to]: !prev[to] }));
 
@@ -406,6 +541,9 @@ function MobileDrawerContent({
             <X aria-hidden />
           </CircleButton>
         </div>
+        <div className="mt-3 flex justify-end md:hidden">
+          <NavDensityToggle value={density} onChange={changeDensity} />
+        </div>
       </div>
 
       <NavList
@@ -416,6 +554,7 @@ function MobileDrawerContent({
         pathname={pathname}
         search={search}
         onNavigate={onClose}
+        density={density}
       />
 
       <div className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]">
@@ -589,6 +728,31 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
 
   const sections = SECTIONS;
 
+  // Sidebar search narrows the nav in place. A group survives the filter when
+  // it matches itself or when any of its sub-items match.
+  const [navQuery, setNavQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const filteredSections = useMemo(() => {
+    const q = navQuery.trim().toLowerCase();
+    if (!q) return sections;
+    return sections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) =>
+            item.label.toLowerCase().includes(q) ||
+            item.subItems?.some((sub) => sub.label.toLowerCase().includes(q)),
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [sections, navQuery]);
+
+  // Clearing the query when the rail collapses keeps a half-typed filter from
+  // reappearing as an empty nav when the sidebar opens again.
+  useEffect(() => {
+    if (railCollapsed) setNavQuery("");
+  }, [railCollapsed]);
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleGroup = (to: string) =>
     setExpanded((prev) => ({ ...prev, [to]: !prev[to] }));
@@ -703,6 +867,14 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
       if (!typing && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
         toggleRail();
+      }
+      if (!typing && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (railCollapsed) toggleRail();
+        window.setTimeout(
+          () => searchRef.current?.focus({ preventScroll: true }),
+          railCollapsed ? 220 : 0,
+        );
       }
       if (e.key === "Escape" && mobileOpen) setMobileOpen(false);
       if (e.key === "Escape" && railHot) setRailHot(false);
@@ -835,9 +1007,14 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                     <PanelLeft aria-hidden />
                   </CircleButton>
                 </div>
+                <NavSearch
+                  value={navQuery}
+                  onChange={setNavQuery}
+                  inputRef={searchRef}
+                />
                 <NavList
                   idPrefix="sidebar"
-                  sections={sections}
+                  sections={filteredSections}
                   expanded={expanded}
                   onToggleGroup={toggleGroup}
                   pathname={location.pathname}
