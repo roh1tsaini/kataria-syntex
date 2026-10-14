@@ -489,8 +489,10 @@ jobs:
           TELEGRAM_ADMIN_ID: ${{ vars.TELEGRAM_ADMIN_ID }}
         run: |
           set -euo pipefail
-          test -n "$TELEGRAM_ADMIN_ID"
-          [[ "$TELEGRAM_ADMIN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
+          # Same rule as the Telegram step: a bare failing test prints nothing,
+          # so a missing variable looks identical to a broken deploy.
+          [ -n "${TELEGRAM_ADMIN_ID:-}" ] || { echo "::error::TELEGRAM_ADMIN_ID variable is not set (Settings > Secrets and variables > Actions > Variables)"; exit 1; }
+          [[ "$TELEGRAM_ADMIN_ID" =~ ^[1-9][0-9]{0,19}$ ]] || { echo "::error::TELEGRAM_ADMIN_ID must be a bare numeric Telegram user id"; exit 1; }
           API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
           DB_ID=$(curl -fsS -H "$AUTH" "$API?per_page=100" | jq -r '.result[] | select(.name == "ks-biz-app-db") | .uuid' | head -1)
@@ -500,6 +502,38 @@ jobs:
           if [ -z "$DB_ID" ]; then echo "Failed to resolve ks-biz-app-db database id" >&2; exit 1; fi
           sed -i "s/00000000-0000-0000-0000-000000000000/$DB_ID/" wrangler.jsonc
           sed -i "s/\"TELEGRAM_ADMIN_ID\": \"\"/\"TELEGRAM_ADMIN_ID\": \"$TELEGRAM_ADMIN_ID\"/" wrangler.jsonc
+
+      # Runs BEFORE the migration on purpose. A migration is the one step in
+      # this job that cannot be rolled back, so every fallible check that guards
+      # it has to pass first: with this order a bad Telegram secret leaves the
+      # database untouched. The reverse order is what produced the incident
+      # where the schema moved to 0.29 while the worker stayed on 0.25.3 and
+      # every failed password login returned 500.
+      - name: Set Telegram Worker secrets
+        working-directory: apps/app
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          # A bare `test -n` or `[[ =~ ]]` exits 1 with no output at all, which
+          # is how this step failed twice with no clue why. Every guard below
+          # names itself, and never echoes the value.
+          [ -n "${TELEGRAM_BOT_TOKEN:-}" ] || { echo "::error::TELEGRAM_BOT_TOKEN is empty - set it under Settings > Secrets and variables > Actions > Secrets"; exit 1; }
+          [ -n "${TELEGRAM_WEBHOOK_SECRET:-}" ] || { echo "::error::TELEGRAM_WEBHOOK_SECRET is empty - set it under Settings > Secrets and variables > Actions > Secrets"; exit 1; }
+          # Telegram's secret_token accepts exactly A-Z a-z 0-9 _ - . A value
+          # pasted with a trailing newline or a stray character fails here and
+          # has to fail here, not at the webhook registration at the end.
+          SECRET="$(printf '%s' "$TELEGRAM_WEBHOOK_SECRET" | tr -d '[:space:]')"
+          if ! printf '%s' "$SECRET" | grep -qE '^[A-Za-z0-9_-]{1,256}$'; then
+            echo "::error::TELEGRAM_WEBHOOK_SECRET must be 1-256 characters from A-Z a-z 0-9 _ - only (length was ${#SECRET})"
+            exit 1
+          fi
+          printf '%s' "$TELEGRAM_BOT_TOKEN" | bunx wrangler secret put TELEGRAM_BOT_TOKEN
+          printf '%s' "$SECRET" | bunx wrangler secret put TELEGRAM_WEBHOOK_SECRET
+          echo "Telegram Worker secrets set"
 
       - name: Apply app D1 migrations
         working-directory: apps/app
@@ -523,21 +557,6 @@ jobs:
               --data '{"name":"ks-releases"}' "$API" | jq -r '.success')
             if [ "$CREATED" != "true" ]; then echo "Failed to create ks-releases bucket (check token R2 permissions)" >&2; exit 1; fi
           fi
-
-      - name: Set Telegram Worker secrets
-        working-directory: apps/app
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
-        run: |
-          set -euo pipefail
-          test -n "$TELEGRAM_BOT_TOKEN"
-          test -n "$TELEGRAM_WEBHOOK_SECRET"
-          [[ "$TELEGRAM_WEBHOOK_SECRET" =~ ^[A-Za-z0-9_-]{1,256}$ ]]
-          printf '%s' "$TELEGRAM_BOT_TOKEN" | bunx wrangler secret put TELEGRAM_BOT_TOKEN
-          printf '%s' "$TELEGRAM_WEBHOOK_SECRET" | bunx wrangler secret put TELEGRAM_WEBHOOK_SECRET
 
       - name: Deploy app worker
         uses: cloudflare/wrangler-action@v4
