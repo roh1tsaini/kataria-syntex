@@ -558,6 +558,12 @@ async function onReady(): Promise<void> {
         ? "public, max-age=31536000, immutable"
         : "no-store",
     );
+    // public/_headers does not reach this document — app:// is served from
+    // disk, not by the assets layer — so the framing policy is set here too.
+    // The QR approve screen grants a session; a shell window that can be
+    // framed is a shell window whose Approve button can be clicked elsewhere.
+    headers.set("X-Frame-Options", "DENY");
+    headers.set("Content-Security-Policy", "frame-ancestors 'none'");
     return new Response(res.body, { status: res.status, headers });
   });
 

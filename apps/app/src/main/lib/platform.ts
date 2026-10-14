@@ -246,16 +246,19 @@ export async function detectPlatformKey(): Promise<DownloadPlatformKey | null> {
 
 // ── Android storage (Capacitor Preferences behind a sync map) ───────────────
 
-/** Bearer-token key in Preferences. Kept out of the session map below so
- *  boot hydration never copies the token into the offline KV. */
-const ANDROID_TOKEN_KEY = "auth.token.v1";
-
 /** Session-authoritative mirror of the offline KV. Preferences is async but
  *  the offline engine reads synchronously, so every read serves this map:
  *  hydrated once at boot (see hydrateAndroidStorage) with each set/delete
  *  written through to Preferences in the background. A write that lands
  *  before hydration finishes wins — hydration only fills keys the session
- *  has not touched yet. */
+ *  has not touched yet.
+ *
+ *  Preferences holds offline caches only — never a credential. The session
+ *  token goes to the keystore-backed SecureToken plugin. */
+/** Where the session token lived before the keystore plugin took over. Read
+ *  once at boot only to delete it — see hydrateAndroidStorage. */
+const LEGACY_ANDROID_TOKEN_KEY = "auth.token.v1";
+
 const androidMemory = new Map<string, string>();
 
 function androidStorage(): CoreStorage {
@@ -291,9 +294,21 @@ export async function hydrateAndroidStorage(): Promise<void> {
   try {
     const { Preferences } = await import("@capacitor/preferences");
     const { keys } = await Preferences.keys();
+    // The session token used to live here in the clear before the keystore
+    // plugin took over. On an upgraded install that file is still on disk and
+    // would otherwise be hydrated into the session map as if it were an
+    // offline cache — burn it before anything reads it. The keystore slot is
+    // empty on such an install, so the one sign-in is lost and the next write
+    // lands encrypted.
+    if (keys.includes(LEGACY_ANDROID_TOKEN_KEY))
+      await Preferences.remove({ key: LEGACY_ANDROID_TOKEN_KEY }).catch(() => {
+        // best effort — the value is unreadable to the app either way
+      });
     await Promise.all(
       keys
-        .filter((key) => key !== ANDROID_TOKEN_KEY && !androidMemory.has(key))
+        .filter(
+          (key) => key !== LEGACY_ANDROID_TOKEN_KEY && !androidMemory.has(key),
+        )
         .map(async (key) => {
           try {
             const { value } = await Preferences.get({ key });
@@ -520,11 +535,13 @@ export function configureWebCore(appVersion: string): void {
         }
       }
       if (shell === "android") {
-        // Preferences is the v1 token store; native secure storage is the
-        // follow-up — the API shape (get-then-read-.value) stays identical.
+        // Keystore-encrypted at rest. No plaintext fallback on purpose: a
+        // secure store that quietly degrades to a readable file is the bug
+        // this replaced, so an unreachable store means the user signs in
+        // again instead of their token sitting in a file.
         try {
-          const { Preferences } = await import("@capacitor/preferences");
-          return (await Preferences.get({ key: ANDROID_TOKEN_KEY })).value;
+          const { token } = await (await secureToken()).readToken();
+          return token || null;
         } catch {
           return null;
         }
@@ -543,12 +560,11 @@ export function configureWebCore(appVersion: string): void {
       }
       if (shell === "android") {
         try {
-          const { Preferences } = await import("@capacitor/preferences");
-          if (token === null)
-            await Preferences.remove({ key: ANDROID_TOKEN_KEY });
-          else await Preferences.set({ key: ANDROID_TOKEN_KEY, value: token });
+          // An empty string is the plugin's clear signal — the session token
+          // is never the empty string.
+          await (await secureToken()).writeToken({ token: token ?? "" });
         } catch {
-          // native store unavailable — session still works via bearer for this run
+          // keystore unavailable — the user signs in again next launch
         }
       }
     },
@@ -776,6 +792,18 @@ export function pluginErrorCode(error: unknown): string | null {
 async function installer(): Promise<InstallerPlugin> {
   const { registerPlugin } = await import("@capacitor/core");
   return registerPlugin<InstallerPlugin>("Installer");
+}
+
+/** Native session-token store (SecureTokenPlugin.kt) — AES-GCM under a
+ *  non-exportable Android Keystore key. */
+type SecureTokenPlugin = {
+  readToken(): Promise<{ token: string | null }>;
+  writeToken(options: { token: string }): Promise<void>;
+};
+
+async function secureToken(): Promise<SecureTokenPlugin> {
+  const { registerPlugin } = await import("@capacitor/core");
+  return registerPlugin<SecureTokenPlugin>("SecureToken");
 }
 
 function apkUrl(apiBase: string, manifest: InstallerManifest): string {

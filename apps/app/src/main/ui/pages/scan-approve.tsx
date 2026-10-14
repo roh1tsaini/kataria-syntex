@@ -17,7 +17,13 @@ import { EASE_OUT } from "@/ui/lib/motion";
 type QrInfo = {
   status: "pending" | "approved" | "expired" | "not_found";
   targetName: string | null;
+  deviceLabel: string | null;
 };
+
+/** Last group of the pairing code, so the two screens can be compared. */
+function codeSuffix(code: string): string {
+  return code.split("-").pop() ?? code;
+}
 
 /**
  * Approve page opened by scanning the login QR from any camera device.
@@ -113,7 +119,7 @@ export function ScanApprovePage() {
             <CardDescription>
               {approvedAs ? (
                 <>
-                  The other device is now logged in as{" "}
+                  {info?.deviceLabel || "That device"} is now signed in as{" "}
                   <span className="font-medium text-foreground">
                     {approvedAs}
                   </span>
@@ -124,25 +130,39 @@ export function ScanApprovePage() {
               ) : alreadyApproved ? (
                 "This code was already approved."
               ) : (
-                "You scanned a login QR from another device."
+                "Check the device and code match that screen."
               )}
             </CardDescription>
           </CardHeader>
           {!approvedAs && !expiredOrUsed && !alreadyApproved && (
             <CardContent className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                {info?.targetName ? (
-                  <>
-                    This will log that device in as{" "}
-                    <span className="font-semibold text-foreground">
-                      {info.targetName}
-                    </span>
-                    .
-                  </>
-                ) : (
-                  "This will log that device in as you."
-                )}
-              </p>
+              {/* Name the requesting device, not just the account. A prompt
+                  that only reads "log in as <you>" looks identical whether the
+                  QR came from your own second device or from a stranger's
+                  link. The label is the requester's own claim, taken off an
+                  unauthenticated header — so the row says "Claims to be".
+                  "Signs in as" and "Code ends in" are the two facts the
+                  server actually knows. */}
+              <dl className="flex flex-col gap-2 rounded-md border border-border bg-muted/40 px-3 py-2.5 text-sm">
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-muted-foreground">Claims to be</dt>
+                  <dd className="truncate font-medium text-foreground">
+                    {info?.deviceLabel || "unknown device"}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-muted-foreground">Signs in as</dt>
+                  <dd className="truncate font-medium text-foreground">
+                    {info?.targetName || "you"}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-muted-foreground">Code ends in</dt>
+                  <dd className="font-mono font-semibold tracking-widest text-foreground">
+                    {codeSuffix(code)}
+                  </dd>
+                </div>
+              </dl>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button
                 onClick={() => void approve()}

@@ -1,16 +1,16 @@
 import { Hono } from "hono";
 
-import { and, eq, gt, lt, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "../lib/db";
-import { loginAttempts } from "../db/schema";
+import { rateLimits } from "../db/schema";
 
 import { detectIdentifier } from "../lib/identifier";
 import { verifyPasswordOrDummy } from "../lib/password";
-import { generateId } from "../lib/token";
+import { sha256Hex } from "../lib/token";
+import { consumeBudgetsStrict } from "../lib/rate-limit";
 
 import { ipBudgetRemaining, recordIpAttempt } from "../auth/otp";
 
-import { toIso } from "../lib/datetime";
 import {
   badRequest,
   buildDeviceMeta,
@@ -19,7 +19,7 @@ import {
   issueSession,
   passwordLoginSchema,
   authPayload,
-  PASSWORD_LOGIN_MAX_FAILS,
+  PASSWORD_LOGIN_MAX_ATTEMPTS,
   PASSWORD_LOGIN_WINDOW_MS,
   type AuthEnv,
 } from "./auth-shared";
@@ -37,48 +37,42 @@ authPasswordRoute.post("/password/login", async (c) => {
   const ident = detectIdentifier(parsed.data.identifier);
   if (!ident) return badRequest(c, "invalid_identifier");
 
-  const now = new Date();
-  const nowIso = toIso(now);
-  if (ipBudgetRemaining("password_login", clientIp(c), 30) <= 0) {
+  const ip = clientIp(c);
+  if (ipBudgetRemaining("password_login", ip, 30) <= 0) {
     return apiError(c, "password_login_rate_limited", 429);
   }
-  recordIpAttempt("password_login", clientIp(c));
+  recordIpAttempt("password_login", ip);
 
-  // Two-tier lockout: per identifier+device pair (owner mandate —
-  // an attacker hammering THEIR device can't lock the real owner out) AND a
-  // wider per-identifier ceiling, because the device key is client-controlled
-  // and rotating it must not defeat the limit entirely.
+  // D1 counters cover IP, identifier, and device. The identifier ceiling
+  // prevents rotating client-controlled device fingerprints from bypassing it.
   const meta = buildDeviceMeta(c);
   const deviceKey =
     c.req.header("x-device-fingerprint")?.slice(0, 64) ??
     `${meta.platform}:${meta.label}`.slice(0, 80);
 
   const db = getDb(c.env.DB);
-  // One query serves both lockout ceilings: device-scoped and
-  // identifier-scoped failure counts over the rate-limit window.
-  const failCounts = await db
-    .select({
-      deviceFails:
-        sql<number>`SUM(CASE WHEN ${loginAttempts.deviceKey} = ${deviceKey} THEN 1 ELSE 0 END)`.mapWith(
-          Number,
-        ),
-      identFails: sql<number>`COUNT(*)`.mapWith(Number),
-    })
-    .from(loginAttempts)
-    .where(
-      and(
-        eq(loginAttempts.phone, ident.value),
-        gt(
-          loginAttempts.createdAt,
-          toIso(new Date(now.getTime() - PASSWORD_LOGIN_WINDOW_MS)),
-        ),
-      ),
-    )
-    .limit(1);
-  if ((failCounts[0]?.identFails ?? 0) >= PASSWORD_LOGIN_MAX_FAILS * 10) {
-    return apiError(c, "password_login_rate_limited", 429);
-  }
-  if ((failCounts[0]?.deviceFails ?? 0) >= PASSWORD_LOGIN_MAX_FAILS) {
+  const identifierHash = await sha256Hex(ident.value);
+  const ipHash = await sha256Hex(ip);
+  const deviceHash = await sha256Hex(`${ident.value}\u0000${deviceKey}`);
+  const deviceBudgetKey = `password:device:${deviceHash}`;
+  const allowed = await consumeBudgetsStrict(db, [
+    {
+      key: `password:ip:${ipHash}`,
+      max: 30,
+      windowMs: PASSWORD_LOGIN_WINDOW_MS,
+    },
+    {
+      key: `password:id:${identifierHash}`,
+      max: PASSWORD_LOGIN_MAX_ATTEMPTS * 10,
+      windowMs: PASSWORD_LOGIN_WINDOW_MS,
+    },
+    {
+      key: deviceBudgetKey,
+      max: PASSWORD_LOGIN_MAX_ATTEMPTS,
+      windowMs: PASSWORD_LOGIN_WINDOW_MS,
+    },
+  ]);
+  if (!allowed) {
     return apiError(c, "password_login_rate_limited", 429);
   }
 
@@ -88,52 +82,12 @@ authPasswordRoute.post("/password/login", async (c) => {
     user?.passwordHash ?? null,
   );
 
-  // Only failures are recorded — the lockout counts above read nothing else,
-  // and a successful login clears its device history below anyway.
-  await (ok
-    ? // Bound the table on successful logins only — a failed attempt
-      // shouldn't pay for a full-table delete sweep.
-      db.batch([
-        db
-          .delete(loginAttempts)
-          .where(
-            lt(
-              loginAttempts.createdAt,
-              toIso(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
-            ),
-          ),
-      ])
-    : db.batch([
-        db.insert(loginAttempts).values({
-          id: generateId(),
-          phone: ident.value,
-          deviceKey,
-          createdAt: nowIso,
-        }),
-        // Same 24h bound as the success path — identifiers that never
-        // succeed must not accumulate rows forever. Piggybacks the insert's
-        // batch, so no extra round trip.
-        db
-          .delete(loginAttempts)
-          .where(
-            lt(
-              loginAttempts.createdAt,
-              toIso(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
-            ),
-          ),
-      ]));
   if (!ok || !user || !user.passwordHash)
     return apiError(c, "invalid_credentials", 401);
 
-  // Correct login clears this device's failure history.
-  await db
-    .delete(loginAttempts)
-    .where(
-      and(
-        eq(loginAttempts.phone, ident.value),
-        eq(loginAttempts.deviceKey, deviceKey),
-      ),
-    );
+  // A successful login clears this device's budget; the identifier and IP
+  // ceilings stand.
+  await db.delete(rateLimits).where(eq(rateLimits.key, deviceBudgetKey));
 
   const { token, deviceId } = await issueSession(c, db, user.id);
   const payload = await authPayload(db, user.id);

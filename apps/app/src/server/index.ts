@@ -7,6 +7,7 @@ import { healthRoute } from "./routes/health";
 import { authRoute } from "./routes/auth";
 import { apiError } from "./lib/api-error";
 import { versionGate } from "./lib/version-gate";
+import { telegramRoute } from "./routes/telegram";
 
 // The worker entry (src/server/worker.ts) routes every /api/* request here.
 // Static SPA assets are served by the assets layer — this app only knows
@@ -81,6 +82,7 @@ app.use("/api/*", async (c, next) => {
 });
 
 app.route("/api", healthRoute);
+app.route("/api/telegram", telegramRoute);
 // Force-update gate sits above every domain route — see lib/version-gate.ts.
 app.use("/api/*", versionGate);
 app.route("/api/auth", authRoute);

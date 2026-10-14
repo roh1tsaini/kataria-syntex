@@ -39,7 +39,8 @@ export interface PlatformAdapter {
   appVersion: string;
   storage: CoreStorage;
   /** Encrypted bearer-token persistence. Web stores nothing (HttpOnly
-   * cookie); Electron uses the OS keychain; Android uses the keystore. */
+   * cookie); Electron uses the OS keychain; Android uses a non-exportable
+   * Android Keystore key through its native SecureToken plugin. */
   readToken(): Promise<string | null>;
   writeToken(token: string | null): Promise<void>;
   /** Connectivity change events; returns an unsubscribe function. */

@@ -18,6 +18,7 @@ const API_CODES = [
   "invalid_credentials",
   "invalid_code",
   "user_exists",
+  "registration_closed",
   // otp
   "otp_expired",
   "otp_attempts_exhausted",

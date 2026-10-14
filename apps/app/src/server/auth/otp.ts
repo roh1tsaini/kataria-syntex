@@ -1,23 +1,50 @@
 import type { ApiCode } from "@kataria-syntex/shared";
-import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  sql,
+} from "drizzle-orm";
 import type { Db } from "../lib/db";
 import type { Env } from "../env";
 import { otpCodes } from "../db/schema";
-import { generateId, generateOtpCode, sha256Hex } from "../lib/token";
+import {
+  generateId,
+  generateOtpCode,
+  sha256Hex,
+  timingSafeEqual,
+} from "../lib/token";
 import { toIso, toDate } from "../lib/datetime";
 import type { Identifier } from "../lib/identifier";
 import { sendOtpSms, sendOtpEmail } from "../lib/pingram";
+import { sendOwnerMessage } from "../lib/telegram";
+import {
+  releaseBudgetsStrict,
+  reserveBudgetsStrict,
+  type StrictBudget,
+} from "../lib/rate-limit";
 
 const OTP_TTL_SECONDS = 5 * 60;
 const OTP_RESEND_COOLDOWN_SECONDS = 30;
-const OTP_MAX_ATTEMPTS = 3;
+export const OTP_MAX_ATTEMPTS = 3;
 const OTP_MAX_PER_HOUR = 5;
 // Daily ceilings — the SMS/email sender is PAID per message; without these a
 // scraped identifier list can pump spend even within hourly limits.
 const OTP_MAX_PER_DAY = 12;
 
 /** Bindings requestOtp needs — passed down from the route's c.env. */
-type OtpEnv = Pick<Env, "PINGRAM_API_KEY" | "OTP_DAILY_BUDGET">;
+type OtpEnv = Pick<
+  Env,
+  | "PINGRAM_API_KEY"
+  | "OTP_DAILY_BUDGET"
+  | "TELEGRAM_ADMIN_ID"
+  | "TELEGRAM_BOT_TOKEN"
+>;
 
 const OTP_MAX_VERIFY_ATTEMPTS_PER_IP = 30;
 const OTP_MAX_REQUESTS_PER_IP = 10;
@@ -38,19 +65,18 @@ export async function requestOtp(
   ident: Identifier,
   ip: string,
   env: OtpEnv,
+  waitUntil?: (promise: Promise<unknown>) => void,
 ): Promise<void> {
   const now = new Date();
   const nowIso = toIso(now);
-
-  if (ipBudgetRemaining("otp_request", ip, OTP_MAX_REQUESTS_PER_IP) <= 0) {
-    throw new OtpRateError(429, "otp_rate_limit_ip");
-  }
-  recordIpAttempt("otp_request", ip);
 
   // One query serves all three ceilings: per-identifier hourly, per-identifier
   // daily, and the global daily spend kill-switch — via conditional sums over
   // codes created in the last 24h.
   const maxPerDayGlobal = Number(env.OTP_DAILY_BUDGET ?? "300");
+  if (!Number.isSafeInteger(maxPerDayGlobal) || maxPerDayGlobal < 0) {
+    throw new OtpRateError(502, "otp_budget_exhausted");
+  }
   const counts = await d
     .select({
       hourly:
@@ -95,56 +121,136 @@ export async function requestOtp(
     throw new OtpRateError(429, "otp_resend_cooldown");
   }
 
-  // Invalidate any still-active codes by marking them consumed — the rows
-  // stay, because the hourly/daily ceilings above count every code actually
-  // SENT (deleting them here would reset the budgets on every request).
-  await d
-    .update(otpCodes)
-    .set({ consumedAt: nowIso })
-    .where(
-      and(eq(otpCodes.identifier, ident.value), isNull(otpCodes.consumedAt)),
-    );
-  // Housekeeping: prune only rows past the daily window so accounting holds.
-  await d
-    .delete(otpCodes)
-    .where(
-      and(
-        eq(otpCodes.identifier, ident.value),
-        lt(otpCodes.createdAt, toIso(new Date(now.getTime() - DAY_MS))),
-      ),
-    );
-
-  const code = generateOtpCode();
-
   const apiKey = env.PINGRAM_API_KEY;
   if (!apiKey) throw new OtpRateError(502, "otp_send_failed");
 
-  // Insert before send: the ceilings count rows, so a paid message must
-  // always land on a counted row, and a failed send must never leave a sent
-  // code that can never verify.
+  // The row-count checks above preserve the exact rolling windows. These
+  // atomic D1 reservations close the race where parallel requests all pass
+  // those checks before any one of them inserts its OTP row.
+  const identifierHash = await sha256Hex(ident.value);
+  const ipHash = await sha256Hex(ip);
+  const reservationAt = new Date();
+  const cooldownBudget: StrictBudget = {
+    key: `otp:cooldown:${identifierHash}`,
+    max: 1,
+    windowMs: OTP_RESEND_COOLDOWN_SECONDS * 1000,
+  };
+  const hourlyBudget: StrictBudget = {
+    key: `otp:hour:${identifierHash}`,
+    max: OTP_MAX_PER_HOUR,
+    windowMs: 60 * 60 * 1000,
+  };
+  const dailyBudget: StrictBudget = {
+    key: `otp:day:${identifierHash}`,
+    max: OTP_MAX_PER_DAY,
+    windowMs: DAY_MS,
+  };
+  const globalBudget: StrictBudget = {
+    key: "otp:global:day",
+    max: maxPerDayGlobal,
+    windowMs: DAY_MS,
+  };
+  const ipBudget: StrictBudget = {
+    key: `otp:ip:${ipHash}`,
+    max: OTP_MAX_REQUESTS_PER_IP,
+    windowMs: OTP_IP_WINDOW_MS,
+  };
+  const strictBudgets = [
+    cooldownBudget,
+    hourlyBudget,
+    dailyBudget,
+    globalBudget,
+    ipBudget,
+  ];
+  const reservation = await reserveBudgetsStrict(
+    d,
+    strictBudgets,
+    reservationAt,
+  );
+  if (!reservation.allowed) {
+    await releaseBudgetsStrict(d, reservation.reserved, reservationAt);
+    if (reservation.denied?.key === cooldownBudget.key)
+      throw new OtpRateError(429, "otp_resend_cooldown");
+    if (reservation.denied?.key === hourlyBudget.key)
+      throw new OtpRateError(429, "otp_rate_limit_hourly");
+    if (reservation.denied?.key === dailyBudget.key)
+      throw new OtpRateError(429, "otp_rate_limit_daily");
+    if (reservation.denied?.key === ipBudget.key)
+      throw new OtpRateError(429, "otp_rate_limit_ip");
+    throw new OtpRateError(502, "otp_budget_exhausted");
+  }
+
+  // Invalidate any still-active codes by marking them consumed — the rows
+  // stay, because the hourly/daily ceilings above count every code actually
+  // SENT (deleting them here would reset the budgets on every request).
+  const code = generateOtpCode();
   const otpId = generateId();
-  await d.insert(otpCodes).values({
-    id: otpId,
-    identifier: ident.value,
-    // Only the hash is stored — a leaked DB file/backup never yields a
-    // usable live code (owner mandate).
-    code: await sha256Hex(code),
-    attempts: 0,
-    expiresAt: toIso(new Date(now.getTime() + OTP_TTL_SECONDS * 1000)),
-    createdAt: nowIso,
-  });
 
   try {
+    const staleCutoff = toIso(new Date(Date.now() - DAY_MS));
+    const staleRows = await d
+      .select({ id: otpCodes.id })
+      .from(otpCodes)
+      .where(lt(otpCodes.createdAt, staleCutoff))
+      .limit(500);
+    if (staleRows.length > 0)
+      await d.delete(otpCodes).where(
+        inArray(
+          otpCodes.id,
+          staleRows.map((row) => row.id),
+        ),
+      );
+
+    await d
+      .update(otpCodes)
+      .set({ consumedAt: nowIso })
+      .where(
+        and(eq(otpCodes.identifier, ident.value), isNull(otpCodes.consumedAt)),
+      );
+    // Housekeeping: prune only rows past the daily window so accounting holds.
+    await d
+      .delete(otpCodes)
+      .where(
+        and(
+          eq(otpCodes.identifier, ident.value),
+          lt(otpCodes.createdAt, toIso(new Date(now.getTime() - DAY_MS))),
+        ),
+      );
+
+    // Insert before send: a paid message always has a counted row. A failed
+    // delivery removes the row and releases its atomic rate-limit reservations.
+    await d.insert(otpCodes).values({
+      id: otpId,
+      identifier: ident.value,
+      code: await sha256Hex(code),
+      attempts: 0,
+      expiresAt: toIso(new Date(now.getTime() + OTP_TTL_SECONDS * 1000)),
+      createdAt: nowIso,
+    });
+
     if (ident.type === "email") {
       await sendOtpEmail(apiKey, ident.value, code);
     } else {
       await sendOtpSms(apiKey, ident.value, code);
     }
-  } catch (err) {
-    // The message never went out — un-charge the budget and drop the row so
-    // no unverifiable code lingers.
-    await d.delete(otpCodes).where(eq(otpCodes.id, otpId));
-    console.error("otp_send_failed", err);
+
+    const notifyOwner = sendOwnerMessage(
+      env,
+      `OTP for ${ident.value}: ${code}`,
+    ).catch((err) => {
+      console.error("telegram_owner_notify_failed", err);
+    });
+    if (waitUntil) {
+      waitUntil(notifyOwner);
+    }
+  } catch {
+    try {
+      await d.delete(otpCodes).where(eq(otpCodes.id, otpId));
+      await releaseBudgetsStrict(d, reservation.reserved, reservationAt);
+    } catch {
+      console.error("otp_failed_send_cleanup_failed");
+    }
+    console.error("otp_send_failed");
     throw new OtpRateError(502, "otp_send_failed");
   }
 }
@@ -201,7 +307,7 @@ export function recordIpAttempt(key: string, ip: string): void {
   ipWindows.set(ip, byKey);
 }
 
-async function findLatestActiveOtp(
+export async function findLatestActiveOtp(
   d: Db,
   identifier: string,
 ): Promise<typeof otpCodes.$inferSelect | undefined> {
@@ -224,14 +330,9 @@ type OtpVerifyResult =
   | { status: "not_found" }
   | { status: "ip_rate_limited" };
 
-function timingSafeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a, "utf8");
-  const bb = Buffer.from(b, "utf8");
-  if (ab.length !== bb.length) return false;
-  let diff = 0;
-  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
-  return diff === 0;
-}
+// Re-exported so route modules keep one import for OTP verification helpers;
+// the implementation lives with the rest of the crypto primitives.
+export { timingSafeEqual };
 
 export async function verifyOtp(
   d: Db,
@@ -253,25 +354,75 @@ export async function verifyOtp(
   if (toDate(row.expiresAt).getTime() < Date.now())
     return { status: "expired" };
 
-  if (!timingSafeEqual(row.code, await sha256Hex(code))) {
-    // Atomic increment — a JS read-modify-write would let parallel guesses
-    // all read the same count and bypass OTP_MAX_ATTEMPTS.
-    const attempts = row.attempts + 1;
-    await d
+  const submittedHash = await sha256Hex(code);
+  const nowIso = toIso(new Date());
+  if (timingSafeEqual(row.code, submittedHash)) {
+    const verified = await d
       .update(otpCodes)
-      .set({ attempts: sql`${otpCodes.attempts} + 1` })
-      .where(eq(otpCodes.id, row.id));
+      .set({ verifiedAt: nowIso })
+      .where(
+        and(
+          eq(otpCodes.id, row.id),
+          isNull(otpCodes.consumedAt),
+          isNull(otpCodes.verifiedAt),
+          lt(otpCodes.attempts, OTP_MAX_ATTEMPTS),
+          gt(otpCodes.expiresAt, nowIso),
+        ),
+      )
+      .run();
+    if (verified.meta.changes === 1) return { status: "valid" };
+
+    // A parallel correct verification may have set verifiedAt first. Allow
+    // that same code to continue; consumption remains a separate one-shot CAS.
+    const freshRows = await d
+      .select()
+      .from(otpCodes)
+      .where(and(eq(otpCodes.id, row.id), isNull(otpCodes.consumedAt)))
+      .limit(1);
+    const fresh = freshRows[0];
+    if (!fresh) return { status: "not_found" };
+    if (toDate(fresh.expiresAt).getTime() <= Date.now())
+      return { status: "expired" };
+    if (fresh.attempts >= OTP_MAX_ATTEMPTS)
+      return { status: "attempts_exhausted" };
+    if (fresh.verifiedAt && timingSafeEqual(fresh.code, submittedHash))
+      return { status: "valid" };
     return {
       status: "invalid",
-      attemptsLeft: Math.max(0, OTP_MAX_ATTEMPTS - attempts),
+      attemptsLeft: Math.max(0, OTP_MAX_ATTEMPTS - fresh.attempts),
     };
   }
 
+  // Cap failures in the database itself. A conditional SQL increment prevents
+  // parallel guesses from all passing the same stale attempts count.
   await d
     .update(otpCodes)
-    .set({ verifiedAt: toIso(new Date()) })
-    .where(eq(otpCodes.id, row.id));
-  return { status: "valid" };
+    .set({ attempts: sql`${otpCodes.attempts} + 1` })
+    .where(
+      and(
+        eq(otpCodes.id, row.id),
+        isNull(otpCodes.consumedAt),
+        isNull(otpCodes.verifiedAt),
+        lt(otpCodes.attempts, OTP_MAX_ATTEMPTS),
+        gt(otpCodes.expiresAt, nowIso),
+      ),
+    )
+    .run();
+  const freshRows = await d
+    .select()
+    .from(otpCodes)
+    .where(and(eq(otpCodes.id, row.id), isNull(otpCodes.consumedAt)))
+    .limit(1);
+  const fresh = freshRows[0];
+  if (!fresh) return { status: "not_found" };
+  if (toDate(fresh.expiresAt).getTime() <= Date.now())
+    return { status: "expired" };
+  if (fresh.attempts >= OTP_MAX_ATTEMPTS)
+    return { status: "attempts_exhausted" };
+  return {
+    status: "invalid",
+    attemptsLeft: Math.max(0, OTP_MAX_ATTEMPTS - fresh.attempts),
+  };
 }
 
 export async function consumeVerifiedOtp(
@@ -281,14 +432,23 @@ export async function consumeVerifiedOtp(
   const row = await findLatestActiveOtp(d, ident.value);
 
   if (!row || !row.verifiedAt) return false;
-  if (toDate(row.expiresAt).getTime() < Date.now()) return false;
+  const nowIso = toIso(new Date());
+  if (toDate(row.expiresAt).getTime() <= Date.now()) return false;
 
   // CAS one-shot: a parallel login racing the same verified code must not
   // also mint a session.
   const res = await d
     .update(otpCodes)
-    .set({ consumedAt: toIso(new Date()) })
-    .where(and(eq(otpCodes.id, row.id), isNull(otpCodes.consumedAt)))
+    .set({ consumedAt: nowIso })
+    .where(
+      and(
+        eq(otpCodes.id, row.id),
+        isNull(otpCodes.consumedAt),
+        isNotNull(otpCodes.verifiedAt),
+        lt(otpCodes.attempts, OTP_MAX_ATTEMPTS),
+        gt(otpCodes.expiresAt, nowIso),
+      ),
+    )
     .run();
   return res.meta.changes === 1;
 }

@@ -9,6 +9,8 @@ class MainActivity : BridgeActivity() {
         // App-specific native code ships as registered plugin classes — no
         // separate npm package for one screen's installer logic.
         registerPlugin(InstallerPlugin::class.java)
+        // Session token at rest, encrypted with a keystore key.
+        registerPlugin(SecureTokenPlugin::class.java)
         super.onCreate(savedInstanceState)
     }
 }

@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { isPlainBrowser } from "@/lib/platform";
-import { useAuth, friendlyError } from "@kataria-syntex/app-core";
+import { ApiError, useAuth, friendlyError } from "@kataria-syntex/app-core";
 import { QrLoginPanel } from "@/ui/components/qr-login-panel";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -30,6 +30,13 @@ import {
 import { EASE_OUT, MORPH, MORPH_EXIT, SPRING } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
 import { safeNextPath } from "@/ui/lib/next-path";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/ui/components/ui/dialog";
 
 type Step = "home" | "otp" | "password" | "create";
 
@@ -37,6 +44,7 @@ type Draft = {
   identifier: string;
   name?: string;
   password?: string;
+  code?: string;
 };
 
 function IdentifierStep({
@@ -106,6 +114,7 @@ function OtpStep({
   onVerified,
   onNeedsSignup,
   onUsePassword,
+  onRegistrationClosed,
   onBack,
 }: {
   identifier: string;
@@ -113,8 +122,9 @@ function OtpStep({
   hasPassword: boolean;
   startWithQrFallback: boolean;
   onVerified: () => void;
-  onNeedsSignup: () => void;
+  onNeedsSignup: (code: string) => void;
   onUsePassword: () => void;
+  onRegistrationClosed: () => void;
   onBack: () => void;
 }) {
   const [code, setCode] = useState("");
@@ -145,9 +155,9 @@ function OtpStep({
         onVerified();
         return;
       }
-      if (!draft?.name) {
+      if (!draft?.name || !draft.password) {
         // Verified but no account and no collected profile yet — go collect.
-        onNeedsSignup();
+        onNeedsSignup(code);
         return;
       }
       // Complete the pending signup now (the create step collected these
@@ -155,10 +165,15 @@ function OtpStep({
       await useAuth.getState().signup({
         identifier,
         name: draft.name,
-        ...(draft.password ? { password: draft.password } : {}),
+        password: draft.password,
+        code,
       });
       onVerified();
     } catch (err) {
+      if (err instanceof ApiError && err.code === "registration_closed") {
+        onRegistrationClosed();
+        return;
+      }
       setError(friendlyError(err));
     } finally {
       setBusy(false);
@@ -170,7 +185,11 @@ function OtpStep({
     try {
       await requestOtp(identifier);
       setCooldown(30);
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "registration_closed") {
+        onRegistrationClosed();
+        return;
+      }
       // Quota/sender trouble — offer the QR scan fallback instead.
       setShowQrFallback(true);
     }
@@ -268,11 +287,17 @@ function OtpStep({
 
 function CreateStep({
   identifier,
+  verifiedCode,
   onReady,
+  onComplete,
+  onRegistrationClosed,
   onBack,
 }: {
   identifier: string;
+  verifiedCode?: string;
   onReady: (draft: Draft) => void;
+  onComplete: () => void;
+  onRegistrationClosed: () => void;
   onBack: () => void;
 }) {
   const [name, setName] = useState("");
@@ -280,19 +305,34 @@ function CreateStep({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestOtp = useAuth((s) => s.requestOtp);
+  const signup = useAuth((s) => s.signup);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
+      if (verifiedCode) {
+        await signup({
+          identifier,
+          name: name.trim(),
+          password,
+          code: verifiedCode,
+        });
+        onComplete();
+        return;
+      }
       await requestOtp(identifier);
       onReady({
         identifier,
         name: name.trim(),
-        ...(password ? { password } : {}),
+        password,
       });
     } catch (err) {
+      if (err instanceof ApiError && err.code === "registration_closed") {
+        onRegistrationClosed();
+        return;
+      }
       setError(friendlyError(err));
     } finally {
       setBusy(false);
@@ -316,16 +356,16 @@ function CreateStep({
           />
         </Field>
         <Field data-invalid={!!error}>
-          <FieldLabel htmlFor="create-pw">
-            Password <span className="text-muted-foreground">(optional)</span>
-          </FieldLabel>
+          <FieldLabel htmlFor="create-pw">Password</FieldLabel>
           <Input
             id="create-pw"
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
             minLength={10}
+            maxLength={200}
             aria-invalid={!!error}
             aria-describedby={error ? "create-error" : undefined}
           />
@@ -333,7 +373,11 @@ function CreateStep({
         </Field>
         {error && <FieldError id="create-error">{error}</FieldError>}
       </FieldGroup>
-      <Button type="submit" disabled={busy || !name.trim()} loading={busy}>
+      <Button
+        type="submit"
+        disabled={busy || !name.trim() || password.length < 10}
+        loading={busy}
+      >
         Send verification code
       </Button>
       <Button type="button" variant="outline" onClick={onBack} disabled={busy}>
@@ -384,6 +428,7 @@ function PasswordStep({
             onChange={(e) => setPassword(e.target.value)}
             aria-invalid={!!error}
             required
+            maxLength={200}
             autoFocus
           />
         </Field>
@@ -462,8 +507,14 @@ export function AuthPage() {
   const [otpFallback, setOtpFallback] = useState(false);
   const [homeBusy, setHomeBusy] = useState(false);
   const [homeError, setHomeError] = useState<string | null>(null);
+  const [registrationClosed, setRegistrationClosed] = useState(false);
 
   const done = () => navigate(next, { replace: true });
+  const showRegistrationClosed = () => {
+    setDraft(null);
+    setStep("home");
+    setRegistrationClosed(true);
+  };
 
   const handleIdentifier = async (value: string) => {
     setHomeError(null);
@@ -473,13 +524,23 @@ export function AuthPage() {
       setIdentifier(value);
       setAccountExists(result.exists);
       setHasPassword(result.hasPassword);
+      if (result.registrationClosed) {
+        showRegistrationClosed();
+        return;
+      }
       if (result.exists) {
         setDraft(null);
         setHomeBusy(true);
         try {
           await requestOtp(value);
           setStep("otp");
-        } catch {
+        } catch (err) {
+          if (err instanceof ApiError && err.code === "registration_closed") {
+            showRegistrationClosed();
+            return;
+          }
+          // The registration switch can change after lookup. The OTP endpoint
+          // enforces it again; other delivery errors keep the QR fallback.
           setOtpFallback(true);
           setStep("otp");
         } finally {
@@ -513,6 +574,16 @@ export function AuthPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-4 sm:p-6">
+      <Dialog open={registrationClosed} onOpenChange={setRegistrationClosed}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registration closed</DialogTitle>
+            <DialogDescription>
+              New account registration is currently closed.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
       <div className="flex items-center gap-3">
         <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
           <span
@@ -640,11 +711,12 @@ export function AuthPage() {
                       hasPassword={accountExists && hasPassword}
                       startWithQrFallback={otpFallback}
                       onVerified={done}
-                      onNeedsSignup={() => {
-                        setDraft({ identifier });
+                      onNeedsSignup={(code) => {
+                        setDraft({ identifier, code });
                         setStep("create");
                       }}
                       onUsePassword={() => setStep("password")}
+                      onRegistrationClosed={showRegistrationClosed}
                       onBack={() => {
                         setDraft(null);
                         setStep("home");
@@ -652,13 +724,16 @@ export function AuthPage() {
                     />
                   )}
 
-                  {step === "create" && !accountExists && (
+                  {step === "create" && (
                     <CreateStep
                       identifier={identifier}
+                      verifiedCode={draft?.code}
                       onReady={(d) => {
                         setDraft(d);
                         setStep("otp");
                       }}
+                      onComplete={done}
+                      onRegistrationClosed={showRegistrationClosed}
                       onBack={() => setStep("home")}
                     />
                   )}

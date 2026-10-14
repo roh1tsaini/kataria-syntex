@@ -16,6 +16,9 @@ export type Env = {
   /** Only "development" exposes error detail in responses. */
   APP_ENV?: string;
   PINGRAM_API_KEY?: string;
+  TELEGRAM_ADMIN_ID?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
   OTP_DAILY_BUDGET?: string;
   /** "1" = trust the RIGHTMOST X-Forwarded-For entry (one known proxy). */
   TRUST_PROXY?: string;

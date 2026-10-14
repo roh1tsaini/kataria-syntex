@@ -156,7 +156,12 @@ What this file owns: business logic, calculations, numbering and edge cases.
 - Reports are paginated
 - Dashboards never repeat full scans
 - PDF, Excel and sticker sheets are made on the device
-- SMS is capped per month, email OTP and Telegram carry the rest
+- SMS is capped per month; email OTP uses Pingram, and Telegram copies each OTP to the configured owner
+- The configured Telegram owner controls one global public-registration switch with `/registrations_on` and `/registrations_off`
+- Public registration starts enabled; the saved switch remains in D1 across Worker deploys and restarts
+- When public registration is disabled, unknown users are blocked before OTP; existing users keep all sign-in methods
+- A valid invitation bypasses the public-registration pause; only Admins may issue invitations
+- Invitation signup is a future feature and has no active invite flow yet
 
 **Open**
 

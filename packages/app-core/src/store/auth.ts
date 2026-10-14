@@ -28,6 +28,7 @@ type LookupResult = {
   type: "phone" | "email";
   exists: boolean;
   hasPassword: boolean;
+  registrationClosed: boolean;
 };
 
 type VerifyResult =
@@ -36,6 +37,10 @@ type VerifyResult =
 /** QR payloads are URLs (`<origin>/login/scan/<code>`) so any camera works. */
 export type QrLoginCode = {
   code: string;
+  /** Secret half of the pairing. Kept by this device, never shown or
+   *  transmitted to the scanning device — without it the code cannot be
+   *  claimed, so a screenshot or forwarded link is worthless. */
+  claimSecret: string;
   expiresIn: number;
   payload: string;
   expiresAt: string;
@@ -60,7 +65,8 @@ type AuthState = {
   signup: (input: {
     identifier: string;
     name: string;
-    password?: string;
+    password: string;
+    code: string;
   }) => Promise<void>;
   loginPassword: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -73,6 +79,7 @@ type AuthState = {
   }>;
   pollQrLogin: (
     code: string,
+    claimSecret: string,
   ) => Promise<"pending" | "expired" | "not_found" | "ok">;
 };
 
@@ -244,14 +251,15 @@ export const useAuth = create<AuthState>()((set, get) => ({
     return { grantedName: res.grantedName, grantedSelf: res.grantedSelf };
   },
 
-  pollQrLogin: async (code) => {
+  pollQrLogin: async (code, claimSecret) => {
     // POST — claiming a session is a state change; GET only reads status
-    // (login-CSRF hardening).
+    // (login-CSRF hardening). The claim secret rides in the body, never the
+    // query string, so it stays out of platform logs and proxy traces.
     const res = await api<
       {
         status: "pending" | "expired" | "not_found" | "ok";
       } & Partial<SessionPayload>
-    >(`/auth/qr/status?code=${encodeURIComponent(code)}`, { method: "POST" });
+    >("/auth/qr/status", { method: "POST", body: { code, claimSecret } });
     if (
       res.status === "ok" &&
       typeof res.token === "string" &&

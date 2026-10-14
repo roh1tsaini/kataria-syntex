@@ -36,9 +36,10 @@ const SERVER_MESSAGES = {
   otp_rate_limit_ip: "Too many requests from this device. Try later.",
   otp_send_failed:
     "Couldn't send the code right now. Please try again shortly.",
-  password_login_rate_limited: "Too many failed logins. Try in 15 minutes.",
+  password_login_rate_limited: "Too many sign-in attempts. Try in 15 minutes.",
   user_exists:
     "An account already exists for this phone/email. Log in instead.",
+  registration_closed: "New account registration is currently closed.",
   // qr login
   qr_code_invalid: "That code is not valid or was already used.",
   qr_code_expired: "That code has expired. Ask for a new one.",

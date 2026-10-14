@@ -10,6 +10,7 @@
 
 export {
   configureCore,
+  core,
   type Host,
   type CoreStorage,
   type PlatformAdapter,

@@ -21,7 +21,7 @@ type AuthCtx = Context<AuthEnv>;
 
 const SESSION_COOKIE = "kc_session";
 const SESSION_MAX_AGE = Math.floor(SESSION_TTL_MS / 1000);
-export const PASSWORD_LOGIN_MAX_FAILS = 10;
+export const PASSWORD_LOGIN_MAX_ATTEMPTS = 10;
 export const PASSWORD_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 export const identifierSchema = z.object({
@@ -34,8 +34,8 @@ export const otpVerifySchema = z.object({
 export const signupSchema = z.object({
   identifier: z.string().min(3).max(200),
   name: z.string().trim().min(1).max(60),
-  // Owner mandate: min 10 — don't undermine PBKDF2 with short secrets.
-  password: z.string().min(10).max(200).optional(),
+  password: z.string().min(10).max(200),
+  code: z.string().regex(/^\d{6}$/),
 });
 export const passwordLoginSchema = z.object({
   identifier: z.string().min(3).max(200),

@@ -70,7 +70,7 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
         return;
       }
       try {
-        const status = await pollQrLogin(pairing.code);
+        const status = await pollQrLogin(pairing.code, pairing.claimSecret);
         if (cancelled) return;
         if (status === "ok") {
           // Session applied to store; stop polling immediately.

@@ -16,7 +16,7 @@ export const users = sqliteTable(
     phone: text("phone", { length: 20 }),
     email: text("email", { length: 200 }),
     name: text("name", { length: 100 }).notNull(),
-    passwordHash: text("password_hash", { length: 200 }),
+    passwordHash: text("password_hash", { length: 200 }).notNull(),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
@@ -80,26 +80,22 @@ export const otpCodes = sqliteTable(
   (t) => [index("idx_otp_identifier").on(t.identifier)],
 );
 
-// ── Password login brute-force protection ──────────────────────────────────
-
-export const loginAttempts = sqliteTable(
-  "login_attempts",
-  {
-    id: text("id", { length: 36 }).primaryKey(),
-    phone: text("phone", { length: 20 }).notNull(),
-    // Failures count per identifier+device pair: an attacker hammering one
-    // device can't lock the real owner out of their account.
-    deviceKey: text("device_key", { length: 80 }).notNull().default(""),
-    createdAt: text("created_at").notNull(),
-  },
-  (t) => [index("idx_login_attempts_phone").on(t.phone)],
-);
-
 // ── QR login ────────────────────────────────────────────────────────────────
 
 export const qrLogins = sqliteTable("qr_logins", {
   id: text("id", { length: 36 }).primaryKey(),
   code: text("code", { length: 64 }).notNull().unique(),
+  // SHA-256 of the secret the waiting device keeps to itself. The QR carries
+  // the code only, so a screenshot or a forwarded link cannot be claimed —
+  // the same reason WhatsApp's QR is a key exchange, not a session ticket.
+  // Default '' on pre-existing rows: a claim hashes to 64 chars and can
+  // never equal it, so an old row is unclaimable rather than claimable.
+  claimSecretHash: text("claim_secret_hash", { length: 64 })
+    .notNull()
+    .default(""),
+  // Shown on the approve screen so the person approving reads which device is
+  // asking, not just whose account it would open.
+  deviceLabel: text("device_label", { length: 100 }).notNull().default(""),
   status: text("status", { length: 10 }).notNull().default("pending"),
   identifier: text("identifier"),
   grantedTo: text("granted_to", { length: 36 }).references(() => users.id),
@@ -110,10 +106,16 @@ export const qrLogins = sqliteTable("qr_logins", {
   createdAt: text("created_at").notNull(),
 });
 
-// ── Rate-limit counters (D1-backed sliding windows, see lib/rate-limit.ts) ─
+// ── Rate-limit counters (D1-backed windows, see lib/rate-limit.ts) ─────────
 
 export const rateLimits = sqliteTable("rate_limits", {
   key: text("key", { length: 120 }).primaryKey(),
   count: integer("count").notNull().default(0),
   windowStart: text("window_start").notNull(),
+});
+
+export const appSettings = sqliteTable("app_settings", {
+  key: text("key", { length: 80 }).primaryKey(),
+  value: text("value", { length: 200 }).notNull(),
+  updatedAt: text("updated_at").notNull(),
 });

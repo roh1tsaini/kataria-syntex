@@ -11,20 +11,27 @@
  */
 const SENDER_NAME = "Kataria Syntex Biz App";
 const API_BASE_URL = "https://api.eu.pingram.io";
+const REQUEST_TIMEOUT_MS = 10_000;
 
 async function post(
   apiKey: string,
   path: "sms" | "email",
   body: Record<string, unknown>,
 ): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch {
+    throw new Error(`pingram_${path}_network_failed`);
+  }
   const text = await res.text().catch(() => "");
   let bodyHasError = false;
   try {
@@ -34,9 +41,7 @@ async function post(
     // Non-JSON 2xx body — no error field to check.
   }
   if (!res.ok || bodyHasError) {
-    throw new Error(
-      `pingram_${path}_failed ${res.status} ${text.slice(0, 200)}`,
-    );
+    throw new Error(`pingram_${path}_failed_${res.status}`);
   }
 }
 

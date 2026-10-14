@@ -43,5 +43,6 @@
     // Non-secret config. Secrets (PINGRAM_API_KEY etc.) live in .dev.vars
     // locally and `wrangler secret put` in production.
     "OTP_DAILY_BUDGET": "300",
+    "TELEGRAM_ADMIN_ID": "",
   },
 }

@@ -23,6 +23,16 @@ export async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+/** Constant-time compare of two equal-length ASCII secrets (hex digests). */
+export function timingSafeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a, "utf8");
+  const bb = Buffer.from(b, "utf8");
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
+}
+
 export function generateOtpCode(): string {
   // Rejection sampling over Uint32 to eliminate modulo bias across 1,000,000 codes.
   // 4_294_000_000 is the largest multiple of 1_000_000 below 2^32.
@@ -63,4 +73,14 @@ export function generateQrLoginCode(): string {
 
 export function generateId(): string {
   return crypto.randomUUID();
+}
+
+/**
+ * Secret half of a QR login. The waiting device keeps this to itself and must
+ * present it to claim the session; only its SHA-256 is stored server-side.
+ * A captured QR — screenshot, forwarded link, shoulder-surfed photo — carries
+ * the code alone and can prove nothing.
+ */
+export function generateQrClaimSecret(): string {
+  return toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
 }

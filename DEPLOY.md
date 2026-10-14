@@ -44,7 +44,23 @@ before passing it to Gradle, and the build fails if `APP_HOST` is not a
 bare hostname (so a poisoned variable can never produce an un-updatable
 APK).
 
-### 3. Deploy
+### 3. Configure the Telegram bot
+
+Create a bot with BotFather, then add these repository secrets and variable
+under Settings → Secrets and variables → Actions:
+
+| Name                      | Type     | Value                                                           |
+| ------------------------- | -------- | --------------------------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN`      | Secret   | Token from BotFather                                            |
+| `TELEGRAM_WEBHOOK_SECRET` | Secret   | Random 1–256 character value using letters, numbers, `_` or `-` |
+| `TELEGRAM_ADMIN_ID`       | Variable | Your numeric Telegram user ID                                   |
+
+The app deploy stores the two secrets in the Worker, deploys the Worker, then
+registers `<APP_URL>/api/telegram/webhook`. The deploy fails if configuration
+or webhook registration fails. Send `/start` to the bot from the owner account
+after creating it so it can send OTP copies.
+
+### 4. Deploy
 
 Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
@@ -76,7 +92,7 @@ deleted when the run finishes.
 After the first app deploy, set `APP_URL` (step 2) so native builds can reach
 the API.
 
-### 4. Production secrets (business app only)
+### 5. Production secrets (business app only)
 
 The OTP sender needs real credentials in production:
 
@@ -88,7 +104,7 @@ bunx wrangler secret put PINGRAM_API_KEY
 Local dev reads the same keys from `apps/app/.dev.vars` (gitignored — never
 commit it).
 
-### 5. Android signing (once — before the first APK build)
+### 6. Android signing (once — before the first APK build)
 
 The release APK must be signed, and every future update must carry the same
 signature — create the keystore once and never lose it. A lost key means the

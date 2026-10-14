@@ -4,6 +4,14 @@
 # code. Rules are cumulative — a later matching block must detach a header
 # before setting a new value ("! Cache-Control").
 #
+# Framing: the SPA document must never load inside someone else's frame. The
+# QR approve screen is why this is load-bearing — it grants a session to the
+# device holding the code, so an attacker who can frame it can clickjack the
+# Approve button. A CSP <meta> tag cannot express frame-ancestors (browsers
+# ignore it there), so it has to be a header. Electron serves the same
+# document over app:// and sets these in electron/main.ts, which bypasses
+# this file.
+#
 # The policy:
 # - HTML and unhashed files (icons, theme-init.js, fonts): never cached
 #   without revalidation. There is no service worker — this is what makes
@@ -16,6 +24,8 @@
 
 /*
   Cache-Control: public, max-age=0, must-revalidate
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
 
 /assets/*
   ! Cache-Control
