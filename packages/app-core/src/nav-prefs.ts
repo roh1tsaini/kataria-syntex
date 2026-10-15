@@ -1,11 +1,12 @@
-import { core, registerDataCache } from "@kataria-syntex/app-core";
+import { core } from "./adapter";
+import { registerDataCache } from "./data-caches";
 
 /**
  * Navigation display preferences (design.md Section 4, "Nav density").
  *
  * These are per-account and go through the shell seam's storage, so they
- * behave identically on web (localStorage), Android (MMKV) and Electron.
- * Every account's copy is wiped on logout / 401 / account switch so a
+ * behave identically on web (localStorage), the Android app (AsyncStorage) and
+ * Electron. Every account's copy is wiped on logout / 401 / account switch so a
  * preference can never leak across accounts.
  */
 

@@ -9,11 +9,11 @@
 > Tokens live in `src/main/ui/globals.css` — code never hardcodes what a token
 > already provides.
 >
-> The Android app (`apps/android`) implements this same design language by
-> loading the same web bundle in a Capacitor WebView at the `≤sm` breakpoint.
-> There is no separate Android token set or primitives — the rendering is the
-> web rendering. This document stays the single source of truth for every
-> visual value on every shell.
+> The Android app (`apps/mobile`) implements this same design language using
+> Expo (React Native) + NativeWind 4 at the `≤sm` phone breakpoint.
+> It shares colors, fonts, spacing tokens, and components matching the
+> phone scale. This document stays the single source of truth for every
+> visual value on every platform.
 
 Contents: 1 Principles · 2 Foundations (2.1 spacing, 2.2 radius, 2.3
 control heights, 2.4 type, 2.4.1 dates & numbers, 2.5
@@ -481,13 +481,11 @@ text-foreground` while a sub is active. The collapsed rail keeps the
 
 ### 4.1 Android shell — phone scale
 
-`apps/android` is a Capacitor 8 WebView over the same `apps/app` bundle —
-no second UI, no Android token set, nothing to port. The phone renders the
-web layout at the `≤sm` breakpoint (Section 4). Behaviour, adapter
-branching, and release steps live in `spec.md` Section 5 — this document
-keeps only the visual contract: the update gate renders as an undismissable
-bottom sheet (Section 3.3), and routine APK availability stays in Settings
-as OS chrome, not an in-app surface.
+`apps/mobile` is the React Native (Expo) Android app matching the phone scale
+(`≤sm` responsive design) via NativeWind 4 and `@kataria-syntex/app-core`.
+Architecture, adapter branching, and testing live in `apps/mobile/APP.md` — this
+document keeps the visual contract: the update gate renders as an undismissable
+bottom sheet (Section 3.3), and routine APK availability stays in Settings.
 
 ## 5. Motion grammar
 

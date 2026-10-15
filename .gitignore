@@ -18,7 +18,6 @@ build/
 *.pem
 *.key
 
-
 # Turbo & tool caches
 .turbo/
 .cache/
@@ -60,3 +59,13 @@ skills-lock.json
 /.openchamber
 sales.pdf
 label.pdf
+
+# Demos & scratch prototypes
+/demos/
+
+# Mobile build artifacts
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/dist/
+apps/mobile/test-results/
+apps/mobile/playwright-report/

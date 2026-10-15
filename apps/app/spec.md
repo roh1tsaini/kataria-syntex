@@ -289,7 +289,7 @@ Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands · 5 Platfo
 | UI           | shadcn/ui-style primitives (`ui/components/ui/*`)      |
 | Icons        | lucide-react (UI) + inline brand glyphs                |
 | Desktop      | Electron 43, electron-builder                          |
-| Android      | Capacitor 8 (`apps/android` — the shell project)       |
+| Android      | Expo SDK 57 / React Native (`apps/mobile`)             |
 | Backend      | Hono 4 on Cloudflare Workers (`nodejs_compat`)         |
 | DB           | D1 (SQLite) via Drizzle ORM (`drizzle-orm@1.0.0-rc.4`) |
 | Auth         | OTP (Pingram) + password + QR pairing, HttpOnly/Bearer |
@@ -341,30 +341,31 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   CI artifacts, never cached. Artifact cleanup: `DEPLOY.md` Section 3.
 - Done = typecheck + lint + format + build green from repo root AND the
   feature works when run (`AGENTS.md` Section 2.4).
-- Web, Electron and Android compile as one renderer bundle; `apps/android`
-  typechecks and syncs (`bunx cap sync android`) against `packages/app-core`.
+- Web and Electron compile as one renderer bundle in `apps/app`; `apps/mobile`
+  is the standalone Expo React Native app sharing `packages/app-core`.
 
 ### 5 · Platforms
 
 **Shell matrix**
 
-- One bundle, three shells (`AGENTS.md` Section 2.3): `apps/app` (web +
-  Electron) + `apps/android` (Capacitor 8 WebView over the same built bundle
-  at the `≤sm` breakpoint).
-- No separate Android UI — a UI/feature change is a web change; it lands on
-  Android by rebuilding + `bunx cap sync android`.
-- UI verification happens once in the browser at the `≤sm` breakpoint.
+- Unified product across three shells (`AGENTS.md` Section 2.3): `apps/app` (web +
+  Electron) and `apps/mobile` (Expo React Native for Android phones
+  matching the `≤sm` breakpoint).
+- UI and business logic are shared across platforms: business logic in
+  `packages/app-core`, shared domain validation in `packages/shared`, and
+  mobile presentation in `apps/mobile` (Expo React Native) matching the `≤sm` phone scale.
+- UI verification for the mobile app runs via Playwright mobile viewport tests and Jest unit tests in `apps/mobile` (see `apps/mobile/APP.md`).
 - iOS is out of scope — never scaffold for it.
 - Build targets (owner-fixed): Android universal APK · Windows x64 ·
   macOS arm64 dmg (Apple Silicon only) · Linux x64 AppImage.
 - Platform branches live ONLY in `src/main/lib/platform.ts` behind
   `detectHost()`. A platform `if` anywhere else is a bug.
 
-| Shell   | Stack                                 | Session storage                                             |
-| ------- | ------------------------------------- | ----------------------------------------------------------- |
-| Web     | browser, revalidated HTML             | HttpOnly cookie                                             |
-| Desktop | Electron 43, `app://` custom protocol | OS keychain via IPC + safeStorage                           |
-| Android | Capacitor 8 WebView                   | AES-GCM under an Android Keystore key (`SecureTokenPlugin`) |
+| Shell   | Stack                                 | Session storage                                |
+| ------- | ------------------------------------- | ---------------------------------------------- |
+| Web     | browser, revalidated HTML             | HttpOnly cookie                                |
+| Desktop | Electron 43, `app://` custom protocol | OS keychain via IPC + safeStorage              |
+| Android | Expo React Native (`apps/mobile`)     | Android Keystore AES-GCM via expo-secure-store |
 
 An install upgrading from the plaintext token store has its old
 `auth.token.v1` preference deleted at first boot, then signs in once.
@@ -382,12 +383,10 @@ An install upgrading from the plaintext token store has its old
   (custom protocols cache against the URL otherwise). Windows/Linux stage
   updates silently and install on quit. macOS uses a manual DMG download
   from Settings.
-- **Android** — `apps/android` wraps the same bundle at `https://localhost`,
-  so the API origin is baked in at build (`VITE_API_URL`);
-  `apps/android/scripts/build-web.ts` fails the build if missing and
-  `platform.ts` throws at boot (`bakedApiOrigin`). Boot compares the native
-  `versionName` with the executing bundle (`reloadOnStaleAndroidBundle`) so
-  a replaced APK never runs a stale bundle.
+- **Android** — `apps/mobile` is built with Expo (React Native), with the API
+  origin configured at build via `EXPO_PUBLIC_API_URL` / `APP_URL`.
+  The app securely connects to the Worker API using `@kataria-syntex/app-core`
+  and native keystore token management.
 
 **Logged-out download page (web only)**
 
@@ -405,15 +404,12 @@ An install upgrading from the plaintext token store has its old
 
 **Gradle & manifest**
 
-- `apps/android/android/` is a committed Capacitor Gradle project — native
-  config only (manifest permissions, signing, ABI filters), never UI.
-- `cap sync` copies the built bundle and the plugin list into it.
-- **Phone testing runs through CI, never a local build.**
-  `apps/android/scripts/build-web.ts` forces `https://` on the baked API
-  origin and fails without one, so a bundle aimed at a local `wrangler dev`
-  would speak TLS to a plain-HTTP server. Push, let the `android` job build
-  the signed APK against the deployed worker (`vars.APP_URL`), install the
-  artifact.
+- `apps/mobile/android/` is generated via Expo prebuild (`bun run prebuild`).
+- Native config, permissions, release signing, and APK naming are managed via
+  Expo config plugins (`plugins/with-android-release.ts`).
+- **Phone testing runs through CI or local release builds.**
+  Push, let the `android` job build the signed APK against the deployed worker
+  (`vars.APP_URL`), and install the artifact.
 - `app/build.gradle` reads `apps/app/package.json` for `versionName` and
   derives `versionCode = major*1000000 + minor*1000 + patch`.
 - `major` is non-negative; `minor` and `patch` stay below 1000; the result
@@ -431,9 +427,10 @@ An install upgrading from the plaintext token store has its old
   version per device; tap "Scan app" once per device.
 - Signing reads `keystore.properties` written by CI from
   `ANDROID_KEY_BASE64` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD`.
-- Plugins: official `@capacitor/*` set plus local `InstallerPlugin.kt`
-  (streams APK to app-private `updates/` cache, verifies SHA-256 against the
-  manifest, fires `FileProvider` `ACTION_VIEW`).
+- Plugins: Expo managed plugins (`expo-camera`, `expo-notifications`,
+  `expo-secure-store`, `expo-build-properties`) plus local config plugin
+  `plugins/with-android-release.ts` (release keystore signing and versioned
+  APK naming).
 - Commands: `AGENTS.md` Section 3.
 
 #### 5.3 · Update mechanisms
@@ -466,10 +463,8 @@ An install upgrading from the plaintext token store has its old
 - Deep links (Android): `kataria://` and `https://<origin>/login/scan/<code>`
   are routed by `initAndroidDeepLinks()`.
 - Network + lifecycle events: web/Electron read `window` online/offline and
-  `visibilitychange`; Android reads `@capacitor/network` and `@capacitor/app`
-  `appStateChange`.
-- Android bundle self-heal: `reloadOnStaleAndroidBundle()` compares native
-  `versionName` with `__APP_VERSION__` and reloads once if mismatched.
+  `visibilitychange`; Android reads `@react-native-community/netinfo` and
+  React Native `AppState` via the `PlatformAdapter` seam (`apps/mobile/src/platform/adapter.ts`).
 - Electron window chrome: `desktopWindow()` exposes minimize/maximize/close
   and the resolved theme background; one instance per installation; zoom
   locked; camera granted to app origins for QR scan; packaged renderer served
@@ -506,7 +501,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Responses        | 200/201/304; errors `{ error: "<snake_code>" }` — shared codes in `packages/shared/errors.ts`, copy in `packages/app-core/errors.ts` (`friendlyError`) |
 | Request IDs      | `crypto.randomUUID` on every response; global error handler logs + 500 without leaking internals                                                       |
-| CORS             | native shells built in (`app://bundle`, capacitor origins); `CORS_ORIGIN` env adds third-party origins                                                 |
+| CORS             | native shells built in (`app://bundle`); `CORS_ORIGIN` env adds third-party origins                                                                    |
 | Security headers | CSP, nosniff, DENY frame, no referrer, strict permissions policy (camera on for app origins — QR scan needs it)                                        |
 | Caching          | every `/api/*` response carries `Cache-Control: no-store`                                                                                              |
 | Version gate     | `src/server/lib/version-gate.ts`; `/api/auth/*` and `/api/health` stay reachable under a floor so the update UI and sign-in work                       |

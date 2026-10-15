@@ -8,8 +8,12 @@ dist-electron/
 .turbo/
 .wrangler/
 coverage/
-apps/android/android/
-
+archive/
+apps/mobile/dist/
+apps/mobile/android/
+apps/mobile/test-results/
+apps/mobile/playwright-report/
+demos/
 
 # Generated files
 *.tsbuildinfo
@@ -32,4 +36,3 @@ apps/app/Docs Template/
 
 # Screenshots (kept on disk, not part of the repo)
 apps/app/tmp/
-

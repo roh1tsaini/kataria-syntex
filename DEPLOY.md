@@ -37,12 +37,9 @@ Add a repository **variable** `APP_URL` = the app worker FQDN
 (`https://app.katariasyntex.workers.dev`; a bare FQDN is also accepted).
 Native builds read it: the
 Electron build injects it into the packaged bundle; the Android APK bakes
-it as `VITE_API_URL` (a bare FQDN is normalized to https). For Android, the
-same value becomes the bare host the deep-link filter and the installer
-plugin's download-origin check accept — the pipeline strips the scheme
-before passing it to Gradle, and the build fails if `APP_HOST` is not a
-bare hostname (so a poisoned variable can never produce an un-updatable
-APK).
+it as `EXPO_PUBLIC_API_URL` / `APP_URL` (a bare FQDN is normalized to https).
+For Android, the same value becomes the bare host the deep-link filter
+accepts — the pipeline strips the scheme before passing it to Gradle.
 
 ### 3. Configure the Telegram bot
 
@@ -70,8 +67,8 @@ Push to `main`. One workflow (`pipeline.yml`) runs everything:
    `apps/app` renderer for later jobs.
 2. `deploy-web` — runs immediately in parallel on push: ensure website D1
    (`ks-web-db`) → migrate → build Vinext → deploy website worker.
-3. `desktop` + `android` — download the shared renderer, then create the
-   Windows, macOS and Linux installers and signed APK. Runs on release pushes
+3. `desktop` + `android` — desktop builds installers using the shared renderer,
+   and android builds the signed Expo React Native APK. Runs on release pushes
    and manual dispatches (skipped on routine non-release commits and PRs).
 4. `publish-r2` — ensures `ks-releases` bucket exists, uploads installers,
    generates one `app/android/latest.json` release-info file and derives the
@@ -128,11 +125,10 @@ Add three repository secrets (Settings → Secrets and variables → Actions):
 | `ANDROID_KEY_PASSWORD` | the keystore password                        |
 
 The APK job decodes the keystore on the runner, writes
-`apps/android/android/keystore.properties`, and
-`apps/android/android/app/build.gradle` reads it (`storeFile`,
-`storePassword`, `keyAlias`, `keyPassword`) when it defines the release
-`signingConfig` — `assembleRelease` then outputs a signed APK. Keep the
-original `.p12` and its password somewhere durable outside GitHub.
+`apps/mobile/android/keystore.properties`, and the release Gradle config plugin
+reads it (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) when it
+defines the release `signingConfig` — `assembleRelease` then outputs a signed
+APK. Keep the original `.p12` and its password somewhere durable outside GitHub.
 
 ## Day-to-day maintenance
 
@@ -166,10 +162,11 @@ Bump `version` in `apps/app/package.json`, push, then Repo → Actions →
   R2. The app Worker deploy follows successful publication. Re-releasing
   requires a new `version`.
 
-Android signing uses the secrets from first-time setup step 5 — the APK job
-fails fast when they are absent. The APK job builds `apps/app`, runs
-`bunx cap sync android` from `apps/android`, then gradle; the signing config
-is read from `apps/android/android/keystore.properties` written by CI.
+Android signing uses the secrets from first-time setup step 6 — the APK job
+fails fast when they are absent. The APK job runs
+`bun run --filter=@kataria-syntex/mobile prebuild --platform android --clean`,
+then Gradle; the signing config is read from
+`apps/mobile/android/keystore.properties` written by CI.
 
 Version floor, `versionCode` and manifest fields: `apps/app/spec.md` Section 12.
 

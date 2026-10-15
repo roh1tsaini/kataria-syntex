@@ -1,0 +1,22 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["jest", "bun"]
+  },
+  "include": [
+    "src",
+    "scripts",
+    "plugins",
+    "e2e",
+    "app.config.ts",
+    "jest-setup.ts",
+    "playwright.config.ts",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ]
+}

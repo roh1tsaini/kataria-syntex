@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { useAuth } from "@kataria-syntex/app-core";
 import { EASE_OUT } from "@/ui/lib/motion";
-import { safeNextPath } from "@/ui/lib/next-path";
+import { safeNextPath } from "@kataria-syntex/shared";
 
 function Splash() {
   const reduceMotion = useReducedMotion();

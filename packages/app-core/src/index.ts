@@ -21,6 +21,12 @@ export { ApiError, api, apiOrigin, setUpdateRequiredHandler } from "./api";
 export { friendlyError } from "./errors";
 export { configureToasts, toastSuccess, toastError } from "./toast";
 export { registerDataCache } from "./data-caches";
+export {
+  readNavDensity,
+  writeNavDensity,
+  clearNavPrefs,
+  type NavDensity,
+} from "./nav-prefs";
 
 // Update-download progress (ETA math shared by every shell's update store)
 export { type UpdateProgress } from "./progress";

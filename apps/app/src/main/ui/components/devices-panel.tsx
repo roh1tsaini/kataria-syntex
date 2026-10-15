@@ -17,7 +17,7 @@ import {
 } from "@/ui/components/ui/empty";
 import { Skeleton, Stagger, StaggerItem } from "@/ui/components/motion";
 import { useConfirm } from "@/ui/components/confirm-dialog";
-import { fmtRelative } from "@/ui/lib/format";
+import { fmtRelative } from "@kataria-syntex/shared";
 import { cn } from "@/ui/lib/cn";
 import {
   useAuth,

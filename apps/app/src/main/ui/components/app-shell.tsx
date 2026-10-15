@@ -31,7 +31,13 @@ import { PageTransition } from "@/ui/components/motion";
 import { routeSkeleton } from "@/ui/components/page-skeletons";
 import { OfflineBanner } from "@/ui/components/offline-banner";
 import { useTheme } from "@/ui/hooks/use-theme";
-import { useAuth, useNetworkState } from "@kataria-syntex/app-core";
+import {
+  useAuth,
+  useNetworkState,
+  readNavDensity,
+  writeNavDensity,
+  type NavDensity,
+} from "@kataria-syntex/app-core";
 import {
   isItemActive,
   isSubActive,
@@ -41,11 +47,6 @@ import {
 } from "@/ui/components/nav-config";
 import { cn } from "@/ui/lib/cn";
 import { EASE_OUT, EASE_DRAWER, MORPH, MORPH_EXIT } from "@/ui/lib/motion";
-import {
-  readNavDensity,
-  writeNavDensity,
-  type NavDensity,
-} from "@/ui/lib/nav-prefs";
 import { dragStyle, noDragStyle } from "@/ui/components/title-bar";
 
 /** List/Grid switch — the one control that changes how the nav itself reads.

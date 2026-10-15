@@ -211,7 +211,7 @@ if (missing.length) {
   fail(`Missing artifacts in ${DIST}: ${missing.map(([n]) => n).join(", ")}`);
 }
 
-// The APK's own name carries the version (apps/android/android/app/
+// The APK's own name carries the version (apps/mobile/android/app/
 // build.gradle). Artifacts are served with a year-long immutable TTL, so an
 // unversioned name — the old app-release.apk — let any HTTP cache hand back a
 // previous release's bytes while the manifest advertised a new sha256, and
