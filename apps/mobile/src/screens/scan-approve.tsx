@@ -22,6 +22,7 @@ type QrInfo = {
   deviceLabel: string | null;
 };
 
+/** Last group of the pairing code, so the two screens can be compared. */
 function codeSuffix(code: string): string {
   return code.split("-").pop() ?? code;
 }
@@ -50,18 +51,46 @@ export function ScanApproveScreen({ code }: { code: string }) {
     };
   }, [status, code]);
 
-  if (!code || status === "guest") {
+  // Approving needs a session on THIS device. Redirect from an effect —
+  // navigating during render runs before the route has mounted.
+  const redirectToAuth = !code || status === "guest";
+
+  useEffect(() => {
+    if (!redirectToAuth) return;
     router.replace({
       pathname: "/auth",
       params: { next: `/login/scan/${code}` },
     });
-    return null;
-  }
+  }, [redirectToAuth, code, router]);
+
+  if (redirectToAuth) return null;
 
   if (status === "loading") {
     return (
-      <View className="flex-1 items-center justify-center p-6 bg-background">
-        <Skeleton className="h-64 w-full max-w-sm rounded-lg" />
+      <View className="flex-1 items-center justify-center bg-background p-6">
+        <View className="w-full max-w-sm">
+          <Card>
+            <CardHeader>
+              <Skeleton className="mb-2 size-10 rounded-lg" />
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="gap-3">
+              <View className="gap-2 rounded-md border border-border bg-muted/40 px-3 py-2.5">
+                {[0, 1, 2].map((row) => (
+                  <View
+                    key={row}
+                    className="flex-row items-center justify-between gap-3"
+                  >
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-28" />
+                  </View>
+                ))}
+              </View>
+              <Skeleton className="h-11 w-full rounded-full" />
+            </CardContent>
+          </Card>
+        </View>
       </View>
     );
   }
@@ -91,89 +120,91 @@ export function ScanApproveScreen({ code }: { code: string }) {
         <Card>
           <CardHeader>
             <View className="mb-2 size-10 items-center justify-center rounded-lg bg-primary/10">
-              <ShieldCheck size={20} className="text-primary" />
+              {approvedAs ? (
+                <CheckCircle2 size={20} className="text-primary" />
+              ) : (
+                <ShieldCheck size={20} className="text-primary" />
+              )}
             </View>
-            <CardTitle>Approve sign-in</CardTitle>
+            <CardTitle>
+              {approvedAs
+                ? "Approved"
+                : expiredOrUsed
+                  ? "Code no longer valid"
+                  : alreadyApproved
+                    ? "Already approved"
+                    : "Approve this login?"}
+            </CardTitle>
             <CardDescription>
-              Another device wants to sign in to your Kataria Syntex account.
+              {approvedAs ? (
+                <>
+                  {`${info?.deviceLabel || "That device"} is now signed in as `}
+                  <Text className="font-medium text-foreground">
+                    {approvedAs}
+                  </Text>
+                  .
+                </>
+              ) : expiredOrUsed ? (
+                "Ask the other device to show a fresh QR code."
+              ) : alreadyApproved ? (
+                "This code was already approved."
+              ) : (
+                "Check the device and code match that screen."
+              )}
             </CardDescription>
           </CardHeader>
-          <CardContent className="gap-4">
-            {error && (
-              <View className="rounded-md bg-destructive/10 p-3">
-                <Text className="text-xs text-destructive">{error}</Text>
-              </View>
-            )}
-
-            {approvedAs ? (
-              <View className="items-center gap-2 py-4">
-                <CheckCircle2 size={32} className="text-primary" />
-                <Text className="font-semibold text-base text-foreground">
-                  Sign-in approved
-                </Text>
-                <Text className="text-center text-xs text-muted-foreground">
-                  The device was signed in as {approvedAs}. You can manage it
-                  under Settings &gt; Devices.
-                </Text>
-                <Button
-                  className="mt-2 w-full"
-                  onPress={() => router.replace("/")}
-                >
-                  <ButtonText>Done</ButtonText>
-                </Button>
-              </View>
-            ) : alreadyApproved ? (
-              <View className="gap-2 py-2">
-                <Text className="text-sm text-muted-foreground">
-                  This code was already approved.
-                </Text>
-                <Button variant="outline" onPress={() => router.replace("/")}>
-                  <ButtonText variant="outline">Go to home</ButtonText>
-                </Button>
-              </View>
-            ) : expiredOrUsed ? (
-              <View className="gap-2 py-2">
-                <Text className="text-sm text-destructive">
-                  This code has expired or is no longer valid.
-                </Text>
-                <Button variant="outline" onPress={() => router.replace("/")}>
-                  <ButtonText variant="outline">Go to home</ButtonText>
-                </Button>
-              </View>
-            ) : (
-              <View className="gap-4">
-                <View className="rounded-lg border border-border bg-muted/30 p-3 gap-1">
-                  <Text className="text-xs text-muted-foreground">
-                    Pairing code suffix:
+          {!approvedAs && !expiredOrUsed && !alreadyApproved ? (
+            <CardContent className="gap-3">
+              {/* Name the requesting device, not just the account: the label
+                  is the requester's own claim from an unauthenticated header,
+                  so the row says "Claims to be". "Signs in as" and "Code ends
+                  in" are the facts the server knows. */}
+              <View className="gap-2 rounded-md border border-border bg-muted/40 px-3 py-2.5">
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="text-[13px] text-muted-foreground">
+                    Claims to be
                   </Text>
-                  <Text className="font-mono font-bold text-sm text-foreground">
-                    ••••-{codeSuffix(code)}
+                  <Text
+                    className="min-w-0 flex-1 text-right font-medium text-[13px] text-foreground"
+                    numberOfLines={1}
+                  >
+                    {info?.deviceLabel || "unknown device"}
                   </Text>
-                  {info?.deviceLabel && (
-                    <Text className="mt-1 text-xs text-muted-foreground">
-                      Device: {info.deviceLabel}
-                    </Text>
-                  )}
                 </View>
-
-                <Button
-                  onPress={approve}
-                  loading={busy}
-                  accessibilityLabel="Approve device sign-in"
-                >
-                  <ButtonText>Approve sign-in</ButtonText>
-                </Button>
-                <Button
-                  variant="outline"
-                  onPress={() => router.replace("/")}
-                  disabled={busy}
-                  accessibilityLabel="Decline sign-in"
-                >
-                  <ButtonText variant="outline">Decline</ButtonText>
-                </Button>
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="text-[13px] text-muted-foreground">
+                    Signs in as
+                  </Text>
+                  <Text
+                    className="min-w-0 flex-1 text-right font-medium text-[13px] text-foreground"
+                    numberOfLines={1}
+                  >
+                    {info?.targetName || "you"}
+                  </Text>
+                </View>
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="text-[13px] text-muted-foreground">
+                    Code ends in
+                  </Text>
+                  <Text className="font-mono font-semibold text-[13px] tracking-widest text-foreground">
+                    {codeSuffix(code)}
+                  </Text>
+                </View>
               </View>
-            )}
-          </CardContent>
+              {error && (
+                <View className="rounded-md bg-destructive/10 p-3">
+                  <Text className="text-xs text-destructive">{error}</Text>
+                </View>
+              )}
+              <Button
+                onPress={() => void approve()}
+                loading={busy}
+                accessibilityLabel="Approve login"
+              >
+                <ButtonText>Approve login</ButtonText>
+              </Button>
+            </CardContent>
+          ) : null}
         </Card>
       </View>
     </Page>

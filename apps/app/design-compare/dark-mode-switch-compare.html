@@ -1,0 +1,2572 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dark mode switch — design compare</title>
+    <style>
+      /* ── Fonts — the same files the app bundles (globals.css) ──────────── */
+      @font-face {
+        font-family: "Inter Variable";
+        font-style: normal;
+        font-display: swap;
+        font-weight: 100 900;
+        src: url("../src/main/assets/fonts/inter-latin-wght-normal.woff2")
+          format("woff2");
+      }
+      @font-face {
+        font-family: "Inter Variable";
+        font-style: normal;
+        font-display: swap;
+        font-weight: 100 900;
+        src: url("../src/main/assets/fonts/inter-latin-ext-wght-normal.woff2")
+          format("woff2");
+      }
+
+      /* ── Tokens — copied 1:1 from src/main/ui/globals.css ──────────────── */
+      :root {
+        color-scheme: light;
+        --a-strong: oklch(0.22 0.005 260);
+        --a-fg: oklch(0.985 0 0);
+        --a-soft: oklch(0.22 0.005 260 / 7%);
+        --a-ink: oklch(0.32 0.008 260);
+        --background: oklch(0.99 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --primary: var(--a-strong);
+        --primary-foreground: var(--a-fg);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --accent: var(--a-soft);
+        --accent-foreground: var(--a-ink);
+        --border: oklch(0.922 0 0);
+        --ring: var(--a-strong);
+        --radius: 0.625rem;
+        --radius-sm: 0.5rem;
+        --radius-md: 0.625rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --shadow-soft: 0 1px 2px oklch(0 0 0 / 5%);
+        --shadow-lift:
+          0 4px 12px -4px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
+        --specular: inset 0 1px 0 oklch(1 0 0 / 55%);
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+        --duration-morph-open: 380ms;
+        --duration-morph-exit: 300ms;
+        --ease-morph: linear(
+          0,
+          0.0094,
+          0.0344,
+          0.0705,
+          0.1143,
+          0.1631,
+          0.2147,
+          0.2676,
+          0.3204,
+          0.3723,
+          0.4225,
+          0.4705,
+          0.516,
+          0.5589,
+          0.5989,
+          0.6362,
+          0.6707,
+          0.7025,
+          0.7316,
+          0.7584,
+          0.7827,
+          0.8049,
+          0.8251,
+          0.8433,
+          0.8598,
+          0.8747,
+          0.8881,
+          0.9002,
+          0.9111,
+          0.9208,
+          0.9295,
+          0.9373,
+          0.9443,
+          0.9506,
+          0.9561,
+          0.9611,
+          0.9655,
+          0.9694,
+          0.9729,
+          0.9761,
+          0.9788,
+          0.9813,
+          0.9834,
+          0.9854,
+          0.9871,
+          0.9886,
+          0.9899,
+          0.9911,
+          0.9922,
+          0.9931,
+          0.9939,
+          0.9946,
+          0.9953,
+          0.9958,
+          0.9963,
+          0.9968,
+          0.9972,
+          0.9975,
+          0.9978,
+          0.9981,
+          0.9983,
+          1
+        );
+      }
+      .dark {
+        color-scheme: dark;
+        --a-strong: oklch(0.93 0 0);
+        --a-fg: oklch(0.16 0 0);
+        --a-soft: oklch(1 0 0 / 10%);
+        --a-ink: oklch(0.88 0 0);
+        --background: oklch(0.145 0 0);
+        --foreground: oklch(0.985 0 0);
+        --card: oklch(0.205 0 0);
+        --card-foreground: oklch(0.985 0 0);
+        --primary: var(--a-strong);
+        --primary-foreground: var(--a-fg);
+        --muted: oklch(0.269 0 0);
+        --muted-foreground: oklch(0.708 0 0);
+        --accent: var(--a-soft);
+        --accent-foreground: var(--a-ink);
+        --border: oklch(1 0 0 / 10%);
+        --ring: var(--a-strong);
+        --specular: inset 0 1px 0 oklch(1 0 0 / 8%);
+      }
+      /* ── Page frame ──────────────────────────────────────────────────── */
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        font-size: clamp(15px, 1rem + 0.12vw, 17px);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-optical-sizing: auto;
+        scrollbar-color: color-mix(
+            in oklch,
+            var(--muted-foreground) 38%,
+            transparent
+          )
+          transparent;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        padding: clamp(24px, 5vw, 56px) clamp(16px, 5vw, 40px) 96px;
+        overflow-x: clip;
+        background: var(--background);
+        color: var(--foreground);
+        font-family:
+          "Inter Variable",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        font-feature-settings:
+          "rlig" 1,
+          "calt" 1,
+          "cv11" 1,
+          "ss01" 1;
+        font-size: 1rem;
+        line-height: 1.6;
+        letter-spacing: -0.011em;
+      }
+      ::selection {
+        background-color: color-mix(in oklch, var(--a-strong) 20%, transparent);
+      }
+      .wrap {
+        max-width: 1120px;
+        margin-inline: auto;
+      }
+      .head {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .eyebrow {
+        margin: 0;
+        color: var(--muted-foreground);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+      h1 {
+        margin: 12px 0 0;
+        font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.25rem);
+        font-weight: 700;
+        letter-spacing: -0.022em;
+        line-height: 1.05;
+        text-wrap: balance;
+      }
+      .lead {
+        margin: 10px 0 0;
+        max-width: 560px;
+        color: var(--muted-foreground);
+        font-size: 0.9375rem;
+        line-height: 1.6;
+      }
+      .park {
+        display: flex;
+        flex-shrink: 0;
+        gap: 4px;
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+        border-radius: 999px;
+        background: var(--muted);
+        padding: 3px;
+      }
+      .park button {
+        min-height: 34px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted-foreground);
+        font: inherit;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        padding: 0 16px;
+        cursor: pointer;
+        transition:
+          background-color 150ms var(--ease-out),
+          color 150ms var(--ease-out),
+          box-shadow 150ms var(--ease-out);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .park button:hover {
+        color: var(--foreground);
+      }
+      .park button.active {
+        background: var(--card);
+        color: var(--foreground);
+        box-shadow: var(--shadow-soft);
+      }
+      .park button:focus-visible {
+        outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent);
+        outline-offset: 2px;
+      }
+      .parity {
+        margin: 28px 0 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--card);
+        color: var(--muted-foreground);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        padding: 12px 16px;
+      }
+
+      /* ── Option cards ────────────────────────────────────────────────── */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .opt {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--card);
+        padding: 20px;
+        transition:
+          border-color 180ms ease,
+          transform 180ms ease,
+          box-shadow 180ms ease;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .opt:hover {
+          border-color: color-mix(
+            in oklch,
+            var(--foreground) 18%,
+            var(--border)
+          );
+        }
+      }
+      .opt-head {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+      }
+      .opt-tag {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        min-width: 26px;
+        height: 26px;
+        margin-top: 1px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: var(--muted);
+        color: var(--muted-foreground);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .opt-badge {
+        display: inline-block;
+        vertical-align: 1px;
+        margin-left: 6px;
+        padding: 0 6px;
+        height: 18px;
+        line-height: 18px;
+        border-radius: 8px;
+        background: var(--accent);
+        color: var(--accent-foreground);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .opt-head h2 {
+        margin: 0;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+      }
+      .opt-sub {
+        margin: 2px 0 0;
+        color: var(--muted-foreground);
+        font-size: 0.8125rem;
+        line-height: 1.45;
+      }
+      .demos {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      figure {
+        margin: 0;
+      }
+      .surface {
+        display: grid;
+        place-items: center;
+        height: 88px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+      }
+      .surface-page {
+        background: var(--background);
+        --ring-offset: var(--background);
+      }
+      .surface-card {
+        background: var(--card);
+        --ring-offset: var(--card);
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+      }
+      figcaption {
+        margin-top: 8px;
+        color: var(--muted-foreground);
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+      .opt-spec {
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 5px;
+      }
+      .opt-spec li {
+        position: relative;
+        padding-left: 14px;
+        color: var(--muted-foreground);
+        font-size: 0.8125rem;
+        line-height: 1.45;
+      }
+      .opt-spec li::before {
+        content: "";
+        position: absolute;
+        left: 1px;
+        top: 0.56em;
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--muted-foreground);
+        opacity: 0.5;
+      }
+      .opt-spec b {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+      .foot {
+        margin-top: 32px;
+        display: grid;
+        gap: 4px;
+        color: var(--muted-foreground);
+        font-size: 0.75rem;
+        line-height: 1.5;
+      }
+      .foot p {
+        margin: 0;
+      }
+
+      /* ── Circle switch — mirrors CircleButton (Section 2.7) ────────────── */
+      .theme-switch {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted-foreground);
+        padding: 0;
+        cursor: pointer;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+          background-color 150ms var(--ease-out),
+          color 150ms var(--ease-out),
+          border-color 150ms var(--ease-out),
+          box-shadow 150ms var(--ease-out),
+          transform 100ms var(--ease-out);
+      }
+      .theme-switch.mobile {
+        width: 2.75rem;
+        height: 2.75rem;
+      }
+      .theme-switch svg {
+        display: block;
+        width: 1rem;
+        height: 1rem;
+      }
+      @media (hover: hover) {
+        .theme-switch:hover {
+          background: var(--muted);
+          color: var(--foreground);
+        }
+      }
+      .theme-switch:active {
+        background: var(--muted);
+        color: var(--foreground);
+        transform: scale(0.97);
+      }
+      .theme-switch:focus-visible {
+        box-shadow:
+          0 0 0 2px var(--ring-offset, var(--background)),
+          0 0 0 4px var(--ring);
+      }
+      /* ── A · Crossfade & tilt — 200ms in / 140ms out ─────────────────── */
+      .ts-a .ic-sun,
+      .ts-a .ic-moon {
+        position: absolute;
+        transition:
+          opacity 200ms var(--ease-out),
+          transform 200ms var(--ease-out);
+      }
+      .ts-a .ic-sun {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      }
+      .ts-a .ic-moon {
+        opacity: 0;
+        transform: rotate(-90deg) scale(0.5);
+        transition-duration: 140ms;
+      }
+      .dark .ts-a .ic-sun {
+        opacity: 0;
+        transform: rotate(90deg) scale(0.5);
+        transition-duration: 140ms;
+      }
+      .dark .ts-a .ic-moon {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      }
+
+      /* ── B · Sun ↔ moon morph — 380ms in / 300ms out ─────────────────── */
+      .ts-b .b-rays,
+      .ts-b .b-disc {
+        transform-origin: 12px 12px;
+      }
+      .ts-b .b-rays {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+        transition:
+          transform var(--duration-morph-exit) var(--ease-morph),
+          opacity var(--duration-morph-exit) var(--ease-out);
+      }
+      .ts-b .b-disc {
+        transform: scale(1);
+        transition: transform var(--duration-morph-exit) var(--ease-morph);
+      }
+      .ts-b .b-cut {
+        transition:
+          cx var(--duration-morph-exit) var(--ease-morph),
+          cy var(--duration-morph-exit) var(--ease-morph),
+          r var(--duration-morph-exit) var(--ease-morph);
+      }
+      .dark .ts-b .b-rays,
+      .dark .ts-b .b-disc,
+      .dark .ts-b .b-cut {
+        transition-duration: var(--duration-morph-open);
+      }
+      .dark .ts-b .b-rays {
+        opacity: 0;
+        transform: rotate(45deg) scale(0.35);
+      }
+      .dark .ts-b .b-disc {
+        transform: scale(1.3);
+      }
+      .dark .ts-b .b-cut {
+        cx: 17px;
+        cy: 7.6px;
+        r: 6.2px;
+      }
+
+      /* ── C · Slot roll — 380ms in / 300ms out ────────────────────────── */
+      .ts-c .roll {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 200%;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(0);
+        transition: transform var(--duration-morph-exit) var(--ease-morph);
+      }
+      .ts-c .roll-cell {
+        display: grid;
+        height: 50%;
+        place-items: center;
+      }
+      .dark .ts-c .roll {
+        transform: translateY(-50%);
+        transition-duration: var(--duration-morph-open);
+      }
+
+      /* ── E · Cross-rotate — Apple Control Center style, 260ms ──────────── */
+      .ts-e .ic-sun,
+      .ts-e .ic-moon {
+        position: absolute;
+        transition:
+          opacity 200ms var(--ease-out),
+          transform 260ms var(--ease-in-out);
+      }
+      .ts-e .ic-sun {
+        opacity: 1;
+        transform: rotate(0deg);
+      }
+      .ts-e .ic-moon {
+        opacity: 0;
+        transform: rotate(-90deg);
+        transition-duration: 160ms, 260ms;
+      }
+      .dark .ts-e .ic-sun {
+        opacity: 0;
+        transform: rotate(90deg);
+        transition-duration: 160ms, 260ms;
+      }
+      .dark .ts-e .ic-moon {
+        opacity: 1;
+        transform: rotate(0deg);
+      }
+
+      /* ── D · Day/night pill — 380ms knob travel ────────────────────────── */
+      .knob-switch {
+        position: relative;
+        height: 2.5rem;
+        width: 4.25rem;
+        flex-shrink: 0;
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+        border-radius: 999px;
+        background: var(--muted);
+        padding: 0;
+        cursor: pointer;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+          background-color 150ms var(--ease-out),
+          border-color 150ms var(--ease-out),
+          transform 100ms var(--ease-out);
+        --k-inset: 3px;
+        --k-size: 2.125rem;
+        --k-travel: 28px;
+      }
+      .knob-switch.size-mobile {
+        height: 2.75rem;
+        width: 4.625rem;
+        --k-size: 2.375rem;
+        --k-travel: 30px;
+      }
+      .knob-switch .hint {
+        position: absolute;
+        top: 50%;
+        display: grid;
+        place-items: center;
+        width: var(--k-size);
+        height: var(--k-size);
+        transform: translateY(-50%);
+        color: var(--muted-foreground);
+        transition: opacity 200ms var(--ease-out);
+      }
+      .knob-switch .hint-l {
+        left: var(--k-inset);
+        opacity: 0;
+        transition-duration: 140ms;
+      }
+      .knob-switch .hint-r {
+        right: var(--k-inset);
+        opacity: 0.55;
+      }
+      .dark .knob-switch .hint-l {
+        opacity: 0.55;
+      }
+      .dark .knob-switch .hint-r {
+        opacity: 0;
+        transition-duration: 140ms;
+      }
+      .knob-switch .hint svg {
+        display: block;
+        width: 1rem;
+        height: 1rem;
+      }
+      @media (hover: hover) {
+        .knob-switch:hover .hint-r {
+          opacity: 0.8;
+        }
+        .dark .knob-switch:hover .hint-l {
+          opacity: 0.8;
+        }
+        .knob-switch:hover .knob {
+          color: var(--foreground);
+        }
+      }
+      .knob-switch:active {
+        transform: scale(0.97);
+      }
+      .knob-switch:focus-visible {
+        box-shadow:
+          0 0 0 2px var(--ring-offset, var(--background)),
+          0 0 0 4px var(--ring);
+      }
+      .knob-switch .knob {
+        position: absolute;
+        top: 50%;
+        left: var(--k-inset);
+        display: grid;
+        place-items: center;
+        width: var(--k-size);
+        height: var(--k-size);
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+        border-radius: 999px;
+        background: var(--card);
+        box-shadow: var(--shadow-soft);
+        color: var(--foreground);
+        transform: translate(0, -50%);
+        transition:
+          transform var(--duration-morph-exit) var(--ease-morph),
+          background-color 150ms var(--ease-out);
+      }
+      .dark .knob-switch .knob {
+        transform: translate(var(--k-travel), -50%);
+        transition-duration: var(--duration-morph-open), 150ms;
+      }
+      .knob-switch .knob svg {
+        position: absolute;
+        display: block;
+        width: 1rem;
+        height: 1rem;
+        transition:
+          opacity 200ms var(--ease-out) 90ms,
+          transform 200ms var(--ease-out) 90ms;
+      }
+      .knob-switch .knob .ic-sun {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      }
+      .knob-switch .knob .ic-moon {
+        opacity: 0;
+        transform: rotate(-90deg) scale(0.5);
+        transition-duration: 140ms;
+        transition-delay: 0ms;
+      }
+      .dark .knob-switch .knob .ic-sun {
+        opacity: 0;
+        transform: rotate(90deg) scale(0.5);
+        transition-duration: 140ms;
+        transition-delay: 0ms;
+      }
+      .dark .knob-switch .knob .ic-moon {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+      }
+
+      /* ── Segmented Light/Dark — Apple picker style ─────────────────────── */
+      .seg-switch {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 2.5rem;
+        width: 5.5rem;
+        flex-shrink: 0;
+        padding: 3px;
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+        border-radius: 999px;
+        background: var(--muted);
+      }
+      .seg-switch.mobile {
+        height: 2.75rem;
+        width: 6rem;
+      }
+      .seg-switch .seg-cell {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 200ms var(--ease-out);
+      }
+      .seg-switch .seg-cell svg {
+        display: block;
+        width: 1rem;
+        height: 1rem;
+      }
+      .seg-switch .seg-sun {
+        color: var(--foreground);
+      }
+      .seg-switch .seg-moon {
+        color: var(--muted-foreground);
+      }
+      .dark .seg-switch .seg-sun {
+        color: var(--muted-foreground);
+      }
+      .dark .seg-switch .seg-moon {
+        color: var(--foreground);
+      }
+      .seg-switch .seg-cell:focus-visible {
+        outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent);
+        outline-offset: 2px;
+      }
+      .seg-switch .seg-thumb {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: calc(50% - 3px);
+        height: calc(100% - 6px);
+        border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+        border-radius: 999px;
+        background: var(--card);
+        box-shadow: var(--shadow-soft);
+        transform: translateX(0);
+        transition: transform var(--duration-morph-exit) var(--ease-morph);
+      }
+      .dark .seg-switch .seg-thumb {
+        transform: translateX(100%);
+        transition-duration: var(--duration-morph-open);
+      }
+
+      /* ── View Transitions baseline ───────────────────────────────────── */
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation: none;
+        mix-blend-mode: normal;
+      }
+      ::view-transition-old(root) {
+        z-index: 1;
+      }
+      ::view-transition-new(root) {
+        z-index: 9999;
+      }
+      /* Freeze inner transitions while the transition snapshots — the flip
+         carries the motion; icons never lag behind the wipe. */
+      html.vt *,
+      html.vt *::before,
+      html.vt *::after {
+        transition-duration: 0ms !important;
+        transition-delay: 0ms !important;
+      }
+
+      /* ── Screen flip (second gallery) ────────────────────────────────── */
+      @property --flip-r {
+        syntax: "<length>";
+        inherits: true;
+        initial-value: 0px;
+      }
+      @property --flip-angle {
+        syntax: "<angle>";
+        inherits: true;
+        initial-value: 0deg;
+      }
+      html.flip-soft::view-transition-new(root) {
+        mask-image: radial-gradient(
+          circle var(--flip-r) at var(--flip-x, 50%) var(--flip-y, 50%),
+          #000 calc(100% - 64px),
+          transparent 100%
+        );
+        mask-repeat: no-repeat;
+        -webkit-mask-image: radial-gradient(
+          circle var(--flip-r) at var(--flip-x, 50%) var(--flip-y, 50%),
+          #000 calc(100% - 64px),
+          transparent 100%
+        );
+      }
+      html.flip-radar::view-transition-new(root) {
+        mask-image: conic-gradient(
+          from -90deg at var(--flip-x, 50%) var(--flip-y, 50%),
+          #000 var(--flip-angle),
+          transparent var(--flip-angle)
+        );
+        mask-repeat: no-repeat;
+        -webkit-mask-image: conic-gradient(
+          from -90deg at var(--flip-x, 50%) var(--flip-y, 50%),
+          #000 var(--flip-angle),
+          transparent var(--flip-angle)
+        );
+      }
+
+      .section-head {
+        margin-top: 44px;
+      }
+      .section-head h2 {
+        margin: 10px 0 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        line-height: 1.2;
+      }
+      .section-sub {
+        margin: 6px 0 0;
+        max-width: 700px;
+        color: var(--muted-foreground);
+        font-size: 0.875rem;
+        line-height: 1.55;
+      }
+      .demos.single {
+        grid-template-columns: 1fr;
+      }
+
+      /* ── Reduced motion — mirror of globals.css ──────────────────────── */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 200ms !important;
+          transition-property:
+            opacity, color, background-color, border-color !important;
+        }
+        .theme-switch:active,
+        .knob-switch:active {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <div class="head-copy">
+          <p class="eyebrow">design-compare · apps/app</p>
+          <h1>Dark mode switch</h1>
+          <p class="lead">
+            Two galleries. The switch control itself — and the screen flip, ten
+            ways the whole window changes theme. Click any switch: the page
+            flips live. Hover, Tab focus and press states are real.
+          </p>
+        </div>
+        <div class="park" role="group" aria-label="Preview theme">
+          <button type="button" data-set="light" aria-pressed="true">
+            Light
+          </button>
+          <button type="button" data-set="dark" aria-pressed="false">
+            Dark
+          </button>
+        </div>
+      </header>
+      <p class="parity">
+        One component on every shell — desktop web, phone web, Electron,
+        Android. Same shape, same motion, same press response; only the size
+        steps up: 40px desktop, 44px at ≤sm or coarse pointers, 16px icon in
+        both.
+      </p>
+
+      <header class="section-head">
+        <p class="eyebrow">The switch</p>
+        <h2>Control animation</h2>
+        <p class="section-sub">
+          Six ways the button itself changes. The flip is a plain swap here —
+          screen transitions are in the next gallery.
+        </p>
+      </header>
+      <section class="grid">
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">A</span>
+            <div>
+              <h2>Crossfade &amp; tilt</h2>
+              <p class="opt-sub">
+                Each icon tilts 45° as it fades; the other tilts in.
+              </p>
+            </div>
+          </header>
+          <div class="demos">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Page header · 40px desktop</figcaption>
+            </figure>
+            <figure>
+              <div class="surface surface-card">
+                <button
+                  class="theme-switch ts-a mobile"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Drawer footer · 44px phone</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Motion</b> — crossfade with a 45° tilt per icon.</li>
+            <li>
+              <b>Timing</b> — 200ms in · 140ms out · press 100ms scale .97.
+            </li>
+            <li><b>Reduced motion</b> — fade only, no tilt.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">B</span>
+            <div>
+              <h2>Sun ↔ moon morph</h2>
+              <p class="opt-sub">
+                One shape changes: rays pull away, the crescent is carved out.
+              </p>
+            </div>
+          </header>
+          <div class="demos">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-b"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <mask id="b-cut-h">
+                        <rect width="24" height="24" fill="#fff" />
+                        <circle
+                          class="b-cut"
+                          cx="34"
+                          cy="34"
+                          r="5"
+                          fill="#000"
+                        />
+                      </mask>
+                    </defs>
+                    <g class="b-rays">
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" />
+                    </g>
+                    <circle
+                      class="b-disc"
+                      cx="12"
+                      cy="12"
+                      r="4"
+                      mask="url(#b-cut-h)"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Page header · 40px desktop</figcaption>
+            </figure>
+            <figure>
+              <div class="surface surface-card">
+                <button
+                  class="theme-switch ts-b mobile"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <mask id="b-cut-m">
+                        <rect width="24" height="24" fill="#fff" />
+                        <circle
+                          class="b-cut"
+                          cx="34"
+                          cy="34"
+                          r="5"
+                          fill="#000"
+                        />
+                      </mask>
+                    </defs>
+                    <g class="b-rays">
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" />
+                    </g>
+                    <circle
+                      class="b-disc"
+                      cx="12"
+                      cy="12"
+                      r="4"
+                      mask="url(#b-cut-m)"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Drawer footer · 44px phone</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Motion</b> — SVG mask morph: rays retract, crescent cuts in.
+            </li>
+            <li><b>Timing</b> — 380ms morph curve in · 300ms out.</li>
+            <li><b>Reduced motion</b> — crossfade, no morph.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">C</span>
+            <div>
+              <h2>Slot roll</h2>
+              <p class="opt-sub">
+                Vertical reel: sun rolls up out of frame as moon rolls up into
+                it.
+              </p>
+            </div>
+          </header>
+          <div class="demos">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-c"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <span class="roll" aria-hidden="true">
+                    <span class="roll-cell"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2" />
+                        <path d="M12 20v2" />
+                        <path d="m4.93 4.93 1.41 1.41" />
+                        <path d="m17.66 17.66 1.41 1.41" />
+                        <path d="M2 12h2" />
+                        <path d="M20 12h2" />
+                        <path d="m6.34 17.66-1.41 1.41" />
+                        <path d="m19.07 4.93-1.41 1.41" /></svg
+                    ></span>
+                    <span class="roll-cell"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg
+                    ></span>
+                  </span>
+                </button>
+              </div>
+              <figcaption>Page header · 40px desktop</figcaption>
+            </figure>
+            <figure>
+              <div class="surface surface-card">
+                <button
+                  class="theme-switch ts-c mobile"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <span class="roll" aria-hidden="true">
+                    <span class="roll-cell"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2" />
+                        <path d="M12 20v2" />
+                        <path d="m4.93 4.93 1.41 1.41" />
+                        <path d="m17.66 17.66 1.41 1.41" />
+                        <path d="M2 12h2" />
+                        <path d="M20 12h2" />
+                        <path d="m6.34 17.66-1.41 1.41" />
+                        <path d="m19.07 4.93-1.41 1.41" /></svg
+                    ></span>
+                    <span class="roll-cell"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg
+                    ></span>
+                  </span>
+                </button>
+              </div>
+              <figcaption>Drawer footer · 44px phone</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Motion</b> — the disc becomes a reel; the old icon leaves
+              upward, the new follows in.
+            </li>
+            <li><b>Timing</b> — 380ms morph curve in · 300ms out.</li>
+            <li><b>Reduced motion</b> — straight swap.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">D</span>
+            <div>
+              <h2>Day/night pill</h2>
+              <p class="opt-sub">
+                A track with a gliding knob; the waiting icon rests at the far
+                end.
+              </p>
+            </div>
+          </header>
+          <div class="demos">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="knob-switch size-md"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <span class="hint hint-l" aria-hidden="true"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" /></svg
+                  ></span>
+                  <span class="hint hint-r" aria-hidden="true"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg
+                  ></span>
+                  <span class="knob" aria-hidden="true">
+                    <svg
+                      class="ic-sun"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                    <svg
+                      class="ic-moon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+              <figcaption>Page header · 40px desktop</figcaption>
+            </figure>
+            <figure>
+              <div class="surface surface-card">
+                <button
+                  class="knob-switch size-mobile"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <span class="hint hint-l" aria-hidden="true"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" /></svg
+                  ></span>
+                  <span class="hint hint-r" aria-hidden="true"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg
+                  ></span>
+                  <span class="knob" aria-hidden="true">
+                    <svg
+                      class="ic-sun"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                    <svg
+                      class="ic-moon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+              <figcaption>Drawer footer · 44px phone</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Motion</b> — knob glides, the active icon rides it, the other
+              waits muted at the far end.
+            </li>
+            <li><b>Timing</b> — 380ms morph curve · press 100ms scale .97.</li>
+            <li>
+              <b>Trade-off</b> — 68×40px, not a circle; changes the icon-button
+              grammar and needs header room.
+            </li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">E</span>
+            <div>
+              <h2>Cross-rotate <span class="opt-badge">Apple</span></h2>
+              <p class="opt-sub">
+                Control Center's move: both glyphs rotate through the swap — the
+                old spins out, the new spins in.
+              </p>
+            </div>
+          </header>
+          <div class="demos">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-e"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Page header · 40px desktop</figcaption>
+            </figure>
+            <figure>
+              <div class="surface surface-card">
+                <button
+                  class="theme-switch ts-e mobile"
+                  data-theme-switch
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Drawer footer · 44px phone</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Motion</b> — 260ms ease-in-out rotate + 200ms crossfade.</li>
+            <li>
+              <b>Timing</b> — press 100ms scale .97 · lags nothing mid-flip.
+            </li>
+            <li><b>Reduced motion</b> — fade only, no rotation.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">F</span>
+            <div>
+              <h2>Segmented picker <span class="opt-badge">Apple</span></h2>
+              <p class="opt-sub">
+                Two halves, one thumb — the picker Apple uses in Settings. Tap a
+                half; the thumb morphs over.
+              </p>
+            </div>
+          </header>
+          <div class="demos">
+            <figure>
+              <div class="surface surface-page">
+                <div class="seg-switch" role="group" aria-label="Theme">
+                  <span class="seg-thumb" aria-hidden="true"></span>
+                  <button
+                    class="seg-cell seg-sun"
+                    data-set="light"
+                    type="button"
+                    aria-label="Light theme"
+                    aria-pressed="true"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                  </button>
+                  <button
+                    class="seg-cell seg-moon"
+                    data-set="dark"
+                    type="button"
+                    aria-label="Dark theme"
+                    aria-pressed="false"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <figcaption>Page header · 40px desktop</figcaption>
+            </figure>
+            <figure>
+              <div class="surface surface-card">
+                <div class="seg-switch mobile" role="group" aria-label="Theme">
+                  <span class="seg-thumb" aria-hidden="true"></span>
+                  <button
+                    class="seg-cell seg-sun"
+                    data-set="light"
+                    type="button"
+                    aria-label="Light theme"
+                    aria-pressed="true"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2" />
+                      <path d="M12 20v2" />
+                      <path d="m4.93 4.93 1.41 1.41" />
+                      <path d="m17.66 17.66 1.41 1.41" />
+                      <path d="M2 12h2" />
+                      <path d="M20 12h2" />
+                      <path d="m6.34 17.66-1.41 1.41" />
+                      <path d="m19.07 4.93-1.41 1.41" />
+                    </svg>
+                  </button>
+                  <button
+                    class="seg-cell seg-moon"
+                    data-set="dark"
+                    type="button"
+                    aria-label="Dark theme"
+                    aria-pressed="false"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <figcaption>Drawer footer · 44px phone</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Motion</b> — thumb slides 380ms morph · glyphs swap 200ms.
+            </li>
+            <li>
+              <b>Trade-off</b> — 88×40px (96×44px phone), shows both themes at
+              once.
+            </li>
+          </ul>
+        </article>
+      </section>
+
+      <header class="section-head">
+        <p class="eyebrow">The flip</p>
+        <h2>Screen transition</h2>
+        <p class="section-sub">
+          Ten ways the whole window changes theme. Every option starts at your
+          tap point where it makes sense, and treats the disc/page as the actor
+          — click a switch and watch the window, not the card. Identical code on
+          web desktop, phone web, Electron and Android. Reduced motion swaps
+          instantly; without View Transitions it is a plain swap.
+        </p>
+      </header>
+      <section class="grid">
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T1</span>
+            <div>
+              <h2>Circle from the tap point</h2>
+              <p class="opt-sub">
+                The new theme grows as a disc from the button; the radius always
+                covers the farthest corner.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="circle"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Mechanism</b> — disc expands from the tap point.</li>
+            <li>
+              <b>Motion</b> — 380ms ease-out · the Telegram/Android classic.
+            </li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T2</span>
+            <div>
+              <h2>Soft circle</h2>
+              <p class="opt-sub">
+                Same disc, but the leading edge is feathered — no hard boundary
+                anywhere.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="soft"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Mechanism</b> — disc with a 64px soft edge.</li>
+            <li><b>Motion</b> — 380ms ease-out · calmest of the two discs.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T3</span>
+            <div>
+              <h2>Curtain</h2>
+              <p class="opt-sub">
+                The new theme drops from the top edge and covers the full width
+                — a window shade, not a disc.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="curtain"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Mechanism</b> — full-width band sweeps top to bottom.</li>
+            <li><b>Motion</b> — 380ms ease-out · no origin point needed.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T4</span>
+            <div>
+              <h2>Diagonal sweep</h2>
+              <p class="opt-sub">
+                A triangle sweeps from the top-left corner across the screen.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="diag"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Mechanism</b> — corner triangle opens across the viewport.
+            </li>
+            <li><b>Motion</b> — 380ms ease-out · one diagonal pass.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T5</span>
+            <div>
+              <h2>Blinds</h2>
+              <p class="opt-sub">
+                Eight horizontal bands snap open, top to bottom — mechanical,
+                50ms apart.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="blinds"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Mechanism</b> — 8 steps, top band first.</li>
+            <li>
+              <b>Motion</b> — 400ms total · steps(8) · the boldest option.
+            </li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T6</span>
+            <div>
+              <h2>Zoom bloom</h2>
+              <p class="opt-sub">
+                The disc grows from the button while the whole layer settles
+                from 94% scale — the new theme arrives with weight.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="zoom"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Mechanism</b> — disc + a 0.94→1 scale settle.</li>
+            <li>
+              <b>Motion</b> — 380ms ease-out · reads like the theme arrives, not
+              cuts.
+            </li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T7</span>
+            <div>
+              <h2>Fade</h2>
+              <p class="opt-sub">
+                Plain crossfade with an 8px blur on entry. The no-risk default.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="fade"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li><b>Mechanism</b> — opacity + blur crossfade.</li>
+            <li><b>Motion</b> — 380ms ease-out · cheapest on weak devices.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T8</span>
+            <div>
+              <h2>Wallpaper settle <span class="opt-badge">Apple</span></h2>
+              <p class="opt-sub">
+                macOS dynamic desktop style — the window softly relaxes into the
+                new theme with dual-layer depth settle.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="settle"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Mechanism</b> — dual-layer scale settle (1.02→1 / 1→0.98) +
+              cross-dissolve.
+            </li>
+            <li>
+              <b>Motion</b> — 450ms smooth curve · calm, photographic depth.
+            </li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T9</span>
+            <div>
+              <h2>Radar sweep <span class="opt-badge">Apple</span></h2>
+              <p class="opt-sub">
+                Clockwise conic sweep centered at the tap point — the Apple
+                Watch circular gauge and face wipe.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="radar"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Mechanism</b> — 360° conic mask originating from the button.
+            </li>
+            <li><b>Motion</b> — 440ms ease-out · precise, radial wipe.</li>
+          </ul>
+        </article>
+
+        <article class="opt">
+          <header class="opt-head">
+            <span class="opt-tag">T10</span>
+            <div>
+              <h2>App-open zoom <span class="opt-badge">Apple</span></h2>
+              <p class="opt-sub">
+                iOS Springboard expansion — the new theme blooms outward
+                directly from the switch's rounded perimeter.
+              </p>
+            </div>
+          </header>
+          <div class="demos single">
+            <figure>
+              <div class="surface surface-page">
+                <button
+                  class="theme-switch ts-a"
+                  data-theme-switch
+                  data-flip="app-open"
+                  type="button"
+                  aria-label="Dark theme"
+                  title="Dark theme"
+                >
+                  <svg
+                    class="ic-sun"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
+                  <svg
+                    class="ic-moon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                  </svg>
+                </button>
+              </div>
+              <figcaption>Click — watch the whole window</figcaption>
+            </figure>
+          </div>
+          <ul class="opt-spec">
+            <li>
+              <b>Mechanism</b> — rounded inset clip-path expanding from switch
+              bounds.
+            </li>
+            <li>
+              <b>Motion</b> — 420ms spring curve · physically anchored to the
+              switch.
+            </li>
+          </ul>
+        </article>
+      </section>
+
+      <footer class="foot">
+        <p>
+          Every value on this page is a token: oklch palette, radius ladder,
+          shadows and the motion curves from globals.css. Press 100ms scale .97
+          · colors 150ms · morph 380ms in / 300ms out.
+        </p>
+        <p>Scratch page — deleted once the pick is made.</p>
+      </footer>
+    </main>
+
+    <script>
+      (() => {
+        const root = document.documentElement;
+        const reduced = () =>
+          matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const switches = [...document.querySelectorAll("[data-theme-switch]")];
+        const park = [...document.querySelectorAll(".park button")];
+
+        const setTheme = (dark) => {
+          root.classList.toggle("dark", dark);
+          for (const b of switches) {
+            const label = dark ? "Light theme" : "Dark theme";
+            b.setAttribute("aria-label", label);
+            b.title = label;
+          }
+          for (const b of park) {
+            const on = (b.dataset.set === "dark") === dark;
+            b.classList.toggle("active", on);
+            b.setAttribute("aria-pressed", String(on));
+          }
+          for (const s of document.querySelectorAll(".seg-switch")) {
+            const sun = s.querySelector(".seg-sun");
+            const moon = s.querySelector(".seg-moon");
+            if (sun && moon) {
+              sun.setAttribute("aria-pressed", String(!dark));
+              moon.setAttribute("aria-pressed", String(dark));
+            }
+          }
+        };
+
+        let vtActive = false;
+        const NEW = "::view-transition-new(root)";
+        const OLD = "::view-transition-old(root)";
+
+        const flip = (btn, dark, effect) => {
+          const rect = btn.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          const r = Math.hypot(
+            Math.max(x, innerWidth - x),
+            Math.max(y, innerHeight - y),
+          );
+          root.classList.add("vt");
+          const vt = document.startViewTransition(() => setTheme(dark));
+          vtActive = true;
+          vt.finished
+            .catch(() => {})
+            .finally(() => {
+              root.classList.remove("vt");
+              root.classList.remove("flip-soft");
+              root.classList.remove("flip-radar");
+              vtActive = false;
+            });
+
+          vt.ready.then(() => {
+            const base = {
+              duration: 380,
+              easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+              pseudoElement: NEW,
+              fill: "both",
+            };
+            if (effect === "circle") {
+              root.animate(
+                {
+                  clipPath: [
+                    `circle(0px at ${x}px ${y}px)`,
+                    `circle(${r}px at ${x}px ${y}px)`,
+                  ],
+                },
+                base,
+              );
+            } else if (effect === "soft") {
+              root.style.setProperty("--flip-x", `${x}px`);
+              root.style.setProperty("--flip-y", `${y}px`);
+              root.classList.add("flip-soft");
+              root.animate({ "--flip-r": ["0px", `${r + 64}px`] }, base);
+            } else if (effect === "curtain") {
+              root.animate(
+                { clipPath: ["inset(0 0 100% 0)", "inset(0 0 0 0)"] },
+                base,
+              );
+            } else if (effect === "diag") {
+              root.animate(
+                {
+                  clipPath: [
+                    "polygon(0% 0%, 0% 0%, 0% 0%)",
+                    "polygon(0% 0%, 240% 0%, 0% 240%)",
+                  ],
+                },
+                base,
+              );
+            } else if (effect === "blinds") {
+              root.animate(
+                { clipPath: ["inset(0 0 100% 0)", "inset(0 0 0 0)"] },
+                { ...base, duration: 400, easing: "steps(8, end)" },
+              );
+            } else if (effect === "zoom") {
+              root.animate(
+                {
+                  clipPath: [
+                    `circle(0px at ${x}px ${y}px)`,
+                    `circle(${r}px at ${x}px ${y}px)`,
+                  ],
+                  transform: ["scale(0.94)", "scale(1)"],
+                },
+                base,
+              );
+            } else if (effect === "settle") {
+              root.animate(
+                {
+                  opacity: [1, 0],
+                  transform: ["scale(1)", "scale(0.98)"],
+                },
+                { ...base, pseudoElement: OLD, duration: 420 },
+              );
+              root.animate(
+                {
+                  opacity: [0, 1],
+                  transform: ["scale(1.02)", "scale(1)"],
+                },
+                { ...base, duration: 450 },
+              );
+            } else if (effect === "radar") {
+              root.style.setProperty("--flip-x", `${x}px`);
+              root.style.setProperty("--flip-y", `${y}px`);
+              root.classList.add("flip-radar");
+              root.animate(
+                { "--flip-angle": ["0deg", "360deg"] },
+                { ...base, duration: 440 },
+              );
+            } else if (effect === "app-open") {
+              const top = Math.round(rect.top);
+              const right = Math.round(innerWidth - rect.right);
+              const bottom = Math.round(innerHeight - rect.bottom);
+              const left = Math.round(rect.left);
+              root.animate(
+                {
+                  clipPath: [
+                    `inset(${top}px ${right}px ${bottom}px ${left}px round 999px)`,
+                    "inset(0px 0px 0px 0px round 0px)",
+                  ],
+                  transform: ["scale(0.96)", "scale(1)"],
+                },
+                {
+                  ...base,
+                  duration: 420,
+                  easing: "cubic-bezier(0.2, 0.9, 0.2, 1)",
+                },
+              );
+              root.animate(
+                {
+                  opacity: [1, 0.2],
+                  transform: ["scale(1)", "scale(0.95)"],
+                },
+                { ...base, pseudoElement: OLD, duration: 320 },
+              );
+            } else {
+              root.animate(
+                { opacity: [0, 1], filter: ["blur(8px)", "blur(0px)"] },
+                base,
+              );
+            }
+          });
+        };
+
+        document.addEventListener("click", (e) => {
+          const seg = e.target.closest(".park button");
+          if (seg) {
+            setTheme(seg.dataset.set === "dark");
+            return;
+          }
+          const cell = e.target.closest(".seg-cell");
+          if (cell) {
+            setTheme(cell.dataset.set === "dark");
+            return;
+          }
+          const btn = e.target.closest("[data-theme-switch]");
+          if (!btn || vtActive) return;
+          const dark = !root.classList.contains("dark");
+          const effect = btn.dataset.flip;
+          if (effect && "startViewTransition" in document && !reduced()) {
+            flip(btn, dark, effect);
+          } else {
+            setTheme(dark);
+          }
+        });
+
+        setTheme(matchMedia("(prefers-color-scheme: dark)").matches);
+      })();
+    </script>
+  </body>
+</html>

@@ -8,6 +8,9 @@
  */
 import { jest } from "@jest/globals";
 
+// React 19 / RN test environment act flag
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 // Lucide publishes its React Native condition as ESM `.mjs`; Jest's Expo
 // transformer only handles JS/TS extensions. Icons are decorative in these
 // behavior tests, so keep the production bundle untouched and render no SVG.
@@ -74,5 +77,64 @@ jest.mock("@react-native-community/netinfo", () => ({
       isConnected: true,
       isInternetReachable: true,
     })),
+  },
+}));
+
+// Native modules used by update-flow and platform adapters.
+jest.mock("expo-notifications", () => ({
+  AndroidImportance: { DEFAULT: 3 },
+  getPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  requestPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  setNotificationChannelAsync: jest.fn(async () => null),
+  dismissAllNotificationsAsync: jest.fn(async () => {}),
+  scheduleNotificationAsync: jest.fn(async () => "id"),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove() {} })),
+}));
+
+jest.mock("expo-intent-launcher", () => ({
+  startActivityAsync: jest.fn(async () => ({ resultCode: -1 })),
+}));
+
+jest.mock("expo-crypto", () => ({
+  CryptoDigestAlgorithm: { SHA256: "SHA-256" },
+  digest: jest.fn(async () => new Uint8Array(32).buffer),
+}));
+
+jest.mock("expo-file-system", () => ({
+  Paths: { cache: "/cache" },
+  Directory: class {
+    uri: string;
+    constructor(...parts: unknown[]) {
+      this.uri = parts.map((p) => String(p)).join("/");
+    }
+    get exists() {
+      return true;
+    }
+    create() {}
+  },
+  File: class {
+    uri: string;
+    constructor(...parts: unknown[]) {
+      this.uri = parts.map((p) => String(p)).join("/");
+    }
+    get exists() {
+      return false;
+    }
+    get size() {
+      return 0;
+    }
+    get contentUri() {
+      return `content://${this.uri}`;
+    }
+    async bytes() {
+      return new Uint8Array();
+    }
+    delete() {}
+    move() {}
+    static createDownloadTask(..._args: unknown[]) {
+      return {
+        downloadAsync: async () => ({}),
+      };
+    }
   },
 }));

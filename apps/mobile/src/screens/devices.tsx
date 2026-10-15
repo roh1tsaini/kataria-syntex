@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
-import { Alert, TextInput, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, StyleSheet, View } from "react-native";
 import {
+  CameraView,
+  useCameraPermissions,
+  type BarcodeScanningResult,
+} from "expo-camera";
+import {
+  Camera,
+  CameraOff,
+  CheckCircle2,
   ChevronDown,
   Globe,
   Monitor,
   Smartphone,
   Trash2,
 } from "lucide-react-native";
-import { fmtRelative } from "@kataria-syntex/shared";
+import { fmtRelative, parseQrScanCode } from "@kataria-syntex/shared";
 import {
   friendlyError,
   toastError,
@@ -21,6 +29,8 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CircleButton } from "@/components/ui/circle-button";
 import { MorphPanel } from "@/components/ui/disclosure";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetDescription,
@@ -41,6 +51,16 @@ const PLATFORM_LABEL: Record<string, string> = {
   web: "Web browser",
   desktop: "Desktop app",
 };
+
+/** Uppercase alphanumerics regrouped into 4s with dashes — the exact stored shape. */
+function canonicalCode(value: string): string {
+  const alnum = value.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  return (alnum.match(/.{1,4}/g) ?? []).join("-");
+}
+
+/** Shown whenever the camera cannot run — permission denied or mount failure. */
+const CAMERA_UNAVAILABLE =
+  "Camera unavailable. Enter the code manually instead.";
 
 function DeviceIcon({ platform }: { platform: string }) {
   if (platform === "android") return <Smartphone size={20} />;
@@ -149,6 +169,16 @@ export function DevicesScreen() {
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [approvalCode, setApprovalCode] = useState("");
   const [approving, setApproving] = useState(false);
+  const [approved, setApproved] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  // A barcode can fire again before the camera tears down; the lock keeps the
+  // first accepted code the only one submitted.
+  const scanHandled = useRef(false);
+  // Closing the sheet abandons any in-flight approval — the bumped run id
+  // stops its result from landing on a later open.
+  const approvalRun = useRef(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -193,22 +223,78 @@ export function DevicesScreen() {
     );
   };
 
-  const approve = async () => {
-    const code = approvalCode.trim();
-    if (!code) return;
+  // Login codes are the 16-char unambiguous alphabet grouped
+  // "XXXX-XXXX-XXXX-XXXX"; typed input is accepted with or without dashes and
+  // always submitted canonical — the server matches codes exactly as stored.
+  const canSubmit = approvalCode.replace(/[^A-Z0-9]/g, "").length >= 4;
+
+  /** Leaves the sheet and resets every transient approval state, so the next
+   *  open starts clean and the camera is never left running. */
+  const closeApproval = () => {
+    approvalRun.current += 1;
+    scanHandled.current = false;
+    setApprovalOpen(false);
+    setApprovalCode("");
+    setApproving(false);
+    setApproved(false);
+    setScanning(false);
+    setScanError(null);
+  };
+
+  const approve = async (raw: string) => {
+    const run = (approvalRun.current += 1);
     setApproving(true);
     try {
-      const result = await approveQrLogin(code);
-      setApprovalOpen(false);
-      setApprovalCode("");
-      toastSuccess(
-        result.grantedSelf ? "This device is approved." : "Device approved.",
-      );
+      await approveQrLogin(canonicalCode(raw));
+      if (approvalRun.current !== run) return;
+      setScanning(false);
+      setApproved(true);
     } catch (error) {
+      if (approvalRun.current !== run) return;
       toastError("Could not approve device", friendlyError(error));
     } finally {
-      setApproving(false);
+      if (approvalRun.current === run) setApproving(false);
     }
+  };
+
+  const startScanning = async () => {
+    setScanError(null);
+    try {
+      const result = permission?.granted
+        ? permission
+        : await requestPermission();
+      if (!result.granted) {
+        setScanError(CAMERA_UNAVAILABLE);
+        return;
+      }
+      scanHandled.current = false;
+      setScanning(true);
+    } catch {
+      setScanError(CAMERA_UNAVAILABLE);
+    }
+  };
+
+  const toggleScanning = () => {
+    if (scanning) {
+      setScanning(false);
+      return;
+    }
+    void startScanning();
+  };
+
+  const cameraFailed = () => {
+    setScanning(false);
+    setScanError(CAMERA_UNAVAILABLE);
+  };
+
+  // First valid code wins: stop the camera and submit what it read.
+  const handleBarcodeScanned = (result: BarcodeScanningResult) => {
+    if (scanHandled.current) return;
+    const code = parseQrScanCode(result.data);
+    if (!code) return;
+    scanHandled.current = true;
+    setScanning(false);
+    void approve(code);
   };
 
   const ordered = [...devices].sort((a, b) =>
@@ -279,30 +365,87 @@ export function DevicesScreen() {
             ))
           : null}
       </Card>
-      <Sheet open={approvalOpen} onClose={() => setApprovalOpen(false)}>
+      <Sheet open={approvalOpen} onClose={closeApproval}>
         <SheetHeader>
           <SheetTitle>Approve a device</SheetTitle>
           <SheetDescription>
-            Enter the code shown on the device you want to sign in.
+            Make sure the code matches the other device, then approve.
           </SheetDescription>
         </SheetHeader>
-        <TextInput
-          value={approvalCode}
-          onChangeText={setApprovalCode}
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholder="Approval code"
-          placeholderTextColor="#8b8b8b"
-          className="mt-5 h-11 rounded-lg border border-border bg-background px-3 font-sans text-sm text-foreground"
-          accessibilityLabel="Approval code"
-        />
-        <Button
-          className="mt-4"
-          label="Approve device"
-          disabled={!approvalCode.trim()}
-          loading={approving}
-          onPress={() => void approve()}
-        />
+        {approved ? (
+          <View className="mt-6 items-center gap-3 py-2">
+            <CheckCircle2 size={40} className="text-primary" />
+            <Text className="text-center text-sm font-medium">
+              Approved. The other device is now logged in.
+            </Text>
+            <Text className="text-xs text-muted-foreground">
+              You can close this dialog.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <Field className="mt-5">
+              <FieldLabel>Login code</FieldLabel>
+              <Input
+                value={approvalCode}
+                onChangeText={(text) =>
+                  setApprovalCode(text.toUpperCase().replace(/[^A-Z0-9-]/g, ""))
+                }
+                placeholder="XXXX-XXXX-XXXX-XXXX"
+                maxLength={19}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                spellCheck={false}
+                accessibilityLabel="Login code"
+              />
+              <FieldDescription>
+                Open the login page on the other device and scan its QR code, or
+                enter the code shown below it.
+              </FieldDescription>
+            </Field>
+
+            {scanning ? (
+              <View className="relative mt-3 aspect-video w-full overflow-hidden rounded-lg border border-border bg-foreground">
+                <CameraView
+                  style={StyleSheet.absoluteFill}
+                  facing="back"
+                  barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+                  onBarcodeScanned={handleBarcodeScanned}
+                  onMountError={cameraFailed}
+                />
+                <Text className="absolute inset-x-0 top-2 text-center text-xs text-background/80">
+                  Point the camera at the QR code on the other device
+                </Text>
+              </View>
+            ) : null}
+            {scanError ? (
+              <Text className="mt-3 text-xs text-muted-foreground">
+                {scanError}
+              </Text>
+            ) : null}
+
+            <View className="mt-4 flex-row gap-2">
+              <Button
+                className="flex-1"
+                label="Approve login"
+                disabled={!canSubmit}
+                loading={approving}
+                onPress={() => void approve(approvalCode)}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={approving}
+                onPress={toggleScanning}
+                accessibilityLabel={
+                  scanning ? "Stop camera" : "Scan QR with camera"
+                }
+              >
+                {scanning ? <CameraOff size={16} /> : <Camera size={16} />}
+              </Button>
+            </View>
+          </>
+        )}
       </Sheet>
     </Page>
   );

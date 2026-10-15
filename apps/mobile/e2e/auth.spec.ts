@@ -47,7 +47,7 @@ test.describe("Mobile Auth Flow", () => {
     await page.goto("/auth");
 
     // Title and branding
-    await expect(page.getByText("Kataria Syntex")).toBeVisible();
+    await expect(page.getByText("Kataria Syntex Biz App")).toBeVisible();
     await expect(page.getByText("Sign in")).toBeVisible();
     await expect(
       page.getByText("Enter your phone number or email, or scan the QR code."),
@@ -59,13 +59,13 @@ test.describe("Mobile Auth Flow", () => {
 
     // Tabs
     await expect(page.getByText("Phone / Email")).toBeVisible();
-    await expect(page.getByText("Scan QR")).toBeVisible();
+    await expect(page.getByText("Instant QR Login")).toBeVisible();
   });
 
   test("can switch to QR login tab", async ({ page }) => {
     await page.goto("/auth");
 
-    const qrTab = page.getByText("Scan QR");
+    const qrTab = page.getByText("Instant QR Login");
     await qrTab.click();
 
     await expect(page.getByText("Scan with a signed-in device.")).toBeVisible();

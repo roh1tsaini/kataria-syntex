@@ -27,6 +27,7 @@ import { initAdapter } from "@/platform/adapter";
 import { initUpdateChecks } from "@/platform/update-flow";
 import { initTheme } from "@/theme/theme";
 import { ThemeProvider } from "@/theme/theme-provider";
+import { UpdateGate } from "@/components/update-gate";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -79,6 +80,9 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: "transparent" },
             }}
           />
+          {/* The 426 gate covers every route; nothing below it is usable
+              while the live server demands an update (design.md 3.3). */}
+          <UpdateGate />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

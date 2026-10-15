@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -36,13 +37,41 @@ jest.mock("@/components/ui/sheet", () => {
   };
 });
 
+const mockRequestPermission = jest.fn();
+let mockCameraGranted = false;
+// Captures the live scan handler so a test can simulate a barcode arriving.
+const mockCameraProps: {
+  onBarcodeScanned?: (result: { data: string; type: string }) => void;
+} = {};
+
+jest.mock("expo-camera", () => {
+  const { View } = require("react-native");
+  return {
+    CameraView: (props: {
+      onBarcodeScanned?: (result: { data: string; type: string }) => void;
+    }) => {
+      mockCameraProps.onBarcodeScanned = props.onBarcodeScanned;
+      return <View testID="camera-view" />;
+    },
+    useCameraPermissions: () => [
+      {
+        granted: mockCameraGranted,
+        canAskAgain: true,
+        expires: "never",
+        status: mockCameraGranted ? "granted" : "denied",
+      },
+      mockRequestPermission,
+    ],
+  };
+});
+
 const mockRefreshDevices = jest.fn();
 const mockDeleteDevice = jest.fn();
 const mockApproveQrLogin = jest.fn();
 const mockToastSuccess = jest.fn();
 const mockToastError = jest.fn();
 
-let mockDevices = [
+const mockDevices = [
   {
     id: "other",
     label: "Office Chrome",
@@ -82,6 +111,9 @@ import { DevicesScreen } from "@/screens/devices";
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockCameraGranted = false;
+  mockCameraProps.onBarcodeScanned = undefined;
+  mockRequestPermission.mockResolvedValue({ granted: false });
   mockRefreshDevices.mockResolvedValue(undefined);
   mockDeleteDevice.mockResolvedValue(undefined);
   mockApproveQrLogin.mockResolvedValue({
@@ -101,24 +133,123 @@ test("loads current device first and reveals technical details", async () => {
   ).toBeTruthy();
 });
 
-test("approves a typed device code", async () => {
+test("shows the login code contract and the scan toggle in the approve sheet", async () => {
   await render(<DevicesScreen />);
   await waitFor(() => expect(mockRefreshDevices).toHaveBeenCalled());
-  fireEvent.press(screen.getByText("Approve device"));
-  fireEvent.changeText(
-    await screen.findByLabelText("Approval code"),
+  await fireEvent.press(screen.getByText("Approve device"));
+
+  expect(screen.getByText("Approve a device")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "Make sure the code matches the other device, then approve.",
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText("Login code")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "Open the login page on the other device and scan its QR code, or enter the code shown below it.",
+    ),
+  ).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Approve login" })).toBeTruthy();
+  expect(screen.getByLabelText("Scan QR with camera")).toBeTruthy();
+  expect(screen.queryByTestId("camera-view")).toBeNull();
+});
+
+test("approves a typed device code and shows the in-sheet success", async () => {
+  await render(<DevicesScreen />);
+  await waitFor(() => expect(mockRefreshDevices).toHaveBeenCalled());
+  await fireEvent.press(screen.getByText("Approve device"));
+  await fireEvent.changeText(
+    await screen.findByLabelText("Login code"),
     "pair-code",
   );
-  const approvalButtons = screen.getAllByRole("button", {
-    name: "Approve device",
-  });
-  const submit = approvalButtons[approvalButtons.length - 1];
+  const submit = screen.getByRole("button", { name: "Approve login" });
   await waitFor(() =>
     expect(submit.props.accessibilityState.disabled).toBe(false),
   );
-  fireEvent.press(submit);
+  await fireEvent.press(submit);
   await waitFor(() =>
-    expect(mockApproveQrLogin).toHaveBeenCalledWith("pair-code"),
+    expect(mockApproveQrLogin).toHaveBeenCalledWith("PAIR-CODE"),
   );
-  expect(mockToastSuccess).toHaveBeenCalledWith("Device approved.");
+  expect(
+    await screen.findByText("Approved. The other device is now logged in."),
+  ).toBeTruthy();
+  expect(screen.getByText("You can close this dialog.")).toBeTruthy();
+  expect(mockToastSuccess).not.toHaveBeenCalled();
+});
+
+test("canonicalizes typed codes into dash groups before approving", async () => {
+  await render(<DevicesScreen />);
+  await waitFor(() => expect(mockRefreshDevices).toHaveBeenCalled());
+  await fireEvent.press(screen.getByText("Approve device"));
+  await fireEvent.changeText(
+    await screen.findByLabelText("Login code"),
+    "abcd1234efgh5678",
+  );
+  const submit = screen.getByRole("button", { name: "Approve login" });
+  await waitFor(() =>
+    expect(submit.props.accessibilityState.disabled).toBe(false),
+  );
+  await fireEvent.press(submit);
+  await waitFor(() =>
+    expect(mockApproveQrLogin).toHaveBeenCalledWith("ABCD-1234-EFGH-5678"),
+  );
+});
+
+test("falls back to manual entry when camera permission is denied", async () => {
+  await render(<DevicesScreen />);
+  await waitFor(() => expect(mockRefreshDevices).toHaveBeenCalled());
+  await fireEvent.press(screen.getByText("Approve device"));
+  await fireEvent.press(screen.getByLabelText("Scan QR with camera"));
+
+  expect(mockRequestPermission).toHaveBeenCalled();
+  expect(
+    await screen.findByText(
+      "Camera unavailable. Enter the code manually instead.",
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByTestId("camera-view")).toBeNull();
+
+  await fireEvent.changeText(
+    await screen.findByLabelText("Login code"),
+    "pair-code",
+  );
+  const submit = screen.getByRole("button", { name: "Approve login" });
+  await waitFor(() =>
+    expect(submit.props.accessibilityState.disabled).toBe(false),
+  );
+  await fireEvent.press(submit);
+  await waitFor(() =>
+    expect(mockApproveQrLogin).toHaveBeenCalledWith("PAIR-CODE"),
+  );
+});
+
+test("submits only the first scanned code and stops the camera", async () => {
+  mockCameraGranted = true;
+  await render(<DevicesScreen />);
+  await waitFor(() => expect(mockRefreshDevices).toHaveBeenCalled());
+  await fireEvent.press(screen.getByText("Approve device"));
+  await fireEvent.press(screen.getByLabelText("Scan QR with camera"));
+  await screen.findByTestId("camera-view");
+
+  await act(async () => {
+    mockCameraProps.onBarcodeScanned?.({
+      data: "https://app.katariasyntex.workers.dev/login/scan/abcd1234efgh5678",
+      type: "qr",
+    });
+    // A barcode event arriving again before the camera tears down is ignored.
+    mockCameraProps.onBarcodeScanned?.({
+      data: "https://app.katariasyntex.workers.dev/login/scan/zzzz9999yyyy8888",
+      type: "qr",
+    });
+  });
+
+  expect(screen.queryByTestId("camera-view")).toBeNull();
+  expect(mockApproveQrLogin).toHaveBeenCalledTimes(1);
+  await waitFor(() =>
+    expect(mockApproveQrLogin).toHaveBeenCalledWith("ABCD-1234-EFGH-5678"),
+  );
+  expect(
+    await screen.findByText("Approved. The other device is now logged in."),
+  ).toBeTruthy();
 });

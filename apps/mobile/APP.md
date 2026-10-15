@@ -99,8 +99,16 @@ apps/mobile/
 
 - Custom scheme: `kataria://`
 - Universal HTTPS filter: `https://<APP_HOST>/login/scan/<code>`
-- The camera scanner automatically parses QR codes and approves browser/desktop
-  sessions using authenticated native credentials.
+- The deep-link screen approves the incoming browser/desktop session using
+  authenticated native credentials.
+- The devices screen approve sheet scans the login QR with `expo-camera`
+  (`CameraView`, back camera, QR only) or takes a typed code; the first valid
+  scan submits and stops the camera.
+- Scanned payloads are parsed by `parseQrScanCode` from
+  `@kataria-syntex/shared` — a bare code or the `<origin>/login/scan/<code>`
+  URL, upper-cased.
+- Denied camera permission or a camera failure keeps manual code entry
+  available.
 
 ## 6 · Build and release
 

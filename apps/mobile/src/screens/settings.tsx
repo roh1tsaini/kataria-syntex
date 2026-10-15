@@ -16,6 +16,7 @@ import { useAuth } from "@kataria-syntex/app-core";
 import { Page } from "@/components/page";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import {
   Eyebrow,
   PageDescription,
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/text";
 import { useTheme, type ThemePreference } from "@/theme/theme";
 import { appVersion } from "@/platform/adapter";
+import { updateFailureCopy, useUpdates } from "@/platform/update-flow";
 import { cn } from "@/lib/cn";
 
 const THEME_OPTIONS: {
@@ -47,18 +49,47 @@ export function SettingsScreen() {
   const { preference, setTheme } = useTheme();
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
-  const [checkingUpdates, setCheckingUpdates] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  // Update state comes from the Android update flow seam; on the web export it
+  // stays idle (checks never run), so the row renders its resting state.
+  const latestVersion = useUpdates((s) => s.latestVersion);
+  const status = useUpdates((s) => s.status);
+  const progress = useUpdates((s) => s.progress);
+  const failure = useUpdates((s) => s.failure);
+  const checking = useUpdates((s) => s.checking);
+  const checkNow = useUpdates((s) => s.checkNow);
+  const installUpdate = useUpdates((s) => s.installUpdate);
+  const retryUpdate = useUpdates((s) => s.retryUpdate);
+  const [result, setResult] = useState<string | null>(null);
+  const [retryInFlight, setRetryInFlight] = useState(false);
+
+  const downloading = status === "downloading";
+  const installing = status === "installing";
+  const busy = downloading || installing;
+  const installable = latestVersion !== null && status === "ready";
+  const retrying = failure !== null || retryInFlight;
+  const showAction = !retryInFlight && (installable || busy);
 
   const handleCheckUpdates = async () => {
-    setCheckingUpdates(true);
-    setUpdateStatus(null);
+    setResult(null);
+    const outcome = await checkNow();
+    setResult(
+      outcome === "up-to-date" ? "You're on the latest version." : null,
+    );
+  };
+
+  const handleRetry = async () => {
+    setRetryInFlight(true);
     try {
-      // Simulate check against release origin
-      await new Promise((r) => setTimeout(r, 800));
-      setUpdateStatus("App is up to date");
+      await retryUpdate();
     } finally {
-      setCheckingUpdates(false);
+      const current = useUpdates.getState();
+      if (
+        !current.checking &&
+        current.status !== "downloading" &&
+        current.status !== "installing"
+      ) {
+        setRetryInFlight(false);
+      }
     }
   };
 
@@ -170,35 +201,71 @@ export function SettingsScreen() {
         </Pressable>
       </Card>
 
-      {/* App Version & Updates Section */}
-      <Card className="mt-6 p-4">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="font-semibold text-sm text-foreground">
-              Kataria Syntex Mobile
-            </Text>
-            <Text className="mt-0.5 text-xs text-muted-foreground">
-              Version {appVersion()}
-            </Text>
-          </View>
-          <Button
-            variant="outline"
-            className="h-9 px-3 flex-row gap-1.5"
-            onPress={handleCheckUpdates}
-            loading={checkingUpdates}
-            accessibilityLabel="Check for app updates"
-          >
-            <RefreshCw size={14} />
-            <ButtonText variant="outline" className="text-xs">
-              Check updates
-            </ButtonText>
-          </Button>
-        </View>
-        {updateStatus ? (
-          <Text className="mt-3 text-xs text-muted-foreground">
-            {updateStatus}
+      {/* Version & Updates — same rows and labels as the web Settings panel. */}
+      <Card className="mt-6 overflow-hidden">
+        <View className="flex-row items-center justify-between gap-4 border-b border-border px-4 py-3">
+          <Text className="text-[13px] font-medium text-foreground">
+            Version
           </Text>
-        ) : null}
+          <Text className="font-mono text-[13px] font-semibold text-primary">
+            v{appVersion()}
+          </Text>
+        </View>
+        <View className="gap-3 px-4 py-3">
+          <View className="flex-row items-center justify-between gap-4">
+            <View className="min-w-0 flex-1">
+              <Text className="text-[13px] font-medium text-foreground">
+                Updates
+              </Text>
+              {failure ? (
+                <Text className="mt-0.5 text-xs text-muted-foreground">
+                  {updateFailureCopy(failure)}
+                </Text>
+              ) : result ? (
+                <Text className="mt-0.5 text-xs text-muted-foreground">
+                  {result}
+                </Text>
+              ) : null}
+            </View>
+            {!showAction ? (
+              <Button
+                variant="outline"
+                onPress={() =>
+                  void (retrying ? handleRetry() : handleCheckUpdates())
+                }
+                disabled={checking || retryInFlight}
+                loading={checking || retryInFlight}
+                accessibilityLabel={
+                  retrying ? "Retry update check" : "Check for app updates"
+                }
+              >
+                <RefreshCw size={14} />
+                <ButtonText variant="outline" className="text-xs">
+                  {retrying ? "Retry" : "Check"}
+                </ButtonText>
+              </Button>
+            ) : null}
+          </View>
+          {downloading && progress ? (
+            <ProgressBar
+              percent={progress.percent}
+              totalBytes={progress.totalBytes}
+            />
+          ) : installable ? (
+            <Text className="text-xs tabular-nums text-muted-foreground">
+              v{latestVersion} available
+            </Text>
+          ) : null}
+          {showAction ? (
+            <Button
+              className="w-full"
+              label="Update"
+              onPress={() => void installUpdate()}
+              loading={busy}
+              disabled={busy}
+            />
+          ) : null}
+        </View>
       </Card>
     </Page>
   );

@@ -40,8 +40,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
 
       {/* Floating panel-left circle (design.md Section 2.7.2) — fixed top-left,
-          over the content, in the card material. */}
-      <View className="absolute left-4 z-40" style={{ top: 16 }}>
+          over the content, in the card material. Respects safe area insets. */}
+      <View className="absolute left-4 z-40" style={{ top: insets.top + 16 }}>
         <CircleButton
           className="border-0 bg-card"
           style={shadowOverlay}

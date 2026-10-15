@@ -1,18 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
-
-/**
- * Extracts a QR-login code from a scan result. The QR payload is the
- * approve-page URL (<origin>/login/scan/<code>), so the code is its last
- * path segment; a bare code is accepted too.
- */
-function parseScanResult(data: string): string | null {
-  const fromUrl = data.match(/\/login\/scan\/([^/?#\s]+)/);
-  const raw = (
-    fromUrl ? decodeURIComponent(fromUrl[1]) : data.trim()
-  ).toUpperCase();
-  return raw.length >= 4 ? raw : null;
-}
+import { parseQrScanCode } from "@kataria-syntex/shared";
 
 export function useCameraScanner(
   onCode: (code: string) => void,
@@ -42,7 +30,7 @@ export function useCameraScanner(
         const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const qr = jsQR(img.data, img.width, img.height);
         if (qr?.data) {
-          const code = parseScanResult(qr.data);
+          const code = parseQrScanCode(qr.data);
           if (code) {
             stream?.getTracks().forEach((t) => t.stop());
             onCodeRef.current(code);

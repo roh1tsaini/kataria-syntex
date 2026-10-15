@@ -3,17 +3,12 @@ import { View, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { QrCode, Smartphone } from "lucide-react-native";
 import { ApiError, friendlyError, useAuth } from "@kataria-syntex/app-core";
+import { COMPANY_DETAILS, safeNextPath } from "@kataria-syntex/shared";
 
 import { Page } from "@/components/page";
 import { QrLoginPanel } from "@/components/qr-login-panel";
 import { Button, ButtonText } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
@@ -22,11 +17,12 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-  Eyebrow,
-  PageDescription,
-  PageTitle,
-  Text,
-} from "@/components/ui/text";
+  Sheet,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { PageDescription, PageTitle, Text } from "@/components/ui/text";
 import { cn } from "@/lib/cn";
 
 type Step = "home" | "otp" | "password" | "create";
@@ -50,7 +46,6 @@ export function AuthScreen({ next }: { next: string | null }) {
   const [authMethod, setAuthMethod] = useState<"phone" | "qr">("phone");
   const [identifier, setIdentifier] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [, setAccountExists] = useState(false);
   const [hasPassword, setHasPassword] = useState(false);
   const [otpFallback, setOtpFallback] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -75,7 +70,7 @@ export function AuthScreen({ next }: { next: string | null }) {
   }, [cooldown]);
 
   const done = () => {
-    router.replace((next as any) || "/");
+    router.replace(safeNextPath(next));
   };
 
   const showRegistrationClosed = () => {
@@ -87,6 +82,9 @@ export function AuthScreen({ next }: { next: string | null }) {
   const handleIdentifierSubmit = async () => {
     setError(null);
     setOtpFallback(false);
+    // A new lookup is a fresh attempt — a closed notice from the previous one
+    // must not linger over it.
+    setRegistrationClosed(false);
     const value = identifier.trim();
     if (value.length < 5) return;
 
@@ -94,7 +92,6 @@ export function AuthScreen({ next }: { next: string | null }) {
     try {
       const result = await lookupIdentifier(value);
       setIdentifier(value);
-      setAccountExists(result.exists);
       setHasPassword(result.hasPassword);
 
       if (result.registrationClosed) {
@@ -136,9 +133,15 @@ export function AuthScreen({ next }: { next: string | null }) {
         return;
       }
       if (!draft?.name || !draft.password) {
+        // Verified but no account and no collected profile yet — carry the
+        // verified code into the create step so signup never asks for a
+        // second code.
+        setDraft({ identifier, code: otpCode });
         setStep("create");
         return;
       }
+      // Complete the pending signup now (the create step collected these
+      // fields before the code was sent).
       await signup({
         identifier,
         name: draft.name,
@@ -189,6 +192,8 @@ export function AuthScreen({ next }: { next: string | null }) {
     setBusy(true);
     try {
       if (draft?.code) {
+        // The code was verified on the way here; complete the signup with it
+        // rather than sending a second code.
         await signup({
           identifier,
           name: createName.trim(),
@@ -221,36 +226,73 @@ export function AuthScreen({ next }: { next: string | null }) {
     ? identifier
     : `••••• ${identifier.slice(-4)}`;
 
+  const title =
+    step === "home"
+      ? "Sign in"
+      : step === "create"
+        ? "Set up account"
+        : step === "password"
+          ? "Enter password"
+          : "Verification";
+
+  const description =
+    step === "home"
+      ? "Enter your phone number or email, or scan the QR code."
+      : step === "create"
+        ? "Enter your profile details."
+        : step === "password"
+          ? "Enter your account password."
+          : null;
+
   return (
     <Page contentClassName="items-center justify-center min-h-full py-8">
+      {/* Blocking notice for an unknown identifier while registration is off
+          (design.md Section 3, Closed registration). */}
+      <Sheet
+        open={registrationClosed}
+        onClose={() => setRegistrationClosed(false)}
+      >
+        <SheetHeader>
+          <SheetTitle>Registration closed</SheetTitle>
+          <SheetDescription>
+            New account registration is currently closed.
+          </SheetDescription>
+        </SheetHeader>
+      </Sheet>
+
       <View className="w-full max-w-sm">
-        <Eyebrow>Kataria Syntex</Eyebrow>
-        <PageTitle className="mt-1">
-          {step === "home"
-            ? "Sign in"
-            : step === "create"
-              ? "Set up account"
-              : step === "password"
-                ? "Enter password"
-                : "Verification"}
-        </PageTitle>
-        <PageDescription className="mt-1">
-          {step === "home"
-            ? "Enter your phone number or email, or scan the QR code."
-            : step === "create"
-              ? "Enter your profile details."
-              : step === "password"
-                ? `Enter your password for ${maskedIdentifier}.`
-                : `Enter the 6-digit code sent to ${maskedIdentifier}.`}
-        </PageDescription>
+        {/* Brand lockup — full app name above the auth card (design.md
+            Section 2.8). */}
+        <View className="mb-6 flex-row items-center gap-3 self-center">
+          <View className="size-11 items-center justify-center rounded-xl bg-foreground">
+            <Text
+              className="text-lg font-semibold leading-none tracking-tight text-background"
+              accessibilityElementsHidden
+            >
+              K
+            </Text>
+          </View>
+          <Text className="text-[17px] font-semibold tracking-tight">
+            {COMPANY_DETAILS.name} Biz App
+          </Text>
+        </View>
+
+        <PageTitle>{title}</PageTitle>
+        {description ? (
+          <PageDescription className="mt-1">{description}</PageDescription>
+        ) : null}
 
         {/* Tab switcher: Phone vs QR (only shown on home step) */}
         {step === "home" ? (
-          <View className="mt-6 flex-row rounded-lg border border-border bg-muted/40 p-1">
+          <View
+            className="mt-6 flex-row rounded-full border border-border bg-muted p-1"
+            accessibilityRole="tablist"
+            accessibilityLabel="Sign-in method"
+          >
             <Pressable
               onPress={() => setAuthMethod("phone")}
               className={cn(
-                "flex-1 flex-row items-center justify-center gap-2 rounded-md py-2",
+                "h-11 flex-1 flex-row items-center justify-center gap-2 rounded-full px-3",
                 authMethod === "phone" ? "bg-card shadow-sm" : null,
               )}
               accessibilityRole="tab"
@@ -266,7 +308,7 @@ export function AuthScreen({ next }: { next: string | null }) {
               />
               <Text
                 className={cn(
-                  "font-medium text-xs",
+                  "font-medium text-[13px]",
                   authMethod === "phone"
                     ? "text-foreground"
                     : "text-muted-foreground",
@@ -278,7 +320,7 @@ export function AuthScreen({ next }: { next: string | null }) {
             <Pressable
               onPress={() => setAuthMethod("qr")}
               className={cn(
-                "flex-1 flex-row items-center justify-center gap-2 rounded-md py-2",
+                "h-11 flex-1 flex-row items-center justify-center gap-2 rounded-full px-3",
                 authMethod === "qr" ? "bg-card shadow-sm" : null,
               )}
               accessibilityRole="tab"
@@ -294,25 +336,17 @@ export function AuthScreen({ next }: { next: string | null }) {
               />
               <Text
                 className={cn(
-                  "font-medium text-xs",
+                  "font-medium text-[13px]",
                   authMethod === "qr"
                     ? "text-foreground"
                     : "text-muted-foreground",
                 )}
               >
-                Scan QR
+                Instant QR Login
               </Text>
             </Pressable>
           </View>
         ) : null}
-
-        {registrationClosed && (
-          <View className="mt-4 rounded-lg bg-destructive/10 p-3">
-            <Text className="text-xs text-destructive">
-              Registration is currently closed for new accounts.
-            </Text>
-          </View>
-        )}
 
         <Card className="mt-4">
           <CardContent className="p-5">
@@ -328,6 +362,7 @@ export function AuthScreen({ next }: { next: string | null }) {
                     onChangeText={setIdentifier}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    autoComplete="username"
                     keyboardType="email-address"
                     accessibilityLabel="Phone number or email"
                   />
@@ -352,6 +387,7 @@ export function AuthScreen({ next }: { next: string | null }) {
                     value={otpCode}
                     onChangeText={setOtpCode}
                     keyboardType="numeric"
+                    autoComplete="one-time-code"
                     maxLength={6}
                     accessibilityLabel="6-digit verification code"
                   />
@@ -378,7 +414,9 @@ export function AuthScreen({ next }: { next: string | null }) {
                     disabled={cooldown > 0}
                   >
                     <ButtonText variant="outline">
-                      {cooldown > 0 ? `Resend (${cooldown}s)` : "Resend code"}
+                      {cooldown > 0
+                        ? `Resend code in ${cooldown}s`
+                        : "Resend code"}
                     </ButtonText>
                   </Button>
                   <Button
@@ -386,6 +424,7 @@ export function AuthScreen({ next }: { next: string | null }) {
                     className="flex-1"
                     onPress={() => {
                       setError(null);
+                      setDraft(null);
                       setStep("home");
                     }}
                   >
@@ -413,7 +452,7 @@ export function AuthScreen({ next }: { next: string | null }) {
                 {otpFallback && (
                   <View className="mt-2 rounded-lg border border-border bg-muted/40 p-3">
                     <Text className="font-medium text-xs text-foreground">
-                      Can't receive the SMS code?
+                      Can't receive the code?
                     </Text>
                     <Text className="mt-0.5 text-xs text-muted-foreground">
                       Scan this QR code from a signed-in device:
@@ -433,6 +472,7 @@ export function AuthScreen({ next }: { next: string | null }) {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
+                    autoComplete="current-password"
                     accessibilityLabel="Account password"
                   />
                   {error && <FieldError>{error}</FieldError>}
@@ -479,6 +519,7 @@ export function AuthScreen({ next }: { next: string | null }) {
                     value={createPassword}
                     onChangeText={setCreatePassword}
                     secureTextEntry
+                    autoComplete="new-password"
                     accessibilityLabel="Create password"
                   />
                   <FieldDescription>Minimum 10 characters.</FieldDescription>
@@ -495,17 +536,16 @@ export function AuthScreen({ next }: { next: string | null }) {
                   }
                   accessibilityLabel="Submit account details"
                 >
-                  <ButtonText>
-                    {draft?.code
-                      ? "Complete sign up"
-                      : "Send verification code"}
-                  </ButtonText>
+                  <ButtonText>Send verification code</ButtonText>
                 </Button>
 
                 <Button
                   variant="outline"
                   onPress={() => {
                     setError(null);
+                    // A draft may hold a verified code for an identifier the
+                    // user is abandoning; never carry it into a new attempt.
+                    setDraft(null);
                     setStep("home");
                   }}
                 >

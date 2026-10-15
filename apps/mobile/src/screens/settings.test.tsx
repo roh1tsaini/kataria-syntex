@@ -28,6 +28,7 @@ jest.mock("@kataria-syntex/app-core", () => ({
       user: { name: "Test User", phone: "+919876543210" },
       logout: mockLogout,
     }),
+  setUpdateRequiredHandler: jest.fn(),
 }));
 
 const { SettingsScreen } = require("@/screens/settings");

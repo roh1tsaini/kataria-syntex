@@ -64,4 +64,29 @@ test.describe("Mobile Devices and Settings Flow", () => {
     await expect(page.getByText("This device")).toBeVisible();
     await expect(page.getByText("Approve device")).toBeVisible();
   });
+
+  test("opens the approve sheet with the login code contract and scan toggle", async ({
+    page,
+  }) => {
+    await page.goto("/devices");
+
+    await page.getByText("Approve device").click();
+
+    await expect(page.getByText("Approve a device")).toBeVisible();
+    await expect(
+      page.getByText(
+        "Make sure the code matches the other device, then approve.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText("Login code")).toBeVisible();
+    await expect(
+      page.getByText(
+        "Open the login page on the other device and scan its QR code, or enter the code shown below it.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText("Approve login")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Scan QR with camera" }),
+    ).toBeVisible();
+  });
 });

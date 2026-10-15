@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 
 import {
   configureCore,
@@ -158,6 +158,25 @@ function onNetworkChange(callback: (online: boolean) => void): () => void {
   return NetInfo.addEventListener((state) => {
     callback(Boolean(state.isConnected && state.isInternetReachable !== false));
   });
+}
+
+// ── AppState: native foreground/background listener ─────────────────────────
+
+/** Foreground/background changes. Web maps document visibility; Android uses
+ *  React Native AppState. The update flow checks only while foreground. */
+export function onAppStateChange(
+  callback: (active: boolean) => void,
+): () => void {
+  if (Platform.OS === "web" && typeof document !== "undefined") {
+    const handler = () => callback(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }
+
+  const subscription = AppState.addEventListener("change", (state) => {
+    callback(state === "active");
+  });
+  return () => subscription.remove();
 }
 
 // ── Boot: hydrate once, configure the seam, expose the ready promise ─────────
