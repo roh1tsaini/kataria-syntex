@@ -228,18 +228,23 @@ appears on any platform.
     `[role=tab]`, `[contenteditable="true"]`) is `no-drag`, so a new control
     is clickable without anyone remembering the rule.
 - Controls (Windows/Linux): a floating cluster pinned flush into the
-  top-right corner (`fixed top-0 right-0`, `h-14`, `z-[60]`) — three
-  `--wc-btn-w` no-drag buttons stretched to full header height. Glyphs are
-  lucide at 14px (`Minus`, `Square`/`Copy`, `X`) — inline SVG, never an icon
-  font. Rest: `text-muted-foreground`; hover: `bg-foreground/10` +
-  `text-foreground`; close hover: `#e81123` + white, full bleed into the
-  corner (no gap — the corner click must land).
+  top-right corner (`fixed top-0 right-0`, `z-[60]`) — three no-drag
+  buttons in Windows 11 caption geometry: `--wc-btn-w` (46px fine, 48px
+  coarse) × 32px (`h-8`), top-aligned, leaving the rest of the 56px header
+  row draggable. Glyphs are inline Fluent SVGs — 16px, 1px hairline
+  strokes, never an icon font. Icon ink `rgb(0 0 0/89%)` light,
+  `rgb(255 255 255/79%)` dark; flat hover fill `rgb(0 0 0/3.73%)` /
+  `rgb(255 255 255/6.05%)`; pressed `rgb(0 0 0/2.41%)` /
+  `rgb(255 255 255/4.19%)` (tokens: `--wc-icon`, `--wc-hover`,
+  `--wc-active`). Close hover `#C42B1C`, pressed `#B0271A`, white glyph,
+  full bleed into the corner (no gap — the corner click must land). A
+  coarse pointer grows the buttons to 48×44 (`touch-44` floor).
 - Reservation: `--wc-w` (3 × `--wc-btn-w`, set on `documentElement` by the
   entry before first paint when `window.desktop` exists and platform
-  ≠ darwin; 0px otherwise). `--wc-btn-w` is `2.5rem`, `2.75rem`
-  under `pointer: coarse` — the 44px floor widens the controls, and the
-  reservation has to widen with them. The header reserves it via
-  `pr-[calc(1rem+var(--wc-w))]` / `sm:pr-[calc(1.5rem+var(--wc-w))]` so
+  ≠ darwin; 0px otherwise). `--wc-btn-w` is `2.875rem`, `3rem` under
+  `pointer: coarse`; the reservation derives from the same token, so the
+  header always reserves exactly the space the controls take. It is applied
+  via `pr-[calc(1rem+var(--wc-w))]` / `sm:pr-[calc(1.5rem+var(--wc-w))]` so
   content never slides beneath the controls.
 - macOS: no drawn controls — native traffic lights ride the sidebar's
   top-left (`titleBarStyle: hiddenInset`). The entry sets `--tl-inset:

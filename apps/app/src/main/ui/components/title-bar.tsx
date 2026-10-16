@@ -5,7 +5,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { Copy, Minus, Square, X } from "lucide-react";
 import { desktopWindow } from "@/lib/platform";
 import { cn } from "@/ui/lib/cn";
 
@@ -40,12 +39,30 @@ import { cn } from "@/ui/lib/cn";
  * - Every control in the desktop shell is `no-drag` (globals.css), so a
  *   control can never be swallowed even if a future drag rect is added.
  * - `WindowControls`: pinned flush into the top-right corner (Windows/Linux;
- *   macOS keeps its native traffic lights instead). Its width is reserved by
- *   --wc-w so header content never slides beneath it.
+ *   macOS keeps its native traffic lights instead) in Windows 11 caption
+ *   geometry — 46×32 Fluent buttons. Its width is reserved by --wc-w so
+ *   header content never slides beneath it.
  */
 
 export const dragStyle = { WebkitAppRegion: "drag" } as CSSProperties;
 export const noDragStyle = { WebkitAppRegion: "no-drag" } as CSSProperties;
+
+/** One Fluent caption glyph (design.md Section 2.7.1): 16px box, 1px
+ * hairline strokes — inline SVG, never an icon font. */
+function CaptionGlyph({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1}
+      className="size-4"
+    >
+      {children}
+    </svg>
+  );
+}
 
 function ControlButton({
   label,
@@ -65,11 +82,15 @@ function ControlButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "grid w-[var(--wc-btn-w)] touch-44 shrink-0 place-items-center text-muted-foreground",
-        "transition-colors hover:bg-foreground/10 hover:text-foreground",
+        // Windows 11 caption geometry: 32px tall at the window edge; the
+        // coarse-pointer 44px floor grows the touch target from below.
+        "grid h-8 w-[var(--wc-btn-w)] touch-44 shrink-0 place-items-center",
+        "text-[var(--wc-icon)] transition-colors",
+        "hover:bg-[var(--wc-hover)] active:bg-[var(--wc-active)]",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         // Windows close-button red, full bleed to the corner
-        destructive && "hover:bg-[#e81123] hover:text-white",
+        destructive &&
+          "hover:bg-[#c42b1c] hover:text-white active:bg-[#b0271a] active:text-white",
       )}
     >
       {children}
@@ -115,24 +136,33 @@ export function WindowControls() {
 
   return (
     <div
-      className="fixed top-0 right-0 z-[60] flex h-14 items-stretch print:hidden"
+      className="fixed top-0 right-0 z-[60] flex print:hidden"
       style={noDragStyle}
     >
       <ControlButton label="Minimize" onClick={() => void win.minimize()}>
-        <Minus className="size-3.5" aria-hidden />
+        <CaptionGlyph>
+          <path d="M3 8.5h10" />
+        </CaptionGlyph>
       </ControlButton>
       <ControlButton
         label={maximized ? "Restore" : "Maximize"}
         onClick={() => void win.toggleMaximize()}
       >
         {maximized ? (
-          <Copy className="size-3.5" aria-hidden />
+          <CaptionGlyph>
+            <path d="M5.5 2.5h8v8" />
+            <rect x="2.5" y="5.5" width="8" height="8" />
+          </CaptionGlyph>
         ) : (
-          <Square className="size-3.5" aria-hidden />
+          <CaptionGlyph>
+            <rect x="3.5" y="3.5" width="9" height="9" />
+          </CaptionGlyph>
         )}
       </ControlButton>
       <ControlButton label="Close" destructive onClick={() => void win.close()}>
-        <X className="size-3.5" aria-hidden />
+        <CaptionGlyph>
+          <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+        </CaptionGlyph>
       </ControlButton>
     </div>
   );

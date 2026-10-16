@@ -12,15 +12,24 @@
   --tl-inset: 0px;
   --duration-morph-open: 380ms;
   --duration-morph-exit: 300ms;
-  /* One window-control button. The cluster reservation (--wc-w) is derived
-     from this, so a coarse pointer's 44px floor can never widen the controls
-     past the space the header reserved for them. */
-  --wc-btn-w: 2.5rem;
+  /* One window-control button — Windows 11 caption geometry, 46×32. The
+     cluster reservation (--wc-w) derives from this, so the header can never
+     reserve less room than the controls take. */
+  --wc-btn-w: 2.875rem;
+  /* Fluent caption states: Windows 11 icon ink and flat hover/press fills. */
+  --wc-icon: rgb(0 0 0 / 89%);
+  --wc-hover: rgb(0 0 0 / 3.73%);
+  --wc-active: rgb(0 0 0 / 2.41%);
 }
 @media (pointer: coarse) {
   :root {
-    --wc-btn-w: 2.75rem;
+    --wc-btn-w: 3rem;
   }
+}
+.dark {
+  --wc-icon: rgb(255 255 255 / 79%);
+  --wc-hover: rgb(255 255 255 / 6.05%);
+  --wc-active: rgb(255 255 255 / 4.19%);
 }
 @media print {
   :root {
