@@ -74,7 +74,7 @@ function NavDensityToggle({
             "btn-motion grid size-9 place-items-center rounded-full",
             value === v
               ? "bg-card text-foreground shadow-[var(--shadow-soft)]"
-              : "text-muted-foreground [@media(hover:hover)]:hover:text-foreground",
+              : "text-muted-foreground [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
           )}
         >
           <Icon className="size-4" aria-hidden />
@@ -192,7 +192,7 @@ function NavList({
                         rowCls,
                         anySubActive
                           ? "font-medium text-foreground"
-                          : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+                          : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
                       )}
                     >
                       <item.icon
@@ -218,7 +218,7 @@ function NavList({
                       onClick={onNavigate}
                       className={cn(
                         asTile
-                          ? "btn-motion flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-center text-[13px] [@media(hover:hover)]:hover:bg-muted"
+                          ? "btn-motion flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-center text-[13px] [@media(hover:hover)]:hover:bg-muted active:bg-muted"
                           : "btn-motion flex items-center",
                         asTile ? null : rowCls,
                         active && asTile
@@ -228,7 +228,7 @@ function NavList({
                           ? "bg-accent font-medium text-accent-foreground"
                           : "",
                         !asTile &&
-                          "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+                          "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
                       )}
                     >
                       <item.icon
@@ -268,7 +268,7 @@ function NavList({
                                 "app-nav-subrow btn-motion",
                                 subActive
                                   ? "bg-accent font-medium text-accent-foreground"
-                                  : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted/60 [@media(hover:hover)]:hover:text-foreground",
+                                  : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted/60 [@media(hover:hover)]:hover:text-foreground active:bg-muted/60 active:text-foreground",
                               )}
                             >
                               <span
@@ -376,7 +376,7 @@ function NavRail({
                 "btn-motion grid size-10 shrink-0 place-items-center rounded-md touch-44",
                 active
                   ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+                  : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
               )}
             >
               <item.icon className="size-4" aria-hidden />

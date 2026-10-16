@@ -438,7 +438,7 @@
   }
   /* No OS tap square: the highlight paints the bounding box and ignores
      border-radius, so circle buttons flash square on touch. Press feedback
-     comes from each control's own :active fill + scale instead. */
+     comes from each control's own :active fill instead. */
   a,
   button {
     -webkit-tap-highlight-color: transparent;
@@ -492,19 +492,14 @@
     padding: 0.75rem;
   }
 
-  /* Press feedback (Section 5): transform answers instantly (100ms); colors keep
-     their 150ms hover pace. Shared by every tappable control. */
+  /* Press feedback (Section 5): the press swaps in a fill/tint — never motion.
+     Colors keep their 150ms pace. Shared by every tappable control. */
   .btn-motion {
     transition:
       background-color 150ms var(--ease-out),
       color 150ms var(--ease-out),
       border-color 150ms var(--ease-out),
-      box-shadow 150ms var(--ease-out),
-      transform 100ms var(--ease-out);
-  }
-
-  .btn-motion:active {
-    transform: scale(0.97);
+      box-shadow 150ms var(--ease-out);
   }
 
   /* Theme toggle (Section 2.7) — cross-rotate: both glyphs share one grid
@@ -651,19 +646,6 @@
     }
   }
 
-  /* The settings window scrolls its own body: the desktop shell pins the
-     document and routes scroll in .shell-scroll, but the window is a
-     portal-mounted fixed surface outside that container, so it needs its
-     own scroller. Mobile renders the page inside .shell-scroll and never
-     reaches this class. */
-  .settings-window-scroll {
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 1 1 0%;
-    min-height: 0;
-    scrollbar-gutter: stable;
-  }
-
   /* Horizontal scroll affordance — fade mask to hint scrollability */
   .scroll-fade {
     mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
@@ -756,10 +738,6 @@
   }
   html {
     scroll-behavior: auto;
-  }
-
-  .btn-motion:active {
-    transform: none;
   }
 }
 

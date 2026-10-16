@@ -20,7 +20,7 @@ export const SPRING: Transition = {
   duration: 0.38,
 };
 
-/** Surface entrances (dialog, settings window) reuse SPRING. */
+/** Surface entrances (dialog) reuse SPRING. */
 export const MORPH: Transition = SPRING;
 /** Surface exits - same path, ~20% faster (design.md Section 5.1). */
 export const MORPH_EXIT: Transition = {

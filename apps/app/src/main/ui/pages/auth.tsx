@@ -465,7 +465,7 @@ function MethodTab({
         "btn-motion relative flex h-11 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium touch-44 sm:h-10",
         active
           ? "text-foreground"
-          : "text-muted-foreground hover:text-foreground",
+          : "text-muted-foreground hover:text-foreground active:text-foreground",
       )}
     >
       {active && (

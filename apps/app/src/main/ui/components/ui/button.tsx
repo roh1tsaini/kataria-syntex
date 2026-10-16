@@ -13,18 +13,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-foreground text-background [@media(hover:hover)]:hover:bg-foreground/90",
+          "bg-foreground text-background [@media(hover:hover)]:hover:bg-foreground/90 active:bg-foreground/85",
         accent:
-          "bg-primary text-primary-foreground [@media(hover:hover)]:hover:bg-primary/90",
+          "bg-primary text-primary-foreground [@media(hover:hover)]:hover:bg-primary/90 active:bg-primary/85",
         outline:
-          "border border-border bg-card [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+          "border border-border bg-card [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted",
         secondary:
-          "bg-secondary text-secondary-foreground [@media(hover:hover)]:hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground [@media(hover:hover)]:hover:bg-secondary/80 active:bg-secondary/70",
         ghost:
-          "[@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
+          "[@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted",
         destructive:
-          "bg-destructive text-destructive-foreground [@media(hover:hover)]:hover:bg-destructive/90",
-        link: "text-foreground underline-offset-4 [@media(hover:hover)]:hover:underline",
+          "bg-destructive text-destructive-foreground [@media(hover:hover)]:hover:bg-destructive/90 active:bg-destructive/85",
+        link: "text-foreground underline-offset-4 [@media(hover:hover)]:hover:underline active:opacity-70",
       },
       size: {
         default: "",

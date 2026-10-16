@@ -39,14 +39,14 @@ function PageHeaderSkeleton({
 
 function SettingsSkeleton() {
   return (
-    <div className="flex gap-4">
-      <div className="hidden w-60 shrink-0 flex-col gap-2 md:flex">
+    <div className="flex flex-col lg:flex-row">
+      <div className="flex w-60 shrink-0 flex-col gap-3 border-r border-border pr-3 max-lg:w-full max-lg:border-r-0 max-lg:border-b max-lg:pb-4 max-lg:pr-0">
         <Skeleton className="h-10 w-full" />
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-10 w-full" />
         ))}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 pt-4 lg:pl-8 lg:pt-0">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="mt-1 h-3 w-72" />
         <Skeleton className="mt-4 h-44 w-full rounded-lg" />

@@ -1,5 +1,4 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   KeyRound,
   Monitor,
@@ -14,7 +13,6 @@ import {
 import { UPDATE_FAILURE_COPY, useUpdates } from "@/store/updates";
 import { isPlainBrowser, updateAction } from "@/lib/platform";
 import { useTheme, type ThemePreference } from "@/ui/hooks/use-theme";
-import { SettingsWindow } from "@/ui/components/settings-window";
 import { Skeleton } from "@/ui/components/motion";
 import { Button } from "@/ui/components/ui/button";
 import { Card } from "@/ui/components/ui/card";
@@ -122,7 +120,7 @@ function AppearancePanel() {
                 "btn-motion flex min-h-11 flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left touch-44",
                 active
                   ? "border-accent-foreground/30 bg-accent text-accent-foreground"
-                  : "border-border bg-card [@media(hover:hover)]:hover:bg-muted/60",
+                  : "border-border bg-card [@media(hover:hover)]:hover:bg-muted/60 active:bg-muted/60",
               )}
             >
               <span className="flex items-center gap-2 text-sm font-semibold">
@@ -287,8 +285,6 @@ function UpdateRow() {
 }
 
 export function SettingsPage() {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
   const [section, setSection] = useState<SectionId>("appearance");
   const [query, setQuery] = useState("");
 
@@ -305,112 +301,97 @@ export function SettingsPage() {
   const active = SECTION_META[section];
 
   return (
-    <SettingsWindow
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) return;
-        // The route renders only the window on desktop — closing it must land
-        // on a real page, not an empty content area at /settings. A direct
-        // landing on the URL (typed, deep link) has no history to pop, and a
-        // no-op back there would leave the shell blank until the next nav.
-        if (window.history.length > 1) navigate(-1);
-        else navigate("/", { replace: true });
-      }}
-      label="Settings"
-    >
-      {/* Desktop: sidebar + detail share the window body — the sidebar holds
-          its place while only the detail scrolls. Mobile: stacked page flow
-          inside the shell's own scroller (PageTransition supplies padding). */}
-      <div className="flex min-h-0 flex-1 overflow-hidden max-md:block max-md:overflow-visible">
-        <aside
-          aria-label="Settings sections"
-          className="flex w-60 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border p-3 max-md:w-full max-md:overflow-visible max-md:border-r-0 max-md:border-b max-md:p-0 max-md:pb-4"
-        >
-          <InputGroup>
-            <InputGroupAddon align="inline-start">
-              <Search className="size-4 text-muted-foreground" aria-hidden />
-            </InputGroupAddon>
-            <InputGroupInput
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search settings"
-              aria-label="Search settings"
-            />
-          </InputGroup>
-          <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
-            {filtered.map((id) => {
-              const meta = SECTION_META[id];
-              const selected = id === section;
-              const Icon = meta.icon;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  aria-current={selected}
-                  onClick={() => setSection(id)}
-                  className={cn(
-                    "app-nav-row btn-motion w-full text-left",
-                    selected
-                      ? "bg-accent font-medium text-accent-foreground"
-                      : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{meta.label}</span>
-                </button>
-              );
-            })}
-            {filtered.length === 0 && (
-              <p className="px-2.5 py-3 text-[13px] text-muted-foreground">
-                Nothing matches “{query}”.
-              </p>
-            )}
-          </nav>
-        </aside>
-
-        <div className="settings-window-scroll min-w-0 flex-1 px-6 pb-8 pt-6 max-md:overflow-visible max-md:p-0 max-md:pt-4 md:px-8">
-          <div className="px-1">
-            <h1 className="text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] sm:text-base">
-              {active.label}
-            </h1>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-              {active.description}
+    <div className="flex flex-col lg:flex-row">
+      {/* Two columns at lg+ — section list left, detail right; stacked below
+          (a 768px window is too narrow for both next to the shell sidebar).
+          The whole page scrolls in the shell scroller, like every screen. */}
+      <aside
+        aria-label="Settings sections"
+        className="flex w-60 shrink-0 flex-col gap-3 border-r border-border pr-3 max-lg:w-full max-lg:border-r-0 max-lg:border-b max-lg:pb-4 max-lg:pr-0"
+      >
+        <InputGroup>
+          <InputGroupAddon align="inline-start">
+            <Search className="size-4 text-muted-foreground" aria-hidden />
+          </InputGroupAddon>
+          <InputGroupInput
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search settings"
+            aria-label="Search settings"
+          />
+        </InputGroup>
+        <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
+          {filtered.map((id) => {
+            const meta = SECTION_META[id];
+            const selected = id === section;
+            const Icon = meta.icon;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-current={selected}
+                onClick={() => setSection(id)}
+                className={cn(
+                  "app-nav-row btn-motion w-full text-left",
+                  selected
+                    ? "bg-accent font-medium text-accent-foreground"
+                    : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
+                )}
+              >
+                <Icon className="size-4 shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{meta.label}</span>
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="px-2.5 py-3 text-[13px] text-muted-foreground">
+              Nothing matches “{query}”.
             </p>
-          </div>
-          <div className="mt-4">
-            {section === "appearance" && <AppearancePanel />}
-            {section === "updates" && <UpdatesPanel />}
-            {section === "security" && (
-              <Suspense
-                fallback={
-                  <div aria-hidden className="space-y-2">
-                    <Skeleton className="h-16 rounded-lg" />
-                    <Skeleton className="h-16 rounded-lg" />
-                    <Skeleton className="h-16 rounded-lg" />
-                  </div>
-                }
-              >
-                <SecurityPanel />
-              </Suspense>
-            )}
-            {section === "devices" && (
-              <Suspense
-                fallback={
-                  <div aria-hidden className="space-y-2">
-                    <Skeleton className="h-16 rounded-lg" />
-                    <Skeleton className="h-16 rounded-lg" />
-                    <Skeleton className="h-16 rounded-lg" />
-                  </div>
-                }
-              >
-                <DevicesPanel />
-              </Suspense>
-            )}
-          </div>
+          )}
+        </nav>
+      </aside>
+
+      <div className="min-w-0 flex-1 pt-4 lg:pl-8 lg:pt-0">
+        <div className="px-1">
+          <h1 className="text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] sm:text-base">
+            {active.label}
+          </h1>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+            {active.description}
+          </p>
+        </div>
+        <div className="mt-4">
+          {section === "appearance" && <AppearancePanel />}
+          {section === "updates" && <UpdatesPanel />}
+          {section === "security" && (
+            <Suspense
+              fallback={
+                <div aria-hidden className="space-y-2">
+                  <Skeleton className="h-16 rounded-lg" />
+                  <Skeleton className="h-16 rounded-lg" />
+                  <Skeleton className="h-16 rounded-lg" />
+                </div>
+              }
+            >
+              <SecurityPanel />
+            </Suspense>
+          )}
+          {section === "devices" && (
+            <Suspense
+              fallback={
+                <div aria-hidden className="space-y-2">
+                  <Skeleton className="h-16 rounded-lg" />
+                  <Skeleton className="h-16 rounded-lg" />
+                  <Skeleton className="h-16 rounded-lg" />
+                </div>
+              }
+            >
+              <DevicesPanel />
+            </Suspense>
+          )}
         </div>
       </div>
-    </SettingsWindow>
+    </div>
   );
 }
