@@ -153,8 +153,13 @@ function DevicesPanelSkeleton() {
 }
 
 /** Signed-in sessions list — shared by the Devices page and the Settings
- * Devices section. One surface, no fork. */
-export function DevicesPanel() {
+ * Devices section. One surface, no fork. Settings passes `sectionHeader` so
+ * its card head sits inside the same card; the Devices page passes nothing. */
+export function DevicesPanel({
+  sectionHeader,
+}: {
+  sectionHeader?: React.ReactNode;
+}) {
   const devices = useAuth((s) => s.devices);
   const refreshDevices = useAuth((s) => s.refreshDevices);
   const deleteDevice = useAuth((s) => s.deleteDevice);
@@ -226,6 +231,7 @@ export function DevicesPanel() {
       )}
 
       <Card className="overflow-hidden">
+        {sectionHeader}
         <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-2.5">
           <span className="micro-label">Signed-in sessions</span>
           <span className="flex items-center gap-2">

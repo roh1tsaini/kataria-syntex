@@ -696,11 +696,7 @@
      a components-layer rule alone loses to it regardless of specificity. */
   .field-control:focus-within,
   .field-control:focus,
-  .field-control:focus-visible,
-  [data-slot="input-group"]:has(
-    [data-slot="input-group-control"]:focus-visible
-  ),
-  [data-slot="input-group"]:focus-within {
+  .field-control:focus-visible {
     border-color: var(--ring);
     box-shadow: none;
     outline: none;

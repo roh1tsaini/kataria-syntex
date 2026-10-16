@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import {
   KeyRound,
   Monitor,
@@ -6,7 +6,6 @@ import {
   Moon,
   Palette,
   RefreshCw,
-  Search,
   Sun,
   type LucideIcon,
 } from "lucide-react";
@@ -16,53 +15,10 @@ import { useTheme, type ThemePreference } from "@/ui/hooks/use-theme";
 import { Skeleton } from "@/ui/components/motion";
 import { Button } from "@/ui/components/ui/button";
 import { Card } from "@/ui/components/ui/card";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/ui/components/ui/input-group";
 import { Label } from "@/ui/components/ui/label";
+import { PageHeader } from "@/ui/components/page-header";
 import { ProgressBar } from "@/ui/components/progress-bar";
 import { cn } from "@/ui/lib/cn";
-
-type SectionId = "appearance" | "updates" | "security" | "devices";
-
-const SECTION_ORDER: SectionId[] = [
-  "appearance",
-  "updates",
-  "security",
-  "devices",
-];
-
-const SECTION_META: Record<
-  SectionId,
-  { label: string; description: string; icon: LucideIcon; keywords: string }
-> = {
-  appearance: {
-    label: "Appearance",
-    description: "Theme for this device.",
-    icon: Palette,
-    keywords: "theme dark light system display",
-  },
-  updates: {
-    label: "Updates",
-    description: "Version and new releases.",
-    icon: RefreshCw,
-    keywords: "version update upgrade release about",
-  },
-  security: {
-    label: "Security",
-    description: "Password for this account.",
-    icon: KeyRound,
-    keywords: "password change security sign in",
-  },
-  devices: {
-    label: "Devices",
-    description: "Signed-in sessions on this account.",
-    icon: MonitorSmartphone,
-    keywords: "devices sessions login approve revoke",
-  },
-};
 
 const DevicesPanel = lazy(() =>
   import("@/ui/components/devices-panel").then((m) => ({
@@ -75,6 +31,50 @@ const SecurityPanel = lazy(() =>
     default: m.SecurityPanel,
   })),
 );
+
+/** One section head — 32px accent tile, name, one muted line, hairline below.
+ * Every settings section opens this way, at every width and on every shell. */
+function SectionHead({
+  icon: Icon,
+  label,
+  description,
+}: {
+  icon: LucideIcon;
+  label: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 border-b border-border px-4 py-3.5">
+      <span className="grid size-8 shrink-0 place-items-center rounded-sm bg-accent text-accent-foreground">
+        <Icon className="size-4" aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-sm font-semibold">{label}</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+/** A section card: head, then the panel. All sections stack on one page. */
+function Section({
+  icon,
+  label,
+  description,
+  children,
+}: {
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <SectionHead icon={icon} label={label} description={description} />
+      {children}
+    </Card>
+  );
+}
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -95,66 +95,56 @@ const THEME_OPTIONS: {
 function AppearancePanel() {
   const { preference, setTheme } = useTheme();
   return (
-    <Card className="overflow-hidden">
-      <div className="border-b border-border px-4 py-3">
-        <div className="text-sm font-semibold">Theme</div>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Applies on this device only.
-        </p>
-      </div>
-      <div
-        role="radiogroup"
-        aria-label="Theme"
-        className="grid gap-2 p-4 sm:grid-cols-3"
-      >
-        {THEME_OPTIONS.map((opt) => {
-          const active = preference === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setTheme(opt.value)}
+    <div
+      role="radiogroup"
+      aria-label="Theme"
+      className="grid gap-2 p-4 sm:grid-cols-3"
+    >
+      {THEME_OPTIONS.map((opt) => {
+        const active = preference === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => setTheme(opt.value)}
+            className={cn(
+              "btn-motion flex min-h-11 flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left touch-44",
+              active
+                ? "border-accent-foreground/30 bg-accent text-accent-foreground"
+                : "border-border bg-card [@media(hover:hover)]:hover:bg-muted/60 active:bg-muted/60",
+            )}
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <opt.icon className="size-4" aria-hidden />
+              {opt.label}
+            </span>
+            <span
               className={cn(
-                "btn-motion flex min-h-11 flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left touch-44",
-                active
-                  ? "border-accent-foreground/30 bg-accent text-accent-foreground"
-                  : "border-border bg-card [@media(hover:hover)]:hover:bg-muted/60 active:bg-muted/60",
+                "text-xs",
+                active ? "text-accent-foreground/80" : "text-muted-foreground",
               )}
             >
-              <span className="flex items-center gap-2 text-sm font-semibold">
-                <opt.icon className="size-4" aria-hidden />
-                {opt.label}
-              </span>
-              <span
-                className={cn(
-                  "text-xs",
-                  active
-                    ? "text-accent-foreground/80"
-                    : "text-muted-foreground",
-                )}
-              >
-                {opt.hint}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </Card>
+              {opt.hint}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 function UpdatesPanel() {
   return (
-    <Card>
+    <>
       <SettingsRow label="Version">
         <span className="font-mono text-[13px] font-semibold tabular-nums text-primary">
           v{__APP_VERSION__}
         </span>
       </SettingsRow>
       <UpdateRow />
-    </Card>
+    </>
   );
 }
 
@@ -284,113 +274,77 @@ function UpdateRow() {
   );
 }
 
-export function SettingsPage() {
-  const [section, setSection] = useState<SectionId>("appearance");
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return SECTION_ORDER;
-    return SECTION_ORDER.filter((id) =>
-      `${SECTION_META[id].label} ${SECTION_META[id].description} ${SECTION_META[id].keywords}`
-        .toLowerCase()
-        .includes(needle),
-    );
-  }, [query]);
-
-  const active = SECTION_META[section];
-
+/** Card-shaped placeholder while a lazily loaded panel chunk arrives. */
+function RowsSkeleton({ rows }: { rows: number }) {
   return (
-    <div className="flex flex-col lg:flex-row">
-      {/* Two columns at lg+ — section list left, detail right; stacked below
-          (a 768px window is too narrow for both next to the shell sidebar).
-          The whole page scrolls in the shell scroller, like every screen. */}
-      <aside
-        aria-label="Settings sections"
-        className="flex w-60 shrink-0 flex-col gap-3 border-r border-border pr-3 max-lg:w-full max-lg:border-r-0 max-lg:border-b max-lg:pb-4 max-lg:pr-0"
-      >
-        <InputGroup>
-          <InputGroupAddon align="inline-start">
-            <Search className="size-4 text-muted-foreground" aria-hidden />
-          </InputGroupAddon>
-          <InputGroupInput
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search settings"
-            aria-label="Search settings"
-          />
-        </InputGroup>
-        <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
-          {filtered.map((id) => {
-            const meta = SECTION_META[id];
-            const selected = id === section;
-            const Icon = meta.icon;
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-current={selected}
-                onClick={() => setSection(id)}
-                className={cn(
-                  "app-nav-row btn-motion w-full text-left",
-                  selected
-                    ? "bg-accent font-medium text-accent-foreground"
-                    : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
-                )}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{meta.label}</span>
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="px-2.5 py-3 text-[13px] text-muted-foreground">
-              Nothing matches “{query}”.
-            </p>
-          )}
-        </nav>
-      </aside>
+    <div aria-hidden className="space-y-2 p-4">
+      {Array.from({ length: rows }).map((_, i) => (
+        <Skeleton key={i} className="h-16 rounded-lg" />
+      ))}
+    </div>
+  );
+}
 
-      <div className="min-w-0 flex-1 pt-4 lg:pl-8 lg:pt-0">
-        <div className="px-1">
-          <h1 className="text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] sm:text-base">
-            {active.label}
-          </h1>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-            {active.description}
-          </p>
-        </div>
-        <div className="mt-4">
-          {section === "appearance" && <AppearancePanel />}
-          {section === "updates" && <UpdatesPanel />}
-          {section === "security" && (
-            <Suspense
-              fallback={
-                <div aria-hidden className="space-y-2">
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
-                </div>
-              }
+export function SettingsPage() {
+  return (
+    <div className="mx-auto w-full max-w-[680px]">
+      {/* One centered column of stacked section cards — no navigation, no
+          search; every section is visible and the page scrolls in the shell
+          scroller like every screen. */}
+      <PageHeader
+        eyebrow="Account"
+        title="Settings"
+        description="Everything for this account, on one page."
+      />
+
+      <div className="mt-6 flex flex-col gap-4">
+        <Section
+          icon={Palette}
+          label="Appearance"
+          description="Theme for this device."
+        >
+          <AppearancePanel />
+        </Section>
+
+        <Section
+          icon={RefreshCw}
+          label="Updates"
+          description="Version and new releases."
+        >
+          <UpdatesPanel />
+        </Section>
+
+        <Section
+          icon={KeyRound}
+          label="Security"
+          description="Password for this account."
+        >
+          <Suspense fallback={<RowsSkeleton rows={3} />}>
+            <SecurityPanel />
+          </Suspense>
+        </Section>
+
+        <Suspense
+          fallback={
+            <Section
+              icon={MonitorSmartphone}
+              label="Devices"
+              description="Signed-in sessions on this account."
             >
-              <SecurityPanel />
-            </Suspense>
-          )}
-          {section === "devices" && (
-            <Suspense
-              fallback={
-                <div aria-hidden className="space-y-2">
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
-                </div>
-              }
-            >
-              <DevicesPanel />
-            </Suspense>
-          )}
-        </div>
+              <RowsSkeleton rows={2} />
+            </Section>
+          }
+        >
+          <DevicesPanel
+            sectionHeader={
+              <SectionHead
+                icon={MonitorSmartphone}
+                label="Devices"
+                description="Signed-in sessions on this account."
+              />
+            }
+          />
+        </Suspense>
       </div>
     </div>
   );
