@@ -505,16 +505,16 @@ as OS chrome, not an in-app surface.
 
 Presets live in `src/main/ui/lib/motion.ts` — import them, never re-derive.
 
-| Preset          | Value                                                        | Use                                     |
-| --------------- | ------------------------------------------------------------ | --------------------------------------- |
-| `EASE_OUT`      | `cubic-bezier(0.16,1,0.3,1)`                                 | all enter/exit tweens                   |
-| `EASE_IN_OUT`   | `cubic-bezier(0.65,0,0.35,1)`                                | symmetric repositions                   |
-| `EASE_DRAWER`   | `cubic-bezier(0.32,0.72,0,1)`                                | sheets/drawers                          |
-| `SPRING`        | spring, bounce 0, 0.38s                                      | default for anything touchable          |
-| `MORPH`         | alias of `SPRING`                                            | morph entrances (Section 5.1)           |
-| `MORPH_EXIT`    | spring, bounce 0, 0.3s                                       | morph exits — ~20% faster (Section 5.1) |
-| `DRAWER_SPRING` | spring, bounce 0.12, 0.36s                                   | ONLY momentum-driven (flicked sheets)   |
-| Durations       | 140 fast / 200 base / ≤400ms UI / 420–450ms theme flip (5.2) | —                                       |
+| Preset          | Value                                                    | Use                                     |
+| --------------- | -------------------------------------------------------- | --------------------------------------- |
+| `EASE_OUT`      | `cubic-bezier(0.16,1,0.3,1)`                             | all enter/exit tweens                   |
+| `EASE_IN_OUT`   | `cubic-bezier(0.65,0,0.35,1)`                            | symmetric repositions                   |
+| `EASE_DRAWER`   | `cubic-bezier(0.32,0.72,0,1)`                            | sheets/drawers                          |
+| `SPRING`        | spring, bounce 0, 0.38s                                  | default for anything touchable          |
+| `MORPH`         | alias of `SPRING`                                        | morph entrances (Section 5.1)           |
+| `MORPH_EXIT`    | spring, bounce 0, 0.3s                                   | morph exits — ~20% faster (Section 5.1) |
+| `DRAWER_SPRING` | spring, bounce 0.12, 0.36s                               | ONLY momentum-driven (flicked sheets)   |
+| Durations       | 140 fast / 200 base / ≤400ms UI / 260ms theme flip (5.2) | —                                       |
 
 Rules:
 
@@ -580,11 +580,12 @@ Dialogs enter and exit on one curve pair, never a cut.
   (`theme-switch.tsx`) and rotate through the change: 260ms `EASE_IN_OUT`
   rotation, 200ms fade in, 160ms fade out (exits ~20% faster). Reduced motion
   keeps the crossfade, no rotation.
-- **Screen flip — wallpaper settle.** `use-theme.ts` runs one View Transition:
-  the old layer fades 1→0 and settles 1→0.98 in 420ms; the new layer fades
-  0→1 and settles 1.02→1 in 450ms — both `EASE_OUT`. Inner transitions freeze
-  for the snapshot (`html.vt`, globals.css) so the settle carries the motion.
-  Reduced motion, or no View Transition support, swaps instantly.
+- **Screen flip — crossfade.** `use-theme.ts` runs one View Transition: the
+  old screen dissolves into the new one in 260ms (`ease-out`, `globals.css`).
+  Single-flight queue serializes rapid clicks so transitions never overlap or
+  black out. Inner transitions freeze for the snapshot (`html.vt`) so the
+  crossfade carries the motion. Reduced motion, or no View Transition support,
+  swaps instantly.
 
 ## 6. Accessibility floor (non-negotiable)
 

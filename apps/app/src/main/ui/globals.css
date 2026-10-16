@@ -830,21 +830,46 @@
   }
 }
 
-/* Theme flip — wallpaper settle (design.md Section 5.2). The pseudos get
-   their animations from use-theme.ts; this baseline kills the default
-   crossfade so the settle is the whole motion. */
+/* Theme flip — crossfade (design.md Section 5.2). The old screen dissolves
+   into the new one in 260ms. Single-flight queue in use-theme.ts serializes
+   rapid toggles so overlapping transitions never black out. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
 ::view-transition-old(root) {
+  animation: vt-fade-out 260ms ease-out both;
   z-index: 1;
 }
 ::view-transition-new(root) {
+  animation: vt-fade-in 260ms ease-out both;
   z-index: 9999;
 }
-/* Inner transitions freeze while the flip snapshots — the settle carries the
+@keyframes vt-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* Inner transitions freeze while the flip snapshots — the crossfade carries the
    motion; controls never lag behind it. */
 html.vt *,
 html.vt *::before,

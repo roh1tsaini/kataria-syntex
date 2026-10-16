@@ -36,7 +36,7 @@
     },
     "apps/app": {
       "name": "@kataria-syntex/biz-app",
-      "version": "0.37.0",
+      "version": "0.37.2",
       "dependencies": {
         "@capacitor/app": "^8.1.1",
         "@capacitor/core": "^8.5.2",

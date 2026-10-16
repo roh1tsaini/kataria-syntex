@@ -1,6 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { reportThemeBackground } from "@/lib/platform";
-import { EASE_OUT } from "@/ui/lib/motion";
 
 type Theme = "light" | "dark";
 
@@ -51,13 +50,14 @@ function readPreference(): ThemePreference {
 /** Applies the persisted (or system) theme before first paint (see also /theme-init.js). */
 export function initTheme() {
   current = readStoredTheme() ?? systemTheme();
+  desiredTheme = current;
   apply(current);
 }
 
 let current: Theme = readStoredTheme() ?? systemTheme();
-
-/** Overlapping flips share the `html.vt` freeze; the last one out removes it. */
-let activeFlips = 0;
+let desiredTheme: Theme = current;
+let busy = false;
+let queued = false;
 
 const listeners = new Set<() => void>();
 
@@ -78,6 +78,7 @@ if (typeof window !== "undefined") {
     .addEventListener("change", (e) => {
       if (readStoredTheme()) return;
       current = e.matches ? "dark" : "light";
+      desiredTheme = current;
       apply(current);
       emit();
     });
@@ -85,9 +86,94 @@ if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
     if (e.key !== THEME_KEY) return;
     current = readStoredTheme() ?? systemTheme();
+    desiredTheme = current;
     apply(current);
     emit();
   });
+}
+
+function pump() {
+  if (!queued) return;
+  queued = false;
+  if (current === desiredTheme) return;
+
+  const next = desiredTheme;
+  const root = document.documentElement;
+
+  let applied = false;
+  const changeTheme = () => {
+    if (applied) return;
+    applied = true;
+    current = next;
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // Storage unavailable (private mode) — theme still applies for this session.
+    }
+    apply(next);
+    emit();
+  };
+
+  const isReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (
+    typeof document === "undefined" ||
+    !("startViewTransition" in document) ||
+    isReducedMotion
+  ) {
+    changeTheme();
+    busy = false;
+    pump();
+    return;
+  }
+
+  busy = true;
+  root.classList.add("vt");
+
+  let released = false;
+  let readySeen = false;
+  let stallTimer = 0;
+
+  const release = (applyNow: boolean) => {
+    if (released) return;
+    released = true;
+    window.clearTimeout(stallTimer);
+    if (applyNow && !applied) changeTheme();
+    root.classList.remove("vt");
+    busy = false;
+    pump();
+  };
+
+  try {
+    const transition = document.startViewTransition(() => {
+      changeTheme();
+    });
+
+    transition.ready
+      .then(() => {
+        readySeen = true;
+        window.clearTimeout(stallTimer);
+      })
+      .catch(() => {
+        window.clearTimeout(stallTimer);
+      });
+
+    // Watchdog: if the compositor stalls (hidden tab or webview capture freeze),
+    // ensure theme flips immediately and queue releases.
+    stallTimer = window.setTimeout(() => {
+      if (!readySeen) release(true);
+    }, 250);
+
+    transition.finished
+      .catch(() => {})
+      .finally(() => {
+        release(false);
+      });
+  } catch {
+    release(true);
+  }
 }
 
 export function useTheme() {
@@ -110,80 +196,15 @@ export function useTheme() {
       // Storage unavailable (private mode) — theme still applies for this session.
     }
     current = mode === "system" ? systemTheme() : mode;
+    desiredTheme = current;
     apply(current);
     emit();
   }, []);
 
   const toggleTheme = useCallback((_event?: ToggleThemeEvent) => {
-    const next: Theme = current === "dark" ? "light" : "dark";
-
-    const changeTheme = () => {
-      current = next;
-      try {
-        localStorage.setItem(THEME_KEY, next);
-      } catch {
-        // Storage unavailable (private mode) — theme still applies for this session.
-      }
-      apply(next);
-      emit();
-    };
-
-    const isReducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (
-      typeof document === "undefined" ||
-      !("startViewTransition" in document) ||
-      isReducedMotion
-    ) {
-      changeTheme();
-      return;
-    }
-
-    // Wallpaper settle (design.md Section 5.2): the old layer fades out while
-    // settling 1→0.98, the new layer fades in from 1.02→1. Inner transitions
-    // freeze for the snapshot so the settle carries the whole motion.
-    const root = document.documentElement;
-    const easing = `cubic-bezier(${EASE_OUT.join(", ")})`;
-    activeFlips += 1;
-    root.classList.add("vt");
-
-    const transition = document.startViewTransition(() => {
-      changeTheme();
-    });
-
-    transition.finished
-      .catch(() => {})
-      .finally(() => {
-        activeFlips -= 1;
-        if (activeFlips === 0) root.classList.remove("vt");
-      });
-
-    transition.ready
-      .then(() => {
-        root.animate(
-          { opacity: [1, 0], transform: ["scale(1)", "scale(0.98)"] },
-          {
-            duration: 420,
-            easing,
-            fill: "both",
-            pseudoElement: "::view-transition-old(root)",
-          } as KeyframeAnimationOptions,
-        );
-        root.animate(
-          { opacity: [0, 1], transform: ["scale(1.02)", "scale(1)"] },
-          {
-            duration: 450,
-            easing,
-            fill: "both",
-            pseudoElement: "::view-transition-new(root)",
-          } as KeyframeAnimationOptions,
-        );
-      })
-      .catch(() => {
-        // The flip was skipped — the theme change already landed.
-      });
+    desiredTheme = desiredTheme === "dark" ? "light" : "dark";
+    queued = true;
+    if (!busy) pump();
   }, []);
 
   return { theme, preference, setTheme, toggleTheme };
