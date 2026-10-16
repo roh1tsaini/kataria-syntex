@@ -5,7 +5,7 @@ import { getDb } from "../lib/db";
 import { users, otpCodes } from "../db/schema";
 
 import { detectIdentifier } from "../lib/identifier";
-import { hashPassword } from "../lib/password";
+import { hashPassword, isUsablePasswordHash } from "../lib/password";
 import { generateId, sha256Hex } from "../lib/token";
 import { consumeBudget } from "../lib/rate-limit";
 import {
@@ -71,7 +71,7 @@ authOtpRoute.post("/lookup", async (c) => {
   return c.json({
     type: ident.type,
     exists: !!user,
-    hasPassword: !!user?.passwordHash,
+    hasPassword: !!user && isUsablePasswordHash(user.passwordHash),
     registrationClosed: !user && !open,
   });
 });

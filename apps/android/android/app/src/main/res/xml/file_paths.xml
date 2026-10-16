@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The provider's door: only the staged APK updates. InstallerPlugin.kt
+     streams to cacheDir/updates and nothing else ever reaches this provider —
+     root-level "." paths (the Capacitor template default) would make private
+     files shareable-by-grand for no user. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="updates" path="updates/" />
+</paths>

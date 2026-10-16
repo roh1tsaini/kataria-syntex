@@ -590,21 +590,22 @@ export function configureWebCore(appVersion: string): void {
 // ── Android deep links ────────────────────────────────────────────────────────
 
 /**
- * The QR-login payload is a URL whose last path segment is the code (see
- * use-camera-scanner.ts: the scan side accepts the same shape). Both the
+ * The QR-login payload is a URL whose last path segment is the request id
+ * (see use-camera-scanner.ts: the scan side accepts the same shape). Both the
  * custom scheme and the release origin's https form carry it, so this parses
  * either. Returns null for anything that isn't a scan route — the link must
  * not route the app off somewhere unrelated.
  */
 function parseScanUrl(url: string): string | null {
-  // A custom-scheme URL with no authority ("kataria://login/scan/AB12CD") is
+  // A custom-scheme URL with no authority ("kataria://login/scan/<id>") is
   // still parseable by URL, but the scheme's first segment reads as the host
   // and the pathname starts at /scan — so match the full path, not just the
   // parsed pathname. Accepting both that and the https form keeps the parse
-  // honest for every shape the manifest can claim.
+  // honest for every shape the manifest can claim. The id keeps its case —
+  // it is an opaque server-issued value, not an upper-case code.
   const m = url.match(/\/login\/scan\/([^/?#\s]+)/);
   if (!m) return null;
-  return decodeURIComponent(m[1]).toUpperCase();
+  return decodeURIComponent(m[1]);
 }
 
 /**
@@ -614,13 +615,14 @@ function parseScanUrl(url: string): string | null {
  * and let the router's popstate listener pick it up.
  */
 function routeDeepLink(url: string): void {
-  const code = parseScanUrl(url);
-  if (!code) return;
+  const id = parseScanUrl(url);
+  if (!id) return;
   try {
-    window.history.pushState(null, "", `/login/scan/${code}`);
+    window.history.pushState(null, "", `/login/scan/${id}`);
     window.dispatchEvent(new PopStateEvent("popstate"));
   } catch {
-    // Navigation failed — the code can still be typed on the scan page.
+    // Navigation failed — leave the app where it is; the approve page can
+    // also be opened by typing the link on any browser.
   }
 }
 
@@ -630,7 +632,7 @@ let deepLinksWired = false;
  * Subscribes to native URL-open events and routes them. Android delivers
  * appUrlOpen when the app was launched (or resumed) by an intent filter the
  * manifest claims: the kataria:// scheme and the release origin's
- * /login/scan/<code> path (see AndroidManifest.xml). Wired once at boot by
+ * /login/scan/<id> path (see AndroidManifest.xml). Wired once at boot by
  * main.tsx; returns the unsubscribe, which the app never calls — the
  * subscription lives as long as the process.
  */

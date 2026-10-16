@@ -299,6 +299,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Download shared app renderer
+        uses: actions/download-artifact@v8
+        with:
+          name: ks-biz-app-renderer
+          path: apps/app/dist
+
       # Fast fail: validate required variables and secrets immediately before heavy tool installs
       - name: Validate environment and signing secrets
         shell: bash
@@ -322,6 +328,12 @@ jobs:
             exit 1
           fi
           echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.p12"
+          cat > apps/android/android/keystore.properties <<EOF
+          storeFile=$RUNNER_TEMP/keystore.p12
+          storePassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
 
       - name: Setup Java
         uses: actions/setup-java@v6
@@ -348,29 +360,25 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Generate Android native project (Expo prebuild)
-        env:
-          EXPO_PUBLIC_API_URL: ${{ vars.APP_URL }}
-        run: bun run --filter=@kataria-syntex/mobile prebuild --platform android --clean
-
-      - name: Configure release signing
-        shell: bash
-        env:
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          cat > apps/mobile/android/keystore.properties <<EOF
-          storeFile=$RUNNER_TEMP/keystore.p12
-          storePassword=$ANDROID_KEY_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          keyPassword=$ANDROID_KEY_PASSWORD
-          EOF
+      - name: Sync shared web bundle into Android
+        # cap sync runs from apps/android — it owns capacitor.config.ts (which
+        # points webDir at ../app/dist) and the Capacitor CLI dependency. The
+        # gate built this bundle with VITE_API_URL and the artifact is shared
+        # with the web and Electron shells.
+        working-directory: apps/android
+        run: bunx cap sync android
 
       - name: Build signed release APK
-        working-directory: apps/mobile/android
+        working-directory: apps/android/android
         env:
           APP_URL: ${{ vars.APP_URL }}
         run: |
+          # APP_URL may carry a scheme (https://host) — the manifest's
+          # android:host placeholder and BuildConfig.APP_HOST (the origin the
+          # installer plugin will accept) both need the bare FQDN, so
+          # normalize once here. A scheme-carrying APP_HOST made every APK
+          # download fail the plugin's host check, locking stale clients
+          # behind the 426 dialog forever.
           APP_HOST="${APP_URL#*://}"
           APP_HOST="${APP_HOST%/}"
           ./gradlew assembleRelease -PAPP_HOST="$APP_HOST"
@@ -379,7 +387,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ks-biz-app-android
-          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
+          path: apps/android/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: ${{ env.RELEASE_ARTIFACT_RETENTION_DAYS }}
 

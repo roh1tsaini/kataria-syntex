@@ -108,7 +108,7 @@ export function App() {
                 }
               />
               <Route
-                path="/login/scan/:code"
+                path="/login/scan/:id"
                 element={
                   <Suspense fallback={<ScanApproveSkeleton />}>
                     <ScanApprovePage />

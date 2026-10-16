@@ -23,7 +23,7 @@ configureWebCore(__APP_VERSION__);
 // before the first render so the offline engine never reads an empty store.
 if (isAndroid()) {
   await hydrateAndroidStorage();
-  // Deep links (kataria:// and the release origin's /login/scan/<code>) hand
+  // Deep links (kataria:// and the release origin's /login/scan/<id>) hand
   // the app a URL on launch or resume. Wired before first render so a
   // cold-start link routes the initial location instead of arriving after the
   // router already painted the default route.

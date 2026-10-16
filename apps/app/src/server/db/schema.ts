@@ -86,8 +86,8 @@ export const qrLogins = sqliteTable("qr_logins", {
   id: text("id", { length: 36 }).primaryKey(),
   code: text("code", { length: 64 }).notNull().unique(),
   // SHA-256 of the secret the waiting device keeps to itself. The QR carries
-  // the code only, so a screenshot or a forwarded link cannot be claimed —
-  // the same reason WhatsApp's QR is a key exchange, not a session ticket.
+  // the request id only, so a screenshot or a forwarded link cannot be claimed
+  // — the same reason WhatsApp's QR is a key exchange, not a session ticket.
   // Default '' on pre-existing rows: a claim hashes to 64 chars and can
   // never equal it, so an old row is unclaimable rather than claimable.
   claimSecretHash: text("claim_secret_hash", { length: 64 })

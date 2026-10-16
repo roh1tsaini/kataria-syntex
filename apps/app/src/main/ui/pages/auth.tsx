@@ -29,6 +29,7 @@ import {
 } from "@/ui/components/ui/field";
 import { EASE_OUT, MORPH, MORPH_EXIT, SPRING } from "@/ui/lib/motion";
 import { cn } from "@/ui/lib/cn";
+import { maskIdentifier } from "@/ui/lib/text";
 import { safeNextPath } from "@kataria-syntex/shared";
 import {
   Dialog,
@@ -141,9 +142,7 @@ function OtpStep({
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  const masked = identifier.includes("@")
-    ? identifier
-    : `••••• ${identifier.slice(-4)}`;
+  const masked = maskIdentifier(identifier);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

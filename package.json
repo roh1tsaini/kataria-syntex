@@ -20,8 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:updates": "bun outdated",
-    "prepare": "husky",
-    "postinstall": "bun apps/mobile/scripts/ensure-nativewind-tailwind.ts"
+    "prepare": "husky"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -31,10 +30,7 @@
     "typescript": "^7.0.2"
   },
   "overrides": {
-    "sharp": "0.35.3",
-    "nativewind": {
-      "tailwindcss": "3.4.19"
-    }
+    "sharp": "0.35.3"
   },
   "trustedDependencies": [
     "@swc/core",

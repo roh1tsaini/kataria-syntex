@@ -13,7 +13,8 @@ import {
 } from "@/ui/components/ui/field";
 
 type CodeEntryFormProps = {
-  submit: (code: string) => Promise<unknown>;
+  submitCode: (code: string) => Promise<unknown>;
+  submitScanned: (id: string, suffix: string) => Promise<unknown>;
   onDone?: () => void;
   label: string;
   description: string;
@@ -29,7 +30,8 @@ function canonicalCode(value: string): string {
 }
 
 export function CodeEntryForm({
-  submit,
+  submitCode,
+  submitScanned,
   onDone,
   label,
   description,
@@ -38,13 +40,19 @@ export function CodeEntryForm({
   success,
 }: CodeEntryFormProps) {
   const [code, setCode] = useState("");
+  const [scannedId, setScannedId] = useState<string | null>(null);
+  const [suffix, setSuffix] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [approved, setApproved] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const { videoRef, scanError } = useCameraScanner(async (c) => {
+  const { videoRef, scanError } = useCameraScanner((id) => {
+    // A scan carries the request id only — the approver must still type the
+    // code's last 4 characters from the waiting screen before approving.
     setScanning(false);
-    await run(c);
+    setScannedId(id);
+    setSuffix("");
+    setError(null);
   }, scanning);
 
   // Login codes are the 16-char unambiguous alphabet grouped
@@ -55,7 +63,7 @@ export function CodeEntryForm({
     setError(null);
     setBusy(true);
     try {
-      await submit(canonicalCode(c));
+      await submitCode(canonicalCode(c));
       if (success) setApproved(true);
       else onDone?.();
     } catch (err) {
@@ -65,7 +73,25 @@ export function CodeEntryForm({
     }
   };
 
-  const canSubmit = code.replace(/[^A-Z0-9]/g, "").length >= 4;
+  const runScanned = async () => {
+    if (!scannedId) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await submitScanned(scannedId, suffix);
+      if (success) setApproved(true);
+      else onDone?.();
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const scanned = scannedId !== null;
+  const canSubmit = scanned
+    ? suffix.length === 4
+    : code.replace(/[^A-Z0-9]/g, "").length >= 4;
 
   if (approved) {
     return (
@@ -81,28 +107,60 @@ export function CodeEntryForm({
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (canSubmit && !busy) void run(code);
+        if (!canSubmit || busy) return;
+        if (scanned) void runScanned();
+        else void run(code);
       }}
     >
       <FieldGroup className="gap-4">
-        <Field>
-          <FieldLabel htmlFor="code-entry">{label}</FieldLabel>
-          <Input
-            id="code-entry"
-            value={code}
-            onChange={(e) =>
-              setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))
-            }
-            placeholder="XXXX-XXXX-XXXX-XXXX"
-            maxLength={19}
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-            aria-invalid={!!error}
-            aria-describedby={error ? "code-entry-error" : undefined}
-          />
-          <FieldDescription>{description}</FieldDescription>
-        </Field>
+        {scanned ? (
+          <Field>
+            <FieldLabel htmlFor="code-suffix">Code ends in</FieldLabel>
+            <Input
+              id="code-suffix"
+              value={suffix}
+              onChange={(e) =>
+                setSuffix(
+                  e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, "")
+                    .slice(0, 4),
+                )
+              }
+              placeholder="XXXX"
+              className="font-mono tracking-[0.18em]"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              autoFocus
+              aria-invalid={!!error}
+              aria-describedby={error ? "code-entry-error" : undefined}
+            />
+            <FieldDescription>
+              QR scanned. Type the last 4 characters of the code shown on the
+              other device.
+            </FieldDescription>
+          </Field>
+        ) : (
+          <Field>
+            <FieldLabel htmlFor="code-entry">{label}</FieldLabel>
+            <Input
+              id="code-entry"
+              value={code}
+              onChange={(e) =>
+                setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))
+              }
+              placeholder="XXXX-XXXX-XXXX-XXXX"
+              maxLength={19}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-invalid={!!error}
+              aria-describedby={error ? "code-entry-error" : undefined}
+            />
+            <FieldDescription>{description}</FieldDescription>
+          </Field>
+        )}
       </FieldGroup>
 
       {scanning && (
@@ -133,22 +191,38 @@ export function CodeEntryForm({
         >
           {buttonLabel}
         </Button>
+        {!scanned && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setScanning((s) => !s)}
+            disabled={busy}
+            aria-label={scanning ? "Stop camera" : "Scan QR with camera"}
+            title={scanning ? "Stop camera" : "Scan QR with camera"}
+          >
+            {scanning ? (
+              <CameraOff className="size-4" />
+            ) : (
+              <Camera className="size-4" />
+            )}
+          </Button>
+        )}
+      </div>
+      {scanned && (
         <Button
           type="button"
-          variant="outline"
-          size="icon"
-          onClick={() => setScanning((s) => !s)}
-          disabled={busy}
-          aria-label={scanning ? "Stop camera" : "Scan QR with camera"}
-          title={scanning ? "Stop camera" : "Scan QR with camera"}
+          variant="link"
+          className="self-start px-0"
+          onClick={() => {
+            setScannedId(null);
+            setSuffix("");
+            setError(null);
+          }}
         >
-          {scanning ? (
-            <CameraOff className="size-4" />
-          ) : (
-            <Camera className="size-4" />
-          )}
+          Enter the full code instead
         </Button>
-      </div>
+      )}
     </form>
   );
 }

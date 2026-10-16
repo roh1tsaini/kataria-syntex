@@ -16,6 +16,7 @@ const API_CODES = [
   "invalid_identifier",
   "unknown_identifier",
   "invalid_credentials",
+  "wrong_password",
   "invalid_code",
   "user_exists",
   "registration_closed",
@@ -31,9 +32,11 @@ const API_CODES = [
   "otp_budget_exhausted",
   "otp_send_failed",
   "password_login_rate_limited",
+  "password_change_rate_limited",
   // qr login
   "qr_code_invalid",
   "qr_code_expired",
+  "qr_code_mismatch",
   "qr_already_approved",
   "qr_rate_limited",
   // updates — the API carries no backward compatibility; a client below the

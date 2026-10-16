@@ -15,20 +15,22 @@ export function QrApproveDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const approveQrLogin = useAuth((s) => s.approveQrLogin);
+  const approveQrLoginByCode = useAuth((s) => s.approveQrLoginByCode);
+  const approveQrLoginBySuffix = useAuth((s) => s.approveQrLoginBySuffix);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Approve a device</DialogTitle>
           <DialogDescription>
-            Make sure the code matches the other device, then approve.
+            Approving signs the other device in as you.
           </DialogDescription>
         </DialogHeader>
         <CodeEntryForm
-          submit={approveQrLogin}
+          submitCode={approveQrLoginByCode}
+          submitScanned={approveQrLoginBySuffix}
           label="Login code"
-          description="Open the login page on the other device and scan its QR code, or enter the code shown below it."
+          description="Open the login page on the other device and scan its QR code, or type the full code shown below it."
           scanHint="Point the camera at the QR code on the other device"
           buttonLabel="Approve login"
           success={

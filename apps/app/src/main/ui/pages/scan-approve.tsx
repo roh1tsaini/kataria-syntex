@@ -11,6 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/ui/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/ui/components/ui/field";
+import { Input } from "@/ui/components/ui/input";
 import { Skeleton } from "@/ui/components/motion";
 import { EASE_OUT } from "@/ui/lib/motion";
 
@@ -20,45 +27,43 @@ type QrInfo = {
   deviceLabel: string | null;
 };
 
-/** Last group of the pairing code, so the two screens can be compared. */
-function codeSuffix(code: string): string {
-  return code.split("-").pop() ?? code;
-}
-
 /**
  * Approve page opened by scanning the login QR from any camera device.
  * Requires a session on THIS device; grants the waiting device either the
- * named account or your own.
+ * named account or your own. Approval needs the last 4 characters of the
+ * code shown on the waiting device, so a forwarded link cannot approve.
  */
 export function ScanApprovePage() {
   const reduceMotion = useReducedMotion();
-  const { code = "" } = useParams();
+  const { id = "" } = useParams();
   const status = useAuth((s) => s.status);
-  const approveQrLogin = useAuth((s) => s.approveQrLogin);
+  const approveQrLoginBySuffix = useAuth((s) => s.approveQrLoginBySuffix);
   const [info, setInfo] = useState<QrInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [approvedAs, setApprovedAs] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [infoError, setInfoError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [suffix, setSuffix] = useState("");
 
   useEffect(() => {
-    if (status !== "authed" || !code) return;
+    if (status !== "authed" || !id) return;
     let cancelled = false;
-    api<QrInfo>(`/auth/qr/info?code=${encodeURIComponent(code)}`)
+    api<QrInfo>(`/auth/qr/info?id=${encodeURIComponent(id)}`)
       .then((res) => {
         if (!cancelled) setInfo(res);
       })
       .catch((err) => {
-        if (!cancelled) setError(friendlyError(err));
+        if (!cancelled) setInfoError(friendlyError(err));
       });
     return () => {
       cancelled = true;
     };
-  }, [status, code]);
+  }, [status, id]);
 
-  if (!code || status === "guest")
+  if (!id || status === "guest")
     return (
       <Navigate
-        to={`/auth?next=${encodeURIComponent(`/login/scan/${code}`)}`}
+        to={`/auth?next=${encodeURIComponent(`/login/scan/${id}`)}`}
         replace
       />
     );
@@ -71,16 +76,18 @@ export function ScanApprovePage() {
     );
   }
 
+  const ready = suffix.length === 4;
+
   const approve = async () => {
-    setError(null);
+    setSubmitError(null);
     setBusy(true);
     try {
-      const res = await approveQrLogin(code);
+      const res = await approveQrLoginBySuffix(id, suffix);
       setApprovedAs(
         res.grantedSelf ? "you" : (res.grantedName ?? "the account"),
       );
     } catch (err) {
-      setError(friendlyError(err));
+      setSubmitError(friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -130,19 +137,25 @@ export function ScanApprovePage() {
               ) : alreadyApproved ? (
                 "This code was already approved."
               ) : (
-                "Check the device and code match that screen."
+                "Check the device, then type the code from its screen."
               )}
             </CardDescription>
           </CardHeader>
           {!approvedAs && !expiredOrUsed && !alreadyApproved && (
             <CardContent className="flex flex-col gap-3">
+              {infoError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {infoError}
+                </p>
+              )}
               {/* Name the requesting device, not just the account. A prompt
                   that only reads "log in as <you>" looks identical whether the
                   QR came from your own second device or from a stranger's
                   link. The label is the requester's own claim, taken off an
                   unauthenticated header — so the row says "Claims to be".
-                  "Signs in as" and "Code ends in" are the two facts the
-                  server actually knows. */}
+                  "Signs in as" is server-derived; the typed suffix beneath the
+                  block is the proof that this person can see the waiting
+                  device's screen. */}
               <dl className="flex flex-col gap-2 rounded-md border border-border bg-muted/40 px-3 py-2.5 text-sm">
                 <div className="flex items-baseline justify-between gap-3">
                   <dt className="text-muted-foreground">Claims to be</dt>
@@ -156,22 +169,54 @@ export function ScanApprovePage() {
                     {info?.targetName || "you"}
                   </dd>
                 </div>
-                <div className="flex items-baseline justify-between gap-3">
-                  <dt className="text-muted-foreground">Code ends in</dt>
-                  <dd className="font-mono font-semibold tracking-widest text-foreground">
-                    {codeSuffix(code)}
-                  </dd>
-                </div>
               </dl>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button
-                onClick={() => void approve()}
-                disabled={busy}
-                loading={busy}
-                className="w-full"
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (ready && !busy) void approve();
+                }}
               >
-                Approve login
-              </Button>
+                <Field>
+                  <FieldLabel htmlFor="code-suffix">Code ends in</FieldLabel>
+                  <Input
+                    id="code-suffix"
+                    value={suffix}
+                    onChange={(e) =>
+                      setSuffix(
+                        e.target.value
+                          .toUpperCase()
+                          .replace(/[^A-Z0-9]/g, "")
+                          .slice(0, 4),
+                      )
+                    }
+                    placeholder="XXXX"
+                    className="font-mono tracking-[0.18em]"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    spellCheck={false}
+                    autoFocus
+                    aria-invalid={!!submitError}
+                    aria-describedby={
+                      submitError ? "code-suffix-error" : undefined
+                    }
+                  />
+                  <FieldDescription>
+                    The last 4 characters of the code shown on the other device.
+                  </FieldDescription>
+                </Field>
+                {submitError && (
+                  <FieldError id="code-suffix-error">{submitError}</FieldError>
+                )}
+                <Button
+                  type="submit"
+                  disabled={!ready}
+                  loading={busy}
+                  className="w-full"
+                >
+                  Approve login
+                </Button>
+              </form>
             </CardContent>
           )}
         </Card>

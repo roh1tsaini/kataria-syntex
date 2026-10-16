@@ -7,14 +7,13 @@ export function safeNextPath(raw: string | null): string {
   return raw;
 }
 
-/** Login code from a scanned QR payload. The payload is the approve-page URL
- *  (<origin>/login/scan/<code>), so the code is its last path segment; a bare
- *  code is accepted too. Returns the upper-cased code, or null for anything
- *  under 4 characters. */
-export function parseQrScanCode(data: string): string | null {
+/** QR-login request id from a scanned QR payload. The payload is the
+ *  approve-page URL (<origin>/login/scan/<id>), so the id is its last path
+ *  segment; a bare id is accepted too. Case is preserved — the id is an
+ *  opaque server-issued value, not a typed code. Returns null unless the
+ *  value has the shape of an id. */
+export function parseQrScanId(data: string): string | null {
   const fromUrl = data.match(/\/login\/scan\/([^/?#\s]+)/);
-  const raw = (
-    fromUrl ? decodeURIComponent(fromUrl[1]) : data.trim()
-  ).toUpperCase();
-  return raw.length >= 4 ? raw : null;
+  const raw = fromUrl ? decodeURIComponent(fromUrl[1]) : data.trim();
+  return raw.length >= 8 && raw.length <= 64 ? raw : null;
 }

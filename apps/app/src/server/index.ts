@@ -14,8 +14,8 @@ import { telegramRoute } from "./routes/telegram";
 // /api/*.
 export const app = new Hono<{ Bindings: Env }>();
 
-// Log requests without query strings — QR codes and other tokens ride in
-// URLs, and the default hono logger writes the full path to stdout.
+// Log requests without query strings — opaque ids and other client values
+// ride in URLs, and the default hono logger writes the full path to stdout.
 app.use(
   "*",
   logger((message) => console.log(message.replace(/\?[^\s]*/g, ""))),

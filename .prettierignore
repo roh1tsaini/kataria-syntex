@@ -8,11 +8,7 @@ dist-electron/
 .turbo/
 .wrangler/
 coverage/
-archive/
-apps/mobile/dist/
-apps/mobile/android/
-apps/mobile/test-results/
-apps/mobile/playwright-report/
+apps/android/android/
 demos/
 
 # Generated files

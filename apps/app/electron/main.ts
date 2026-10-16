@@ -20,6 +20,7 @@ import {
   net,
   protocol,
   safeStorage,
+  session,
   shell,
   type IpcMainInvokeEvent,
   type MenuItemConstructorOptions,
@@ -282,6 +283,10 @@ async function handleApi(raw: unknown) {
   try {
     const res = await net.fetch(url, {
       method,
+      // Bearer-only transport: without this, net.fetch stores the login
+      // Set-Cookie in the default session's jar and replays it on every
+      // later call — a second credential the keychain logout cannot reach.
+      credentials: "omit",
       headers,
       // net.fetch rejects a body on GET/HEAD — forward it only where it
       // belongs instead of letting the request fail as a network error.
@@ -527,6 +532,17 @@ async function onReady(): Promise<void> {
   installApplicationMenu();
   // Restore the previous window geometry + theme before the first paint.
   initialState = await loadDesktopState();
+
+  // Pre-fix installs stored the login Set-Cookie in the default session's
+  // jar (handleApi used to send credentials). The transport is Bearer-only
+  // now — clear any leftover so the jar can never act as a second
+  // credential after a keychain logout.
+  await session.defaultSession
+    .clearStorageData({
+      origin: new URL(API_ORIGIN).origin,
+      storages: ["cookies"],
+    })
+    .catch((error: unknown) => console.error("cookie_cleanup_failed", error));
 
   // Serve the packaged renderer: app://bundle/<path> → APP_ROOT/dist/<path>.
   // Host is ignored; only the path matters, and it may not escape dist/.

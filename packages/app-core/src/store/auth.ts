@@ -34,7 +34,8 @@ type LookupResult = {
 type VerifyResult =
   { status: "needs_signup" } | ({ status: "ok" } & SessionPayload);
 
-/** QR payloads are URLs (`<origin>/login/scan/<code>`) so any camera works. */
+/** QR payloads are URLs (`<origin>/login/scan/<id>`) so any camera works;
+ *  the link carries the request id only, never the code. */
 export type QrLoginCode = {
   code: string;
   /** Secret half of the pairing. Kept by this device, never shown or
@@ -44,6 +45,12 @@ export type QrLoginCode = {
   expiresIn: number;
   payload: string;
   expiresAt: string;
+};
+
+/** What an approve call reports: whose account was signed in. */
+type QrApproveOutcome = {
+  grantedName: string | null;
+  grantedSelf: boolean;
 };
 
 type SessionPayload = MePayload & {
@@ -69,14 +76,20 @@ type AuthState = {
     code: string;
   }) => Promise<void>;
   loginPassword: (identifier: string, password: string) => Promise<void>;
+  changePassword: (input: {
+    currentPassword?: string;
+    code?: string;
+    newPassword: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   refreshDevices: () => Promise<void>;
   deleteDevice: (id: string) => Promise<void>;
   startQrLogin: (identifier?: string) => Promise<QrLoginCode>;
-  approveQrLogin: (code: string) => Promise<{
-    grantedName: string | null;
-    grantedSelf: boolean;
-  }>;
+  approveQrLoginByCode: (code: string) => Promise<QrApproveOutcome>;
+  approveQrLoginBySuffix: (
+    id: string,
+    suffix: string,
+  ) => Promise<QrApproveOutcome>;
   pollQrLogin: (
     code: string,
     claimSecret: string,
@@ -200,6 +213,13 @@ export const useAuth = create<AuthState>()((set, get) => ({
     applySession(set, res);
   },
 
+  changePassword: async (input) => {
+    await api<{ ok: boolean }>("/auth/password/change", {
+      method: "POST",
+      body: input,
+    });
+  },
+
   logout: async () => {
     ++bootstrapGeneration;
     try {
@@ -239,15 +259,25 @@ export const useAuth = create<AuthState>()((set, get) => ({
     return res;
   },
 
-  approveQrLogin: async (code) => {
-    const res = await api<{
-      status: "ok";
-      grantedName: string | null;
-      grantedSelf: boolean;
-    }>("/auth/qr/approve", {
-      method: "POST",
-      body: { code },
-    });
+  approveQrLoginByCode: async (code) => {
+    const res = await api<{ status: "ok" } & QrApproveOutcome>(
+      "/auth/qr/approve",
+      {
+        method: "POST",
+        body: { code },
+      },
+    );
+    return { grantedName: res.grantedName, grantedSelf: res.grantedSelf };
+  },
+
+  approveQrLoginBySuffix: async (id, suffix) => {
+    const res = await api<{ status: "ok" } & QrApproveOutcome>(
+      "/auth/qr/approve",
+      {
+        method: "POST",
+        body: { id, suffix },
+      },
+    );
     return { grantedName: res.grantedName, grantedSelf: res.grantedSelf };
   },
 

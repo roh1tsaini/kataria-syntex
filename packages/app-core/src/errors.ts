@@ -21,6 +21,7 @@ const SERVER_MESSAGES = {
   // auth / otp
   invalid_code: "Wrong code. Try again.",
   invalid_credentials: "Wrong phone, email, or password.",
+  wrong_password: "That's not your current password.",
   otp_expired: "Code expired. Request a new one.",
   otp_attempts_exhausted: "Too many wrong attempts. Request a new code.",
   otp_not_found: "No active code. Request a new one.",
@@ -37,15 +38,16 @@ const SERVER_MESSAGES = {
   otp_send_failed:
     "Couldn't send the code right now. Please try again shortly.",
   password_login_rate_limited: "Too many sign-in attempts. Try in 15 minutes.",
+  password_change_rate_limited: "Too many attempts. Try again in 15 minutes.",
   user_exists:
     "An account already exists for this phone/email. Log in instead.",
   registration_closed: "New account registration is currently closed.",
   // qr login
   qr_code_invalid: "That code is not valid or was already used.",
   qr_code_expired: "That code has expired. Ask for a new one.",
+  qr_code_mismatch: "That code doesn't match. Check the other device's screen.",
   qr_already_approved: "This code was already approved.",
-  qr_rate_limited:
-    "Too many QR codes requested from this network. Wait a moment and try again.",
+  qr_rate_limited: "Too many QR attempts. Wait a moment and try again.",
   internal_server_error:
     "Something went wrong on our side. Try again in a moment.",
   // updates — the blocking update gate handles this code; the entry only

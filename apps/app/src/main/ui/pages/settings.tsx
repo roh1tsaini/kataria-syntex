@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  KeyRound,
   Monitor,
   MonitorSmartphone,
   Moon,
@@ -26,9 +27,14 @@ import { Label } from "@/ui/components/ui/label";
 import { ProgressBar } from "@/ui/components/progress-bar";
 import { cn } from "@/ui/lib/cn";
 
-type SectionId = "appearance" | "updates" | "devices";
+type SectionId = "appearance" | "updates" | "security" | "devices";
 
-const SECTION_ORDER: SectionId[] = ["appearance", "updates", "devices"];
+const SECTION_ORDER: SectionId[] = [
+  "appearance",
+  "updates",
+  "security",
+  "devices",
+];
 
 const SECTION_META: Record<
   SectionId,
@@ -46,6 +52,12 @@ const SECTION_META: Record<
     icon: RefreshCw,
     keywords: "version update upgrade release about",
   },
+  security: {
+    label: "Security",
+    description: "Password for this account.",
+    icon: KeyRound,
+    keywords: "password change security sign in",
+  },
   devices: {
     label: "Devices",
     description: "Signed-in sessions on this account.",
@@ -57,6 +69,12 @@ const SECTION_META: Record<
 const DevicesPanel = lazy(() =>
   import("@/ui/components/devices-panel").then((m) => ({
     default: m.DevicesPanel,
+  })),
+);
+
+const SecurityPanel = lazy(() =>
+  import("@/ui/components/security-panel").then((m) => ({
+    default: m.SecurityPanel,
   })),
 );
 
@@ -364,6 +382,19 @@ export function SettingsPage() {
           <div className="mt-4">
             {section === "appearance" && <AppearancePanel />}
             {section === "updates" && <UpdatesPanel />}
+            {section === "security" && (
+              <Suspense
+                fallback={
+                  <div aria-hidden className="space-y-2">
+                    <Skeleton className="h-16 rounded-lg" />
+                    <Skeleton className="h-16 rounded-lg" />
+                    <Skeleton className="h-16 rounded-lg" />
+                  </div>
+                }
+              >
+                <SecurityPanel />
+              </Suspense>
+            )}
             {section === "devices" && (
               <Suspense
                 fallback={

@@ -49,6 +49,8 @@ export type UpdateFailure =
   | "publish_pending"
   /** The download failed, or the feed has no such artifact. */
   | "download_failed"
+  /** The staged file could not be written — the device is out of space. */
+  | "storage_full"
   /** Bytes arrived but failed verification. */
   | "integrity_failed"
   /** Android needs permission to install this APK. */
@@ -69,6 +71,8 @@ export const UPDATE_FAILURE_COPY: Record<UpdateFailure, string> = {
     "The required update is still publishing. Try again shortly.",
   download_failed: "The update download failed. Try again.",
   integrity_failed: "The update file could not be verified. Try again.",
+  storage_full:
+    "Not enough storage on the phone to install the update. Free some space, then try again.",
   install_blocked: "Allow app installs in Android Settings, then try again.",
   install_failed: "Android could not open the installer. Try again.",
   stalled: "The update was interrupted. Try again.",
@@ -235,6 +239,7 @@ const ANDROID_FAILURES: Record<string, UpdateFailure> = {
   artifact_missing: "download_failed",
   download_failed: "download_failed",
   integrity_failed: "integrity_failed",
+  storage_unavailable: "storage_full",
   install_permission_required: "install_blocked",
   install_unavailable: "install_failed",
   not_staged: "download_failed",

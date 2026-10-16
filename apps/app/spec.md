@@ -289,7 +289,7 @@ Contents: 1 What it is · 2 Tech stack · 3 Source map · 4 Commands · 5 Platfo
 | UI           | shadcn/ui-style primitives (`ui/components/ui/*`)      |
 | Icons        | lucide-react (UI) + inline brand glyphs                |
 | Desktop      | Electron 43, electron-builder                          |
-| Android      | Expo SDK 57 / React Native (`apps/mobile`)             |
+| Android      | Capacitor 8 (`apps/android` — the shell project)       |
 | Backend      | Hono 4 on Cloudflare Workers (`nodejs_compat`)         |
 | DB           | D1 (SQLite) via Drizzle ORM (`drizzle-orm@1.0.0-rc.4`) |
 | Auth         | OTP (Pingram) + password + QR pairing, HttpOnly/Bearer |
@@ -341,31 +341,30 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   CI artifacts, never cached. Artifact cleanup: `DEPLOY.md` Section 3.
 - Done = typecheck + lint + format + build green from repo root AND the
   feature works when run (`AGENTS.md` Section 2.4).
-- Web and Electron compile as one renderer bundle in `apps/app`; `apps/mobile`
-  is the standalone Expo React Native app sharing `packages/app-core`.
+- Web, Electron and Android compile as one renderer bundle; `apps/android`
+  typechecks and syncs (`bunx cap sync android`) against `packages/app-core`.
 
 ### 5 · Platforms
 
 **Shell matrix**
 
-- Unified product across three shells (`AGENTS.md` Section 2.3): `apps/app` (web +
-  Electron) and `apps/mobile` (Expo React Native for Android phones
-  matching the `≤sm` breakpoint).
-- UI and business logic are shared across platforms: business logic in
-  `packages/app-core`, shared domain validation in `packages/shared`, and
-  mobile presentation in `apps/mobile` (Expo React Native) matching the `≤sm` phone scale.
-- UI verification for the mobile app runs via Playwright mobile viewport tests and Jest unit tests in `apps/mobile` (see `apps/mobile/APP.md`).
+- One bundle, three shells (`AGENTS.md` Section 2.3): `apps/app` (web +
+  Electron) + `apps/android` (Capacitor 8 WebView over the same built bundle
+  at the `≤sm` breakpoint).
+- No separate Android UI — a UI/feature change is a web change; it lands on
+  Android by rebuilding + `bunx cap sync android`.
+- UI verification happens once in the browser at the `≤sm` breakpoint.
 - iOS is out of scope — never scaffold for it.
 - Build targets (owner-fixed): Android universal APK · Windows x64 ·
   macOS arm64 dmg (Apple Silicon only) · Linux x64 AppImage.
 - Platform branches live ONLY in `src/main/lib/platform.ts` behind
   `detectHost()`. A platform `if` anywhere else is a bug.
 
-| Shell   | Stack                                 | Session storage                                |
-| ------- | ------------------------------------- | ---------------------------------------------- |
-| Web     | browser, revalidated HTML             | HttpOnly cookie                                |
-| Desktop | Electron 43, `app://` custom protocol | OS keychain via IPC + safeStorage              |
-| Android | Expo React Native (`apps/mobile`)     | Android Keystore AES-GCM via expo-secure-store |
+| Shell   | Stack                                 | Session storage                                             |
+| ------- | ------------------------------------- | ----------------------------------------------------------- |
+| Web     | browser, revalidated HTML             | HttpOnly cookie                                             |
+| Desktop | Electron 43, `app://` custom protocol | OS keychain via IPC + safeStorage                           |
+| Android | Capacitor 8 WebView                   | AES-GCM under an Android Keystore key (`SecureTokenPlugin`) |
 
 An install upgrading from the plaintext token store has its old
 `auth.token.v1` preference deleted at first boot, then signs in once.
@@ -383,10 +382,12 @@ An install upgrading from the plaintext token store has its old
   (custom protocols cache against the URL otherwise). Windows/Linux stage
   updates silently and install on quit. macOS uses a manual DMG download
   from Settings.
-- **Android** — `apps/mobile` is built with Expo (React Native), with the API
-  origin configured at build via `EXPO_PUBLIC_API_URL` / `APP_URL`.
-  The app securely connects to the Worker API using `@kataria-syntex/app-core`
-  and native keystore token management.
+- **Android** — `apps/android` wraps the same bundle at `https://localhost`,
+  so the API origin is baked in at build (`VITE_API_URL`);
+  `apps/android/scripts/build-web.ts` fails the build if missing and
+  `platform.ts` throws at boot (`bakedApiOrigin`). Boot compares the native
+  `versionName` with the executing bundle (`reloadOnStaleAndroidBundle`) so
+  a replaced APK never runs a stale bundle.
 
 **Logged-out download page (web only)**
 
@@ -404,12 +405,15 @@ An install upgrading from the plaintext token store has its old
 
 **Gradle & manifest**
 
-- `apps/mobile/android/` is generated via Expo prebuild (`bun run prebuild`).
-- Native config, permissions, release signing, and APK naming are managed via
-  Expo config plugins (`plugins/with-android-release.ts`).
-- **Phone testing runs through CI or local release builds.**
-  Push, let the `android` job build the signed APK against the deployed worker
-  (`vars.APP_URL`), and install the artifact.
+- `apps/android/android/` is a committed Capacitor Gradle project — native
+  config only (manifest permissions, signing, ABI filters), never UI.
+- `cap sync` copies the built bundle and the plugin list into it.
+- **Phone testing runs through CI, never a local build.**
+  `apps/android/scripts/build-web.ts` forces `https://` on the baked API
+  origin and fails without one, so a bundle aimed at a local `wrangler dev`
+  would speak TLS to a plain-HTTP server. Push, let the `android` job build
+  the signed APK against the deployed worker (`vars.APP_URL`), install the
+  artifact.
 - `app/build.gradle` reads `apps/app/package.json` for `versionName` and
   derives `versionCode = major*1000000 + minor*1000 + patch`.
 - `major` is non-negative; `minor` and `patch` stay below 1000; the result
@@ -427,10 +431,9 @@ An install upgrading from the plaintext token store has its old
   version per device; tap "Scan app" once per device.
 - Signing reads `keystore.properties` written by CI from
   `ANDROID_KEY_BASE64` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD`.
-- Plugins: Expo managed plugins (`expo-camera`, `expo-notifications`,
-  `expo-secure-store`, `expo-build-properties`) plus local config plugin
-  `plugins/with-android-release.ts` (release keystore signing and versioned
-  APK naming).
+- Plugins: official `@capacitor/*` set plus local `InstallerPlugin.kt`
+  (streams APK to app-private `updates/` cache, verifies SHA-256 against the
+  manifest, fires `FileProvider` `ACTION_VIEW`).
 - Commands: `AGENTS.md` Section 3.
 
 #### 5.3 · Update mechanisms
@@ -460,11 +463,13 @@ An install upgrading from the plaintext token store has its old
 - Web has no UI for routine deploys; revalidated HTML picks up the new build
   on next navigation.
 - The 426 dialog action leads somewhere installable on every host.
-- Deep links (Android): `kataria://` and `https://<origin>/login/scan/<code>`
+- Deep links (Android): `kataria://` and `https://<origin>/login/scan/<id>`
   are routed by `initAndroidDeepLinks()`.
 - Network + lifecycle events: web/Electron read `window` online/offline and
-  `visibilitychange`; Android reads `@react-native-community/netinfo` and
-  React Native `AppState` via the `PlatformAdapter` seam (`apps/mobile/src/platform/adapter.ts`).
+  `visibilitychange`; Android reads `@capacitor/network` and `@capacitor/app`
+  `appStateChange`.
+- Android bundle self-heal: `reloadOnStaleAndroidBundle()` compares native
+  `versionName` with `__APP_VERSION__` and reloads once if mismatched.
 - Electron window chrome: `desktopWindow()` exposes minimize/maximize/close
   and the resolved theme background; one instance per installation; zoom
   locked; camera granted to app origins for QR scan; packaged renderer served
@@ -501,7 +506,7 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Responses        | 200/201/304; errors `{ error: "<snake_code>" }` — shared codes in `packages/shared/errors.ts`, copy in `packages/app-core/errors.ts` (`friendlyError`) |
 | Request IDs      | `crypto.randomUUID` on every response; global error handler logs + 500 without leaking internals                                                       |
-| CORS             | native shells built in (`app://bundle`); `CORS_ORIGIN` env adds third-party origins                                                                    |
+| CORS             | native shells built in (`app://bundle`, capacitor origins); `CORS_ORIGIN` env adds third-party origins                                                 |
 | Security headers | CSP, nosniff, DENY frame, no referrer, strict permissions policy (camera on for app origins — QR scan needs it)                                        |
 | Caching          | every `/api/*` response carries `Cache-Control: no-store`                                                                                              |
 | Version gate     | `src/server/lib/version-gate.ts`; `/api/auth/*` and `/api/health` stay reachable under a floor so the update UI and sign-in work                       |
@@ -523,27 +528,29 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 | Password  | ✓   | ✓       | ✓       |
 | QR login  | ✓   | ✓       | ✓       |
 
-| Topic               | Rule                                                                                                                                                        |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Session             | opaque token in HttpOnly cookie (web) / `Authorization: Bearer` (native); 30-day TTL · storage per shell in Section 5                                       |
-| QR login            | 10-min TTL codes in `qr_logins`; single-use CAS claim                                                                                                       |
-| QR claim secret     | the waiting device keeps a 32-byte secret; only its SHA-256 is stored and only the secret can claim — a screenshot or forwarded link is worthless           |
-| QR approve prompt   | names the requesting device, the account it signs in as, and the last 4 code characters, so the two screens can be compared                                 |
-| QR limits           | 30 starts per IP per 15 min (D1, holds across isolates) · 120 per IP per 15 min in-memory · code space 2^79                                                 |
-| OTP delivery        | Pingram API — `https://api.eu.pingram.io` (worker secret `PINGRAM_API_KEY`)                                                                                 |
-| OTP expiry          | 5 min; 3 verify attempts per code (CAS update)                                                                                                              |
-| OTP resend cooldown | 30 s per identifier (429 `otp_resend_cooldown`)                                                                                                             |
-| OTP daily caps      | 5/hr and 12/day per identifier · 10 per IP per 15 min · 300 global/day (`OTP_DAILY_BUDGET`)                                                                 |
-| Password login      | 10 attempts per device+identifier · 100 per identifier · 30 per IP per 15 min; D1 counters are atomic                                                       |
-| OTP copy            | Telegram owner receives sign-in, registration, and resend codes; delivery failure is logged and does not block OTP                                          |
-| Registration        | opt-in: the D1 setting must read `on`, so a missing row blocks signup · `/registrations_on` and `/registrations_off` persist it                             |
-| Registration gate   | unknown accounts are blocked before OTP when disabled; the signup insert re-checks the switch in the same transaction                                       |
-| Telegram control    | owner numeric ID only, private chats only; webhook secret header required                                                                                   |
-| Password            | required at registration; Argon2id v19 · 19,456 KiB · 2 passes · parallelism 1 · minimum 10 chars                                                           |
-| Native persistence  | desktop: OS keychain · Android: AES-GCM under a non-exportable Android Keystore key (`SecureTokenPlugin`); neither ever writes a credential to a plain file |
-| Framing             | the SPA document sends `X-Frame-Options: DENY` and `frame-ancestors 'none'` on web and desktop — the approve screen must not be clickjacked                 |
-| Desktop logout      | wipes native keychain + `localStorage` + `sessionStorage`                                                                                                   |
-| Devices management  | `/devices` and Settings → Devices list active sessions with current marker and per-device revoke                                                            |
+| Topic               | Rule                                                                                                                                                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session             | opaque token in HttpOnly cookie (web) / `Authorization: Bearer` (native); 30-day TTL · storage per shell in Section 5                                                                                                                                                                 |
+| QR login            | 10-min TTL codes in `qr_logins`; single-use CAS claim; the QR payload URL carries the request id only — never the code                                                                                                                                                                |
+| QR claim secret     | the waiting device keeps a 32-byte secret; only its SHA-256 is stored and only the secret can claim — a screenshot or forwarded link is worthless                                                                                                                                     |
+| QR approve proof    | names the requesting device and the account it signs in as; approval needs the code's last 4 characters typed off the waiting screen (or the full code typed in the app) — a forwarded link alone cannot approve                                                                      |
+| QR limits           | 30 starts per IP per 15 min (D1, holds across isolates) · 120 starts per IP per 15 min in-memory · status 200 per code+IP / 2000 per IP per 15 min in-memory (over → 429, panel polls every 15s instead of 4s) · approve 10 per account / 30 per IP per 15 min (D1) · code space 2^79 |
+| OTP delivery        | Pingram API — `https://api.eu.pingram.io` (worker secret `PINGRAM_API_KEY`)                                                                                                                                                                                                           |
+| OTP expiry          | 5 min; 3 verify attempts per code (CAS update)                                                                                                                                                                                                                                        |
+| OTP resend cooldown | 30 s per identifier (429 `otp_resend_cooldown`)                                                                                                                                                                                                                                       |
+| OTP daily caps      | 5/hr and 12/day per identifier · 10 per IP per 15 min · 300 global/day (`OTP_DAILY_BUDGET`)                                                                                                                                                                                           |
+| Password login      | 10 attempts per device+identifier · 100 per identifier · 30 per IP per 15 min; D1 counters are atomic                                                                                                                                                                                 |
+| OTP copy            | Telegram owner receives sign-in, registration, password-change, and resend codes; delivery failure is logged and does not block OTP                                                                                                                                                   |
+| Registration        | opt-in: the D1 setting must read `on`, so a missing row blocks signup · `/registrations_on` and `/registrations_off` persist it                                                                                                                                                       |
+| Registration gate   | unknown accounts are blocked before OTP when disabled; the signup insert re-checks the switch in the same transaction                                                                                                                                                                 |
+| Telegram control    | owner numeric ID only, private chats only; webhook secret header required                                                                                                                                                                                                             |
+| Password            | required at registration; Argon2id v19 · 19,456 KiB · 2 passes · parallelism 1 · minimum 10 chars                                                                                                                                                                                     |
+| Password storage    | each stored hash labels its own settings; login verifies with those, then rewrites the hash with the current recipe; the login picker offers password only for a usable hash                                                                                                          |
+| Password change     | signed-in only; the current password or an OTP code sent to the account confirms the change, then the stored hash is rewritten · other sessions stay signed in · 10 per account / 30 per IP per 15 min                                                                                |
+| Native persistence  | desktop: OS keychain · Android: AES-GCM under a non-exportable Android Keystore key (`SecureTokenPlugin`); neither ever writes a credential to a plain file                                                                                                                           |
+| Framing             | the SPA document sends `X-Frame-Options: DENY` and `frame-ancestors 'none'` on web and desktop — the approve screen must not be clickjacked                                                                                                                                           |
+| Desktop logout      | wipes native keychain + cached session snapshot; the shell never stores a session cookie (stale jar cleared at launch)                                                                                                                                                                |
+| Devices management  | `/devices` and Settings → Devices list active sessions with current marker and per-device revoke                                                                                                                                                                                      |
 
 **Flow**
 
@@ -553,6 +560,10 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
   (`POST /api/auth/otp/verify`) or switch to password (`POST
 /api/auth/password/login`).
 - New user → lookup and OTP request check the global registration switch; if enabled, collect name + required password, send OTP, verify OTP, then submit the same code with `POST /api/auth/signup` for server-side recheck and one-time consumption.
+- Signed-in → Settings → Security changes the password (`POST
+/api/auth/password/change`) with either the current password or a code sent to
+  the account (`POST /api/auth/otp/request`); the proof is single-use and the
+  stored hash is rewritten.
 - Telegram webhook → owner-only private commands update the D1 switch; deployments register the webhook and fail if Telegram rejects setup. The switch starts off: a fresh database blocks signup until the owner runs `/registrations_on`.
 
 ### 9 · Offline & reachability
@@ -654,5 +665,5 @@ version`, and `deploy-app` runs after `publish-r2` when a release is being
   JSON 404s, migrations.
 - OTP testing budget — limits in Section 8; an identifier at the daily cap
   is locked out until the oldest row ages out (24 h).
-- QR login needs a second logged-in device (any camera) to approve.
+- QR login needs a second signed-in device (any camera) to approve; the approver types the last 4 characters of the code shown on the waiting screen.
 - Dev logs (`api*.log`) are throwaway and gitignored — never commit them.

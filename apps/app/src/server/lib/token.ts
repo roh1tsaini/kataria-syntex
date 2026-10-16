@@ -50,9 +50,11 @@ export function generateOtpCode(): string {
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 /**
- * QR login codes are never typed by hand — only scanned by another device —
- * so they can be long. 16 chars from a 31-char alphabet ≈ 2^79 search space,
+ * QR login codes: 16 chars from a 31-char alphabet ≈ 2^79 search space,
  * making online guessing impossible while staying single-use + 10-min TTL.
+ * The QR payload URL never carries the code — it carries the row id — so
+ * only someone looking at the waiting device's screen can read the code: the
+ * approver types its last 4 characters (or all 16 in the in-app entry form).
  * Rejection sampling over Uint8 eliminates modulo bias (248 is largest multiple of 31 below 256).
  */
 export function generateQrLoginCode(): string {
@@ -79,7 +81,7 @@ export function generateId(): string {
  * Secret half of a QR login. The waiting device keeps this to itself and must
  * present it to claim the session; only its SHA-256 is stored server-side.
  * A captured QR — screenshot, forwarded link, shoulder-surfed photo — carries
- * the code alone and can prove nothing.
+ * the request id alone and can prove nothing.
  */
 export function generateQrClaimSecret(): string {
   return toBase64Url(crypto.getRandomValues(new Uint8Array(32)));

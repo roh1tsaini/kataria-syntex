@@ -41,6 +41,14 @@ export const passwordLoginSchema = z.object({
   identifier: z.string().min(3).max(200),
   password: z.string().min(10).max(200),
 });
+export const changePasswordSchema = z.object({
+  newPassword: z.string().min(10).max(200),
+  currentPassword: z.string().min(1).max(200).optional(),
+  code: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
+});
 
 export function badRequest(c: AuthCtx, message: ApiCode) {
   return apiError(c, message, 400);

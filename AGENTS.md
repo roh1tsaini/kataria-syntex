@@ -13,11 +13,12 @@ Before doing anything, ask the user **one** question:
 Then work ONLY on that target until told otherwise. Never change the other
 workspace "while you're in there".
 
-**Business-app exception — parity is always in scope.** The business app
-spans three shells: `apps/app` (web + Electron desktop) and `apps/mobile`
-(Expo React Native Android phone app matching the `≤sm` breakpoint). Shared
-business logic, stores, validation, and contracts live in `packages/app-core`
-and `packages/shared`. Visual patterns adhere to `apps/app/design.md`.
+**Business-app exception — parity is always in scope.** The business app is
+one bundle in three shells: `apps/app` (web + Electron) and `apps/android`
+(a Capacitor 8 WebView that renders that same built bundle at the `≤sm`
+breakpoint). There is no separate Android UI, so a feature, UI, copy, motion,
+or business-flow change lands on every shell by landing on the web bundle
+(Section 2.3). The question picks where to start — it is never permission to fork.
 Only the owner can scope a change to one shell, in writing.
 
 ## 1. Communication style (mandatory)
@@ -121,14 +122,16 @@ shell and the owner-fixed build targets: `apps/app/spec.md` Section 5.
 - **iOS is skipped completely — never build or scaffold for it.**
 - `packages/app-core` holds the shared business core (API client, zustand
   stores, network reachability, error copy). Both apps configure it at boot
-  through its `PlatformAdapter` seam. Both apps configure it at boot through its `PlatformAdapter` seam
-  (`apps/app/src/main/lib/platform.ts` for web/Electron and
-  `apps/mobile/src/platform/adapter.ts` for Android). Platform differences
-  live ONLY in these seams. Never branch on platform elsewhere.
+  through its `PlatformAdapter` seam. All three shells share one file —
+  `apps/app/src/main/lib/platform.ts` — because the Android app runs the
+  same built bundle inside a Capacitor WebView; the adapter branches on
+  `detectHost()`. Platform differences live ONLY there. Never branch on
+  platform elsewhere.
 - A change is "done" for apps/app only when web still works; desktop
   (Electron) must stay compiling against the same renderer bundle. Business
-  logic changes in `packages/*` must pass typecheck and tests in both
-  `apps/app` and `apps/mobile`. Breaking one shell to fix another is not a fix.
+  logic changes must build in `apps/app` + `apps/android` — Android consumes
+  them through the `apps/app` bundle it renders, so one `packages/*` edit
+  reaches every shell. Breaking one shell to fix another is not a fix.
 
 ## 2.2 Design language (mandatory for every screen, both apps)
 
@@ -155,45 +158,63 @@ shell and the owner-fixed build targets: `apps/app/spec.md` Section 5.
   admin demo. If a screen looks dated next to macOS System Settings, Linear
   or Luma, it's not done.
 
-## 2.3 Web ↔ Mobile parity (mandatory for every business-app change)
+## 2.3 Web ↔ Android parity (mandatory for every business-app change)
 
-**One product, unified experience.** The business app spans `apps/app`
-(web + Electron desktop) and `apps/mobile` (Expo React Native Android phone app
-matching the `≤sm` breakpoint). Business logic, stores, validation, and API
-clients are shared via `packages/app-core` and `packages/shared`.
+**One bundle, one UI.** The business app is ONE product: `apps/app` is a
+React 19 + Vite SPA served as web, wrapped by Electron (desktop), and
+wrapped by `apps/android` — a Capacitor 8 WebView that renders the same built
+bundle at the `≤sm` breakpoint. **There is no separate Android UI, nothing to
+port, nothing to mirror — parity is structural.** A UI change is a web
+change; it lands on Android the moment the bundle is rebuilt and `cap sync`
+copies it. Never write a second implementation.
 
 ### What "same" means
 
-- **Visual** — contract in `apps/app/design.md`; mobile styling via NativeWind
-  matching the phone scale in `design.md` Section 4.1.
+Rules only — the values live in one place each:
+
+- **Visual** — contract in `apps/app/design.md`; tokens in `globals.css`, no
+  Android token-conversion step. Phone-scale contract in `design.md` Section 4.1.
 - **Behavior** — same validation, navigation targets, confirmations, toasts
   (copy via `friendlyError`); per-shell detail in `apps/app/spec.md` Section 5.1.
 - **Data** — same fields and sorting; date/number formatting is owned by
   `apps/app/design.md` Section 2.4.1.
-- **Motion** — phone springs and transitions matching `design.md` Section 5.
+- **Motion** — presets in `apps/app/src/main/ui/lib/motion.ts`, grammar in
+  `design.md` Section 5.
 - **Logic** — one home: `packages/app-core` / `packages/shared`.
-  Platform differences live ONLY in adapter files (`apps/app/src/main/lib/platform.ts`
-  and `apps/mobile/src/platform/adapter.ts`).
+  Platform differences live ONLY in the one adapter file
+  (`apps/app/src/main/lib/platform.ts`), behind `detectHost() === "android"`.
+  A platform branch anywhere else is a bug.
 
 ### How to execute
 
-1. Read `design.md` and the web implementation first.
-2. Change web (`apps/app`); shared business-logic changes go in `packages/*`.
-3. Mobile screens and flows are implemented in `apps/mobile` using NativeWind and Expo Router.
-4. New value or pattern? Add it to `design.md` first; then code.
-5. Verify: `bun run typecheck`, `bun run lint`, `bun run --filter=@kataria-syntex/mobile test`,
-   and `bun run --filter=@kataria-syntex/mobile test:e2e`.
-6. Update docs in the same change: `design.md`, `apps/mobile/APP.md`, and `apps/app/spec.md`.
+1. Read `design.md` and the web implementation first — the bundle is truth.
+2. Change web (`apps/app`); business-logic changes go in `packages/*` so every
+   shell consumes them.
+3. Anything that needs native capability gets a guarded branch in
+   `apps/app/src/main/lib/platform.ts` behind `detectHost() === "android"`,
+   plus the official `@capacitor/*` plugin. Nowhere else.
+4. New value or pattern? Add it to `design.md` first; then code. Never invent
+   an Android-only visual value.
+5. Rebuild + sync: `bun run build` (apps/app) then
+   `bunx cap sync android` (apps/android). CI does this; run both locally to
+   verify.
+6. Update docs in the same change: `design.md` (any untrue section) and
+   `apps/app/spec.md` Section 5.1 (per-platform behaviour).
+7. Platform limits (APK self-update): surface the exact gap to the
+   owner. Never silently diverge, and never copy a web bug — report it to the
+   owner.
 
 ## 2.4 Verification protocol (continuous — not a final step)
 
 Verify while you work, and report exactly what ran. The agent that wrote the
 code never certifies it.
 
-1. **After each file/step:** run the touched package's `typecheck` — fix before moving on.
-2. **Viewport & mobile tests:** verify mobile UI at `≤sm` breakpoint in browser and run
-   `bun run --filter=@kataria-syntex/mobile test:e2e` (Playwright mobile viewport tests).
-   A business-logic change is done only when all shells consume the same `packages/*` code.
+1. **After each file/step:** `cd apps/android && bunx tsc --noEmit` (or the
+   touched app's typecheck) — fix before moving on.
+2. **One bundle:** the Android rendering is the web rendering at the `≤sm`
+   breakpoint, so a UI change is verified once — in the browser at the `≤sm`
+   breakpoint. The report states which viewport was checked. A business-logic
+   change is done only when every shell consumes the same `packages/*` code.
 3. **Independent pass:** for UI/business changes, hand the working diff to a
    separate verification agent (fresh context, no edit rights). It reads
    `git diff` plus the web references and lists mismatches/regressions; the
@@ -201,9 +222,9 @@ code never certifies it.
 4. **Gates (repo root):** `bun run typecheck`, `bun run lint`,
    `bun run build`, `bun run format:check` (Windows CRLF noise is
    pre-existing — at minimum every changed file passes
-   `bunx prettier --check`). Mobile: `bun run --filter=@kataria-syntex/mobile test` and
-   `bun run --filter=@kataria-syntex/mobile test:e2e` (CI runs `expo prebuild` and
-   `gradlew assembleRelease` for the signed APK).
+   `bunx prettier --check`). Android: `cd apps/android && bunx tsc --noEmit` +
+   `bunx cap sync android` (copies the built web bundle into the native
+   project; CI runs `gradle assembleRelease` for the signed APK).
 5. **Device checks belong to the owner:** motion feel, camera, install,
    real-pixel layout. List them as "owner-verified pending" — never claim
    them.
@@ -253,15 +274,15 @@ bun run build      # vinext build
 bun run typecheck  # wrangler types + tsc --noEmit
 bun run lint       # eslint .
 
-# inside apps/mobile (Android phone app — Expo SDK 57 React Native)
-bun run dev:android   # expo start --android
-bun run dev:web       # expo start --web (preview)
-bun run build         # expo export --platform web --output-dir dist
-bun run prebuild      # expo prebuild --platform android --clean
-bun run typecheck     # tsc --noEmit
-bun run lint          # eslint .
-bun run test          # jest unit tests
-bun run test:e2e      # playwright mobile viewport tests
+# inside apps/android (Android app — Capacitor shell over the apps/app bundle)
+bun run build:web:apk # build apps/app with the APK build script
+bun run build:web     # plain vite build of apps/app
+bun run sync      # build apps/app + cap sync android
+bun run open      # open android/ in Android Studio
+bun run build:apk # cap sync + gradlew assembleRelease (Android SDK required;
+                  # see apps/app/spec.md Section 5.2)
+bun run typecheck # bunx tsc --noEmit
+bun run lint      # eslint .
 ```
 
 ## 4. Hard rules
@@ -289,11 +310,12 @@ bun run test:e2e      # playwright mobile viewport tests
    every commit; safe lines float via `^`/`~` and the lock refreshes with
    `bun install`. Deliberate pins — never "upgrade" blindly: electron exact
    (builder hoisting), drizzle v1 RC (ahead of stable).
-10. **Unified business app.** The business app spans `apps/app` (web + Electron)
-    and `apps/mobile` (Expo React Native for Android phones). Shared logic lives
-    in `packages/app-core` and `packages/shared`. Docs updated in the same change,
-    verification run per Section 2.4. Only the owner can scope a change to one shell,
-    in writing.
+10. **One bundle, three shells.** The business app is one SPA bundle rendered
+    by web, Electron and the `apps/android` WebView — there is no separate
+    Android UI, so every feature, UI, copy, motion, or business-flow change
+    lands on every shell by landing on the web bundle (Section 2.3). Docs updated in
+    the same change, verification run per Section 2.4. Only the owner can scope a
+    change to one shell, in writing.
 11. **Docs follow Section 1.1.** Short bullets, one fact in one file,
     minimal file count, exact numbers, current state only. A doc out of
     shape is a bug — fix it in the same change that touched the topic.
@@ -466,9 +488,10 @@ update_required` floor may block work. Keep HTML revalidated,
 
 - `bun run typecheck && bun run lint && bun run format:check && bun run build`
   all green from repo root, AND the feature verified by actually running it.
-  Mobile tests must pass (`bun run --filter=@kataria-syntex/mobile test` and
-  `bun run --filter=@kataria-syntex/mobile test:e2e`). CI runs Expo prebuild and
-  `gradlew assembleRelease` for the signed APK.
+  The web renderer (web + Electron) must still compile as
+  one bundle, and the Android app (apps/android) must still typecheck and
+  sync (`cd apps/android && bunx tsc --noEmit && bunx cap sync android`) —
+  CI runs `gradle assembleRelease` for the signed APK.
 
 <!-- BEGIN:turborepo-agent-rules -->
 

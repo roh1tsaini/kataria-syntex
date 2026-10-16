@@ -13,14 +13,15 @@ export async function createQrLogin(
   ident: Identifier | null,
   claimSecretHash: string,
   deviceLabel: string,
-): Promise<{ code: string; expiresAt: Date }> {
+): Promise<{ id: string; code: string; expiresAt: Date }> {
   const now = new Date();
   const nowIso = toIso(now);
+  const id = generateId();
   const code = generateQrLoginCode();
   const expiresAt = new Date(now.getTime() + QR_TTL_SECONDS * 1000);
 
   await d.insert(qrLogins).values({
-    id: generateId(),
+    id,
     code,
     claimSecretHash,
     deviceLabel,
@@ -33,22 +34,20 @@ export async function createQrLogin(
     expiresAt: toIso(expiresAt),
     createdAt: nowIso,
   });
-  return { code, expiresAt };
+  return { id, code, expiresAt };
 }
 
-/** Public info for the approve page — who is asking, and whose account. */
+/** Public info for the approve page — who is asking, and whose account.
+ *  Keyed by the request id the QR URL carries; never exposes the code. */
 export async function qrLoginInfo(
   d: Db,
-  code: string,
+  id: string,
 ): Promise<{
   status: "pending" | "approved" | "expired" | "not_found";
   targetName: string | null;
   deviceLabel: string | null;
 }> {
-  const rows = await d
-    .select()
-    .from(qrLogins)
-    .where(eq(qrLogins.code, code.trim().toUpperCase()));
+  const rows = await d.select().from(qrLogins).where(eq(qrLogins.id, id));
   const row = rows[0];
   if (!row || row.claimedAt)
     return { status: "not_found", targetName: null, deviceLabel: null };
@@ -92,7 +91,28 @@ type QrApproveResult =
   | { kind: "expired" }
   | { kind: "not_found" }
   | { kind: "unknown_target" }
-  | { kind: "already_approved" };
+  | { kind: "already_approved" }
+  | { kind: "code_mismatch" };
+
+/**
+ * Two proof shapes reach the same approve: the request id plus the code's
+ * last 4 characters typed off the waiting device's screen (the QR URL carries
+ * only the id), or the full 16-character code typed in the in-app entry form.
+ * Neither shape can be produced from a forwarded link or a screenshot.
+ */
+export type QrApproveRef = { id: string; suffix: string } | { code: string };
+
+/** Uppercase letters + digits only — "QRST", "qrst", and "QRST-" all count. */
+function normalizeCodeText(value: string): string {
+  return value.replace(/[^a-z0-9]/gi, "").toUpperCase();
+}
+
+function suffixMatches(code: string, input: string): boolean {
+  return timingSafeEqual(
+    normalizeCodeText(code).slice(-4),
+    normalizeCodeText(input),
+  );
+}
 
 /**
  * Approve a pending QR login. Without a named identifier the waiting device
@@ -101,14 +121,16 @@ type QrApproveResult =
  */
 export async function approveQrLogin(
   d: Db,
-  code: string,
+  ref: QrApproveRef,
   approver: { userId: string },
 ): Promise<QrApproveResult> {
-  const normalized = code.trim().toUpperCase();
-  const rows = await d
-    .select()
-    .from(qrLogins)
-    .where(eq(qrLogins.code, normalized));
+  const rows =
+    "id" in ref
+      ? await d.select().from(qrLogins).where(eq(qrLogins.id, ref.id))
+      : await d
+          .select()
+          .from(qrLogins)
+          .where(eq(qrLogins.code, ref.code.trim().toUpperCase()));
   const row = rows[0];
 
   if (!row || row.claimedAt) return { kind: "not_found" };
@@ -130,6 +152,11 @@ export async function approveQrLogin(
     grantUserId = target.id;
     grantedName = target.name;
   }
+
+  // Typed confirmation, checked after the target so a non-owner never gets a
+  // suffix verdict on someone else's named login.
+  if ("suffix" in ref && !suffixMatches(row.code, ref.suffix))
+    return { kind: "code_mismatch" };
 
   if (row.status === "approved" && row.grantedTo === grantUserId)
     return { kind: "ok", grantedTo: grantUserId, grantedName };
@@ -186,9 +213,9 @@ export async function claimQrLogin(
   if (toDate(row.expiresAt).getTime() < Date.now())
     return { status: "expired" };
 
-  // The QR carries the code and nothing else. A device holding a screenshot or
-  // a forwarded link has no secret, so it cannot mint the session — and it
-  // cannot burn the code either, because this check runs before the CAS below.
+  // A screenshot or a forwarded link carries no claim secret, so it cannot
+  // mint the session — and it cannot burn the code either, because this check
+  // runs before the CAS below.
   if (
     !claimSecretHash ||
     !timingSafeEqual(row.claimSecretHash, claimSecretHash)

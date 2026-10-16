@@ -36,7 +36,19 @@ export const authQrRoute = new Hono<AuthEnv>();
 
 // ── QR login ────────────────────────────────────────────────────────────────
 
-const qrLoginCodeSchema = z.object({ code: z.string().min(4).max(64) });
+/** Request-id bounds — a UUID today, validated loosely as an opaque id. */
+const qrIdSchema = z.string().min(8).max(64);
+
+/**
+ * /qr/approve body. Two proof shapes: the request id plus the code's last 4
+ * characters typed off the waiting screen, or the full 16-character code
+ * typed in the in-app entry form. Strict objects keep the shapes from
+ * blending; a forwarded link alone satisfies neither.
+ */
+const qrApproveSchema = z.union([
+  z.object({ id: qrIdSchema, suffix: z.string().min(1).max(8) }).strict(),
+  z.object({ code: z.string().min(4).max(64) }).strict(),
+]);
 
 /** /qr/start body. An absent identifier — including a missing or empty
  * body — starts an anonymous login; a present one names the account to
@@ -44,22 +56,25 @@ const qrLoginCodeSchema = z.object({ code: z.string().min(4).max(64) });
 const qrStartBodySchema = identifierSchema.partial().strict();
 
 /**
- * Query form of the login code — same bounds as qrLoginCodeSchema.
- */
-const qrCodeQuerySchema = z.string().min(4).max(64);
-
-/**
  * /qr/status body. The claim secret rides here, never in the query string: a
  * URL lands in platform logs and proxy traces, and this secret is what turns
  * an approved code into a live session.
  */
 const qrStatusSchema = z.object({
-  code: qrCodeQuerySchema,
+  code: z.string().min(4).max(64),
   claimSecret: z.string().min(16).max(128),
 });
 
 const QR_START_MAX_PER_IP = 30;
 const QR_START_WINDOW_MS = 15 * 60 * 1000;
+const QR_APPROVE_MAX_PER_IP = 30;
+const QR_APPROVE_MAX_PER_USER = 10;
+/* /qr/status polling budgets: generous enough that a full-length wait (10 min
+   at 4s ≈ 150 polls) is never cut off, tight enough that hammering the route
+   can't burn D1 reads. Over budget the route answers 429 instead of a silent
+   "pending", so the panel can slow down and say so. */
+const QR_STATUS_MAX_PER_CODE = 200;
+const QR_STATUS_MAX_PER_IP = 2000;
 
 /**
  * Start a QR login. Optional identifier: when the waiting device names an
@@ -124,17 +139,18 @@ authQrRoute.post("/qr/start", async (c) => {
   }
 
   // The secret half of the pairing. It is returned to this device only and
-  // never goes into the payload URL: the QR carries the code alone, so a
-  // screenshot or a forwarded link cannot be claimed by whoever holds it.
+  // never goes into the payload URL: the QR carries the request id alone, so
+  // a screenshot or a forwarded link can neither claim the session nor
+  // approve it — approval needs the code characters only this screen shows.
   const claimSecret = generateQrClaimSecret();
-  const { code, expiresAt } = await createQrLogin(
+  const { id, code, expiresAt } = await createQrLogin(
     db,
     ident,
     await sha256Hex(claimSecret),
     buildDeviceMeta(c).label,
   );
   const origin = new URL(c.req.url).origin;
-  const payloadUrl = `${origin}/login/scan/${encodeURIComponent(code)}`;
+  const payloadUrl = `${origin}/login/scan/${encodeURIComponent(id)}`;
   return c.json({
     code,
     claimSecret,
@@ -146,13 +162,12 @@ authQrRoute.post("/qr/start", async (c) => {
 
 /** Public info for the scan/approve page — names who will be logged in. */
 authQrRoute.get("/qr/info", async (c) => {
-  const parsed = qrCodeQuerySchema.safeParse(c.req.query("code"));
-  if (!parsed.success) return badRequest(c, "invalid_code");
-  const code = parsed.data;
+  const parsed = qrIdSchema.safeParse(c.req.query("id"));
+  if (!parsed.success) return badRequest(c, "invalid_request");
   if (ipBudgetRemaining("qr_info", clientIp(c), 120) <= 0)
     return apiError(c, "qr_rate_limited", 429);
   recordIpAttempt("qr_info", clientIp(c));
-  const info = await qrLoginInfo(getDb(c.env.DB), code);
+  const info = await qrLoginInfo(getDb(c.env.DB), parsed.data);
   return c.json(info);
 });
 
@@ -160,19 +175,43 @@ authQrRoute.get("/qr/info", async (c) => {
  * Approve from a logged-in device.
  */
 authQrRoute.post("/qr/approve", requireAuth, async (c) => {
-  const parsed = qrLoginCodeSchema.safeParse(
+  const parsed = qrApproveSchema.safeParse(
     await c.req.json().catch(() => null),
   );
-  if (!parsed.success) return badRequest(c, "invalid_code");
+  if (!parsed.success) return badRequest(c, "invalid_request");
   const auth = c.get("auth");
+  const ip = clientIp(c);
+
+  // Approve was the one QR route with no budget; typed confirmation makes
+  // wrong guesses the expected abuse, and every call still touches D1.
+  if (
+    !(await consumeBudgetsStrict(getDb(c.env.DB), [
+      {
+        key: `qr:approve:ip:${await sha256Hex(ip)}`,
+        max: QR_APPROVE_MAX_PER_IP,
+        windowMs: QR_START_WINDOW_MS,
+      },
+      {
+        key: `qr:approve:user:${auth.userId}`,
+        max: QR_APPROVE_MAX_PER_USER,
+        windowMs: QR_START_WINDOW_MS,
+      },
+    ]))
+  )
+    return apiError(c, "qr_rate_limited", 429);
+  if (ipBudgetRemaining("qr_approve", ip, 120) <= 0)
+    return apiError(c, "qr_rate_limited", 429);
+  recordIpAttempt("qr_approve", ip);
 
   const db = getDb(c.env.DB);
-  const result = await approveQrLogin(db, parsed.data.code, {
+  const result = await approveQrLogin(db, parsed.data, {
     userId: auth.userId,
   });
   if (result.kind === "expired") return apiError(c, "qr_code_expired", 400);
   if (result.kind === "not_found") return apiError(c, "qr_code_invalid", 400);
   if (result.kind === "unknown_target") return apiError(c, "forbidden", 403);
+  if (result.kind === "code_mismatch")
+    return apiError(c, "qr_code_mismatch", 400);
   if (result.kind === "already_approved")
     return apiError(c, "qr_already_approved", 409);
   return c.json({
@@ -187,9 +226,19 @@ authQrRoute.post("/qr/status", async (c) => {
   const parsed = qrStatusSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return badRequest(c, "invalid_code");
   const { code, claimSecret } = parsed.data;
-  if (ipBudgetRemaining("qr_status", clientIp(c), 600) <= 0)
-    return c.json({ status: "pending" });
-  recordIpAttempt("qr_status", clientIp(c));
+  const ip = clientIp(c);
+  // Two budgets: per code+IP so one waiting session is never starved by other
+  // traffic from the same network, and per IP as the aggregate shield for D1
+  // reads. The code is normalized the same way claimQrLogin does, so casing
+  // variants can't farm separate allowances.
+  const codeKey = `qr_status:${code.trim().toUpperCase()}`;
+  if (
+    ipBudgetRemaining(codeKey, ip, QR_STATUS_MAX_PER_CODE) <= 0 ||
+    ipBudgetRemaining("qr_status", ip, QR_STATUS_MAX_PER_IP) <= 0
+  )
+    return apiError(c, "qr_rate_limited", 429);
+  recordIpAttempt(codeKey, ip);
+  recordIpAttempt("qr_status", ip);
   const db = getDb(c.env.DB);
   const result = await claimQrLogin(
     db,

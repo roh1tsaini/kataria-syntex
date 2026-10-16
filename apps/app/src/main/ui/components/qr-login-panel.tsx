@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { StyledQrCode } from "@/ui/components/styled-qr";
 import {
+  ApiError,
   useAuth,
   type QrLoginCode,
   friendlyError,
@@ -11,7 +12,9 @@ import { useCountdown } from "@/ui/hooks/use-countdown";
 import { Button } from "@/ui/components/ui/button";
 import { Skeleton } from "@/ui/components/motion";
 
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 4000;
+/** Cadence after the server's polling budgets trip (429). */
+const SLOW_POLL_INTERVAL_MS = 15_000;
 
 export function QrLoginPanel({ identifier }: { identifier?: string }) {
   const startQrLogin = useAuth((s) => s.startQrLogin);
@@ -24,6 +27,8 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [throttled, setThrottled] = useState(false);
+  const slowRef = useRef(false);
   const { mm, ss } = useCountdown(pairing?.expiresAt ?? null);
   const secondsLeft = mm * 60 + ss;
   const identRef = useRef(identifier);
@@ -53,12 +58,18 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
     if (!pairing) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // A fresh code has its own fresh server-side budget — start at pace.
+    slowRef.current = false;
+    setThrottled(false);
 
     const schedule = () => {
       if (cancelled) return;
-      timer = setTimeout(() => {
-        void tick();
-      }, POLL_INTERVAL_MS);
+      timer = setTimeout(
+        () => {
+          void tick();
+        },
+        slowRef.current ? SLOW_POLL_INTERVAL_MS : POLL_INTERVAL_MS,
+      );
     };
 
     const tick = async () => {
@@ -81,8 +92,14 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
         } else {
           setPolling(status);
         }
-      } catch {
-        // Transient network error — retry on next interval without overlap.
+      } catch (err) {
+        if (cancelled) return;
+        // 429 means the server's polling budgets tripped: keep waiting, but
+        // slower, and say so. Anything else is transient — retry at pace.
+        if (err instanceof ApiError && err.code === "qr_rate_limited") {
+          slowRef.current = true;
+          setThrottled(true);
+        }
         schedule();
       }
     };
@@ -189,6 +206,11 @@ export function QrLoginPanel({ identifier }: { identifier?: string }) {
                 ? `Expires in ${mm}:${String(ss).padStart(2, "0")}`
                 : "Loading pairing…"}
           </p>
+          {throttled && !expired && !polling && (
+            <p className="text-xs text-muted-foreground">
+              Network is busy — still checking.
+            </p>
+          )}
         </div>
       )}
     </div>

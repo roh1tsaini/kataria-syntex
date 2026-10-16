@@ -238,7 +238,7 @@ export function DevicesPanel() {
             <Button
               variant="outline"
               onClick={() => setQrApproveOpen(true)}
-              title="Scan or type the QR code shown on another device to log it in"
+              title="Scan the QR code or type the code shown on another device to sign it in as you"
             >
               <Smartphone className="size-3.5" aria-hidden />
               Approve a device

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
-import { parseQrScanCode } from "@kataria-syntex/shared";
+import { parseQrScanId } from "@kataria-syntex/shared";
 
 export function useCameraScanner(
   onCode: (code: string) => void,
@@ -30,10 +30,10 @@ export function useCameraScanner(
         const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const qr = jsQR(img.data, img.width, img.height);
         if (qr?.data) {
-          const code = parseQrScanCode(qr.data);
-          if (code) {
+          const id = parseQrScanId(qr.data);
+          if (id) {
             stream?.getTracks().forEach((t) => t.stop());
-            onCodeRef.current(code);
+            onCodeRef.current(id);
             return;
           }
         }
