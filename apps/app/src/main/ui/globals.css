@@ -304,6 +304,16 @@
   * {
     border-color: var(--border);
   }
+  /* Safe-area insets, one source per shell: the Android app injects
+     --safe-area-inset-* inline on <html> (Capacitor SystemBars, css mode);
+     browsers and Electron resolve the env() fallback. Inline beats this rule,
+     so every read below works unchanged on every shell. */
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  }
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -330,8 +340,8 @@
       "cv11" 1,
       "ss01" 1;
     font-optical-sizing: auto;
-    padding-top: env(safe-area-inset-top, 0);
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
     overflow-x: clip;
     /* Apple: body tracking near 0, comfortable leading */
     letter-spacing: -0.011em;
@@ -636,7 +646,7 @@
   /* Clear the floating navigation without moving actions when field focus changes. */
   .sticky-action-bar {
     position: sticky;
-    bottom: calc(3.25rem + 2px + 12px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(3.25rem + 2px + 12px + var(--safe-area-inset-bottom));
     z-index: 20;
     margin-inline: -1rem;
     padding: 0.75rem 1rem;
@@ -747,7 +757,7 @@
 }
 
 .phone-navigation {
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(12px + var(--safe-area-inset-bottom));
 }
 
 /* Phone floating panel-left circle (Section 2.7.2) — fixed top-left, over content,
@@ -755,7 +765,7 @@
    navigation. */
 .phone-menu-float {
   position: fixed;
-  top: calc(16px + env(safe-area-inset-top, 0px));
+  top: calc(16px + var(--safe-area-inset-top));
   left: 16px;
   z-index: 40;
 }

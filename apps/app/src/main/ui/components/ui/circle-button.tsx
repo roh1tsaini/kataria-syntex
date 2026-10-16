@@ -3,14 +3,15 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/ui/lib/cn";
 
-/* design.md Section 2.7 — icon actions share the app button size and join into
-   one ButtonCapsule when adjacent. Navigation rows keep rounded-md. */
+/* design.md Section 2.7 — icon actions are one 44px circle on every shell and
+   pointer (desktop included) and join into one ButtonCapsule when adjacent.
+   Navigation rows keep rounded-md. */
 const circleButtonVariants = cva(
   "btn-motion grid shrink-0 place-items-center rounded-full border border-border/60 text-muted-foreground outline-none [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       size: {
-        md: "size-11 sm:size-10 touch-44 [&_svg]:size-4",
+        md: "size-11 [&_svg]:size-4",
         touch: "size-11 [&_svg]:size-5",
       },
     },

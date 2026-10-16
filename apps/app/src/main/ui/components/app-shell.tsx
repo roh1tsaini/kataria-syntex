@@ -71,13 +71,13 @@ function NavDensityToggle({
           title={`${label} layout`}
           aria-label={`${label} layout`}
           className={cn(
-            "btn-motion grid size-9 place-items-center rounded-full",
+            "btn-motion grid size-11 place-items-center rounded-full",
             value === v
               ? "bg-card text-foreground shadow-[var(--shadow-soft)]"
               : "text-muted-foreground [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
           )}
         >
-          <Icon className="size-4" aria-hidden />
+          <Icon className="size-5" aria-hidden />
         </button>
       ))}
     </div>
@@ -507,7 +507,7 @@ function MobileDrawerContent({
 
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
-      <div className="shrink-0 px-4 pb-3 pt-[calc(1.25rem+env(safe-area-inset-top,0px))]">
+      <div className="shrink-0 px-4 pb-3 pt-[calc(1.25rem+var(--safe-area-inset-top))]">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 pt-1">
             <div className="truncate text-2xl font-bold tracking-[-0.022em]">
@@ -542,7 +542,7 @@ function MobileDrawerContent({
         density={density}
       />
 
-      <div className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]">
+      <div className="shrink-0 border-t border-border px-4 pt-3 pb-[calc(0.875rem+var(--safe-area-inset-bottom))]">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <Avatar className="size-9 shrink-0 bg-muted text-sm font-semibold text-foreground">
@@ -626,8 +626,8 @@ function HeaderBar({
         ...dragStyle,
         // Fixed h-14 plus the status-bar inset: paddingTop alone would shrink
         // the content box and push a 44px touch target over the hairline.
-        height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
-        paddingTop: "env(safe-area-inset-top, 0px)",
+        height: "calc(3.5rem + var(--safe-area-inset-top))",
+        paddingTop: "var(--safe-area-inset-top)",
       }}
     >
       <div className="flex min-w-0 items-center gap-2">

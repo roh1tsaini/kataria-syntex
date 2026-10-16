@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "sonner";
 import { useTheme } from "@/ui/hooks/use-theme";
 
 /** Toast sits below the notch / status bar, not at the raw window edge. */
-const TOP_OFFSET = "calc(16px + env(safe-area-inset-top, 0px))";
+const TOP_OFFSET = "calc(16px + var(--safe-area-inset-top))";
 
 /** ≥sm toasts hug the right edge — same 16px inset as the top. */
 const WIDE_OFFSET = { top: TOP_OFFSET, right: "16px" };

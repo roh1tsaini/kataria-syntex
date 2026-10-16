@@ -116,7 +116,7 @@ export const DialogContent = React.forwardRef<
                 // Desktop: centered modal, 16px radius.
                 "fixed left-1/2 top-1/2 z-50 grid w-full max-w-md gap-4 rounded-xl border border-border bg-card p-6 shadow-overlay",
                 // Mobile: iOS bottom sheet.
-                "max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-auto max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:border-b-0 max-sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0))]",
+                "max-sm:inset-x-0 max-sm:bottom-0 max-sm:top-auto max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:border-b-0 max-sm:pb-[calc(1.5rem+var(--safe-area-inset-bottom))]",
                 className,
               )}
               style={sheet ? undefined : { translate: "-50% -50%" }}
