@@ -16,21 +16,19 @@ import {
   LayoutGrid,
   List,
   LogOut,
-  Moon,
   PanelLeft,
   Search,
-  Sun,
   X,
 } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
+import { ThemeSwitch } from "@/ui/components/ui/theme-switch";
 import { MorphChevron, MorphPanel } from "@/ui/components/ui/disclosure";
 import { TabBar, type TabBarItem } from "@/ui/components/ui/tab-bar";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
 import { PageTransition } from "@/ui/components/motion";
 import { routeSkeleton } from "@/ui/components/page-skeletons";
 import { OfflineBanner } from "@/ui/components/offline-banner";
-import { useTheme } from "@/ui/hooks/use-theme";
 import {
   useAuth,
   useNetworkState,
@@ -394,7 +392,6 @@ function UserFooter({ compact }: { compact?: boolean }) {
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   const onLogout = async () => {
     setLoggingOut(true);
@@ -412,13 +409,7 @@ function UserFooter({ compact }: { compact?: boolean }) {
     return (
       <div className="flex justify-center border-t border-border py-2">
         <ButtonCapsule vertical>
-          <CircleButton
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Light theme" : "Dark theme"}
-            aria-label={theme === "dark" ? "Light theme" : "Dark theme"}
-          >
-            {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
-          </CircleButton>
+          <ThemeSwitch />
           <CircleButton
             onClick={() => void onLogout()}
             disabled={loggingOut}
@@ -452,13 +443,7 @@ function UserFooter({ compact }: { compact?: boolean }) {
           </div>
         </div>
         <ButtonCapsule>
-          <CircleButton
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Light theme" : "Dark theme"}
-            aria-label={theme === "dark" ? "Light theme" : "Dark theme"}
-          >
-            {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
-          </CircleButton>
+          <ThemeSwitch />
           <CircleButton
             onClick={() => void onLogout()}
             disabled={loggingOut}
@@ -490,7 +475,6 @@ function MobileDrawerContent({
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loggingOut, setLoggingOut] = useState(false);
   // Read once per account; the key is account-scoped, so a sign-in as
@@ -576,13 +560,7 @@ function MobileDrawerContent({
             </div>
           </div>
           <ButtonCapsule className="shrink-0">
-            <CircleButton
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Light theme" : "Dark theme"}
-              aria-label={theme === "dark" ? "Light theme" : "Dark theme"}
-            >
-              {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
-            </CircleButton>
+            <ThemeSwitch />
             <CircleButton
               onClick={() => void onLogout()}
               disabled={loggingOut}

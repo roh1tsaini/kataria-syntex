@@ -163,6 +163,14 @@ export function retryUpdateUsesAction(failure: string | null): boolean {
 }
 
 export type DownloadPlatformKey = "win" | "mac" | "linux" | "android";
+export type DownloadArch = "x64" | "arm64";
+
+/** A downloadable build for this device: OS + CPU target where the platform
+ *  ships more than one (Android carries both ARM ABIs in one APK). */
+export type DownloadTarget = {
+  platform: DownloadPlatformKey;
+  arch: DownloadArch | null;
+};
 
 type OperatingSystem = DownloadPlatformKey | "ios";
 type ArchitectureHints = { architecture: string; bitness: string };
@@ -216,31 +224,47 @@ async function readArchitectureHints(): Promise<ArchitectureHints | null> {
   }
 }
 
-/** Recommends only builds whose published CPU target can be identified. */
-export async function detectPlatformKey(): Promise<DownloadPlatformKey | null> {
+/** Recommends only builds whose published CPU target can be identified.
+ *  Windows/Linux ship x64 + arm64; macOS is Apple Silicon only. */
+export async function detectDownloadTarget(): Promise<DownloadTarget | null> {
   const system = detectOperatingSystem();
   if (!system || system === "ios") return null;
-  if (system === "android") return "android";
+  if (system === "android") return { platform: "android", arch: null };
 
   const architecture = await readArchitectureHints();
   if (architecture) {
     if (architecture.bitness !== "64") return null;
-    if (system === "win" && architecture.architecture === "x86") return "win";
-    if (
-      system === "mac" &&
-      ["arm", "arm64"].includes(architecture.architecture)
-    ) {
-      return "mac";
+    const arm = ["arm", "arm64"].includes(architecture.architecture);
+    const x64 = architecture.architecture === "x86";
+    if (system === "mac") {
+      return arm ? { platform: "mac", arch: "arm64" } : null;
     }
-    if (system === "linux" && architecture.architecture === "x86") {
-      return "linux";
-    }
+    if (arm) return { platform: system, arch: "arm64" };
+    if (x64) return { platform: system, arch: "x64" };
     return null;
   }
 
+  // UA fallback — only the unambiguous arch tokens. Windows-on-ARM browsers
+  // usually report x64 and get the emulated x64 build as the recommendation
+  // (the rows still list the arm64 file).
   const ua = navigator.userAgent;
-  if (system === "win" && /\b(?:win64|x64|wow64)\b/i.test(ua)) return "win";
-  if (system === "linux" && /\b(?:x86_64|amd64)\b/i.test(ua)) return "linux";
+  if (system === "win") {
+    if (/\b(?:arm64|aarch64)\b/i.test(ua)) {
+      return { platform: "win", arch: "arm64" };
+    }
+    if (/\b(?:win64|x64|wow64)\b/i.test(ua)) {
+      return { platform: "win", arch: "x64" };
+    }
+    return null;
+  }
+  if (system === "linux") {
+    if (/\b(?:aarch64|arm64)\b/i.test(ua)) {
+      return { platform: "linux", arch: "arm64" };
+    }
+    if (/\b(?:x86_64|amd64)\b/i.test(ua)) {
+      return { platform: "linux", arch: "x64" };
+    }
+  }
   return null;
 }
 

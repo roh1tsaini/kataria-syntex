@@ -34,12 +34,16 @@ publish:
   url: https://app.katariasyntex.workers.dev/releases/app/desktop
 
 win:
+  # CPU targets come from the CLI — one arch per CI job (--x64 / --arm64);
+  # a plain local build packages the host CPU. An arch list here would be
+  # merged into the CLI map and silently build every listed arch.
   target:
     - target: nsis
-      arch: [x64]
   # Dash-named artifacts: what the builder writes is what gets stored in R2
   # and referenced by latest.yml — no renaming anywhere in the pipeline.
-  artifactName: Kataria-Syntex-Biz-App-Setup-${version}.${ext}
+  # Both CPU targets share one feed, so the name must carry -${arch} to make
+  # the two files distinct (the updater picks by process.arch in the name).
+  artifactName: Kataria-Syntex-Biz-App-Setup-${version}-${arch}.${ext}
   icon: resources/icon.png
 
 # One-click (per-user, silent): the updated installer runs without any UI, so
@@ -47,6 +51,9 @@ win:
 # (oneClick: false) would raise a setup wizard every update.
 nsis:
   oneClick: true
+  # Per-CPU installers only — no combined ~215 MB universal file. The two
+  # -x64 / -arm64 installers ship side by side, one download page row each.
+  buildUniversalInstaller: false
 
 mac:
   target:
@@ -62,9 +69,11 @@ mac:
     NSCameraUsageDescription: Scan QR codes to sign in and approve devices.
 
 linux:
+  # Same as Windows: the CPU target comes from the CLI (--x64 / --arm64).
+  # electron-builder renders x64 as x86_64 in AppImage names
+  # (getArtifactArchName) — CI globs and publish discovery match that.
   target:
     - target: AppImage
-      arch: [x64]
-  artifactName: Kataria-Syntex-Biz-App-${version}.${ext}
+  artifactName: Kataria-Syntex-Biz-App-${version}-${arch}.${ext}
   category: Office
   icon: resources/icon.png

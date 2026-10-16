@@ -170,6 +170,9 @@ controls, and actions that sit together share one grouped background.
   The OS tap highlight is transparent globally (`globals.css`) — it paints a
   square over the bounding box and ignores the circle. Size 40px on desktop,
   44px below `sm` and on coarse pointers.
+- **The theme toggle keeps both glyphs mounted.** Sun and moon share one grid
+  cell inside the circle (`theme-switch.tsx`) and cross-rotate through the
+  swap (Section 5.2); `html.dark` drives the state, so the motion is pure CSS.
 - **Two or more adjacent icon buttons = one capsule.** `rounded-full`
   container, `bg-muted/60`, `p-1`, `gap-1`; every button inside stays a
   circle. Vertical action stacks use a vertical capsule; navigation rail
@@ -406,7 +409,8 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
 - Download uses the neutral page background, the same lockup, and a 640px
   content width. One page title and one version/status line sit above the
   download choices.
-- A detected Windows x64, macOS arm64, Linux x64, or Android build gets one
+- A detected Windows x64, Windows arm64, macOS Apple Silicon, Linux x64,
+  Linux arm64, or Android build gets one
   recommended Card with its brand glyph, package type, and primary Download
   action. CPU detection uses browser hints where available. The accent border
   marks the card; it has no solid accent fill.
@@ -416,8 +420,9 @@ and `ui/App.tsx` mounts it). There is no separate Android toast file.
 - The web action is `Use web version` and opens `/auth`. It appears below the
   recommended download. When the OS or supported CPU target is unknown, it is
   the main action and all installer rows remain available.
-- All remaining builds appear as compact rows in one Card. If detection is
-  unavailable, all four rows appear. The page carries no installation-instructions
+- All remaining builds appear as compact rows in one Card — Windows and
+  Linux appear once per CPU target (x64, arm64). If detection is
+  unavailable, every row appears. The page carries no installation-instructions
   disclosure.
 - Download actions are plain anchors to their `/releases/*` URL. The browser
   owns transfer progress; the page does not buffer installers or show a
@@ -494,16 +499,16 @@ as OS chrome, not an in-app surface.
 
 Presets live in `src/main/ui/lib/motion.ts` — import them, never re-derive.
 
-| Preset          | Value                                             | Use                                     |
-| --------------- | ------------------------------------------------- | --------------------------------------- |
-| `EASE_OUT`      | `cubic-bezier(0.16,1,0.3,1)`                      | all enter/exit tweens                   |
-| `EASE_IN_OUT`   | `cubic-bezier(0.65,0,0.35,1)`                     | symmetric repositions                   |
-| `EASE_DRAWER`   | `cubic-bezier(0.32,0.72,0,1)`                     | sheets/drawers                          |
-| `SPRING`        | spring, bounce 0, 0.38s                           | default for anything touchable          |
-| `MORPH`         | alias of `SPRING`                                 | morph entrances (Section 5.1)           |
-| `MORPH_EXIT`    | spring, bounce 0, 0.3s                            | morph exits — ~20% faster (Section 5.1) |
-| `DRAWER_SPRING` | spring, bounce 0.12, 0.36s                        | ONLY momentum-driven (flicked sheets)   |
-| Durations       | 120 press / 140 fast / 200 base / ≤400ms anything | —                                       |
+| Preset          | Value                                                                    | Use                                     |
+| --------------- | ------------------------------------------------------------------------ | --------------------------------------- |
+| `EASE_OUT`      | `cubic-bezier(0.16,1,0.3,1)`                                             | all enter/exit tweens                   |
+| `EASE_IN_OUT`   | `cubic-bezier(0.65,0,0.35,1)`                                            | symmetric repositions                   |
+| `EASE_DRAWER`   | `cubic-bezier(0.32,0.72,0,1)`                                            | sheets/drawers                          |
+| `SPRING`        | spring, bounce 0, 0.38s                                                  | default for anything touchable          |
+| `MORPH`         | alias of `SPRING`                                                        | morph entrances (Section 5.1)           |
+| `MORPH_EXIT`    | spring, bounce 0, 0.3s                                                   | morph exits — ~20% faster (Section 5.1) |
+| `DRAWER_SPRING` | spring, bounce 0.12, 0.36s                                               | ONLY momentum-driven (flicked sheets)   |
+| Durations       | 120 press / 140 fast / 200 base / ≤400ms UI / 420–450ms theme flip (5.2) | —                                       |
 
 Rules:
 
@@ -566,6 +571,18 @@ Dialogs and overlay windows enter and exit on one curve pair, never a cut.
   `--ease-morph` (the SPRING curve, sampled once in globals.css) — never a raw
   CSS width/height tween.
 
+### 5.2 Theme switch & screen flip
+
+- **Control — cross-rotate.** Sun and moon stay mounted in the circle button
+  (`theme-switch.tsx`) and rotate through the change: 260ms `EASE_IN_OUT`
+  rotation, 200ms fade in, 160ms fade out (exits ~20% faster). Reduced motion
+  keeps the crossfade, no rotation.
+- **Screen flip — wallpaper settle.** `use-theme.ts` runs one View Transition:
+  the old layer fades 1→0 and settles 1→0.98 in 420ms; the new layer fades
+  0→1 and settles 1.02→1 in 450ms — both `EASE_OUT`. Inner transitions freeze
+  for the snapshot (`html.vt`, globals.css) so the settle carries the motion.
+  Reduced motion, or no View Transition support, swaps instantly.
+
 ## 6. Accessibility floor (non-negotiable)
 
 - 44×44px touch targets on coarse pointers; dense 32/40px sizes stay on
@@ -587,6 +604,7 @@ Dialogs and overlay windows enter and exit on one curve pair, never a cut.
 | Morphing disclosure panels                      | `src/main/ui/components/ui/disclosure.tsx`                                            |
 | Nav display preferences (density)               | `src/main/ui/lib/nav-prefs.ts`                                                        |
 | Circular icon buttons & capsules (Section 2.7)  | `src/main/ui/components/ui/circle-button.tsx`                                         |
+| Theme toggle (cross-rotate, Section 2.7)        | `src/main/ui/components/ui/theme-switch.tsx`                                          |
 | App frame (sidebar/header/nav drawer)           | `src/main/ui/components/app-shell.tsx`                                                |
 | Settings window (desktop overlay, Section 3)    | `src/main/ui/components/settings-window.tsx`                                          |
 | Nav tree (sections/items/subs)                  | `src/main/ui/components/nav-config.tsx`                                               |

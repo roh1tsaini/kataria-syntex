@@ -355,8 +355,8 @@ All commands: `AGENTS.md` Section 3. This app's build notes:
   Android by rebuilding + `bunx cap sync android`.
 - UI verification happens once in the browser at the `≤sm` breakpoint.
 - iOS is out of scope — never scaffold for it.
-- Build targets (owner-fixed): Android universal APK · Windows x64 ·
-  macOS arm64 dmg (Apple Silicon only) · Linux x64 AppImage.
+- Build targets (owner-fixed): Android universal APK · Windows x64 + arm64 ·
+  macOS arm64 dmg (Apple Silicon only) · Linux x64 + arm64 AppImage.
 - Platform branches live ONLY in `src/main/lib/platform.ts` behind
   `detectHost()`. A platform `if` anywhere else is a bug.
 
@@ -379,9 +379,11 @@ An install upgrading from the plaintext token store has its old
   the ErrorBoundary takes a second failure. Only the live server's 426
   response can require an update.
 - **Desktop** — Electron `app://` handler sets explicit cache headers
-  (custom protocols cache against the URL otherwise). Windows/Linux stage
-  updates silently and install on quit. macOS uses a manual DMG download
-  from Settings.
+  (custom protocols cache against the URL otherwise). Windows/Linux ship
+  x64 + arm64 installers; each feed lists both files and the app updates
+  from the one matching its own CPU (x64 file first as fallback).
+  Windows/Linux stage updates silently and install on quit. macOS uses a
+  manual DMG download from Settings.
 - **Android** — `apps/android` wraps the same bundle at `https://localhost`,
   so the API origin is baked in at build (`VITE_API_URL`);
   `apps/android/scripts/build-web.ts` fails the build if missing and
@@ -644,8 +646,9 @@ Hono app mounted on `/api/*` (`src/server/index.ts`).
 version`, and `deploy-app` runs after `publish-r2` when a release is being
   published.
 - One generated `app/android/latest.json` carries `version`, `releasedAt`,
-  per-platform paths, and the APK's `sha256`/`size`. The download page and app
-  checks read it; Electron's Windows/Linux feeds are generated from it.
+  per-platform paths (Windows/Linux carry x64 + arm64), and the APK's
+  `sha256`/`size`. The download page and app checks read it; Electron's
+  Windows/Linux feeds are generated from it.
 - Only the live server's `426 update_required` response makes an update
   mandatory; the release-info file never carries an update floor.
 

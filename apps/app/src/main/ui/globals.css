@@ -507,6 +507,38 @@
     transform: scale(0.97);
   }
 
+  /* Theme toggle (Section 2.7) — cross-rotate: both glyphs share one grid
+     cell; rotation 260ms EASE_IN_OUT, incoming fade 200ms, outgoing fade
+     160ms (exits faster, Section 5 rule 2). */
+  .theme-icons > svg {
+    grid-area: 1 / 1;
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 260ms var(--ease-in-out);
+  }
+
+  .theme-icons > .theme-icon-sun {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+
+  .theme-icons > .theme-icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg);
+    transition-duration: 160ms, 260ms;
+  }
+
+  .dark .theme-icons > .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(90deg);
+    transition-duration: 160ms, 260ms;
+  }
+
+  .dark .theme-icons > .theme-icon-moon {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+
   .content-icon-tile {
     display: grid;
     width: 2.5rem;
@@ -805,7 +837,9 @@
   }
 }
 
-/* View-transitions circular reveal (Telegram-style expand from tap / toggle) */
+/* Theme flip — wallpaper settle (design.md Section 5.2). The pseudos get
+   their animations from use-theme.ts; this baseline kills the default
+   crossfade so the settle is the whole motion. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -816,6 +850,14 @@
 }
 ::view-transition-new(root) {
   z-index: 9999;
+}
+/* Inner transitions freeze while the flip snapshots — the settle carries the
+   motion; controls never lag behind it. */
+html.vt *,
+html.vt *::before,
+html.vt *::after {
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
 }
 
 /* Notification toast (Section 3, Section 5) — sonner ships 400ms `ease` transitions, which

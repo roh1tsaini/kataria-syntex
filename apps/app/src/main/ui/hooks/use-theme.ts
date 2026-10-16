@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { reportThemeBackground } from "@/lib/platform";
+import { EASE_OUT } from "@/ui/lib/motion";
 
 type Theme = "light" | "dark";
 
@@ -54,6 +55,9 @@ export function initTheme() {
 }
 
 let current: Theme = readStoredTheme() ?? systemTheme();
+
+/** Overlapping flips share the `html.vt` freeze; the last one out removes it. */
+let activeFlips = 0;
 
 const listeners = new Set<() => void>();
 
@@ -137,33 +141,48 @@ export function useTheme() {
       return;
     }
 
-    // Stripe Center Iris: concentric circle expanding from viewport center
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-    const endRadius = Math.hypot(cx, cy);
+    // Wallpaper settle (design.md Section 5.2): the old layer fades out while
+    // settling 1→0.98, the new layer fades in from 1.02→1. Inner transitions
+    // freeze for the snapshot so the settle carries the whole motion.
+    const root = document.documentElement;
+    const easing = `cubic-bezier(${EASE_OUT.join(", ")})`;
+    activeFlips += 1;
+    root.classList.add("vt");
 
     const transition = document.startViewTransition(() => {
       changeTheme();
     });
 
+    transition.finished
+      .catch(() => {})
+      .finally(() => {
+        activeFlips -= 1;
+        if (activeFlips === 0) root.classList.remove("vt");
+      });
+
     transition.ready
       .then(() => {
-        document.documentElement.animate(
+        root.animate(
+          { opacity: [1, 0], transform: ["scale(1)", "scale(0.98)"] },
           {
-            clipPath: [
-              `circle(0px at ${cx}px ${cy}px)`,
-              `circle(${endRadius}px at ${cx}px ${cy}px)`,
-            ],
-          },
+            duration: 420,
+            easing,
+            fill: "both",
+            pseudoElement: "::view-transition-old(root)",
+          } as KeyframeAnimationOptions,
+        );
+        root.animate(
+          { opacity: [0, 1], transform: ["scale(1.02)", "scale(1)"] },
           {
             duration: 450,
-            easing: "cubic-bezier(0.2, 0, 0, 1)",
+            easing,
+            fill: "both",
             pseudoElement: "::view-transition-new(root)",
           } as KeyframeAnimationOptions,
         );
       })
       .catch(() => {
-        // Fallback in case animation rejects
+        // The flip was skipped — the theme change already landed.
       });
   }, []);
 

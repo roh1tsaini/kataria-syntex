@@ -109,10 +109,16 @@ function releasesManifestUrl(): string {
   return `${apiOrigin()}/releases/app/android/latest.json`;
 }
 
+type DesktopArchPaths = { x64?: string; arm64?: string };
+
 type LatestManifest = {
   version: string;
   android?: { apk?: string; sha256?: string; size?: number };
-  desktop?: { win?: string; mac?: string; linux?: string };
+  desktop?: {
+    win?: DesktopArchPaths;
+    mac?: string;
+    linux?: DesktopArchPaths;
+  };
 };
 
 async function fetchManifest(): Promise<LatestManifest | null> {

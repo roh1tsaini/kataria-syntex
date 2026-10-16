@@ -235,16 +235,27 @@ jobs:
         include:
           - platform: windows-latest
             name: windows-x64
-            builder_args: --win
-            bundle_path: apps/app/release/*.exe*
+            builder_args: --win --x64
+            bundle_path: apps/app/release/*-x64.exe*
+          - platform: windows-latest
+            name: windows-arm64
+            builder_args: --win --arm64
+            bundle_path: apps/app/release/*-arm64.exe*
           - platform: macos-latest
             name: macos-arm64
             builder_args: --mac
             bundle_path: apps/app/release/*.dmg
           - platform: ubuntu-24.04
             name: linux-x64
-            builder_args: --linux
-            bundle_path: apps/app/release/*.AppImage
+            builder_args: --linux --x64
+            # electron-builder renders x64 as x86_64 in AppImage names.
+            bundle_path: apps/app/release/*-x86_64.AppImage
+          # GitHub-hosted arm64 runner — free for public repositories. Builds
+          # the AppImage natively (no cross-arch emulation).
+          - platform: ubuntu-24.04-arm
+            name: linux-arm64
+            builder_args: --linux --arm64
+            bundle_path: apps/app/release/*-arm64.AppImage
     steps:
       - uses: actions/checkout@v6
 
@@ -558,14 +569,27 @@ jobs:
             if [ "$CREATED" != "true" ]; then echo "Failed to create ks-releases bucket (check token R2 permissions)" >&2; exit 1; fi
           fi
 
+      # Cloudflare's API intermittently answers 504 on deploy (the assets
+      # upload session). A deploy is idempotent, so retry it here instead of
+      # letting one transient hiccup fail the release.
       - name: Deploy app worker
-        uses: cloudflare/wrangler-action@v4
-        with:
-          packageManager: bun
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/app
-          command: deploy
+        working-directory: apps/app
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if bunx wrangler deploy; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "wrangler deploy attempt $attempt/3 failed; retrying in 20s"
+              sleep 20
+            fi
+          done
+          echo "::error::wrangler deploy failed after 3 attempts"
+          exit 1
 
       - name: Register Telegram webhook
         env:

@@ -4,13 +4,12 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Download, Globe, Moon, Sun } from "lucide-react";
+import { ArrowRight, Download, Globe } from "lucide-react";
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { apiOrigin } from "@kataria-syntex/app-core";
-import { detectPlatformKey, type DownloadPlatformKey } from "@/lib/platform";
-import { useTheme } from "@/ui/hooks/use-theme";
+import { detectDownloadTarget, type DownloadTarget } from "@/lib/platform";
 import { Button } from "@/ui/components/ui/button";
-import { CircleButton } from "@/ui/components/ui/circle-button";
+import { ThemeSwitch } from "@/ui/components/ui/theme-switch";
 import { Card, CardContent } from "@/ui/components/ui/card";
 import { Skeleton } from "@/ui/components/motion";
 import {
@@ -21,33 +20,56 @@ import {
 } from "@/ui/components/brand-icons";
 import { cn } from "@/ui/lib/cn";
 
-type PlatformMeta = {
+/** One published build: platform + CPU target where the platform ships more
+ *  than one. Windows/Linux carry x64 and arm64; macOS is Apple Silicon only;
+ *  Android has one universal ARM APK. */
+type DownloadTargetKey =
+  | "win-x64"
+  | "win-arm64"
+  | "mac-arm64"
+  | "linux-x64"
+  | "linux-arm64"
+  | "android";
+
+type TargetMeta = {
   name: string;
   file: string;
   icon: typeof WindowsGlyph;
 };
 
-const PLATFORM_ORDER: readonly DownloadPlatformKey[] = [
-  "win",
-  "mac",
-  "linux",
+const TARGET_ORDER: readonly DownloadTargetKey[] = [
+  "win-x64",
+  "win-arm64",
+  "mac-arm64",
+  "linux-x64",
+  "linux-arm64",
   "android",
 ];
 
-const PLATFORM_META: Record<DownloadPlatformKey, PlatformMeta> = {
-  win: {
+const TARGET_META: Record<DownloadTargetKey, TargetMeta> = {
+  "win-x64": {
     name: "Windows",
     file: "x64 · Setup .exe",
     icon: WindowsGlyph,
   },
-  mac: {
+  "win-arm64": {
+    name: "Windows",
+    file: "arm64 · Setup .exe",
+    icon: WindowsGlyph,
+  },
+  "mac-arm64": {
     name: "macOS",
     file: "Apple Silicon · .dmg",
     icon: AppleGlyph,
   },
-  linux: {
+  "linux-x64": {
     name: "Linux",
     file: "x64 · AppImage",
+    icon: LinuxGlyph,
+  },
+  "linux-arm64": {
+    name: "Linux",
+    file: "arm64 · AppImage",
     icon: LinuxGlyph,
   },
   android: {
@@ -57,9 +79,20 @@ const PLATFORM_META: Record<DownloadPlatformKey, PlatformMeta> = {
   },
 };
 
+/** The row a detected device points at. Detection guarantees an arch for
+ *  Windows/Linux, and macOS is always Apple Silicon. */
+function targetKeyFor(detected: DownloadTarget): DownloadTargetKey {
+  if (detected.platform === "android") return "android";
+  if (detected.platform === "mac") return "mac-arm64";
+  if (detected.platform === "win") {
+    return detected.arch === "arm64" ? "win-arm64" : "win-x64";
+  }
+  return detected.arch === "arm64" ? "linux-arm64" : "linux-x64";
+}
+
 type ReleaseInfo = {
   version: string;
-  paths: Partial<Record<DownloadPlatformKey, string>>;
+  paths: Partial<Record<DownloadTargetKey, string>>;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -93,14 +126,18 @@ async function fetchRelease(): Promise<ReleaseInfo | null> {
 
     const android = asRecord(body.android);
     const desktop = asRecord(body.desktop);
+    const win = asRecord(desktop?.win);
+    const linux = asRecord(desktop?.linux);
 
     return {
       version: body.version,
       paths: {
+        "win-x64": releasePath(win?.x64),
+        "win-arm64": releasePath(win?.arm64),
+        "mac-arm64": releasePath(desktop?.mac),
+        "linux-x64": releasePath(linux?.x64),
+        "linux-arm64": releasePath(linux?.arm64),
         android: releasePath(android?.apk),
-        win: releasePath(desktop?.win),
-        mac: releasePath(desktop?.mac),
-        linux: releasePath(desktop?.linux),
       },
     };
   } catch {
@@ -154,18 +191,18 @@ function DownloadAction({
   );
 }
 
-function PlatformRow({
-  platform,
+function TargetRow({
+  target,
   href,
   loading,
   releaseLoaded,
 }: {
-  platform: DownloadPlatformKey;
+  target: DownloadTargetKey;
   href: string | null;
   loading: boolean;
   releaseLoaded: boolean;
 }) {
-  const meta = PLATFORM_META[platform];
+  const meta = TARGET_META[target];
   const Icon = meta.icon;
 
   return (
@@ -194,13 +231,12 @@ function PlatformRow({
 export function DownloadPage() {
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [platform, setPlatform] = useState<DownloadPlatformKey | null>(null);
-  const { theme, toggleTheme } = useTheme();
+  const [target, setTarget] = useState<DownloadTargetKey | null>(null);
 
   useEffect(() => {
     let alive = true;
-    void detectPlatformKey().then((detectedPlatform) => {
-      if (alive) setPlatform(detectedPlatform);
+    void detectDownloadTarget().then((detected) => {
+      if (alive) setTarget(detected ? targetKeyFor(detected) : null);
     });
     void fetchRelease().then((nextRelease) => {
       if (!alive) return;
@@ -213,12 +249,12 @@ export function DownloadPage() {
     };
   }, []);
 
-  const hrefFor = (key: DownloadPlatformKey): string | null => {
+  const hrefFor = (key: DownloadTargetKey): string | null => {
     const path = release?.paths[key];
     return path ? `${apiOrigin()}${path}` : null;
   };
-  const recommended = platform ? PLATFORM_META[platform] : null;
-  const otherPlatforms = PLATFORM_ORDER.filter((key) => key !== platform);
+  const recommended = target ? TARGET_META[target] : null;
+  const otherTargets = TARGET_ORDER.filter((key) => key !== target);
 
   return (
     <main className="min-h-dvh bg-background px-4 py-10 sm:px-6">
@@ -237,13 +273,7 @@ export function DownloadPage() {
               {COMPANY_DETAILS.name} Biz App
             </div>
           </div>
-          <CircleButton
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Light theme" : "Dark theme"}
-            aria-label={theme === "dark" ? "Light theme" : "Dark theme"}
-          >
-            {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
-          </CircleButton>
+          <ThemeSwitch />
         </div>
 
         <header className="space-y-2">
@@ -286,7 +316,7 @@ export function DownloadPage() {
                     </span>
                   </span>
                   <DownloadAction
-                    href={platform ? hrefFor(platform) : null}
+                    href={target ? hrefFor(target) : null}
                     label={`Download for ${recommended.name}`}
                     loading={loading}
                     releaseLoaded={release !== null}
@@ -346,10 +376,10 @@ export function DownloadPage() {
             <Card>
               <CardContent className="p-0">
                 <ul className="divide-y divide-border">
-                  {otherPlatforms.map((key) => (
-                    <PlatformRow
+                  {otherTargets.map((key) => (
+                    <TargetRow
                       key={key}
-                      platform={key}
+                      target={key}
                       href={hrefFor(key)}
                       loading={loading}
                       releaseLoaded={release !== null}

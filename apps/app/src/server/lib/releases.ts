@@ -21,7 +21,8 @@
 import type { Env } from "../env";
 import { releaseContentType } from "@kataria-syntex/shared";
 
-const MANIFEST_SUFFIX = /\/latest(\.json|\.yml|-linux\.yml|-mac\.yml)$/i;
+const MANIFEST_SUFFIX =
+  /\/latest(\.json|\.yml|-linux\.yml|-linux-arm64\.yml|-mac\.yml)$/i;
 
 function contentType(key: string): string {
   return releaseContentType(key);

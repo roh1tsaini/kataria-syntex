@@ -71,7 +71,9 @@ Push to `main`. One workflow (`pipeline.yml`) runs everything:
 2. `deploy-web` — runs immediately in parallel on push: ensure website D1
    (`ks-web-db`) → migrate → build Vinext → deploy website worker.
 3. `desktop` + `android` — download the shared renderer, then create the
-   Windows, macOS and Linux installers and signed APK. Runs on release pushes
+   Windows and Linux installers (x64 + arm64, one CI job per CPU target; the
+   Linux arm64 job runs on GitHub's free arm64 runner for public repos), the
+   macOS Apple Silicon dmg, and the signed APK. Runs on release pushes
    and manual dispatches (skipped on routine non-release commits and PRs).
 4. `publish-r2` — ensures `ks-releases` bucket exists, uploads installers,
    generates one `app/android/latest.json` release-info file and derives the

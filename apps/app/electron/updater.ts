@@ -68,8 +68,9 @@ export function initUpdater(
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  // Channel files live per-OS in the bucket (latest.yml → win/,
-  // latest-linux.yml → linux/), matching the published layout.
+  // Channel files live per-OS in the bucket (latest.yml → win/); Linux
+  // asks for latest-linux.yml (x64) or latest-linux-arm64.yml (arm64) —
+  // both are published next to the AppImages.
   autoUpdater.setFeedURL({
     provider: "generic",
     url:

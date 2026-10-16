@@ -30,13 +30,23 @@
  *                                  check target); defaults to the app Worker.
  *
  * Layout written (URL path = object key, served at /releases/<key>):
- *   app/desktop/win/<setup>.exe[.blockmap] + latest.yml
- *   app/desktop/linux/<*.AppImage>         + latest-linux.yml
+ *   app/desktop/win/<setup>-x64|-arm64.exe[.blockmap] + latest.yml
+ *   app/desktop/linux/<*>-x86_64|-arm64.AppImage       + latest-linux.yml
+ *                                                      + latest-linux-arm64.yml
  *   app/desktop/mac/<*.dmg>                (no yml — unsigned, no updater)
  *   app/android/Kataria-Syntex-Biz-App-<version>.apk
  *   app/android/latest.json                — shared release info used by
  *                                            download and app checks; Electron
  *                                            feeds are generated from it
+ *
+ * Windows and Linux each ship two CPU targets (x64 + arm64). Their feed
+ * bodies list both installers, x64 first: electron-updater downloads the
+ * file whose name carries the running machine's process.arch, falling back
+ * to the first entry. Those suffixes are load-bearing — electron-builder
+ * writes them, and a Linux x64 AppImage renders as -x86_64 (a name the x64
+ * check misses, so x64 clients are served by the first-entry fallback).
+ * Linux asks for latest-linux.yml (x64) and latest-linux-arm64.yml (arm64)
+ * — both get the same body; Windows keeps its single latest.yml.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -171,12 +181,19 @@ function readMinVersion(): string {
 }
 
 const files = walk(DIST);
-const winSetup = files.find((f) => basename(f).endsWith(".exe"));
-const winBlockmap = files.find((f) => basename(f).endsWith(".exe.blockmap"));
-const linuxImage = files.find((f) => basename(f).endsWith(".AppImage"));
-const macDmg = files.find((f) => basename(f).endsWith(".dmg"));
-const macBlockmap = files.find((f) => basename(f).endsWith(".dmg.blockmap"));
-const apk = files.find((f) => basename(f).endsWith(".apk"));
+/** Single artifact by its versioned, CPU-suffixed filename suffix. */
+function findArtifact(suffix: string): string | undefined {
+  return files.find((f) => basename(f).endsWith(suffix));
+}
+const winX64 = findArtifact("-x64.exe");
+const winArm64 = findArtifact("-arm64.exe");
+const winX64Blockmap = findArtifact("-x64.exe.blockmap");
+const winArm64Blockmap = findArtifact("-arm64.exe.blockmap");
+const linuxX64 = findArtifact("-x86_64.AppImage");
+const linuxArm64 = findArtifact("-arm64.AppImage");
+const macDmg = findArtifact(".dmg");
+const macBlockmap = findArtifact(".dmg.blockmap");
+const apk = findArtifact(".apk");
 
 // Push builds only publish when the version actually changed (bumping
 // package.json is the release action). Manual dispatch always publishes.
@@ -202,8 +219,10 @@ if (process.env.ONLY_IF_VERSION_CHANGED === "1") {
 }
 
 const missing = [
-  ["win setup", winSetup],
-  ["linux AppImage", linuxImage],
+  ["win x64 setup", winX64],
+  ["win arm64 setup", winArm64],
+  ["linux x64 AppImage", linuxX64],
+  ["linux arm64 AppImage", linuxArm64],
   ["mac dmg", macDmg],
   ["android apk", apk],
 ].filter(([, v]) => !v);
@@ -242,25 +261,19 @@ if (
 // 1) Upload versioned installers and blockmaps.
 const ARTIFACT_CACHE = "public, max-age=31536000, immutable";
 const uploads: Array<{ key: string; file: string }> = [];
-if (winSetup)
-  uploads.push({ key: keyFor(winSetup, "desktop/win"), file: winSetup });
-if (winBlockmap)
-  uploads.push({
-    key: keyFor(winBlockmap, "desktop/win"),
-    file: winBlockmap,
-  });
-if (linuxImage)
-  uploads.push({
-    key: keyFor(linuxImage, "desktop/linux"),
-    file: linuxImage,
-  });
-if (macDmg) uploads.push({ key: keyFor(macDmg, "desktop/mac"), file: macDmg });
-if (macBlockmap)
-  uploads.push({
-    key: keyFor(macBlockmap, "desktop/mac"),
-    file: macBlockmap,
-  });
-if (apk) uploads.push({ key: keyFor(apk, "android"), file: apk });
+for (const [file, folder] of [
+  [winX64, "desktop/win"],
+  [winArm64, "desktop/win"],
+  [winX64Blockmap, "desktop/win"],
+  [winArm64Blockmap, "desktop/win"],
+  [linuxX64, "desktop/linux"],
+  [linuxArm64, "desktop/linux"],
+  [macDmg, "desktop/mac"],
+  [macBlockmap, "desktop/mac"],
+  [apk, "android"],
+] as const) {
+  if (file) uploads.push({ key: keyFor(file, folder), file });
+}
 
 for (const { key, file } of uploads) {
   await putObject(
@@ -277,6 +290,14 @@ for (const { key, file } of uploads) {
 // still checked against this release above, but is not published in this file.
 // Android carries APK SHA-256 + size so the stager can verify the download.
 const apkBytes = apk === undefined ? null : readFileSync(apk);
+/** Public /releases/* path for a built artifact, or undefined when absent —
+ *  JSON.stringify drops undefined keys, so the manifest lists only real builds. */
+function manifestPath(
+  file: string | undefined,
+  folder: string,
+): string | undefined {
+  return file ? `/releases/${keyFor(file, folder)}` : undefined;
+}
 const manifest = {
   version: VERSION,
   releasedAt: new Date().toISOString(),
@@ -289,53 +310,78 @@ const manifest = {
         }
       : {},
   desktop: {
-    ...(winSetup
-      ? { win: `/releases/${keyFor(winSetup, "desktop/win")}` }
-      : {}),
-    ...(macDmg ? { mac: `/releases/${keyFor(macDmg, "desktop/mac")}` } : {}),
-    ...(linuxImage
-      ? { linux: `/releases/${keyFor(linuxImage, "desktop/linux")}` }
-      : {}),
+    // Windows/Linux carry one path per CPU target; mac stays a plain string
+    // (single Apple Silicon build) so already-installed clients keep reading it.
+    win: {
+      x64: manifestPath(winX64, "desktop/win"),
+      arm64: manifestPath(winArm64, "desktop/win"),
+    },
+    mac: manifestPath(macDmg, "desktop/mac"),
+    linux: {
+      x64: manifestPath(linuxX64, "desktop/linux"),
+      arm64: manifestPath(linuxArm64, "desktop/linux"),
+    },
   },
 };
 
 type DesktopPlatform = "win" | "linux";
-function makeElectronFeed(platform: DesktopPlatform): {
+/** Channel files electron-updater requests per platform — Linux names the
+ *  file after a non-x64 CPU (Provider getChannelFilePrefix): x64 asks for
+ *  latest-linux.yml, arm64 for latest-linux-arm64.yml. Both get the same
+ *  body listing every CPU target. */
+function feedFileNames(platform: DesktopPlatform): string[] {
+  return platform === "win"
+    ? ["latest.yml"]
+    : ["latest-linux.yml", "latest-linux-arm64.yml"];
+}
+
+function makeElectronFeed(platform: DesktopPlatform): Array<{
   key: string;
   body: Buffer;
-} {
-  const artifact = platform === "win" ? winSetup : linuxImage;
+}> {
+  // x64 first: a client that cannot match its own arch falls back to the
+  // first entry (electron-updater Provider findFile).
+  const artifacts =
+    platform === "win" ? [winX64, winArm64] : [linuxX64, linuxArm64];
   const folder = platform === "win" ? "desktop/win" : "desktop/linux";
-  const path = manifest.desktop[platform];
-  if (!artifact || !path)
-    fail(`Cannot make ${platform} feed without its installer.`);
-  const bytes = readFileSync(artifact);
-  const filename = basename(path);
-  const sha512 = createHash("sha512").update(bytes).digest("base64");
-  const quotedFilename = JSON.stringify(filename);
+  const entries = artifacts.map((file) => {
+    if (!file) fail(`Cannot make ${platform} feed without its installer.`);
+    const bytes = readFileSync(file);
+    return {
+      filename: basename(file),
+      size: bytes.length,
+      sha512: createHash("sha512").update(bytes).digest("base64"),
+    };
+  });
+  const primary = entries[0];
   const body = Buffer.from(
     [
       `version: ${JSON.stringify(manifest.version)}`,
       "files:",
-      `  - url: ${quotedFilename}`,
-      `    sha512: ${sha512}`,
-      `    size: ${bytes.length}`,
-      `path: ${quotedFilename}`,
-      `sha512: ${sha512}`,
+      ...entries.flatMap((entry) => [
+        `  - url: ${JSON.stringify(entry.filename)}`,
+        `    sha512: ${entry.sha512}`,
+        `    size: ${entry.size}`,
+      ]),
+      `path: ${JSON.stringify(primary.filename)}`,
+      `sha512: ${primary.sha512}`,
       `releaseDate: ${JSON.stringify(manifest.releasedAt)}`,
       "",
     ].join("\n"),
     "utf8",
   );
-  return {
-    key: `${PREFIX}/${folder}/${platform === "win" ? "latest.yml" : "latest-linux.yml"}`,
+  return feedFileNames(platform).map((name) => ({
+    key: `${PREFIX}/${folder}/${name}`,
     body,
-  };
+  }));
 }
 
-// 3) Electron requires fixed per-platform feed filenames. Derive both from
-// release info and the installer bytes, then publish release info last.
-const electronFeeds = [makeElectronFeed("win"), makeElectronFeed("linux")];
+// 3) Electron requires fixed per-platform feed filenames. Derive them from
+// the installers' bytes — every feed lists both CPU targets — then publish
+// release info last.
+const winFeeds = makeElectronFeed("win");
+const linuxFeeds = makeElectronFeed("linux");
+const electronFeeds = [...winFeeds, ...linuxFeeds];
 for (const feed of electronFeeds) {
   await putObject(
     feed.key,
@@ -380,17 +426,21 @@ for (const url of publicUrls) {
     console.error(`SMOKE FAIL ${res.status} ${url}`);
   }
 }
-for (const [feed, artifact] of [
-  [electronFeeds[0], winSetup],
-  [electronFeeds[1], linuxImage],
+for (const [feeds, artifacts] of [
+  [winFeeds, [winX64, winArm64]],
+  [linuxFeeds, [linuxX64, linuxArm64]],
 ] as const) {
-  if (!artifact) continue;
-  const text = feed.body.toString("utf8");
-  if (!text.includes(basename(artifact))) {
-    smokeFailed = true;
-    console.error(
-      `SMOKE FAIL ${basename(feed.key)} does not reference ${basename(artifact)} — updater would 404.`,
-    );
+  for (const feed of feeds) {
+    const text = feed.body.toString("utf8");
+    for (const artifact of artifacts) {
+      if (!artifact) continue;
+      if (!text.includes(basename(artifact))) {
+        smokeFailed = true;
+        console.error(
+          `SMOKE FAIL ${basename(feed.key)} does not reference ${basename(artifact)} — updater would 404.`,
+        );
+      }
+    }
   }
 }
 if (smokeFailed) fail("Release smoke check failed — see errors above.");
