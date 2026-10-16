@@ -791,9 +791,22 @@ export function pluginErrorCode(error: unknown): string | null {
   return error instanceof Error ? error.message : null;
 }
 
+/** Both custom plugins (Installer, SecureToken) are fetched through the
+ *  Capacitor proxy object. The proxy answers every property — `then`
+ *  included — with a plugin-method wrapper, so awaiting or returning the
+ *  proxy itself makes the runtime treat it as a thenable whose `then` never
+ *  settles: the call hangs with an unhandled "then() is not implemented"
+ *  rejection and whatever awaited it never completes. (On Android that was
+ *  the auth boot: the K splash never resolved.) Hand back bound methods —
+ *  calling one returns the real native promise. */
 async function installer(): Promise<InstallerPlugin> {
   const { registerPlugin } = await import("@capacitor/core");
-  return registerPlugin<InstallerPlugin>("Installer");
+  const plugin = registerPlugin<InstallerPlugin>("Installer");
+  return {
+    downloadApk: (options) => plugin.downloadApk(options),
+    installApk: (options) => plugin.installApk(options),
+    addListener: (event, listener) => plugin.addListener(event, listener),
+  };
 }
 
 /** Native session-token store (SecureTokenPlugin.kt) — AES-GCM under a
@@ -805,7 +818,11 @@ type SecureTokenPlugin = {
 
 async function secureToken(): Promise<SecureTokenPlugin> {
   const { registerPlugin } = await import("@capacitor/core");
-  return registerPlugin<SecureTokenPlugin>("SecureToken");
+  const plugin = registerPlugin<SecureTokenPlugin>("SecureToken");
+  return {
+    readToken: () => plugin.readToken(),
+    writeToken: (options) => plugin.writeToken(options),
+  };
 }
 
 function apkUrl(apiBase: string, manifest: InstallerManifest): string {
