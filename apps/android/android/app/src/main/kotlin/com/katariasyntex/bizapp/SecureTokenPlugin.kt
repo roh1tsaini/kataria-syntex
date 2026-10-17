@@ -43,7 +43,6 @@ class SecureTokenPlugin : Plugin() {
         const val PREFS_NAME = "ks_secure_token"
         const val PREFS_KEY = "session"
         const val GCM_TAG_BITS = 128
-        const val IV_BYTES = 12
     }
 
     private val prefs

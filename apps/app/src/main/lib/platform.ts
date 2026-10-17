@@ -17,6 +17,7 @@ import {
   type Host,
   type PlatformAdapter,
 } from "@kataria-syntex/app-core";
+import type { ReleaseManifest } from "@kataria-syntex/shared";
 import type { DesktopBridge } from "../../../electron/preload";
 
 /** Minimal shape of the Capacitor native bridge (v8 exposes
@@ -113,7 +114,7 @@ export function updateAction(): UpdateAction {
   return usesManifestUpdateFlow() ? "download" : "restart";
 }
 
-export type UpdateNoticePhase = "found" | "ready";
+type UpdateNoticePhase = "found" | "ready";
 
 export function updateNoticeCopy(
   version: string,
@@ -162,8 +163,8 @@ export function retryUpdateUsesAction(failure: string | null): boolean {
   );
 }
 
-export type DownloadPlatformKey = "win" | "mac" | "linux" | "android";
-export type DownloadArch = "x64" | "arm64";
+type DownloadPlatformKey = "win" | "mac" | "linux" | "android";
+type DownloadArch = "x64" | "arm64";
 
 /** A downloadable build for this device: OS + CPU target where the platform
  *  ships more than one (Android carries both ARM ABIs in one APK). */
@@ -526,7 +527,7 @@ function bakedApiOrigin(): string {
     // a build that can never reach the server.
     if (detectHost() !== "web") {
       throw new Error(
-        `VITE_API_URL is not baked into this ${detectHost()} build — the app cannot reach the API. Rebuild with VITE_API_URL set (the Android step is bun run build:web:apk with the env exported; see apps/android/APP.md).`,
+        `VITE_API_URL is not baked into this ${detectHost()} build — the app cannot reach the API. Rebuild with VITE_API_URL set (the Android step is bun run build:web:apk with the env exported; see apps/app/spec.md Section 5.1).`,
       );
     }
     return "";
@@ -751,14 +752,9 @@ type InstallerPlugin = {
  *  side (InstallerPlugin.DEFAULT_FILENAME) and every caller below. */
 const STAGED_APK_FILENAME = "ks-biz-app.apk";
 
-type InstallerManifest = {
-  version: string;
-  android?: { apk?: string; sha256?: string; size?: number };
-};
-
 export async function fetchInstallerManifest(
   apiBase: string,
-): Promise<InstallerManifest | null> {
+): Promise<ReleaseManifest | null> {
   try {
     const res = await fetch(`${apiBase}/releases/app/android/latest.json`, {
       cache: "no-store",
@@ -770,7 +766,7 @@ export async function fetchInstallerManifest(
     if (typeof (body as Record<string, unknown>).version !== "string") {
       return null;
     }
-    return body as InstallerManifest;
+    return body as ReleaseManifest;
   } catch {
     return null;
   }
@@ -849,7 +845,7 @@ async function secureToken(): Promise<SecureTokenPlugin> {
   };
 }
 
-function apkUrl(apiBase: string, manifest: InstallerManifest): string {
+function apkUrl(apiBase: string, manifest: ReleaseManifest): string {
   const apk = manifest.android?.apk;
   if (typeof apk !== "string" || !apk.startsWith("/releases/")) {
     throw new Error("artifact_missing");
@@ -868,7 +864,7 @@ function apkUrl(apiBase: string, manifest: InstallerManifest): string {
  */
 export async function ensureAndroidStaging(
   apiBase: string,
-  manifest: InstallerManifest,
+  manifest: ReleaseManifest,
   onProgress: (progress: ApkProgress) => void,
 ): Promise<void> {
   if (detectHost() !== "android") throw new Error("android_only");

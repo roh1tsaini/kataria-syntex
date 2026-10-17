@@ -10,8 +10,10 @@
  * size is the scale.
  */
 
-export type UpdateProgressReadout = {
+export type UpdateProgress = {
+  /** 0–100, rounded by the UI. */
   percent: number;
+  /** 0 when the source can't know the size — the readout hides the size then. */
   totalBytes: number;
 };
 
@@ -32,7 +34,7 @@ function formatBytes(bytes: number): string {
 
 /** The one-line progress readout: "34% · 38.1 MB".
  * An unknown total drops the size clause instead of guessing. */
-export function formatUpdateProgress(p: UpdateProgressReadout): string {
+export function formatUpdateProgress(p: UpdateProgress): string {
   const parts = [`${Math.round(p.percent)}%`];
   if (p.totalBytes > 0) parts.push(formatBytes(p.totalBytes));
   return parts.join(" · ");

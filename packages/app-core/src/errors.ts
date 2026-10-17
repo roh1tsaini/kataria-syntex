@@ -4,10 +4,15 @@ import { ApiError } from "./api";
 /** Codes this layer generates itself — never emitted by the server. */
 type ClientCode = "network_error" | "http_500" | "http_502";
 
+/** The same server-side failure, reached two ways: http_500 when a route
+ *  crashed before naming a code, internal_server_error when it named one. */
+const SERVER_FAULT_MESSAGE =
+  "Something went wrong on our side. Try again in a moment.";
+
 const CLIENT_MESSAGES = {
   network_error:
     "Could not reach the server. Check your connection and try again.",
-  http_500: "Something went wrong on our side. Try again in a moment.",
+  http_500: SERVER_FAULT_MESSAGE,
   http_502: "The server is temporarily unavailable. Try again in a moment.",
 } satisfies Record<ClientCode, string>;
 
@@ -48,8 +53,7 @@ const SERVER_MESSAGES = {
   qr_code_mismatch: "That code doesn't match. Check the other device's screen.",
   qr_already_approved: "This code was already approved.",
   qr_rate_limited: "Too many QR attempts. Wait a moment and try again.",
-  internal_server_error:
-    "Something went wrong on our side. Try again in a moment.",
+  internal_server_error: SERVER_FAULT_MESSAGE,
   // updates — the blocking update gate handles this code; the entry only
   // satisfies the exhaustive Record for toasts that never special-case it.
   update_required: "This version is no longer supported. Update the app.",

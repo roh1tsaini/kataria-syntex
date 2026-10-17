@@ -69,14 +69,6 @@
   --morph-duration: var(--duration-morph-open);
 }
 
-/* Hide scrollbars while keeping the area scrollable (horizontal chip strips). */
-@utility scrollbar-none {
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
 /* Inter variable font — bundled locally (assets/fonts), zero external requests at runtime. */
 @font-face {
   font-family: "Inter Variable";
@@ -132,26 +124,18 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 5%);
-  --shadow-lift:
-    0 4px 12px -4px oklch(0 0 0 / 10%), 0 2px 6px -2px oklch(0 0 0 / 6%);
   --shadow-overlay:
     0 8px 24px -8px oklch(0 0 0 / 14%), 0 4px 12px -4px oklch(0 0 0 / 8%);
   /* Top specular edge on capsule materials — light catching lit glass (Section 2.7) */
   --specular: inset 0 1px 0 oklch(1 0 0 / 55%);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   /* SPRING as a curve — critically damped, settled at 380ms. CSS surfaces
      (grid-rows morphs, dialogs) share the exact curve motion/react springs
      produce; sampled once, no live physics. */
@@ -260,12 +244,6 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: var(--a-strong);
-  --chart-1: var(--a-strong);
-  --chart-2: oklch(0.65 0 0);
-  --chart-3: color-mix(in oklch, var(--a-strong) 55%, oklch(0.6 0 0));
-  --chart-4: oklch(0.45 0 0);
-  --chart-5: color-mix(in oklch, var(--a-strong) 30%, oklch(0.75 0 0));
-  --radius: 0.625rem;
 }
 
 .dark {
@@ -293,11 +271,6 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
   --ring: var(--a-strong);
-  --chart-1: var(--a-strong);
-  --chart-2: oklch(0.62 0 0);
-  --chart-3: color-mix(in oklch, var(--a-strong) 55%, oklch(0.65 0 0));
-  --chart-4: oklch(0.42 0 0);
-  --chart-5: color-mix(in oklch, var(--a-strong) 30%, oklch(0.78 0 0));
 }
 
 @layer base {
@@ -499,18 +472,6 @@
     line-height: 1;
   }
 
-  /* Apple material filter bar — translucent border, generous padding */
-  .filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem;
-    border: 1px solid var(--border);
-    background: var(--card);
-    border-radius: var(--radius-lg);
-    padding: 0.75rem;
-  }
-
   /* Press feedback (Section 5): the press swaps in a fill/tint — never motion.
      Colors keep their 150ms pace. Shared by every tappable control. */
   .btn-motion {
@@ -564,34 +525,24 @@
     color: var(--muted-foreground);
   }
 
-  .app-nav-row,
-  .app-nav-subrow {
+  .app-nav-row {
     display: flex;
     min-height: 2.75rem;
     align-items: center;
     gap: 0.5rem;
     border-radius: var(--radius-md);
     padding: 0.375rem 0.5rem;
-  }
-
-  .app-nav-row {
     font-size: 0.8125rem;
   }
 
-  .app-nav-subrow {
-    font-size: 0.75rem;
-  }
-
   @media (min-width: 40rem) {
-    .app-nav-row,
-    .app-nav-subrow {
+    .app-nav-row {
       min-height: 2.5rem;
     }
   }
 
   @media (pointer: coarse) {
-    .app-nav-row,
-    .app-nav-subrow {
+    .app-nav-row {
       min-height: 2.75rem;
     }
   }
@@ -607,72 +558,6 @@
   }
   .field-control:hover {
     border-color: color-mix(in oklch, var(--foreground) 18%, var(--border));
-  }
-  .field-control:focus-within,
-  .field-control:focus,
-  .field-control:focus-visible {
-    border-color: var(--ring);
-    box-shadow: none;
-    outline: none;
-  }
-
-  .table-row {
-    transition: background-color 140ms ease;
-  }
-  .table-row:hover {
-    background-color: var(--muted);
-  }
-
-  /* Apple card — standard 16px padding (Section 2.1), soft, no hard shadow */
-  .data-card {
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
-    background: var(--card);
-    padding: 1rem;
-    transition:
-      border-color 180ms ease,
-      background-color 180ms ease,
-      transform 180ms ease;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .data-card:hover {
-      border-color: color-mix(in oklch, var(--foreground) 18%, var(--border));
-      background: var(--card);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-lift);
-    }
-  }
-
-  /* Clear the floating navigation without moving actions when field focus changes. */
-  .sticky-action-bar {
-    position: sticky;
-    bottom: calc(3.25rem + 2px + 12px + var(--safe-area-inset-bottom));
-    z-index: 20;
-    margin-inline: -1rem;
-    padding: 0.75rem 1rem;
-    background: var(--card);
-    border-top: 1px solid var(--border);
-  }
-  @media (min-width: 640px) {
-    .sticky-action-bar {
-      position: static;
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      backdrop-filter: none;
-      border: 0;
-      box-shadow: none;
-    }
-  }
-
-  /* Horizontal scroll affordance — fade mask to hint scrollability */
-  .scroll-fade {
-    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
-    -webkit-mask-image: linear-gradient(
-      to right,
-      black calc(100% - 24px),
-      transparent
-    );
   }
 
   /* Indeterminate progress: a size the source can't know gets an honest
@@ -792,20 +677,9 @@
     backdrop-filter: blur(12px) saturate(1.4);
     -webkit-backdrop-filter: blur(12px) saturate(1.4);
   }
-  .sticky-action-bar {
-    background: color-mix(in oklch, var(--card) 85%, transparent);
-    backdrop-filter: blur(12px) saturate(1.4);
-    -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .filter-bar,
-  .sticky-action-bar {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background-color: var(--card) !important;
-  }
   header[class*="backdrop-blur"],
   nav[class*="backdrop-blur"],
   div[class*="backdrop-blur"] {

@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { QrCode, Smartphone } from "lucide-react";
-import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { isPlainBrowser } from "@/lib/platform";
 import { ApiError, useAuth, friendlyError } from "@kataria-syntex/app-core";
 import { QrLoginPanel } from "@/ui/components/qr-login-panel";
+import { BrandLockup } from "@/ui/components/brand";
 import { Button } from "@/ui/components/ui/button";
 import {
   Card,
@@ -217,11 +217,6 @@ function OtpStep({
                     key={i}
                     index={i}
                     data-invalid={error ? true : undefined}
-                    className={
-                      error
-                        ? "[data-invalid=true]:border-destructive [data-invalid=true]:text-destructive"
-                        : undefined
-                    }
                   />
                 ))}
               </InputOTPGroup>
@@ -583,19 +578,7 @@ export function AuthPage() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
-      <div className="flex items-center gap-3">
-        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
-          <span
-            className="text-lg font-semibold leading-none tracking-tight"
-            aria-hidden
-          >
-            K
-          </span>
-        </div>
-        <div className="text-[17px] font-semibold tracking-tight">
-          {COMPANY_DETAILS.name} Biz App
-        </div>
-      </div>
+      <BrandLockup />
       {isPlainBrowser() && (
         <Button asChild variant="link" className="text-muted-foreground">
           <Link to="/downloads">Get the app for desktop or Android</Link>

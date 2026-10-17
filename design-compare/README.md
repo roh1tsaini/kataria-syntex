@@ -5,8 +5,7 @@ live templates keep their current presentation until the owner picks a
 direction for each.** Nothing here is wired into the app.
 
 Counts here are authoritative: ten challan-sheet (A–J), ten carton-sticker
-(S-A–S-J) and ten sales-report (R1–R10) directions. `design.md` Section
-2.4.1 points here.
+(S-A–S-J) and ten sales-report (R1–R10) directions.
 
 Three artifacts; the challan and sticker galleries hold ten directions
 each, the report gallery holds ten formats in both orientations:
@@ -87,7 +86,7 @@ keep the light totals panel"):
 2. Re-render sample PDFs through the Electron pipeline and re-verify: exact
    page size, no clipping, single- and multi-page (challan) and full 6-up
    sheets (sticker).
-3. Update this folder's status and `design.md` Section 2.4.1.
+3. Update the pick status table above.
 4. Delete this folder — the style then lives only in the template.
 
 Note: sticker printing has no pipeline in the app yet; building it is a

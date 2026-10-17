@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/d1";
-import type { SQLiteAsyncDatabase } from "drizzle-orm/sqlite-core";
 
 /**
  * D1 is async and per-request: build the drizzle handle from the env binding
@@ -12,10 +11,3 @@ export function getDb(d1: D1Database) {
 
 /** Query-capable surface — accepts the D1 drizzle handle. */
 export type Db = ReturnType<typeof getDb>;
-
-/**
- * Anything that executes queries: the per-request handle OR an open
- * transaction (both expose select/insert/update/delete). Helper modules
- * accept this so they run inside transactions too.
- */
-export type Queryable = SQLiteAsyncDatabase<"async", D1Result>;

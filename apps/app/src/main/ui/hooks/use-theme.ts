@@ -5,7 +5,7 @@ type Theme = "light" | "dark";
 
 export type ThemePreference = "light" | "dark" | "system";
 
-export type ToggleThemeEvent =
+type ToggleThemeEvent =
   | React.MouseEvent
   | MouseEvent
   | { clientX: number; clientY: number }

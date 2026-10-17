@@ -44,7 +44,7 @@ apps/web/
 │   ├── app/
 │   │   ├── layout.tsx          # root metadata + viewport + skip link
 │   │   ├── globals.css         # @font-face for the three families
-│   │   ├── robots.ts           # allow-all
+│   │   ├── robots.ts           # allow all, disallow /api/
 │   │   ├── sitemap.ts          # static routes + every product slug
 │   │   ├── not-found.tsx       # 404 page
 │   │   ├── fonts/              # 8 woff2 files (Inter, Space Grotesk, Plex Mono)
@@ -64,7 +64,7 @@ apps/web/
 │   │   ├── contact/InquiryForm.tsx
 │   │   ├── links/BusinessCard.tsx
 │   │   ├── layout/             # SiteHeader, SiteFooter
-│   │   ├── section/            # Section, SectionHead, PageHead, CtaPanel
+│   │   ├── section/            # Section, SectionHead, Kicker, PageHead, RouteError, CtaPanel
 │   │   ├── motion/Reveal.tsx
 │   │   └── ui/                 # button, dialog, accordion, badge, filter-pill,
 │   │                           # input, textarea
@@ -111,13 +111,14 @@ checking the table is a manual step.
 
 ## 7 · SEO surfaces
 
-- `src/app/layout.tsx` metadata — `metadataBase`, title template
-  (`%s — <name>`), description, `openGraph` with **only** `siteName` +
-  `type`. No `og:image`, no Twitter card, no `alternates.canonical`.
-- `src/app/sitemap.ts` — the 6 static routes plus all 6 product slugs.
-- `src/app/robots.ts` — `allow: "/"` for everyone, no `disallow`, so
-  `/api/inquiry` is crawlable too.
-- No JSON-LD anywhere, including on product detail pages.
+- `src/app/layout.tsx` — `metadataBase`, canonical `/`, title template
+  (`%s — <name>`), description, `openGraph` (`siteName`, `website`,
+  `en_IN`, 512×512 `/icon.svg` image) and a `summary` Twitter card.
+- `/products/[slug]` — per-product canonical, `article` openGraph and a
+  `summary_large_image` Twitter card; ships the site's only JSON-LD
+  (`Product` with `AggregateOffer`).
+- `src/app/sitemap.ts` — 6 static routes plus all 6 product slugs.
+- `src/app/robots.ts` — allow all, `disallow: ["/api/"]`; sitemap listed.
 
 ## 8 · Environment
 
@@ -146,10 +147,6 @@ build — vinext bakes it into the worker. Migration path off the platform:
 
 - `/products/[slug]` has no `error.tsx` or `loading.tsx`; `/links` and
   `/contact` have both.
-- `SiteHeader`''s mobile menu is a `fixed inset-0` Dialog
-  (`components/ui/dialog.tsx`) whose inner column (`SiteHeader.tsx:112`)
-  has no `overflow-y-auto`; in landscape the last links and "Send inquiry"
-  clip (~504px of content in a 390px viewport). Portrait is fine.
-- No `og:image`, Twitter card or canonical URL (Section 7); sharing
-  renders a text-only card.
-- Product images serve at ~3× the needed resolution at their render size.
+- Product images ship as-is at source size — 1024×1024 for
+  `cotton-yarn.webp` and `polyester-yarn.webp`, 1024×1536 for
+  `dyed-yarn.webp` — at every render size (Section 6).

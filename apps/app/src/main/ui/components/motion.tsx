@@ -1,53 +1,26 @@
 import { type ReactNode } from "react";
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/ui/lib/cn";
 import { EASE_OUT, staggerContainer, staggerItem } from "@/ui/lib/motion";
 
 /** Parent container with staggered child entrances. */
-export function Stagger({
-  children,
-  className,
-  stagger = 0.04,
-  delay = 0.01,
-}: {
-  children: ReactNode;
-  className?: string;
-  stagger?: number;
-  delay?: number;
-}) {
+export function Stagger({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
+  if (reduce) return <div>{children}</div>;
 
   return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      animate="show"
-      variants={staggerContainer(stagger, delay)}
-    >
+    <motion.div initial="hidden" animate="show" variants={staggerContainer()}>
       {children}
     </motion.div>
   );
 }
 
 /** Staggered child item. */
-export function StaggerItem({
-  children,
-  className,
-  variants = staggerItem,
-}: {
-  children: ReactNode;
-  className?: string;
-  variants?: Variants;
-}) {
+export function StaggerItem({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
+  if (reduce) return <div>{children}</div>;
 
-  return (
-    <motion.div className={className} variants={variants}>
-      {children}
-    </motion.div>
-  );
+  return <motion.div variants={staggerItem}>{children}</motion.div>;
 }
 
 /** Route-level enter/exit transition, driven by AnimatePresence in AppShell. */

@@ -23,9 +23,9 @@ import {
 import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { ButtonCapsule, CircleButton } from "@/ui/components/ui/circle-button";
 import { ThemeSwitch } from "@/ui/components/ui/theme-switch";
-import { MorphChevron, MorphPanel } from "@/ui/components/ui/disclosure";
 import { TabBar, type TabBarItem } from "@/ui/components/ui/tab-bar";
 import { Avatar, AvatarFallback } from "@/ui/components/ui/avatar";
+import { BrandMark } from "@/ui/components/brand";
 import { PageTransition } from "@/ui/components/motion";
 import { routeSkeleton } from "@/ui/components/page-skeletons";
 import { OfflineBanner } from "@/ui/components/offline-banner";
@@ -38,7 +38,6 @@ import {
 } from "@kataria-syntex/app-core";
 import {
   isItemActive,
-  isSubActive,
   SECTIONS,
   SIDEBAR_STORAGE_KEY,
   type NavSection,
@@ -87,22 +86,15 @@ function NavDensityToggle({
 function Brand({ compact }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div
-        className="grid size-8 shrink-0 place-items-center rounded-md bg-foreground text-background"
-        title={`${COMPANY_DETAILS.name} Biz App`}
-      >
-        <span className="text-[11px] font-semibold leading-none" aria-hidden>
-          KS
-        </span>
+      <div title={`${COMPANY_DETAILS.name} Biz App`}>
+        <BrandMark label="KS" />
       </div>
     );
   }
   return (
     <div className="flex w-full min-w-0 items-center gap-2.5 px-1">
-      <div className="relative grid size-8 shrink-0 place-items-center rounded-md bg-foreground text-background">
-        <span className="text-[11px] font-semibold leading-none" aria-hidden>
-          K
-        </span>
+      <div className="relative shrink-0">
+        <BrandMark />
         <span className="absolute -bottom-0.5 -right-0.5 size-1.5 rounded-full bg-success ring-2 ring-card" />
       </div>
       <div className="min-w-0 overflow-hidden leading-tight">
@@ -126,169 +118,70 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
-/** Expanded sidebar navigation with collapsible groups. */
+/** Expanded sidebar navigation. */
 function NavList({
-  idPrefix,
   sections,
-  expanded,
-  onToggleGroup,
   pathname,
-  search,
   onNavigate,
   density = "list",
 }: {
-  idPrefix: string;
   sections: NavSection[];
-  expanded: Record<string, boolean>;
-  onToggleGroup: (to: string) => void;
   pathname: string;
-  search: string;
   onNavigate?: () => void;
   density?: NavDensity;
 }) {
   const rowCls = "app-nav-row";
   const iconCls = "size-4";
-  const chevronCls = "size-3.5";
-  const subDotCls = "size-1";
   const grid = density === "grid";
 
-  // Grid tiles are a fixed shape, so a group with sub-items does not tile —
-  // it keeps the list rendering and carries its children underneath.
   const itemsCls = grid ? "grid grid-cols-2 gap-2" : "flex flex-col gap-0.5";
-  const sectionCls = grid ? "flex flex-col gap-2" : "flex flex-col gap-0.5";
 
   return (
-    <nav
-      className={cn(
-        "flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]",
-        grid ? "px-3 py-3" : "px-3 py-3",
-      )}
-    >
+    <nav className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] px-3 py-3">
       {sections.map((section, i) => (
         <div key={section.title} className={cn(i > 0 && "mt-3")}>
           <SectionLabel>{section.title}</SectionLabel>
           <div className={itemsCls}>
             {section.items.map((item) => {
               const active = isItemActive(item, pathname);
-              const hasSubs = !!item.subItems?.length;
-              const asTile = grid && !hasSubs;
-              const panelId = `${idPrefix}-nav-group-${encodeURIComponent(item.to)}`;
-              const anySubActive =
-                item.subItems?.some((sub) =>
-                  isSubActive(sub, pathname, search),
-                ) ?? false;
-              const isExpanded = expanded[item.to] ?? anySubActive;
-
               return (
-                <div key={item.to}>
-                  {hasSubs ? (
-                    <button
-                      type="button"
-                      onClick={() => onToggleGroup(item.to)}
-                      aria-expanded={isExpanded}
-                      aria-controls={panelId}
-                      className={cn(
-                        "btn-motion flex w-full items-center",
-                        rowCls,
-                        anySubActive
-                          ? "font-medium text-foreground"
-                          : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
-                      )}
-                    >
-                      <item.icon
-                        className={cn(iconCls, "shrink-0")}
-                        aria-hidden
-                      />
-                      <span className="min-w-0 flex-1 truncate text-left">
-                        {item.label}
-                      </span>
-                      <MorphChevron
-                        open={isExpanded}
-                        className={cn(
-                          chevronCls,
-                          "-rotate-90 shrink-0 opacity-60",
-                          isExpanded && "rotate-0",
-                        )}
-                      />
-                    </button>
-                  ) : (
-                    <NavLink
-                      to={item.to}
-                      end={item.end}
-                      onClick={onNavigate}
-                      className={cn(
-                        asTile
-                          ? "btn-motion flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-center text-[13px] [@media(hover:hover)]:hover:bg-muted active:bg-muted"
-                          : "btn-motion flex items-center",
-                        asTile ? null : rowCls,
-                        active && asTile
-                          ? "border-foreground bg-accent text-accent-foreground"
-                          : "",
-                        active && !asTile
-                          ? "bg-accent font-medium text-accent-foreground"
-                          : "",
-                        !asTile &&
-                          "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
-                      )}
-                    >
-                      <item.icon
-                        className={cn(
-                          asTile ? "size-5 shrink-0" : iconCls,
-                          "shrink-0",
-                        )}
-                        aria-hidden
-                      />
-                      <span
-                        className={cn(
-                          asTile
-                            ? "line-clamp-2 leading-snug"
-                            : "min-w-0 flex-1 truncate",
-                        )}
-                      >
-                        {item.label}
-                      </span>
-                    </NavLink>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  onClick={onNavigate}
+                  className={cn(
+                    grid
+                      ? "btn-motion flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-center text-[13px] [@media(hover:hover)]:hover:bg-muted active:bg-muted"
+                      : "btn-motion flex items-center",
+                    grid ? null : rowCls,
+                    active && grid
+                      ? "border-foreground bg-accent text-accent-foreground"
+                      : "",
+                    active && !grid
+                      ? "bg-accent font-medium text-accent-foreground"
+                      : "",
+                    !grid &&
+                      "text-muted-foreground [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted active:text-foreground",
                   )}
-                  {hasSubs && (
-                    <MorphPanel id={panelId} open={isExpanded}>
-                      <div
-                        className={cn(
-                          "flex flex-col gap-0.5 border-l border-border pl-3 pt-0.5",
-                          "ml-4",
-                        )}
-                      >
-                        {item.subItems?.map((sub) => {
-                          const subActive = isSubActive(sub, pathname, search);
-                          return (
-                            <NavLink
-                              key={sub.to}
-                              to={sub.to}
-                              onClick={onNavigate}
-                              className={cn(
-                                "app-nav-subrow btn-motion",
-                                subActive
-                                  ? "bg-accent font-medium text-accent-foreground"
-                                  : "text-muted-foreground [@media(hover:hover)]:hover:bg-muted/60 [@media(hover:hover)]:hover:text-foreground active:bg-muted/60 active:text-foreground",
-                              )}
-                            >
-                              <span
-                                className={cn(
-                                  subDotCls,
-                                  "shrink-0 rounded-full",
-                                  subActive
-                                    ? "bg-accent-foreground"
-                                    : "bg-muted-foreground/40",
-                                )}
-                                aria-hidden
-                              />
-                              <span className="truncate">{sub.label}</span>
-                            </NavLink>
-                          );
-                        })}
-                      </div>
-                    </MorphPanel>
-                  )}
-                </div>
+                >
+                  <item.icon
+                    className={cn(
+                      grid ? "size-5 shrink-0" : iconCls,
+                      "shrink-0",
+                    )}
+                    aria-hidden
+                  />
+                  <span
+                    className={cn(
+                      grid
+                        ? "line-clamp-2 leading-snug"
+                        : "min-w-0 flex-1 truncate",
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </NavLink>
               );
             })}
           </div>
@@ -358,12 +251,7 @@ function NavRail({
       {sections
         .flatMap((s) => s.items)
         .map((item) => {
-          const active =
-            isItemActive(item, pathname) ||
-            (item.subItems?.some((sub) =>
-              isSubActive(sub, pathname, window.location.search),
-            ) ??
-              false);
+          const active = isItemActive(item, pathname);
           return (
             <NavLink
               key={item.to}
@@ -464,18 +352,15 @@ function UserFooter({ compact }: { compact?: boolean }) {
 function MobileDrawerContent({
   sections,
   pathname,
-  search,
   onClose,
 }: {
   sections: NavSection[];
   pathname: string;
-  search: string;
   onClose: () => void;
 }) {
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loggingOut, setLoggingOut] = useState(false);
   // Read once per account; the key is account-scoped, so a sign-in as
   // someone else starts from that account's own choice.
@@ -490,8 +375,6 @@ function MobileDrawerContent({
     setDensity(next);
     writeNavDensity(accountId, next);
   };
-  const toggleGroup = (to: string) =>
-    setExpanded((prev) => ({ ...prev, [to]: !prev[to] }));
 
   const onLogout = async () => {
     setLoggingOut(true);
@@ -532,12 +415,8 @@ function MobileDrawerContent({
       </div>
 
       <NavList
-        idPrefix="drawer"
         sections={sections}
-        expanded={expanded}
-        onToggleGroup={toggleGroup}
         pathname={pathname}
-        search={search}
         onNavigate={onClose}
         density={density}
       />
@@ -586,6 +465,8 @@ function HeaderBar({
   onOpenMobile: () => void;
   floating?: boolean;
 }) {
+  const location = useLocation();
+
   if (floating) {
     return (
       <div className="phone-menu-float md:hidden">
@@ -601,15 +482,10 @@ function HeaderBar({
       </div>
     );
   }
-  const location = useLocation();
 
   const currentLabel = (() => {
     for (const section of sections) {
       for (const item of section.items) {
-        const activeSub = item.subItems?.find((sub) =>
-          isSubActive(sub, location.pathname, location.search),
-        );
-        if (activeSub) return activeSub.label;
         if (isItemActive(item, location.pathname)) return item.label;
       }
     }
@@ -662,19 +538,32 @@ const AppShellContext = createContext<boolean>(false);
 function useTabBarItems(sections: NavSection[]): TabBarItem[] {
   return useMemo(() => {
     const all = sections.flatMap((s) => s.items);
-    const preferred = [
-      all.find((i) => i.to === "/"),
-      all.find((i) => i.to === "/devices"),
-    ].filter((i): i is NonNullable<typeof i> => !!i);
-    const seen = new Set<string>();
-    return preferred
-      .filter((i) => {
-        if (seen.has(i.to)) return false;
-        seen.add(i.to);
-        return true;
-      })
+    return [all.find((i) => i.to === "/"), all.find((i) => i.to === "/devices")]
+      .filter((i): i is NonNullable<typeof i> => !!i)
       .map((i) => ({ to: i.to, label: i.label, icon: i.icon, end: i.end }));
   }, [sections]);
+}
+
+/** Sidebar rail↔full crossfade — both renderings share one motion wrapper. */
+function RailCrossfade({ children }: { children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      className="flex min-h-0 flex-1 flex-col"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={
+        reduceMotion
+          ? { opacity: 0 }
+          : { opacity: 0, transition: { duration: 0.11, ease: EASE_OUT } }
+      }
+      transition={
+        reduceMotion ? { duration: 0 } : { duration: 0.14, ease: EASE_OUT }
+      }
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 function InnerPageLoader({ pathname }: { pathname: string }) {
@@ -707,8 +596,8 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
 
   const sections = SECTIONS;
 
-  // Sidebar search narrows the nav in place. A group survives the filter when
-  // it matches itself or when any of its sub-items match.
+  // Sidebar search narrows the nav in place; items that don't match drop out,
+  // and sections left empty disappear.
   const [navQuery, setNavQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const filteredSections = useMemo(() => {
@@ -717,10 +606,8 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
     return sections
       .map((section) => ({
         ...section,
-        items: section.items.filter(
-          (item) =>
-            item.label.toLowerCase().includes(q) ||
-            item.subItems?.some((sub) => sub.label.toLowerCase().includes(q)),
+        items: section.items.filter((item) =>
+          item.label.toLowerCase().includes(q),
         ),
       }))
       .filter((section) => section.items.length > 0);
@@ -731,10 +618,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
   useEffect(() => {
     if (railCollapsed) setNavQuery("");
   }, [railCollapsed]);
-
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const toggleGroup = (to: string) =>
-    setExpanded((prev) => ({ ...prev, [to]: !prev[to] }));
 
   const toggleRail = useCallback(() => {
     setRailCollapsed((v) => !v);
@@ -908,25 +791,7 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
         >
           <AnimatePresence mode="wait" initial={false}>
             {!railOpen ? (
-              <motion.div
-                key="rail"
-                className="flex min-h-0 flex-1 flex-col"
-                initial={reduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={
-                  reduceMotion
-                    ? { opacity: 0 }
-                    : {
-                        opacity: 0,
-                        transition: { duration: 0.11, ease: EASE_OUT },
-                      }
-                }
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : { duration: 0.14, ease: EASE_OUT }
-                }
-              >
+              <RailCrossfade key="rail">
                 {/* Rail brand row: the window's top-left drag band. */}
                 <div
                   className="flex h-14 shrink-0 items-center justify-center border-b border-border"
@@ -945,27 +810,9 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                 </div>
                 <NavRail sections={sections} pathname={location.pathname} />
                 <UserFooter compact />
-              </motion.div>
+              </RailCrossfade>
             ) : (
-              <motion.div
-                key="full"
-                className="flex min-h-0 flex-1 flex-col"
-                initial={reduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={
-                  reduceMotion
-                    ? { opacity: 0 }
-                    : {
-                        opacity: 0,
-                        transition: { duration: 0.11, ease: EASE_OUT },
-                      }
-                }
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : { duration: 0.14, ease: EASE_OUT }
-                }
-              >
+              <RailCrossfade key="full">
                 {/* Full brand row: drag band for the window's top-left corner.
                     The brand text is part of the band; the toggle is a
                     nested no-drag island (plus the app-wide control rule), so
@@ -992,15 +839,11 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
                   inputRef={searchRef}
                 />
                 <NavList
-                  idPrefix="sidebar"
                   sections={filteredSections}
-                  expanded={expanded}
-                  onToggleGroup={toggleGroup}
                   pathname={location.pathname}
-                  search={location.search}
                 />
                 <UserFooter />
-              </motion.div>
+              </RailCrossfade>
             )}
           </AnimatePresence>
         </motion.aside>
@@ -1082,7 +925,6 @@ function AppShellInternal({ children }: { children?: ReactNode }) {
               <MobileDrawerContent
                 sections={sections}
                 pathname={location.pathname}
-                search={location.search}
                 onClose={() => setMobileOpen(false)}
               />
             </motion.div>

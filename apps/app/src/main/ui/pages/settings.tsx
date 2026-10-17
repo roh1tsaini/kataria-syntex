@@ -150,12 +150,10 @@ function UpdatesPanel() {
 
 /** One grouped row — label (+optional hint) left, control right, ≥44px tall. */
 function SettingsRow({
-  htmlFor,
   label,
   hint,
   children,
 }: {
-  htmlFor?: string;
   label: string;
   hint?: string;
   children?: React.ReactNode;
@@ -163,7 +161,7 @@ function SettingsRow({
   return (
     <div className="flex flex-col gap-2 border-b border-border px-4 py-3 last:border-b-0 sm:min-h-11 sm:flex-row sm:items-center sm:gap-4 sm:py-2">
       <div className="min-w-0 flex-1">
-        <Label htmlFor={htmlFor}>{label}</Label>
+        <Label>{label}</Label>
         {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
       </div>
       {children}

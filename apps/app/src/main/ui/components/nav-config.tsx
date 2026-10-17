@@ -5,16 +5,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type SubNavItem = {
-  to: string;
-  label: string;
-};
 type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
   end?: boolean;
-  subItems?: SubNavItem[];
 };
 export type NavSection = { title: string; items: NavItem[] };
 
@@ -48,14 +43,4 @@ export function isItemActive(item: NavItem, pathname: string): boolean {
   return item.end
     ? pathname === item.to
     : pathname === item.to || pathname.startsWith(`${item.to}/`);
-}
-
-export function isSubActive(
-  sub: SubNavItem,
-  pathname: string,
-  search: string,
-): boolean {
-  const [path, query] = sub.to.split("?");
-  if (query) return pathname === path && search === `?${query}`;
-  return pathname === path || pathname.startsWith(`${path}/`);
 }

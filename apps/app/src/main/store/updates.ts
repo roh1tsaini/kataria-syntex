@@ -14,12 +14,13 @@
  */
 import { create } from "zustand";
 import { toast } from "sonner";
-import { compareSemver, floorAppliesTo } from "@kataria-syntex/shared";
 import {
-  apiOrigin,
-  setUpdateRequiredHandler,
+  compareSemver,
+  floorAppliesTo,
+  type ReleaseManifest,
   type UpdateProgress,
-} from "@kataria-syntex/app-core";
+} from "@kataria-syntex/shared";
+import { apiOrigin, setUpdateRequiredHandler } from "@kataria-syntex/app-core";
 import {
   clearStagedApkVersion,
   desktopBridge,
@@ -42,7 +43,7 @@ import {
  * the blocking dialog maps it to copy and nothing else inspects it, so a
  * release that is not published yet can never read as "no network".
  */
-export type UpdateFailure =
+type UpdateFailure =
   /** The release manifest itself could not be read. */
   | "manifest_unavailable"
   /** The server's floor is ahead of what is published — nothing to install. */
@@ -109,19 +110,7 @@ function releasesManifestUrl(): string {
   return `${apiOrigin()}/releases/app/android/latest.json`;
 }
 
-type DesktopArchPaths = { x64?: string; arm64?: string };
-
-type LatestManifest = {
-  version: string;
-  android?: { apk?: string; sha256?: string; size?: number };
-  desktop?: {
-    win?: DesktopArchPaths;
-    mac?: string;
-    linux?: DesktopArchPaths;
-  };
-};
-
-async function fetchManifest(): Promise<LatestManifest | null> {
+async function fetchManifest(): Promise<ReleaseManifest | null> {
   try {
     const res = await fetch(releasesManifestUrl(), {
       // Manifests are served with max-age=60 for native updaters; the browser
@@ -134,14 +123,14 @@ async function fetchManifest(): Promise<LatestManifest | null> {
     if (body === null || typeof body !== "object") return null;
     const rec = body as Record<string, unknown>;
     if (typeof rec.version !== "string") return null;
-    return body as LatestManifest;
+    return body as ReleaseManifest;
   } catch {
     return null;
   }
 }
 
 /** The manifest artifact this host installs. */
-function artifactFor(manifest: LatestManifest): string | null {
+function artifactFor(manifest: ReleaseManifest): string | null {
   const mac = manifest.desktop?.mac;
   return typeof mac === "string" && mac.startsWith("/releases/")
     ? `${apiOrigin()}${mac}`
@@ -205,7 +194,7 @@ function drainDeferredCheck(): void {
 
 /** Android stages downloaded bytes only; Settings owns the installer tap. */
 async function stageAndroidInBackground(
-  manifest: LatestManifest,
+  manifest: ReleaseManifest,
 ): Promise<void> {
   const s = useUpdates.getState();
   if (s.status === "downloading" || s.status === "installing") return;

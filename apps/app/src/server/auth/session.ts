@@ -100,7 +100,7 @@ export async function createSessionForUser(
   d: Db,
   userId: string,
   meta: DeviceMeta,
-): Promise<{ token: string; deviceId: string; sessionId: string }> {
+): Promise<{ token: string }> {
   const now = new Date();
   const nowIso = toIso(now);
 
@@ -143,5 +143,5 @@ export async function createSessionForUser(
     expiresAt: toIso(new Date(now.getTime() + SESSION_TTL_MS)),
   });
 
-  return { token, deviceId: device.id, sessionId };
+  return { token };
 }

@@ -110,10 +110,10 @@ authPasswordRoute.post("/password/login", async (c) => {
   // ceilings stand.
   await db.delete(rateLimits).where(eq(rateLimits.key, deviceBudgetKey));
 
-  const { token, deviceId } = await issueSession(c, db, user.id);
+  const { token } = await issueSession(c, db, user.id);
   const payload = await authPayload(db, user.id);
   if (!payload) return apiError(c, "internal_server_error", 500);
-  return c.json({ status: "ok", token, deviceId, ...payload });
+  return c.json({ status: "ok", token, ...payload });
 });
 
 // ── Password change ─────────────────────────────────────────────────────────

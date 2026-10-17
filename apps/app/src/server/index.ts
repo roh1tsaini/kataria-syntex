@@ -27,9 +27,9 @@ app.use("*", secureHeaders());
  * capacitor.config.ts sets server.androidScheme "https" and Capacitor's
  * hostname default is "localhost", so the origin is https://localhost. That
  * is a first-party app shell, not a third-party site: it is fixed by our own
- * native config, so it is allowed here unconditionally and never via
- * CORS_ORIGIN (an optional, manually-maintained env var — depending on it
- * for a structural origin silently bricks the whole app as "offline").
+ * native config, so it is allowed here unconditionally (depending on a
+ * deploy-time allowlist for a structural origin silently bricks the whole app
+ * as "offline").
  *
  * Every request from the WebView is cross-origin to this Worker and carries
  * custom headers (X-App-Version and friends), so it needs a passing
@@ -43,22 +43,13 @@ const SHELL_ORIGINS = ["https://localhost"];
 app.use(
   "*",
   cors({
-    origin: (origin, c) => {
+    origin: (origin) => {
       if (!origin) return null;
       // An opaque "null" origin (sandboxed frame, file://) is never
       // trusted — any page can present it, so it stays out of every
       // allowlist.
       if (origin === "null") return null;
-      if (SHELL_ORIGINS.includes(origin)) return origin;
-      // Third-party origins (the public website) stay opt-in per env.
-      const allowed = (c.env as Env).CORS_ORIGIN;
-      if (!allowed) return null;
-      return allowed
-        .split(",")
-        .map((s) => s.trim())
-        .includes(origin)
-        ? origin
-        : null;
+      return SHELL_ORIGINS.includes(origin) ? origin : null;
     },
     credentials: true,
     allowHeaders: [
@@ -83,7 +74,8 @@ app.use("/api/*", async (c, next) => {
 
 app.route("/api", healthRoute);
 app.route("/api/telegram", telegramRoute);
-// Force-update gate sits above every domain route — see lib/version-gate.ts.
+// Force-update gate — see lib/version-gate.ts. /api/health and the Telegram
+// webhook register above it; /api/auth registers below but is exempt by path.
 app.use("/api/*", versionGate);
 app.route("/api/auth", authRoute);
 
@@ -93,14 +85,5 @@ app.notFound((c) => {
 
 app.onError((err, c) => {
   console.error("unhandled_error", err);
-  const dev = c.env.APP_ENV === "development";
-  return c.json(
-    {
-      error: "internal_server_error",
-      ...(dev
-        ? { detail: err instanceof Error ? err.message : String(err) }
-        : {}),
-    },
-    500,
-  );
+  return c.json({ error: "internal_server_error" }, 500);
 });

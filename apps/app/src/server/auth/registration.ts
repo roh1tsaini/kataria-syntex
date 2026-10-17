@@ -2,7 +2,7 @@ import { eq, sql, type SQL } from "drizzle-orm";
 import { appSettings } from "../db/schema";
 import { getDb } from "../lib/db";
 
-export const REGISTRATION_SETTING_KEY = "public_registrations";
+const REGISTRATION_SETTING_KEY = "public_registrations";
 
 /**
  * Public signups are opt-in: the setting row must exist and read "on". A

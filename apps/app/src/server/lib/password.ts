@@ -37,17 +37,8 @@ let computeHashPromise: Promise<computeHash> | undefined;
 
 function loadInstance(module: WebAssembly.Module) {
   return async (imports: WebAssembly.Imports) => {
-    const instance =
-      typeof WebAssembly.instantiate === "function"
-        ? await WebAssembly.instantiate(module, imports)
-        : new WebAssembly.Instance(module, imports);
-    return {
-      module,
-      instance:
-        instance instanceof WebAssembly.Instance
-          ? instance
-          : (instance as { instance: WebAssembly.Instance }).instance,
-    };
+    const instance = await WebAssembly.instantiate(module, imports);
+    return { module, instance };
   };
 }
 
@@ -158,7 +149,7 @@ export function isUsablePasswordHash(stored: string): boolean {
  *  real verification — response timing must not tell accounts apart. */
 const DUMMY_SALT = new Uint8Array(SALT_BYTES).fill(0x5a);
 
-export type PasswordCheck = {
+type PasswordCheck = {
   ok: boolean;
   /** The stored hash matched but predates the current recipe — the caller
    *  rewrites it after a successful login. */

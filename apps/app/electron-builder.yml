@@ -26,13 +26,6 @@ extraMetadata:
 
 asar: true
 
-# Generic feed — electron-builder emits local feed files during packaging.
-# CI builds the published per-platform feeds from the shared release info in
-# scripts/publish-releases.ts instead.
-publish:
-  provider: generic
-  url: https://app.katariasyntex.workers.dev/releases/app/desktop
-
 win:
   # CPU targets come from the CLI — one arch per CI job (--x64 / --arm64);
   # a plain local build packages the host CPU. An arch list here would be

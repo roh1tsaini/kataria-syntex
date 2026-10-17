@@ -5,9 +5,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Download, Globe } from "lucide-react";
-import { COMPANY_DETAILS } from "@kataria-syntex/shared";
 import { apiOrigin } from "@kataria-syntex/app-core";
+import type { ReleaseManifest } from "@kataria-syntex/shared";
 import { detectDownloadTarget, type DownloadTarget } from "@/lib/platform";
+import { BrandLockup } from "@/ui/components/brand";
 import { Button } from "@/ui/components/ui/button";
 import { ThemeSwitch } from "@/ui/components/ui/theme-switch";
 import { Card, CardContent } from "@/ui/components/ui/card";
@@ -108,6 +109,17 @@ function releasePath(value: unknown): string | undefined {
     : undefined;
 }
 
+/** Narrows the fetched JSON to the shared manifest contract. Only `version`
+ *  is required — every path still goes through releasePath, so a malformed
+ *  platform entry reads as "no build" instead of failing the page. */
+function asReleaseManifest(value: unknown): ReleaseManifest | null {
+  const body = asRecord(value);
+  if (typeof body?.version !== "string" || body.version.trim() === "") {
+    return null;
+  }
+  return value as ReleaseManifest;
+}
+
 async function fetchRelease(): Promise<ReleaseInfo | null> {
   try {
     const response = await fetch(
@@ -119,25 +131,18 @@ async function fetchRelease(): Promise<ReleaseInfo | null> {
     );
     if (!response.ok) return null;
 
-    const body = asRecord(await response.json());
-    if (typeof body?.version !== "string" || body.version.trim() === "") {
-      return null;
-    }
-
-    const android = asRecord(body.android);
-    const desktop = asRecord(body.desktop);
-    const win = asRecord(desktop?.win);
-    const linux = asRecord(desktop?.linux);
+    const manifest = asReleaseManifest(await response.json());
+    if (!manifest) return null;
 
     return {
-      version: body.version,
+      version: manifest.version,
       paths: {
-        "win-x64": releasePath(win?.x64),
-        "win-arm64": releasePath(win?.arm64),
-        "mac-arm64": releasePath(desktop?.mac),
-        "linux-x64": releasePath(linux?.x64),
-        "linux-arm64": releasePath(linux?.arm64),
-        android: releasePath(android?.apk),
+        "win-x64": releasePath(manifest.desktop?.win?.x64),
+        "win-arm64": releasePath(manifest.desktop?.win?.arm64),
+        "mac-arm64": releasePath(manifest.desktop?.mac),
+        "linux-x64": releasePath(manifest.desktop?.linux?.x64),
+        "linux-arm64": releasePath(manifest.desktop?.linux?.arm64),
+        android: releasePath(manifest.android?.apk),
       },
     };
   } catch {
@@ -260,19 +265,7 @@ export function DownloadPage() {
     <main className="min-h-dvh bg-background px-4 py-10 sm:px-6">
       <div className="mx-auto flex w-full max-w-[40rem] flex-col gap-8">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background">
-              <span
-                className="text-lg font-semibold leading-none tracking-tight"
-                aria-hidden
-              >
-                K
-              </span>
-            </div>
-            <div className="text-[17px] font-semibold tracking-tight">
-              {COMPANY_DETAILS.name} Biz App
-            </div>
-          </div>
+          <BrandLockup />
           <ThemeSwitch />
         </div>
 

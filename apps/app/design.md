@@ -66,13 +66,13 @@ Never mix two spacings for the same relationship on one screen.
 
 ### 2.2 Radius ladder (one family, continuous feel)
 
-Base `--radius: 0.625rem` (10px):
+Base `--radius-md: 0.625rem` (10px):
 
 | Token             | Value | Used for                               |
 | ----------------- | ----- | -------------------------------------- |
 | `rounded-sm`      | 8px   | badges, chips, small tags              |
 | `rounded-md`/base | 10px  | inputs, navigation rows                |
-| `rounded-lg`      | 12px  | cards, filter bars, table containers   |
+| `rounded-lg`      | 12px  | cards, panels                          |
 | `rounded-xl`      | 16px  | dialogs                                |
 | `rounded-2xl`     | 20px  | bottom sheets (mobile drawers/dialogs) |
 
@@ -117,11 +117,11 @@ no text-transform on body copy.
 
 ### 2.4.1 Dates & numbers
 
-- Dates render `DD Mon YYYY` (`03 Sep 2026`) via `fmtDate` (`ui/lib/format.ts`),
-  parsed timezone-safe: date-only strings build from parts, never UTC.
-- Fresh timestamps render relative through `fmtRelative` (`ui/lib/format.ts`):
-  "Active now", "12 min ago", "3 hr ago", "Yesterday" — anything older falls
-  back to `fmtDate`. Same single home, one wording everywhere.
+- Dates render through `fmtRelative` (`packages/shared/src/format.ts`), the one
+  public date formatter: "Active now", "12 min ago", "3 hr ago", "Yesterday";
+  anything older falls back to a fixed `DD Mon YYYY` (`03 Sep 2026`) date.
+- The fixed-date fallback parses timezone-safe: date-only strings build from
+  parts, never UTC. One home, one wording, everywhere.
 - Numbers that update render as static text with `tabular-nums`; there is no
   animated counter. Under `prefers-reduced-motion` nothing animates anyway.
 
@@ -141,11 +141,9 @@ no text-transform on body copy.
 
 ### 2.6 Shadows & materials
 
-- `--shadow-soft` (rest) → `--shadow-lift` (hover) → `--shadow-overlay`
-  (floating). `--shadow-lift` is `0 4px 12px -4px oklch(0 0 0 / 10%),
-0 2px 6px -2px oklch(0 0 0 / 6%)`.
-  Cards rest flat with hairline borders; lift max −1px on hover.
-- Floating chrome (app header, sticky action bars): translucent
+- `--shadow-soft` (rest) → `--shadow-overlay` (floating). Cards rest flat
+  with hairline borders.
+- Floating chrome (app header, floating phone navigation): translucent
   `color-mix` background + `backdrop-blur` + hairline edge. Content scrolls
   under it. The header sits on the page background (`bg-background/85`,
   `bg-background/70` where backdrop-filter is supported), never `bg-card` —
@@ -154,7 +152,6 @@ no text-transform on body copy.
 - Frosted glass & blur surfaces:
   - Header chrome: `backdrop-blur-xl bg-background/85 supports-[backdrop-filter]:bg-background/70`
   - Floating capsule / circle navigation: `capsule-surface` / `menu-float-circle` with `backdrop-filter: blur(12px) saturate(1.4)` and `color-mix(in oklch, var(--card) 78%, transparent)`
-  - Sticky mobile action bars (`.sticky-action-bar`): `backdrop-filter: blur(12px) saturate(1.4)` and `color-mix(in oklch, var(--card) 85%, transparent)`
   - Dialog scrims: `bg-black/40 backdrop-blur-[4px]`
   - Under `prefers-reduced-transparency: reduce`, all frosted glass surfaces collapse to solid background/card fills and remove backdrop filters.
 - Header right side: the company name is bare muted text — no bordered
@@ -297,12 +294,8 @@ appears on any platform.
   static 12px backdrop blur with 1.4 saturation, hairline border and overlay
   shadow. Unsupported/reduced-transparency environments use a solid card.
   Never animate blur or run an idle animation loop.
-- Content keeps its `pb-28` reservation below `md`. Mobile sticky actions sit
-  above the navigation footprint: `3.25rem` (item plus capsule inset), 2px
-  border, 12px bottom clearance and the bottom safe area. Their own padding
-  is 12px vertically and 16px horizontally; the safe area is counted only in
-  the bottom offset. This reservation stays stable while editing, so focus
-  changes do not move the actions. At `sm` and above, actions remain in flow.
+- Content keeps its `pb-28` reservation below `md` so the floating capsule
+  never covers the last row of content.
 - The bar is hidden while the navigation drawer is open and while editing a
   field. Native window controls retain their platform edge-click behavior.
 - Primitive: `src/main/ui/components/ui/circle-button.tsx` — `CircleButton`,
@@ -313,24 +306,25 @@ appears on any platform.
 
 ### 2.8 App identity (names — never invent variants)
 
-| Form  | Value                    | Used for                                                                                            |
-| ----- | ------------------------ | --------------------------------------------------------------------------------------------------- |
-| Short | `KS Biz App`             | sidebar header, compact chrome                                                                      |
-| Full  | `Kataria Syntex Biz App` | document `<title>`, installer/product names (Electron, Android strings), auth header, release names |
-| Never | `Kataria Challan` etc.   | — (does not exist)                                                                                  |
+| Form  | Value                    | Used for                                                              |
+| ----- | ------------------------ | --------------------------------------------------------------------- |
+| Short | `KS Biz App`             | sidebar header, compact chrome                                        |
+| Full  | `Kataria Syntex Biz App` | document `<title>`, Electron product name, auth header, release names |
+| Never | `Kataria Challan` etc.   | — (does not exist)                                                    |
 
 `Kataria Syntex` alone is the company name (sidebar subtitle,
-placeholders, fallbacks) — never the app name.
+placeholders, fallbacks, and the Android app label) — never the full app
+name.
 
 ## 3. Component specs (ui/*)
 
 | Component                                               | Contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button                                                  | One shared size: 40px desktop, 44px below `sm` and on coarse pointers. Radii from Section 2.2. Press: an `:active` fill via `.btn-motion` — filled variants fade ~15%, `outline`/`ghost` fill `muted`; never motion. Variants change surface treatment, not size or press response: `default` (foreground fill), `accent` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default`/`accent` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons.                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Navigation rows (`.app-nav-row`)                        | Sidebar and drawer text rows share one size: 40px desktop and 44px below `sm`, with 13px text, 10px radius, and the shared `:active` press tint. Nested rows keep the same height with 12px text. Icon rail items are 40px squares, 44px below `sm` or on coarse pointers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Button                                                  | One shared size: 40px desktop, 44px below `sm` and on coarse pointers. Radii from Section 2.2. Press: an `:active` fill via `.btn-motion` — filled variants fade ~15%, `outline`/`ghost` fill `muted`; never motion. Variants change surface treatment, not size or press response: `default` (foreground fill), `secondary`, `outline`, `ghost`, `destructive`, `link`. Max one `default` per cluster; destructive always confirm-gated. `loading` = disabled + dim + `aria-busy`; the label never changes and nothing is injected — no pulsing pill inside buttons.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Navigation rows (`.app-nav-row`)                        | Sidebar and drawer text rows share one size: 40px desktop and 44px below `sm`, with 13px text, 10px radius, and the shared `:active` press tint. Icon rail items are 40px squares, 44px below `sm` or on coarse pointers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | CircleButton / ButtonCapsule                            | App-wide icon actions (Section 2.7). Lone = circle 44px on every shell and pointer, hairline border, same `:active` fill press via `.btn-motion`. Adjacent icon actions join in a `ButtonCapsule` (`bg-muted/60`, `p-1`, `gap-1`, vertical variant for the rail); direct children lose their individual borders. Never for navigation rows.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Input                                                   | Height 40px desktop and 44px below `sm` or on coarse pointers, radius 10px, 1px border, focus = border-color goes accent (`--ring`) and nothing else: no `box-shadow` halo, no `outline`. The focus override lives in `@layer utilities` — a components-layer rule loses to the `border-input` utility regardless of specificity. Label 13px medium above, helper/error 12px below, `aria-invalid` on error.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Card                                                    | radius 12px, hairline border, padding 16/20px, no shadow at rest. Hover lift only for interactive cards.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Card                                                    | radius 12px, hairline border, padding 16/20px, no shadow at rest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Dialog                                                  | Desktop: centered, radius 16px, overlay scrim 40% + 4px backdrop blur, enter = fade + scale 0.96→1 + slight y. Mobile (≤sm): bottom sheet, radius 20px top, drag-to-dismiss. Exit mirrors entry exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Settings page (`settings.tsx`)                          | App settings is a normal routed page in the shell's content area, like every screen — same page gutter, standard `PageHeader`, and PageTransition, no scrim, no dialog semantics, no close button. One centered column (680px max) of stacked cards — Appearance, Updates, Security, Devices — each opening with a section head: 32px `rounded-sm` accent tile holding a 16px icon, 14px semibold name, 12px muted one-liner, hairline below. No section navigation, no search — every section is visible and the whole page scrolls in `.shell-scroll`. Identical at every width and on every shell; theme options sit three-across at `sm`+ and stack below.                                                                                                                                                                                                                                                                                                                                                              |
 | TabBar (`ui/tab-bar.tsx`)                               | `md:hidden` bottom navigation: a `fixed inset-x-0 bottom-0` bar holding one `.capsule-surface` tray (`--card` + `--shadow-overlay`, 12px blur, `rounded-full`, `p-1`, `gap-1`). Items are `size-11` circles carrying a single 20px stroke icon — no text label; `label` reaches users via `aria-label`/`title`. Press uses the same `:active` tint response as app buttons. The active item gets a shared `layoutId="selection"` pill (`bg-primary`, `SPRING`) plus a 260ms `tab-pop` icon pulse; reduced motion drops both. `aria-current="page"` marks the active route. It navigates routes, so it is not a `role="tablist"`.                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -338,7 +332,7 @@ placeholders, fallbacks) — never the app name.
 | Notification toast                                      | Card stack — top-centre at ≤sm, top-right at ≥sm — full contract in Section 3.2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Empty states                                            | Centered, icon 40px muted, title 15px semibold, one-line description, one action. No illustrations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Skeletons                                               | Same shape/size as the loaded content, `animate-pulse` muted. Spinners are banned. Route-level skeletons are page-specific (Section 3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Tables                                                  | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; hover muted bg 140ms; numbers tabular + right-aligned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Tables                                                  | Container card radius 12px; header row 11px uppercase muted; rows 44px (touch) / 40px desktop; numbers tabular + right-aligned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Update notice (`updates.ts`, `toast.tsx`)               | Notification toast (Section 3.2) — full visual contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Update gate (`update-surface.tsx`, `update-dialog.tsx`) | The one undismissable dialog — full contract in Section 3.3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Progress bar (`progress-bar.tsx`)                       | Download/install progress — track `bg-muted` h-2 radius-full, fill `bg-primary` width 0–100% with `transition-[width] duration-200 ease-out` (no JS animation loop: the store already throttles samples and a CSS transition absorbs their spacing). Readout is `formatUpdateProgress` (percent · total size) in `tabular-nums` 12px muted — no transferred bytes, no ETA. `role="progressbar"` + `aria-valuenow`; a `totalBytes` of 0 means unknown and the bar shows an indeterminate shimmer instead of a lying 0%. Never a spinner (Section 3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -363,9 +357,10 @@ layout — never one generic shape for all pages.
 - **Page-level (data load):** pages keep their own shaped skeletons in place
   of their real blocks. Never a bare rectangle where structured content will
   appear.
-- **Building blocks:** `PageHeaderSkeleton` (eyebrow `h-3 w-20`, title
-  `h-8 w-56`, description `h-3 w-72`, actions `h-10 w-32 rounded-full`),
-  `SettingsSkeleton`, `DevicesSkeleton`.
+- **Building blocks:** `PageHeaderSkeleton` (eyebrow `h-3 w-20`, title `h-8 w-56`,
+  description `h-3 w-72`, action `h-11 w-32 rounded-full sm:h-10 touch-44`),
+  `DeviceRowSkeleton` (shared by `DevicesSkeleton` and the devices panel's own
+  loading state), `SettingsSkeleton`, `DevicesSkeleton`.
 - **Rules:** every skeleton is `aria-hidden`; `animate-pulse` only
   (globals.css collapses it under `prefers-reduced-motion`); tokens only,
   no raw colors; a new screen ships with its own skeleton entry in
@@ -441,9 +436,8 @@ Android toast file.
 ## 4. Layout
 
 - Content max width: 1200px for data pages, 680px for settings, 640px for forms/auth.
-- Page structure is always: `PageHeader` (title + desc + actions) → optional
-  filter bar → content. Eyebrow, title, and description never repeat the
-  same concept. One primary action top-right; secondary inside.
+- Page structure is always: `PageHeader` (eyebrow + title + description) →
+  content. Eyebrow, title, and description never repeat the same concept.
 - Mobile: single column, cards; ≥sm: grids (`minmax(0,1fr)`); ≥xl: data grids
   up to 4 columns. Card grids keep equal heights (`grid` + stretch).
 - Mobile nav: floating shortcuts (Section 2.7.2) plus one full-screen nav
@@ -459,8 +453,8 @@ Android toast file.
   (44px circles, Section 2.7), the shared nav list, and a pinned footer:
   identity (avatar 36px + name + email/phone) left, a theme-toggle + log-out
   circle capsule right. Drawer and sidebar text rows share
-  `.app-nav-row` / `.nav-subrow`: 40px desktop, 44px below `sm` or on
-  coarse pointers, 13px/12px labels, 16px icons, and `rounded-md` selection.
+  `.app-nav-row`: 40px desktop, 44px below `sm` or on
+  coarse pointers, 13px labels, 16px icons, and `rounded-md` selection.
   Reduced-motion disables spatial movement and keeps fades within 200ms.
 - **Nav density — list or grid.** The drawer's nav list has two renderings
   from one source: **list** (default) is the `.app-nav-row` column above;
@@ -474,20 +468,15 @@ Android toast file.
   both renderings — only the arrangement changes.
 - **Sidebar search.** The expanded desktop sidebar carries one filter field
   between the brand row and the nav: 32px tall, `bg-muted`, transparent border,
-  `Search` icon left, a `⌘K` hint right. It narrows the nav list in place — a
-  group survives when it matches itself or when any sub-item matches — and
-  sections with no surviving item drop out. `Ctrl/Cmd+K` focuses it (expanding
+  `Search` icon left, a `⌘K` hint right. It narrows the nav list in place —
+  items that don't match drop out, and a section left with no items
+  disappears. `Ctrl/Cmd+K` focuses it (expanding
   the rail first if collapsed); Escape clears a non-empty field. It is not a
   command palette and never searches data. Absent from the collapsed rail.
 - A collapsed sidebar expands on hover as an overlay — the page underneath
   never moves. Opening waits ~120ms of hover intent; closing waits ~180ms
   after the pointer leaves. The overlay carries no shadow — the hairline
   border is the only edge in the shell.
-- A parent item with sub-items is a toggle, never a selection: it never
-  takes the accent pill, even when one of its subs is active. The active
-  sub alone takes the pill; the parent renders `font-medium
-text-foreground` while a sub is active. The collapsed rail keeps the
-  pill on the parent icon (its subs aren't visible there).
 - Every screen answers: Where am I? (header) Where can I go? (nav)
   How do I get out? (back/close) — wayfinding is never optional.
 
@@ -606,15 +595,16 @@ Dialogs enter and exit on one curve pair, never a cut.
 | Per-screen route skeletons (Section 3.1)        | `src/main/ui/components/page-skeletons.tsx`                                           |
 | Primitives (shadcn-style)                       | `src/main/ui/components/ui/*`                                                         |
 | Morphing disclosure panels                      | `src/main/ui/components/ui/disclosure.tsx`                                            |
-| Nav display preferences (density)               | `src/main/ui/lib/nav-prefs.ts`                                                        |
+| Nav display preferences (density)               | `packages/app-core/src/nav-prefs.ts`                                                  |
 | Circular icon buttons & capsules (Section 2.7)  | `src/main/ui/components/ui/circle-button.tsx`                                         |
 | Theme toggle (cross-rotate, Section 2.7)        | `src/main/ui/components/ui/theme-switch.tsx`                                          |
 | App frame (sidebar/header/nav drawer)           | `src/main/ui/components/app-shell.tsx`                                                |
 | Settings page (stacked sections, Section 3)     | `src/main/ui/pages/settings.tsx`                                                      |
-| Nav tree (sections/items/subs)                  | `src/main/ui/components/nav-config.tsx`                                               |
+| Nav config (sections/items)                     | `src/main/ui/components/nav-config.tsx`                                               |
 | Page scaffold                                   | `src/main/ui/components/page-header.tsx`                                              |
 | Update surfaces (notice/gate)                   | `src/main/ui/components/update-surface.tsx`                                           |
 | Notification toast (Section 3.2)                | `src/main/ui/components/toast.tsx`, configured in `main.tsx`, mounted in `ui/App.tsx` |
+| Brand mark + lockup (sidebar, auth, download)   | `src/main/ui/components/brand.tsx`                                                    |
 | OS brand glyphs (download/entry)                | `src/main/ui/components/brand-icons.tsx`                                              |
 | Error-code → human copy                         | `packages/app-core/src/errors.ts` (`friendlyError`)                                   |
 

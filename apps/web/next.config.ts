@@ -1,12 +1,7 @@
 import type { NextConfig } from "next";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 
 // Rendered by Vinext on Cloudflare Workers — see apps/web/vite.config.ts +
-// wrangler.jsonc for the Workers setup. Vinext loads this file as ESM, so no
-// CommonJS globals (__dirname) here.
+// wrangler.jsonc for the Workers setup.
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -46,9 +41,6 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  compress: true,
-  outputFileTracingRoot: root,
-  turbopack: { root },
   // Images ship as pre-optimized static WebP (public/images/) — there is no
   // server optimizer behind /_next/image (the Cloudflare adapter needs the
   // paid Images binding), so next/image serves files as-is.

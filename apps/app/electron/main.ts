@@ -20,7 +20,6 @@ import {
   net,
   protocol,
   safeStorage,
-  session,
   shell,
   type IpcMainInvokeEvent,
   type MenuItemConstructorOptions,
@@ -278,8 +277,8 @@ async function handleApi(raw: unknown) {
   const token = await readToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), req.timeoutMs ?? 30_000);
-  const method = req.method ?? "GET";
+  const timer = setTimeout(() => ctrl.abort(), req.timeoutMs);
+  const method = req.method;
   try {
     const res = await net.fetch(url, {
       method,
@@ -532,17 +531,6 @@ async function onReady(): Promise<void> {
   installApplicationMenu();
   // Restore the previous window geometry + theme before the first paint.
   initialState = await loadDesktopState();
-
-  // Pre-fix installs stored the login Set-Cookie in the default session's
-  // jar (handleApi used to send credentials). The transport is Bearer-only
-  // now — clear any leftover so the jar can never act as a second
-  // credential after a keychain logout.
-  await session.defaultSession
-    .clearStorageData({
-      origin: new URL(API_ORIGIN).origin,
-      storages: ["cookies"],
-    })
-    .catch((error: unknown) => console.error("cookie_cleanup_failed", error));
 
   // Serve the packaged renderer: app://bundle/<path> → APP_ROOT/dist/<path>.
   // Host is ignored; only the path matters, and it may not escape dist/.

@@ -117,7 +117,6 @@ export function TabBar({ items, pathname, onMore, hidden }: TabBarProps) {
             onClick={onMore}
             aria-label="More navigation"
             aria-haspopup="dialog"
-            aria-expanded={false}
             title="More navigation"
             className={cn(
               itemClass,

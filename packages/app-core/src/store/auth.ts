@@ -25,7 +25,6 @@ type MePayload = {
 };
 
 type LookupResult = {
-  type: "phone" | "email";
   exists: boolean;
   hasPassword: boolean;
   registrationClosed: boolean;
@@ -42,7 +41,6 @@ export type QrLoginCode = {
    *  transmitted to the scanning device — without it the code cannot be
    *  claimed, so a screenshot or forwarded link is worthless. */
   claimSecret: string;
-  expiresIn: number;
   payload: string;
   expiresAt: string;
 };
@@ -55,7 +53,6 @@ type QrApproveOutcome = {
 
 type SessionPayload = MePayload & {
   token: string;
-  deviceId: string;
 };
 
 type AuthState = {
@@ -298,7 +295,6 @@ export const useAuth = create<AuthState>()((set, get) => ({
     ) {
       applySession(set, {
         token: res.token,
-        deviceId: res.deviceId ?? "",
         user: res.user,
       });
     }

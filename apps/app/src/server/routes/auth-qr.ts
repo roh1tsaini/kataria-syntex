@@ -15,7 +15,6 @@ import {
   approveQrLogin,
   claimQrLogin,
   qrLoginInfo,
-  QR_TTL_SECONDS,
 } from "../auth/qr-login";
 
 import { requireAuth } from "../auth/session";
@@ -154,7 +153,6 @@ authQrRoute.post("/qr/start", async (c) => {
   return c.json({
     code,
     claimSecret,
-    expiresIn: QR_TTL_SECONDS,
     payload: payloadUrl,
     expiresAt: expiresAt.toISOString(),
   });
@@ -250,9 +248,9 @@ authQrRoute.post("/qr/status", async (c) => {
   if (result.status === "expired") return c.json({ status: "expired" });
   if (result.status === "not_found") return c.json({ status: "not_found" });
 
-  const { token, deviceId } = result.session;
+  const { token } = result.session;
   setSessionCookie(c, token);
   const payload = await authPayload(db, result.userId);
   if (!payload) return apiError(c, "internal_server_error", 500);
-  return c.json({ status: "ok", token, deviceId, ...payload });
+  return c.json({ status: "ok", token, ...payload });
 });

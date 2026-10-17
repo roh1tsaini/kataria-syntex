@@ -10,7 +10,6 @@
 
 export {
   configureCore,
-  core,
   type Host,
   type CoreStorage,
   type PlatformAdapter,
@@ -20,24 +19,10 @@ export { ApiError, api, apiOrigin, setUpdateRequiredHandler } from "./api";
 
 export { friendlyError } from "./errors";
 export { configureToasts, toastSuccess, toastError } from "./toast";
-export { registerDataCache } from "./data-caches";
-export {
-  readNavDensity,
-  writeNavDensity,
-  clearNavPrefs,
-  type NavDensity,
-} from "./nav-prefs";
-
-// Update-download progress (ETA math shared by every shell's update store)
-export { type UpdateProgress } from "./progress";
+export { readNavDensity, writeNavDensity, type NavDensity } from "./nav-prefs";
 
 // Stores
-export {
-  useAuth,
-  type User,
-  type Device,
-  type QrLoginCode,
-} from "./store/auth";
+export { useAuth, type Device, type QrLoginCode } from "./store/auth";
 
 // Offline read cache + network reachability
 export { useSync } from "./offline/sync-state";

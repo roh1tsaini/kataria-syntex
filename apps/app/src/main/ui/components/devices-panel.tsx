@@ -15,10 +15,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/ui/components/ui/empty";
-import { Skeleton, Stagger, StaggerItem } from "@/ui/components/motion";
+import { Stagger, StaggerItem } from "@/ui/components/motion";
+import { DeviceRowSkeleton } from "@/ui/components/page-skeletons";
 import { useConfirm } from "@/ui/components/confirm-dialog";
-import { fmtRelative } from "@kataria-syntex/shared";
-import { cn } from "@/ui/lib/cn";
+import { devicePlatformLabel, fmtRelative } from "@kataria-syntex/shared";
 import {
   useAuth,
   type Device,
@@ -26,14 +26,6 @@ import {
   toastSuccess,
   friendlyError,
 } from "@kataria-syntex/app-core";
-
-/** Plain names for the three shells — the stored value is a platform token,
- * never something to show a user. */
-const PLATFORM_LABEL: Record<string, string> = {
-  android: "Android app",
-  web: "Web browser",
-  desktop: "Desktop app",
-};
 
 function platformIcon(platform: string) {
   if (platform === "android")
@@ -55,7 +47,7 @@ function DeviceRow({
   deleting: boolean;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const platform = PLATFORM_LABEL[device.platform] ?? "App";
+  const platform = devicePlatformLabel(device.platform);
 
   return (
     <div className="flex items-start gap-3 border-b border-border/65 px-4 py-3 last:border-b-0 sm:px-5">
@@ -134,19 +126,7 @@ function DevicesPanelSkeleton() {
   return (
     <div>
       {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="flex items-start gap-3 border-b border-border/65 px-4 py-3 last:border-b-0 sm:px-5"
-        >
-          <Skeleton className="size-10 shrink-0 rounded-lg" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-3 w-52" />
-          </div>
-          {i > 0 && (
-            <Skeleton className="size-11 shrink-0 rounded-full sm:h-10 sm:w-24 touch-44" />
-          )}
-        </div>
+        <DeviceRowSkeleton key={i} padded action={i > 0} />
       ))}
     </div>
   );

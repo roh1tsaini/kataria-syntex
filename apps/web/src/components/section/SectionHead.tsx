@@ -1,4 +1,5 @@
 import { Reveal } from "@/components/motion/Reveal";
+import { Kicker } from "@/components/section/Kicker";
 import { cn } from "@kataria-syntex/shared";
 
 /**
@@ -20,18 +21,7 @@ export function SectionHead({
 }) {
   return (
     <Reveal className={cn("max-w-3xl", className)}>
-      <p
-        className={cn(
-          "flex items-center gap-3 font-body text-[11px] font-bold uppercase tracking-[0.07em]",
-          invert ? "text-sky" : "text-royal",
-        )}
-      >
-        <span
-          aria-hidden="true"
-          className={cn("h-px w-8", invert ? "bg-sky/50" : "bg-royal/40")}
-        />
-        {kicker}
-      </p>
+      <Kicker invert={invert}>{kicker}</Kicker>
       <h2
         className={cn(
           "mt-4 text-balance font-display text-[clamp(1.875rem,3.6vw,2.625rem)] font-bold leading-[1.06] tracking-tight",

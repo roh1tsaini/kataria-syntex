@@ -57,7 +57,6 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode APP_VERSION_CODE
         versionName APP_VERSION
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // The host the https deep-link filter claims (the QR-login payload is
         // <origin>/login/scan/<code>). CI passes the same value the web bundle
         // bakes as VITE_API_URL; a local build without it gets a placeholder so
@@ -142,19 +141,7 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
 }
 
 apply from: 'capacitor.build.gradle'
-
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}

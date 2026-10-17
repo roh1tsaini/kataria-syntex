@@ -23,5 +23,6 @@ export * from "./products";
 export * from "./validation";
 export * from "./semver";
 export * from "./format";
+export * from "./devices";
 export * from "./next-path";
 export * from "./releases";

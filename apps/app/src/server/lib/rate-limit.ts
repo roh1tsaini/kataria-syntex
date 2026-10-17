@@ -1,6 +1,6 @@
 import { and, eq, gt, lt, lte, or, sql } from "drizzle-orm";
 import { rateLimits } from "../db/schema";
-import type { Db, Queryable } from "./db";
+import type { Db } from "./db";
 
 export type StrictBudget = {
   key: string;
@@ -8,7 +8,7 @@ export type StrictBudget = {
   windowMs: number;
 };
 
-export type StrictBudgetReservation = {
+type StrictBudgetReservation = {
   allowed: boolean;
   reserved: StrictBudget[];
   denied?: StrictBudget;
@@ -140,7 +140,7 @@ export async function consumeBudgetsStrict(
  * storage errors let the request through.
  */
 export async function consumeBudget(
-  d: Queryable,
+  d: Db,
   key: string,
   max: number,
   windowMs: number,

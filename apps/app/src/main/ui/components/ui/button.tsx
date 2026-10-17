@@ -1,6 +1,6 @@
 /**
- * APP ONLY — Luma design system (oklch accents, dark mode, skeleton loading).
- * Do NOT copy to apps/web — web uses Living Weave (ecru/ink/stitch).
+ * APP ONLY — the business app's button (oklch accents, dark mode).
+ * Do NOT copy to apps/web — the website is its own blue brand system.
  */
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
@@ -14,8 +14,6 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-foreground text-background [@media(hover:hover)]:hover:bg-foreground/90 active:bg-foreground/85",
-        accent:
-          "bg-primary text-primary-foreground [@media(hover:hover)]:hover:bg-primary/90 active:bg-primary/85",
         outline:
           "border border-border bg-card [@media(hover:hover)]:hover:bg-muted [@media(hover:hover)]:hover:text-foreground active:bg-muted",
         secondary:

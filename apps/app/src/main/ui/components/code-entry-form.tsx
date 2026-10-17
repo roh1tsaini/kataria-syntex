@@ -2,6 +2,7 @@ import { type ReactNode, useState } from "react";
 import { Camera, CameraOff, CheckCircle2 } from "lucide-react";
 import { friendlyError } from "@kataria-syntex/app-core";
 import { useCameraScanner } from "@/ui/hooks/use-camera-scanner";
+import { SuffixInput } from "@/ui/components/suffix-input";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import {
@@ -15,7 +16,6 @@ import {
 type CodeEntryFormProps = {
   submitCode: (code: string) => Promise<unknown>;
   submitScanned: (id: string, suffix: string) => Promise<unknown>;
-  onDone?: () => void;
   label: string;
   description: string;
   scanHint: string;
@@ -32,7 +32,6 @@ function canonicalCode(value: string): string {
 export function CodeEntryForm({
   submitCode,
   submitScanned,
-  onDone,
   label,
   description,
   scanHint,
@@ -65,7 +64,6 @@ export function CodeEntryForm({
     try {
       await submitCode(canonicalCode(c));
       if (success) setApproved(true);
-      else onDone?.();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -80,7 +78,6 @@ export function CodeEntryForm({
     try {
       await submitScanned(scannedId, suffix);
       if (success) setApproved(true);
-      else onDone?.();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -116,25 +113,12 @@ export function CodeEntryForm({
         {scanned ? (
           <Field>
             <FieldLabel htmlFor="code-suffix">Code ends in</FieldLabel>
-            <Input
+            <SuffixInput
               id="code-suffix"
               value={suffix}
-              onChange={(e) =>
-                setSuffix(
-                  e.target.value
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9]/g, "")
-                    .slice(0, 4),
-                )
-              }
-              placeholder="XXXX"
-              className="font-mono tracking-[0.18em]"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              autoFocus
-              aria-invalid={!!error}
-              aria-describedby={error ? "code-entry-error" : undefined}
+              onChange={setSuffix}
+              error={error}
+              describedBy="code-entry-error"
             />
             <FieldDescription>
               QR scanned. Type the last 4 characters of the code shown on the

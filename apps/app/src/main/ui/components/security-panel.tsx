@@ -145,11 +145,6 @@ export function SecurityPanel() {
                     key={i}
                     index={i}
                     data-invalid={error ? true : undefined}
-                    className={
-                      error
-                        ? "[data-invalid=true]:border-destructive [data-invalid=true]:text-destructive"
-                        : undefined
-                    }
                   />
                 ))}
               </InputOTPGroup>

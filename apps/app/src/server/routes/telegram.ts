@@ -6,6 +6,7 @@ import {
   saveRegistrationsEnabled,
 } from "../auth/registration";
 import { answerTelegram } from "../lib/telegram";
+import { timingSafeEqual } from "../lib/token";
 
 const updateSchema = z.object({
   message: z
@@ -17,15 +18,6 @@ const updateSchema = z.object({
     .optional(),
 });
 
-function sameSecret(actual: string, expected: string): boolean {
-  const a = new TextEncoder().encode(actual);
-  const b = new TextEncoder().encode(expected);
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a[i] ^ b[i];
-  return mismatch === 0;
-}
-
 export const telegramRoute = new Hono<{ Bindings: Env }>();
 
 telegramRoute.post("/webhook", async (c) => {
@@ -36,7 +28,10 @@ telegramRoute.post("/webhook", async (c) => {
     !secret ||
     !token ||
     !adminId ||
-    !sameSecret(c.req.header("X-Telegram-Bot-Api-Secret-Token") ?? "", secret)
+    !timingSafeEqual(
+      c.req.header("X-Telegram-Bot-Api-Secret-Token") ?? "",
+      secret,
+    )
   )
     return c.json({ error: "unauthorized" }, 401);
 

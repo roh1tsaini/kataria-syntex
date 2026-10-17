@@ -24,10 +24,6 @@ import { releaseContentType } from "@kataria-syntex/shared";
 const MANIFEST_SUFFIX =
   /\/latest(\.json|\.yml|-linux\.yml|-linux-arm64\.yml|-mac\.yml)$/i;
 
-function contentType(key: string): string {
-  return releaseContentType(key);
-}
-
 function cacheControl(key: string): string {
   return MANIFEST_SUFFIX.test(key)
     ? "public, max-age=60"
@@ -36,7 +32,7 @@ function cacheControl(key: string): string {
 
 function baseHeaders(key: string, size: number, etag: string): Headers {
   const headers = new Headers({
-    "Content-Type": contentType(key),
+    "Content-Type": releaseContentType(key),
     "Cache-Control": cacheControl(key),
     ETag: etag,
     // Differential updaters probe this before slicing. Every response on this

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@kataria-syntex/app-core";
 import { initUpdateChecks } from "@/store/updates";
@@ -13,6 +13,7 @@ import { ChromeDragStrip, WindowControls } from "@/ui/components/title-bar";
 import {
   AuthSkeleton,
   ScanApproveSkeleton,
+  type ShellRoute,
 } from "@/ui/components/page-skeletons";
 import { NotFoundPage } from "@/ui/pages/not-found";
 
@@ -33,6 +34,15 @@ const DevicesPage = lazyRoute(() =>
 const SettingsPage = lazyRoute(() =>
   import("@/ui/pages/settings").then((m) => ({ default: m.SettingsPage })),
 );
+
+/** The shell's screens, keyed by the same union as the skeleton map
+ * (page-skeletons.tsx): a route that isn't a `ShellRoute` cannot be declared
+ * here, and every `ShellRoute` needs a skeleton there. "/" has its own
+ * top-level route — HomeOrDownload picks the shell or the download page. */
+const SHELL_SCREENS: Record<Exclude<ShellRoute, "/">, ReactNode> = {
+  "/devices": <DevicesPage />,
+  "/settings": <SettingsPage />,
+};
 
 function Home() {
   return <div className="min-h-[60vh]" />;
@@ -140,8 +150,9 @@ export function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route path="devices" element={<DevicesPage />} />
-                <Route path="settings" element={<SettingsPage />} />
+                {Object.entries(SHELL_SCREENS).map(([path, element]) => (
+                  <Route key={path} path={path} element={element} />
+                ))}
               </Route>
 
               <Route path="*" element={<NotFoundPage />} />

@@ -7,7 +7,7 @@
  * - setThemeBackground: persists the resolved theme background for the shell
  * - window controls for the custom title bar (minimize / toggle-maximize /
  *   close / maximized state) + host platform
- * - update bridge: check / status events / quit-and-install / app version
+ * - update bridge: check / status events / quit-and-install
  * Nothing else crosses the boundary.
  */
 import { contextBridge, ipcRenderer } from "electron";
@@ -47,7 +47,7 @@ const desktop = {
     };
   },
   // Update system (see electron/updater.ts): manual check, push status,
-  // quit-and-install (Windows/Linux), and the packaged version.
+  // quit-and-install (Windows/Linux).
   checkForUpdate: (): Promise<UpdateStatus> =>
     ipcRenderer.invoke("kc:update:check"),
   onUpdateStatus: (cb: (status: UpdateStatus) => void): (() => void) => {
@@ -59,7 +59,6 @@ const desktop = {
     };
   },
   restartToUpdate: (): Promise<void> => ipcRenderer.invoke("kc:update:restart"),
-  appVersion: (): Promise<string> => ipcRenderer.invoke("kc:update:version"),
   /** /releases/* URLs only (main-validated) — macOS dmg download flow. */
   openReleaseUrl: (url: string): Promise<void> =>
     ipcRenderer.invoke("kc:open-external", url),

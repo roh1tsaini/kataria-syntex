@@ -6,7 +6,7 @@ import { toIso, toDate } from "../lib/datetime";
 import type { Identifier } from "../lib/identifier";
 import { createSessionForUser, type DeviceMeta } from "./session";
 
-export const QR_TTL_SECONDS = 10 * 60;
+const QR_TTL_SECONDS = 10 * 60;
 
 export async function createQrLogin(
   d: Db,
@@ -100,7 +100,7 @@ type QrApproveResult =
  * only the id), or the full 16-character code typed in the in-app entry form.
  * Neither shape can be produced from a forwarded link or a screenshot.
  */
-export type QrApproveRef = { id: string; suffix: string } | { code: string };
+type QrApproveRef = { id: string; suffix: string } | { code: string };
 
 /** Uppercase letters + digits only — "QRST", "qrst", and "QRST-" all count. */
 function normalizeCodeText(value: string): string {
@@ -192,7 +192,7 @@ type QrClaimResult =
   | {
       status: "ok";
       userId: string;
-      session: { token: string; deviceId: string; sessionId: string };
+      session: { token: string };
     };
 
 export async function claimQrLogin(
@@ -233,6 +233,6 @@ export async function claimQrLogin(
   // CAS: the code may already have been claimed by another device.
   if (claim.meta.changes !== 1) return { status: "not_found" };
 
-  const session = await createSessionForUser(d, row.grantedTo, meta);
-  return { status: "ok", userId: row.grantedTo, session };
+  const { token } = await createSessionForUser(d, row.grantedTo, meta);
+  return { status: "ok", userId: row.grantedTo, session: { token } };
 }

@@ -53,7 +53,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class OtpRateError extends Error {
   constructor(
-    public readonly status: 400 | 429 | 502,
+    public readonly status: 429 | 502,
     public readonly code: ApiCode,
   ) {
     super(code);
@@ -65,7 +65,7 @@ export async function requestOtp(
   ident: Identifier,
   ip: string,
   env: OtpEnv,
-  waitUntil?: (promise: Promise<unknown>) => void,
+  waitUntil: (promise: Promise<unknown>) => void,
 ): Promise<void> {
   const now = new Date();
   const nowIso = toIso(now);
@@ -240,9 +240,7 @@ export async function requestOtp(
     ).catch((err) => {
       console.error("telegram_owner_notify_failed", err);
     });
-    if (waitUntil) {
-      waitUntil(notifyOwner);
-    }
+    waitUntil(notifyOwner);
   } catch {
     try {
       await d.delete(otpCodes).where(eq(otpCodes.id, otpId));
@@ -260,7 +258,7 @@ const IP_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
 let lastSweep = Date.now();
 
 /** Drops IPs with no recent activity so the in-memory map can't grow forever
- * (keys come from client-controlled data when behind a proxy). */
+ * (one bucket per client IP, keyed off Cloudflare's CF-Connecting-IP). */
 function sweepStaleIps(): void {
   const now = Date.now();
   if (now - lastSweep < IP_SWEEP_INTERVAL_MS) return;
@@ -302,9 +300,6 @@ export function ipBudgetRemaining(
 export function recordIpAttempt(key: string, ip: string): void {
   const recent = pruneWindow(ip, key);
   recent.push(Date.now());
-  const byKey = ipWindows.get(ip) ?? new Map<string, number[]>();
-  byKey.set(key, recent);
-  ipWindows.set(ip, byKey);
 }
 
 export async function findLatestActiveOtp(

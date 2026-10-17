@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { type Db } from "../lib/db";
 import type { Env } from "../env";
 import { users } from "../db/schema";
-import { type ApiCode } from "@kataria-syntex/shared";
+import { type ApiCode, DEVICE_LABELS } from "@kataria-syntex/shared";
 import { apiError } from "../lib/api-error";
 import { type Identifier } from "../lib/identifier";
 
@@ -67,10 +67,10 @@ export function buildDeviceMeta(c: AuthCtx): {
     (platform === "web"
       ? fingerprint
         ? `Browser ${fingerprint.slice(0, 6)}`
-        : "Web browser"
+        : DEVICE_LABELS.web
       : platform === "android"
-        ? "Android app"
-        : "Desktop app");
+        ? DEVICE_LABELS.android
+        : DEVICE_LABELS.desktop);
   // These land verbatim in devices rows on unauthenticated endpoints —
   // clamp them so a client can't store arbitrary-size strings (the devices
   // schema caps label at 100; SQLite enforces nothing).
@@ -88,29 +88,20 @@ function isHttpsRequest(c: AuthCtx): boolean {
 }
 
 /**
- * Client IP for rate-limit budgets. X-Forwarded-For is spoofable, so it is
- * honored ONLY when TRUST_PROXY=1 (one known proxy in front) — and then the
- * RIGHTMOST entry wins: a trusted proxy APPENDS the real client IP, so any
- * client-supplied entries sit to the LEFT of it. Taking the leftmost value
- * would let an attacker rotate the header past every IP budget.
+ * Client IP for rate-limit budgets.
  *
- * On Cloudflare the edge itself sets CF-Connecting-IP to the true client
- * address (not client-spoofable), so that is the default source.
+ * CF-Connecting-IP is set by Cloudflare's edge to the true client address
+ * (not client-spoofable), so it is the only source used here —
+ * X-Forwarded-For is spoofable and must never key a budget.
  */
 export function clientIp(c: AuthCtx): string {
-  if (c.env.TRUST_PROXY === "1") {
-    const forwarded = c.req.header("x-forwarded-for");
-    const parts = forwarded?.split(",").map((s) => s.trim()) ?? [];
-    const last = parts[parts.length - 1];
-    if (last) return last;
-  }
   return c.req.header("cf-connecting-ip") ?? "127.0.0.1";
 }
 
 export function setSessionCookie(c: AuthCtx, token: string) {
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: isHttpsRequest(c) || c.env.APP_ENV === "production",
+    secure: isHttpsRequest(c),
     sameSite: "Lax",
     path: "/",
     maxAge: SESSION_MAX_AGE,
@@ -122,7 +113,7 @@ export function clearSessionCookie(c: AuthCtx) {
     path: "/",
     httpOnly: true,
     sameSite: "Lax",
-    secure: isHttpsRequest(c) || c.env.APP_ENV === "production",
+    secure: isHttpsRequest(c),
   });
 }
 
@@ -151,7 +142,7 @@ export async function authPayload(d: Db, userId: string) {
 
 export async function issueSession(c: AuthCtx, d: Db, userId: string) {
   const meta = buildDeviceMeta(c);
-  const { token, deviceId } = await createSessionForUser(d, userId, meta);
+  const { token } = await createSessionForUser(d, userId, meta);
   setSessionCookie(c, token);
-  return { token, deviceId };
+  return { token };
 }

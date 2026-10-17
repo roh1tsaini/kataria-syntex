@@ -64,10 +64,11 @@ after creating it so it can send OTP copies.
 
 Push to `main`. One workflow (`pipeline.yml`) runs everything:
 
-1. `prune-artifacts` deletes artifacts from completed Pipeline runs before a
-   new upload. `gate` — typecheck + lint + format + build via Turbo — resolves
-   whether the push introduces a new release version and uploads the shared
-   `apps/app` renderer for later jobs.
+1. `gate` — typecheck + lint + format + build via Turbo — resolves whether
+   the push introduces a new release version and uploads the shared
+   `apps/app` renderer for later jobs. `prune-artifacts` deletes artifacts
+   from completed Pipeline runs in parallel (skipped on PRs, which upload
+   no artifacts).
 2. `deploy-web` — runs immediately in parallel on push: ensure website D1
    (`ks-web-db`) → migrate → build Vinext → deploy website worker.
 3. `desktop` + `android` — download the shared renderer, then create the

@@ -11,6 +11,7 @@
  */
 import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
 import { autoUpdater } from "electron-updater";
+import { compareSemver } from "@kataria-syntex/shared/semver";
 
 // Baked at build time by electron/build.ts alongside KC_API_ORIGIN —
 // the deployed Worker that serves /releases/*.
@@ -52,10 +53,6 @@ function broadcast(status: UpdateStatus): void {
 export function initUpdater(
   isTrusted: (event: IpcMainInvokeEvent) => boolean,
 ): void {
-  ipcMain.handle("kc:update:version", (event) =>
-    isTrusted(event) ? app.getVersion() : "",
-  );
-
   // macOS + dev builds: the renderer's manifest check owns updates.
   // Idle is the only answer on this path, trusted or not.
   if (process.platform === "darwin" || !feedConfigured()) {
@@ -118,7 +115,7 @@ export function initUpdater(
       try {
         const res = await autoUpdater.checkForUpdates();
         const version = res?.updateInfo?.version ?? "";
-        return compareVersions(version, app.getVersion()) > 0
+        return compareSemver(version, app.getVersion()) > 0
           ? { kind: "available", version }
           : { kind: "not-available" };
       } catch {
@@ -144,13 +141,4 @@ export function initUpdater(
     // app and changed nothing".
     if (staged) autoUpdater.quitAndInstall();
   });
-}
-
-function compareVersions(a: string, b: string): number {
-  const pa = a.split(".").map((n) => Number.parseInt(n, 10) || 0);
-  const pb = b.split(".").map((n) => Number.parseInt(n, 10) || 0);
-  for (let i = 0; i < 3; i++) {
-    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) - (pb[i] ?? 0);
-  }
-  return 0;
 }

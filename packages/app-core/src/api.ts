@@ -5,7 +5,7 @@
  * Bearer token). Auth and error-code rules are identical on every shell.
  */
 
-import { hasUpdateFloor } from "@kataria-syntex/shared";
+import { DEVICE_LABELS, hasUpdateFloor } from "@kataria-syntex/shared";
 import { core } from "./adapter";
 import { randomId } from "./id";
 
@@ -13,8 +13,6 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly code: string,
-    /** Parsed JSON body of the error response, when present. */
-    public readonly data?: unknown,
   ) {
     super(code);
   }
@@ -90,13 +88,13 @@ function deviceHeaders(): Record<string, string> {
     return {
       ...version,
       "X-Platform": "desktop",
-      "X-Device-Label": "Desktop app",
+      "X-Device-Label": DEVICE_LABELS.desktop,
     };
   if (a.host === "android")
     return {
       ...version,
       "X-Platform": "android",
-      "X-Device-Label": "Android app",
+      "X-Device-Label": DEVICE_LABELS.android,
     };
   const fp = deviceFingerprint();
   return fp
@@ -121,7 +119,7 @@ function classify<T>(status: number, body: unknown): T {
       if (typeof err === "string" && err) code = err;
     }
     if (status === 426 || code === "update_required") raiseUpdateRequired(body);
-    throw new ApiError(status, code, body);
+    throw new ApiError(status, code);
   }
   if (status === 204 || body === undefined) return undefined as T;
   // A 2xx with an empty/HTML body (captive portal, truncated response) must

@@ -69,7 +69,6 @@ authOtpRoute.post("/lookup", async (c) => {
   const open = user ? true : await registrationsEnabled(c.env.DB);
 
   return c.json({
-    type: ident.type,
     exists: !!user,
     hasPassword: !!user && isUsablePasswordHash(user.passwordHash),
     registrationClosed: !user && !open,
@@ -146,10 +145,10 @@ authOtpRoute.post("/otp/verify", async (c) => {
   if (!(await consumeVerifiedOtp(db, ident)))
     return apiError(c, "otp_expired", 400);
 
-  const { token, deviceId } = await issueSession(c, db, existing.id);
+  const { token } = await issueSession(c, db, existing.id);
   const payload = await authPayload(db, existing.id);
   if (!payload) return apiError(c, "internal_server_error", 500);
-  return c.json({ status: "ok", token, deviceId, ...payload });
+  return c.json({ status: "ok", token, ...payload });
 });
 
 // ── Signup — account created after OTP verify ────────────────────────
@@ -278,8 +277,8 @@ authOtpRoute.post("/signup", async (c) => {
     throw err;
   }
 
-  const { token, deviceId } = await issueSession(c, db, userId);
+  const { token } = await issueSession(c, db, userId);
   const payload = await authPayload(db, userId);
   if (!payload) return apiError(c, "internal_server_error", 500);
-  return c.json({ status: "ok", token, deviceId, ...payload });
+  return c.json({ status: "ok", token, ...payload });
 });

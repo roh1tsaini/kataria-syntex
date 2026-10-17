@@ -17,7 +17,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@/ui/components/ui/field";
-import { Input } from "@/ui/components/ui/input";
+import { SuffixInput } from "@/ui/components/suffix-input";
 import { Skeleton } from "@/ui/components/motion";
 import { EASE_OUT } from "@/ui/lib/motion";
 
@@ -179,27 +179,12 @@ export function ScanApprovePage() {
               >
                 <Field>
                   <FieldLabel htmlFor="code-suffix">Code ends in</FieldLabel>
-                  <Input
+                  <SuffixInput
                     id="code-suffix"
                     value={suffix}
-                    onChange={(e) =>
-                      setSuffix(
-                        e.target.value
-                          .toUpperCase()
-                          .replace(/[^A-Z0-9]/g, "")
-                          .slice(0, 4),
-                      )
-                    }
-                    placeholder="XXXX"
-                    className="font-mono tracking-[0.18em]"
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                    spellCheck={false}
-                    autoFocus
-                    aria-invalid={!!submitError}
-                    aria-describedby={
-                      submitError ? "code-suffix-error" : undefined
-                    }
+                    onChange={setSuffix}
+                    error={submitError}
+                    describedBy="code-suffix-error"
                   />
                   <FieldDescription>
                     The last 4 characters of the code shown on the other device.

@@ -14,34 +14,20 @@ const DialogContext = React.createContext<DialogContextType | null>(null);
  * Root that shares its open state with the content. Radix unmounts content
  * the moment it closes, which kills exit animations — so the animated
  * surface reads the state from here and runs its own exit inside
- * AnimatePresence. Same API as Radix Root (controlled in this app).
+ * AnimatePresence. Same API as Radix Root, controlled.
  */
 export function Dialog({
-  open: controlledOpen,
-  defaultOpen = false,
+  open,
   onOpenChange,
   children,
 }: {
-  open?: boolean;
-  defaultOpen?: boolean;
+  open: boolean;
   onOpenChange?: (open: boolean) => void;
   children: React.ReactNode;
 }) {
-  const [uncontrolled, setUncontrolled] = React.useState(defaultOpen);
-  const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolled;
-
-  const setOpen = React.useCallback(
-    (next: boolean) => {
-      if (!isControlled) setUncontrolled(next);
-      onOpenChange?.(next);
-    },
-    [isControlled, onOpenChange],
-  );
-
   return (
     <DialogContext.Provider value={{ open }}>
-      <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+      <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
         {children}
       </DialogPrimitive.Root>
     </DialogContext.Provider>

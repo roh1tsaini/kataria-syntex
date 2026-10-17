@@ -5,7 +5,10 @@ name: Pipeline
 #   [desktop, android] → publish-r2 → deploy-app
 #
 # Runs on GitHub-hosted runners. Temporary workflow artifacts are cleaned up
-# before uploads and after all jobs finish.
+# after all jobs finish; prune-artifacts and the cleanup jobs are parallel
+# housekeeping and never sit on any job's critical path.
+# Every job installs only the workspaces it uses (bun install --filter), and
+# desktop packaging restores the Electron toolchain from a per-platform cache.
 # Native packaging (desktop installers + Android APK) is gated to release pushes
 # (when apps/app/package.json version differs from live R2 manifest) and manual
 # workflow_dispatch runs, avoiding ~15 min of wasted compute on routine PRs and
@@ -45,6 +48,9 @@ env:
 jobs:
   prune-artifacts:
     name: "Free storage from completed Pipeline artifacts"
+    # Housekeeping only — runs alongside the gate, never blocks it. PRs upload
+    # no artifacts, so they skip the job entirely.
+    if: github.event_name != 'pull_request'
     concurrency:
       group: pipeline-artifact-prune-${{ github.repository }}
       cancel-in-progress: false
@@ -56,14 +62,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          EVENT_NAME: ${{ github.event_name }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            echo "Pull requests do not upload artifacts; skipping cleanup."
-            exit 0
-          fi
           RUN_IDS_FILE="$RUNNER_TEMP/completed-run-ids.txt"
           gh api --paginate "repos/$GH_REPO/actions/workflows/pipeline.yml/runs?status=completed&per_page=100&sort=created&direction=desc" --jq '.workflow_runs[].id' > "$RUN_IDS_FILE"
           declare -A completed_run_ids=()
@@ -85,7 +86,6 @@ jobs:
 
   gate:
     name: "Gate: typecheck, lint, format, build"
-    needs: prune-artifacts
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version_info.outputs.version }}
@@ -108,19 +108,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Typecheck, lint, and build
-        env:
-          VITE_API_URL: ${{ vars.APP_URL }}
-        run: bunx turbo run typecheck lint build
-
-      - name: Format check
-        run: bun run format:check
-
       # AGENTS.md Section 4.0.1: version and minAppVersion bump together. A
       # floor above the version being shipped can never be satisfied by any
       # installable release — every client below it would be answered 426 with
-      # nothing to install. Caught here in seconds, not after a build.
-      # Also resolves whether this run is a release (version bumped or workflow_dispatch).
+      # nothing to install. Runs before the build, so a bad floor fails the
+      # run in seconds. Also resolves whether this run is a release (version
+      # bumped or workflow_dispatch).
       - name: Resolve release targets
         id: version_info
         shell: bash
@@ -159,6 +152,14 @@ jobs:
           fi
           echo "is_release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Format check
+        run: bun run format:check
+
+      - name: Typecheck, lint, and build
+        env:
+          VITE_API_URL: ${{ vars.APP_URL }}
+        run: bunx turbo run typecheck lint build
+
       - name: Upload shared app renderer
         if: ${{ github.event_name != 'pull_request' }}
         uses: actions/upload-artifact@v7
@@ -182,7 +183,7 @@ jobs:
           bun-version-file: package.json
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter @kataria-syntex/web
 
       # D1 steps run before the build: vinext bakes a resolved copy of
       # wrangler.jsonc into dist/server at build time, so the real database id
@@ -259,12 +260,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Download shared app renderer
-        uses: actions/download-artifact@v8
-        with:
-          name: ks-biz-app-renderer
-          path: apps/app/dist
-
       - name: Require APP_URL variable
         shell: bash
         env:
@@ -275,13 +270,62 @@ jobs:
             exit 1
           fi
 
+      - name: Resolve packaging tool versions
+        id: pkg_versions
+        shell: bash
+        run: |
+          echo "electron=$(jq -r '.devDependencies.electron' apps/app/package.json)" >> "$GITHUB_OUTPUT"
+          echo "eb=$(jq -r '.devDependencies["electron-builder"]' apps/app/package.json)" >> "$GITHUB_OUTPUT"
+
+      # electron-builder downloads large toolchains on first use (the Electron
+      # zip, NSIS, winCodeSign). Restoring them per platform removes those
+      # downloads from every packaging run; the key follows the pinned tool
+      # versions, so an upgrade invalidates the cache.
+      - name: Cache Electron toolchain (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: electron-tools-${{ matrix.name }}-${{ steps.pkg_versions.outputs.electron }}-eb${{ steps.pkg_versions.outputs.eb }}
+          restore-keys: electron-tools-${{ matrix.name }}-
+
+      - name: Cache Electron toolchain (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: electron-tools-${{ matrix.name }}-${{ steps.pkg_versions.outputs.electron }}-eb${{ steps.pkg_versions.outputs.eb }}
+          restore-keys: electron-tools-${{ matrix.name }}-
+
+      - name: Cache Electron toolchain (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: electron-tools-${{ matrix.name }}-${{ steps.pkg_versions.outputs.electron }}-eb${{ steps.pkg_versions.outputs.eb }}
+          restore-keys: electron-tools-${{ matrix.name }}-
+
+      - name: Download shared app renderer
+        uses: actions/download-artifact@v8
+        with:
+          name: ks-biz-app-renderer
+          path: apps/app/dist
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: package.json
 
+      # Packaging needs only the app workspace: the renderer arrives as an
+      # artifact, and the web/android workspace dependencies are never touched.
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter @kataria-syntex/biz-app
 
       # The gate's renderer artifact is shared across shells. This step builds
       # only Electron's main/preload and packages this platform's installer.
@@ -369,7 +413,7 @@ jobs:
             "build-tools;36.0.0"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter @kataria-syntex/android
 
       - name: Sync shared web bundle into Android
         # cap sync runs from apps/android — it owns capacitor.config.ts (which
@@ -418,7 +462,7 @@ jobs:
           bun-version-file: package.json
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter @kataria-syntex/biz-app
 
       - name: Read app version
         id: app_version
@@ -487,7 +531,7 @@ jobs:
           bun-version-file: package.json
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter @kataria-syntex/biz-app
 
       # Auto-provisions the DB and injects its real id into wrangler.jsonc on
       # the runner, so a fresh Cloudflare account needs no manual dashboard
@@ -623,16 +667,7 @@ jobs:
   cleanup-history:
     name: "Keep the latest five Pipeline runs"
     if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-    needs:
-      [
-        gate,
-        deploy-web,
-        desktop,
-        android,
-        publish-r2,
-        deploy-app,
-        cleanup-artifacts,
-      ]
+    needs: [gate, deploy-web, desktop, android, publish-r2, deploy-app]
     runs-on: ubuntu-24.04
     permissions:
       actions: write

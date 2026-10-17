@@ -55,6 +55,7 @@ import {
   compareSemver,
   hasUpdateFloor,
   releaseContentType,
+  type ReleaseManifest,
 } from "@kataria-syntex/shared";
 
 const ACCOUNT = process.env.CF_ACCOUNT_ID ?? "";
@@ -170,6 +171,36 @@ function releaseUrl(key: string): string {
   return `${RELEASES_ORIGIN}/releases/${key}`;
 }
 
+/** Runs `worker` for each item with at most `limit` operations in flight. */
+async function mapLimit<T>(
+  items: readonly T[],
+  limit: number,
+  worker: (item: T) => Promise<void>,
+): Promise<void> {
+  let next = 0;
+  const run = async (): Promise<void> => {
+    for (;;) {
+      const index = next++;
+      if (index >= items.length) return;
+      await worker(items[index]);
+    }
+  };
+  const runners = Math.min(Math.max(limit, 1), items.length);
+  await Promise.all(Array.from({ length: runners }, run));
+}
+
+/** Reads each artifact once — uploads, hashes and feeds reuse the same bytes,
+ * so a several-hundred-MB release is not re-read per consumer. */
+const fileCache = new Map<string, Buffer>();
+function readFileCached(file: string): Buffer {
+  let bytes = fileCache.get(file);
+  if (bytes === undefined) {
+    bytes = readFileSync(file);
+    fileCache.set(file, bytes);
+  }
+  return bytes;
+}
+
 function readMinVersion(): string {
   const pkgPath = join(process.cwd(), "package.json");
   const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
@@ -275,21 +306,23 @@ for (const [file, folder] of [
   if (file) uploads.push({ key: keyFor(file, folder), file });
 }
 
-for (const { key, file } of uploads) {
-  await putObject(
+// The installers total hundreds of MB; a bounded pool overlaps their uploads
+// instead of paying every round trip end to end.
+await mapLimit(uploads, 4, ({ key, file }) =>
+  putObject(
     key,
-    readFileSync(file),
+    readFileCached(file),
     releaseContentType(basename(key)),
     ARTIFACT_CACHE,
-  );
-}
+  ),
+);
 
 // 2) The unified release info — Android, macOS Electron and /downloads read it.
 // Paths are the public /releases/* URLs every client resolves directly.
 // Required updates come only from the live app server. The package floor is
 // still checked against this release above, but is not published in this file.
 // Android carries APK SHA-256 + size so the stager can verify the download.
-const apkBytes = apk === undefined ? null : readFileSync(apk);
+const apkBytes = apk === undefined ? null : readFileCached(apk);
 /** Public /releases/* path for a built artifact, or undefined when absent —
  *  JSON.stringify drops undefined keys, so the manifest lists only real builds. */
 function manifestPath(
@@ -298,7 +331,7 @@ function manifestPath(
 ): string | undefined {
   return file ? `/releases/${keyFor(file, folder)}` : undefined;
 }
-const manifest = {
+const manifest: ReleaseManifest = {
   version: VERSION,
   releasedAt: new Date().toISOString(),
   android:
@@ -346,7 +379,7 @@ function makeElectronFeed(platform: DesktopPlatform): Array<{
   const folder = platform === "win" ? "desktop/win" : "desktop/linux";
   const entries = artifacts.map((file) => {
     if (!file) fail(`Cannot make ${platform} feed without its installer.`);
-    const bytes = readFileSync(file);
+    const bytes = readFileCached(file);
     return {
       filename: basename(file),
       size: bytes.length,
@@ -403,9 +436,11 @@ await putObject(
 const keep = new Set<string>(uploads.map(({ key }) => key));
 keep.add(releaseInfoKey);
 for (const feed of electronFeeds) keep.add(feed.key);
-for (const key of await listKeys()) {
-  if (!keep.has(key)) await deleteObject(key);
-}
+await mapLimit(
+  (await listKeys()).filter((key) => !keep.has(key)),
+  4,
+  deleteObject,
+);
 
 // 5) Smoke check — every advertised URL and generated Electron feed resolves.
 // A release that fails here is broken for real clients; exit non-zero.
@@ -417,7 +452,7 @@ const publicUrls = [
   releaseUrl(releaseInfoKey),
 ];
 let smokeFailed = false;
-for (const url of publicUrls) {
+await mapLimit(publicUrls, 8, async (url) => {
   const res = await fetch(url, { method: "HEAD" });
   if (res.ok) {
     console.log(`ok ${url}`);
@@ -425,7 +460,7 @@ for (const url of publicUrls) {
     smokeFailed = true;
     console.error(`SMOKE FAIL ${res.status} ${url}`);
   }
-}
+});
 for (const [feeds, artifacts] of [
   [winFeeds, [winX64, winArm64]],
   [linuxFeeds, [linuxX64, linuxArm64]],
